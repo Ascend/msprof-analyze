@@ -80,6 +80,10 @@
         torch_npu.npu_group_norm_silu: [ "group_norm-silu" ]
         torch.addmm: [ "mul-mul-add" ]
         torch_npu.npu_add_layer_norm: [ "add-layer_norm" ]
+        mx_driving.npu_max_pool2d: ["max_pool2d"]
+        mx_driving.npu_fused_bias_leaky_relu: ["add-leaky_relu-mul"]
+        mx_driving.cal_anchors_heading: ["(select){0,1}-(gt){0,1}-(select){0,1}-(gt){0,1}-logical_or-(select){0,2}-atan2",
+                                          "(select){0,2}-atan2-(select){0,1}-(gt){0,1}-(select){0,1}-(gt){0,1}-logical_or"]
 
 - cann_version: 8.0.RC3
   torch_version: [1.11.0, 2.1.0]

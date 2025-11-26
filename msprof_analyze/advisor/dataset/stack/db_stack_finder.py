@@ -74,11 +74,12 @@ class DBStackFinder:
         api_str.value AS api_name,
         api.startNs / 1000.0 AS ts,
         (api.endNs - api.startNs) / 1000.0 AS dur,
-        GROUP_CONCAT(stack_str.value, ';\n' ORDER BY cc.stackDepth ASC) AS call_stack
+        GROUP_CONCAT(stack_str.value, ';\n') AS call_stack
     FROM task_connections tc
     JOIN PYTORCH_API api ON tc.api_conn_id = api.connectionId
     JOIN STRING_IDS api_str ON api.name = api_str.id
-    JOIN PYTORCH_CALLCHAINS cc ON api.callchainId = cc.id
+    JOIN (SELECT * FROM PYTORCH_CALLCHAINS ORDER BY stackDepth ASC) cc
+        ON api.callchainId = cc.id
     JOIN STRING_IDS stack_str ON cc.stack = stack_str.id
     GROUP BY tc.op_name, tc.task_id, tc.task_type, api_str.value, api.startNs, api.endNs
     """

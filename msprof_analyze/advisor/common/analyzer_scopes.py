@@ -41,3 +41,4 @@ class SupportedScopes:
     CONJECTURED_GC_ANALYSIS = "conjectured_analysis"
     COMPARISON = "comparison"
     AICORE_PERFORMANCE_ANALYSIS = "ai_core_performance_analysis"
+    VECTOR_BOTTLENECK_ANALYSIS = "vector_bottleneck_analysis"

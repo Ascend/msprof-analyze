@@ -1,0 +1,69 @@
+<div class="collapsible">
+    <h2 class="collapsible-header" style="background-color: {{ priority_background_color }};">Vector Bottleneck Operators</h2>
+    <div class="collapsible-content">
+        {% if rank is not none %}
+        <a style="font-weight: bold" id="timeline_api_instruction">Analysis of rank {{ rank|safe }}. </a>
+        {% endif %}
+        <table>
+            <tr>
+                <th>Description</th>
+                <th>Suggestion</th>
+            </tr>
+            <tr>
+                <td>{{ format_result.description|safe }}</td>
+                <td>{{ format_result.suggestion|safe }}</td>
+            </tr>
+        </table>
+        <div class="collapsible">
+            {% for op_type, op_info in format_result.statistic %}
+            <div class="collapsible-header" style="background-color: {{ op_info.summary.op_color }};">{{ op_type|safe }}</div>
+            <div class="collapsible-content">
+                <table>
+                    <tr>
+                        <th>Operator Type</th>
+                        <th>Counts</th>
+                        <th>Elapsed Time(us)</th>
+                        <th>Compution Ratio(%)</th>
+                        <th>Step Time Ratio(%)</th>
+                    </tr>
+                    <tr>
+                        <td>{{ op_info.summary.op_type|safe }}</td>
+                        <td>{{ op_info.summary.counts|safe }}</td>
+                        <td>{{ op_info.summary.total_duration|safe }}</td>
+                        <td>{{ op_info.summary.op_computation_ratio|safe }}</td>
+                        <td>{{ op_info.summary.op_step_time_ratio|safe }}</td>
+                    </tr>
+                </table>
+                <div>
+                    <p>
+                        <b>Suggestion:</b> <u>{{op_info.summary.suggestion|safe}}</u>
+                        {% if op_info.summary.op_priority == 2 %}
+                            {% if language == 'en' %}
+                                <u>current CPU and communication time relatively high, Please check the related problem.</u>
+                            {% else %}
+                                <u>当前CPU和通信时间占用较高，请检查相关问题。</u>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="separator"></div>
+                {% for _, stacks in op_info.op_info_list.items() %}
+                    {% if not stacks.op_info_list[0].stack_info %}
+                        <a style="font-weight: bold">Suggestion: </a>
+                        <a>These APIs have no stack. If parameter 'with_stack=False' was set while profiling, please refer to</a>
+                        <a href="{{with_stack_doc_url|safe}}" target="_blank">Ascend Profiler</a> to set
+                        <span style="font-weight:bold;">'with_stack=True'</span>. Otherwise, ignore following affinity APIs due to backward broadcast lack of stack.
+                    {% else %}
+                        <div class="collapsible">
+                            <div class="collapsible-header"> No.{{loop.index|safe}} code stack, input shapes is: {{stacks.op_info_list[0].input_shapes}}, called {{stacks.summary.counts|safe}} times</div>
+                            <div class="collapsible-content">
+                                <a id = "timeline_api_stack">{{stacks.op_info_list[0].stack_info|safe}}</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

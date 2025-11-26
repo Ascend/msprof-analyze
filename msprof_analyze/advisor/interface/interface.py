@@ -45,6 +45,8 @@ from msprof_analyze.advisor.analyzer.comparison.comparison_analyzer import Compa
 from msprof_analyze.advisor.analyzer.schedule.fusible_ops.fusible_operator_analyzer import FusibleOperatorAnalyzer
 from msprof_analyze.advisor.analyzer.computation.ai_core_performance.ai_core_performance_analyzer import \
     AICorePerformanceAnalyzer
+from msprof_analyze.advisor.analyzer.computation.vector_bottleneck_operator.vector_bottleneck_op_analyzer import \
+    VectorBottleneckOPAnalyzer
 
 logger = logging.getLogger()
 
@@ -76,7 +78,8 @@ class Interface:
             SupportedScopes.BLOCK_DIM_ANALYSIS: BlockDimAnalyzer,
             SupportedScopes.GRAPH: FusionOPAnalyzer,
             SupportedScopes.FREQ_ANALYSIS: AICoreFreqAnalyzer,
-            SupportedScopes.AICORE_PERFORMANCE_ANALYSIS: AICorePerformanceAnalyzer
+            SupportedScopes.AICORE_PERFORMANCE_ANALYSIS: AICorePerformanceAnalyzer,
+            SupportedScopes.VECTOR_BOTTLENECK_ANALYSIS: VectorBottleneckOPAnalyzer
         }),
         COMMUNICATION: OrderedDict({SupportedScopes.PACKET: PacketAnalyzer,
                                     SupportedScopes.COMMUNICATION_RETRANSMISSION_DETECTION: RDMARetransmissionAnalyzer,
