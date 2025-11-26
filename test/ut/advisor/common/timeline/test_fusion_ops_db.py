@@ -115,7 +115,7 @@ class TestFusionOperatorDB(unittest.TestCase):
                                   profiling_version='2.1.0')
         default_cann_version = EnumParamsParser().get_default(Constant.CANN_VERSION)
         self.assertEqual(db.cann_version, default_cann_version)
-        self.assertEqual(len(db.aten_op_api_map), 34)
+        self.assertEqual(len(db.aten_op_api_map), 38)
 
     def test_is_version_supported_when_db_content_none_then_false(self):
         db = FusionOperatorDB(profiling_type=Constant.MINDSPORE)

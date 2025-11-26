@@ -1,0 +1,47 @@
+problem: "Threshold Operator"
+description: "Some operators have a disproportionately high time consumption ratio, both in overall execution and in single-step execution, such as：\n"
+suggestion: "Modify the code to avoid using such bottleneck operators"
+THRESHOLD_OP_URL: &THRESHOLD_OP_URL "https://gitcode.com/Ascend/mstt/blob/master/profiler/msprof_analyze/advisor/doc/Samples%20of%20Vector%20Bottleneck%20Operator%20Replacement.md"
+INDEXPUT_V2_URL: &INDEXPUT_V2_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0041.html"
+NONZERO_URL: &NONZERO_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0042.html"
+WHERE_URL: &WHERE_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0043.html"
+
+ExampleSuggestionChecker:
+  - op_list:
+      [ IndexPutV2, RepeatInterleave, SelectV2, ReduceSum, BatchMatMulV2, GatherElementsV2, NonZero ]
+
+  - IndexPutV2:
+      op_type: IndexPutV2
+      url: *INDEXPUT_V2_URL
+      suggestion: "Convert the indexing operation into a matrix addition and multiplication operation, Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."
+
+  - RepeatInterleave:
+      op_type: RepeatInterleave
+      url: *THRESHOLD_OP_URL
+      suggestion: "RepeatInterleave only optimizes the 0-dimensional operator operation. It is recommended to perform data axis conversion calculation, Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."
+
+  - SelectV2:
+      op_type: SelectV2
+      url: *WHERE_URL
+      suggestion: "It is recommended to use torch.lerp instead of torch.where for calculation(invoke SelectV2 operator), Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."
+
+  - ReduceSum:
+      op_type: ReduceSum
+      url: *THRESHOLD_OP_URL
+      suggestion: "If it is a combination of onehot and reducesum operators, it can be replaced with a combination of zeros and scatter operators, Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."
+
+  - BatchMatMulV2:
+      op_type: BatchMatMulV2
+      url: *THRESHOLD_OP_URL
+      suggestion: "The performance of this operator deteriorates when the output shape is (1,1), Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."
+      input_shape_limit: [[[-2,1],[-1,1]], [[0,1],[0,1]]]
+
+  - GatherElementsV2:
+      op_type: GatherElementsV2
+      url: *THRESHOLD_OP_URL
+      suggestion: "The GatherElement operator can be replaced with the torch.index_select function, Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."
+
+  - NonZero:
+      op_type: NonZero
+      url: *NONZERO_URL
+      suggestion: "Convert mask to index and replace it with multiplication, Please refer to <a href='{}' target='_blank'>Link</a>Modify the source code and attempt to replace operators with equivalent ones."

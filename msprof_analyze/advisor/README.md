@@ -95,6 +95,7 @@ msprof-analyze advisor命令行包含如下三个参数：
 |            | Operator No Bound Issues     | 算子瓶颈分析                                                                              | PyTorch、MindSpore |
 |            | Fusion Issues                    | 融合算子图调优                                                                             | PyTorch、MindSpore       |
 |            | AI Core Frequency Issues | AI Core算子降频分析                                                                       | PyTorch、MindSpore |
+|            | Vector Bottleneck operator Issues                 | 高耗时占比算子性能调优                                                                         | PyTorch、MindSpore |
 |communication| Packet Analysis                       | 通信小包检测                                                                              |PyTorch、MindSpore                          |
 || Bandwidth Contention Analysis | 通信计算带宽抢占检测                                                                          |PyTorch、MindSpore |
 || Communication Retransmission Analysis | 通信重传检测                                                                              |PyTorch、MindSpore |

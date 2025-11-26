@@ -1,0 +1,48 @@
+problem: "瓶颈算子"
+description: "一些算子执行耗时占比和单步执行中耗时占比过大，比如：\n"
+suggestion: "修改代码避免使用这类瓶颈算子"
+THRESHOLD_OP_URL: &THRESHOLD_OP_URL "https://gitcode.com/Ascend/mstt/blob/master/profiler/msprof_analyze/advisor/doc/Samples%20of%20Vector%20Bottleneck%20Operator%20Replacement.md"
+INDEXPUT_V2_URL: &INDEXPUT_V2_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0041.html"
+NONZERO_URL: &NONZERO_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0042.html"
+WHERE_URL: &WHERE_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0043.html"
+
+ExampleSuggestionChecker:
+  - op_list:
+      [ IndexPutV2, RepeatInterleave, SelectV2, ReduceSum, BatchMatMulV2, GatherElementsV2, NonZero]
+
+  - IndexPutV2:
+      op_type: IndexPutV2
+      url: *INDEXPUT_V2_URL
+      suggestion: "将索引操作转换成矩阵加乘操作，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换算子。"
+
+  - RepeatInterleave:
+      op_type: RepeatInterleave
+      url: *THRESHOLD_OP_URL
+      suggestion: "RepeatInterleave仅优化0维进行算子操作，建议进行数据轴转换计算，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换算子。"
+
+  - SelectV2:
+      op_type: SelectV2
+      url: *WHERE_URL
+      suggestion: "建议用torch.lerp代替torch.where(调用SelectV2算子)进行计算，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换算子。"
+
+  - ReduceSum:
+      op_type: ReduceSum
+      url: *THRESHOLD_OP_URL
+      suggestion: "如果为onehot+reducesum算子组合，可用zeros+scatter算子组合进行替代，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换算子。"
+
+  - BatchMatMulV2:
+      op_type: BatchMatMulV2
+      url: *THRESHOLD_OP_URL
+      suggestion: "该算子在输出shape为(1,1)的时候性能会出现劣化，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试修改代码计算方式。"
+      input_shape_limit: [[[-2,1],[-1,1]], [[0,1],[0,1]]]
+#      [[[-2,1],[-1,1]]表示第一个输入的索引-2位置为1，第二个输入索引-1位置为1，如(b,1,n) (n,1)
+
+  - GatherElementsV2:
+      op_type: GatherElementsV2
+      url: *THRESHOLD_OP_URL
+      suggestion: "GatherElement算子可用torch.index_select函数进行替换，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换算子。"
+
+  - NonZero:
+      op_type: NonZero
+      url: *NONZERO_URL
+      suggestion: "将mask转换为index利用乘法替换，请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换算子。"
