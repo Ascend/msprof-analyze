@@ -3,7 +3,7 @@ description: "一些算子和任务执行时间超过了{}us，比如：\n"
 suggestion: "修改代码避免使用aicpu类算子"
 double_suggestion: "尝试将double类型的算子转换成float，比如{}"
 DataTypeSuggeation: &DataTypeSuggeation "数据类型{}在{}算子中可能会造成AICpu问题, 如果可以，尝试转换成{}。"
-AICPU_DOC_URL: &AICPU_DOC_URL "https://gitcode.com/Ascend/mstt/blob/master/profiler/msprof_analyze/advisor/doc/Samples%20of%20AI%20CPU%20Operator%20Replacement.md"
+AICPU_DOC_URL: &AICPU_DOC_URL "https://gitcode.com/Ascend/msprof-analyze/blob/master/docs/zh/aicpu_operator_replacement_example.md"
 
 CommonChecker:
   - DataTypeChecker:

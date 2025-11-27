@@ -3,7 +3,7 @@ description: "Some operators and task duration exceed {} us, such as :\n"
 suggestion: "Modify code to avoid aicpu operator"
 double_suggestion: "Try to convert double type operator to float, such as {}"
 DataTypeSuggeation: &DataTypeSuggeation "Data type {} in {} operator may cause AICPU issues, Try to convert to {} if possible."
-AICPU_DOC_URL: &AICPU_DOC_URL "https://gitcode.com/Ascend/mstt/blob/master/profiler/msprof_analyze/advisor/doc/Samples%20of%20AI%20CPU%20Operator%20Replacement.md"
+AICPU_DOC_URL: &AICPU_DOC_URL "https://gitcode.com/Ascend/msprof-analyze/blob/master/docs/zh/aicpu_operator_replacement_example.md"
 
 CommonChecker:
   - DataTypeChecker:
