@@ -1,7 +1,7 @@
 problem: "瓶颈算子"
 description: "一些算子执行耗时占比和单步执行中耗时占比过大，比如：\n"
 suggestion: "修改代码避免使用这类瓶颈算子"
-THRESHOLD_OP_URL: &THRESHOLD_OP_URL "https://gitcode.com/Ascend/mstt/blob/master/profiler/msprof_analyze/advisor/doc/Samples%20of%20Vector%20Bottleneck%20Operator%20Replacement.md"
+THRESHOLD_OP_URL: &THRESHOLD_OP_URL "https://gitcode.com/Ascend/msprof-analyze/blob/pre-research/docs/zh/vector_bottleneck_operator_replacement_example.md"
 INDEXPUT_V2_URL: &INDEXPUT_V2_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0041.html"
 NONZERO_URL: &NONZERO_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0042.html"
 WHERE_URL: &WHERE_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0043.html"

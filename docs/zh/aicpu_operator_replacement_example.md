@@ -13,7 +13,7 @@
 
 图1 PyTorch支持的dtype
 
-![img](./img/Pytorch_dtype.png)
+![img](./figures/Pytorch_dtype.png)
 
 基于此对常见的算子如MUL、Equal、TensorEqual等做单算子测试，看有哪些类型的算子是执行在AICPU上的，然后尝试转换到支持AICORE单元的类型dtype上计算，实现效率提升的目的。
 
@@ -21,7 +21,7 @@
 
 图2 Mul
 
-![img](./img/Mul.png)
+![img](./figures/Mul.png)
 
 AICORE支持的dtype。
 
@@ -39,7 +39,7 @@ int16, complex128
 
 图3 Equal
 
-![img](./img/Equal.png)
+![img](./figures/Equal.png)
 
 AICORE支持的dtype。
 
@@ -57,7 +57,7 @@ int16, complex64, complex128
 
 图4 TensorEqual
 
-![img](./img/TensorEqual.png)
+![img](./figures/TensorEqual.png)
 
 AICORE支持的dtype。
 
@@ -81,7 +81,7 @@ int16, int64
 
   图5 index by index
 
-  <img src="./img/index by index.png" alt="img" style="zoom:80%;" />
+  <img src="./figures/index by index.png" alt="img" style="zoom:80%;" />
 
 - 情形二：index\_put by index
 
@@ -103,7 +103,7 @@ int16, int64
 
   图6 index\_put by mask
   
-  ![img](./img/index_put_by_mask.png)
+  ![img](./figures/index_put_by_mask.png)
   
   index by mask或者index_put by mask相对来说对NPU和框架比较友好。关键在保持shape这样不需要contiguous，然后将必要的index抽取操作放在最后。在index比较少的情况下，index操作就比较快了，可能优于替换。
 
@@ -127,13 +127,13 @@ masked_input *= ~input_mask
 
 图7 替换前耗时
 
-![img](./img/替换前耗时.png)
+![img](./figures/替换前耗时.png)
 
 替换后，总体耗时226.131us。下发三个执行算子，均执行在AI CORE上。
 
 图8 替换后耗时
 
-![img](./img/替换后耗时.png)
+![img](./figures/替换后耗时.png)
 
 ### ArgMin算子优化
 
@@ -143,13 +143,13 @@ ArgMin在CANN 6.3 RC2版本上算子下发到 AICPU执行，在CANN 7.0RC1上下
 
 图9 单算子执行时间（CANN 6.3.RC2）
 
-![img](./img/single_op_time_CANN63RC2.png)
+![img](./figures/single_op_time_CANN63RC2.png)
 
 CANN7.0 RC1上，单算子执行时间 223.516 us。
 
 图10 单算子执行时间（CANN7.0 RC1）
 
-![img](./img/single_op_time_CANN70RC1.png)
+![img](./figures/single_op_time_CANN70RC1.png)
 
 ### nonzero算子优化
 

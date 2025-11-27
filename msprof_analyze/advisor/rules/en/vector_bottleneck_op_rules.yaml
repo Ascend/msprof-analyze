@@ -1,7 +1,7 @@
 problem: "Threshold Operator"
 description: "Some operators have a disproportionately high time consumption ratio, both in overall execution and in single-step execution, such as：\n"
 suggestion: "Modify the code to avoid using such bottleneck operators"
-THRESHOLD_OP_URL: &THRESHOLD_OP_URL "https://gitcode.com/Ascend/mstt/blob/master/profiler/msprof_analyze/advisor/doc/Samples%20of%20Vector%20Bottleneck%20Operator%20Replacement.md"
+THRESHOLD_OP_URL: &THRESHOLD_OP_URL "https://gitcode.com/Ascend/msprof-analyze/blob/pre-research/docs/zh/vector_bottleneck_operator_replacement_example.md"
 INDEXPUT_V2_URL: &INDEXPUT_V2_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0041.html"
 NONZERO_URL: &NONZERO_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0042.html"
 WHERE_URL: &WHERE_URL "https://www.hiascend.com/document/detail/zh/Pytorch/720/ptmoddevg/trainingmigrguide/performance_tuning_0043.html"

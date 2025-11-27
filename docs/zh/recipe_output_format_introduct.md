@@ -568,7 +568,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 ### pp_chart
 
-说明： 这个能力需要首先要使用轻量化打点在前反向前后打点，然后使用mstt进行处理，最后用MindStudio Insight进行显示。
+说明： 这个能力需要首先要使用轻量化打点在前反向前后打点，然后使用msprof-analyze进行处理，最后用MindStudio Insight进行显示。
 
 #### 打点
 

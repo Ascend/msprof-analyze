@@ -1,9 +1,15 @@
 # 自定义分析规则开发指导
-自定义分析规则是基于对Profiling的analysis.db和ascend_pytorch_profiler_{rank_id}.db文件进行性能数据分析而开发。与cann_api_sum、compute_op_sum、hccl_sum等参数功能实现类似，可自定义一套性能数据的分析规则，方法如下：
+## 简介
 
-1. 在mstt工具代码仓profiler/msprof_analyze/cluster_analyse/recipes目录下创建xxx目录和xxx.py文件。
+自定义分析规则是基于对Profiling的analysis.db和ascend_pytorch_profiler_{rank_id}.db文件进行性能数据分析而开发。与cann_api_sum、compute_op_sum、hccl_sum等参数功能实现类似，可自定义一套性能数据的分析规则。
 
-   例如：profiler/msprof_analyze/cluster_analyse/recipes/cann_api_sum/cann_api_sum.py，其中目录名和文件名要保持一致，该目录名也会作为使用msprof-analyze cluster工具启动该自定义分析的开关参数。
+## 自定义分析规则开发操作步骤
+
+步骤如下：
+
+1. 在msprof-analyze工具代码仓msprof_analyze/cluster_analyse/recipes目录下创建xxx目录和xxx.py文件。
+
+   例如：msprof_analyze/cluster_analyse/recipes/cann_api_sum/cann_api_sum.py，其中目录名和文件名要保持一致，该目录名也会作为使用msprof-analyze cluster工具启动该自定义分析的开关参数。
 
 2. 在xxx.py文件进行性能数据分析规则的开发，开发要求继承BaseRecipeAnalysis，实现run函数。
 
@@ -56,7 +62,7 @@
 
    1. 使用DatabaseService可配置单表的查询。
 
-      可参考：https://gitcode.com/Ascend/mstt/blob/pre-research/profiler/msprof_analyze/cluster_analyse/recipes/mstx2commop/mstx2commop.py
+      可参考：[mstx2commop.py](../../msprof_analyze/cluster_analyse/recipes/mstx2commop/mstx2commop.py)
 
       使用样例：
 
