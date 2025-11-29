@@ -22,8 +22,11 @@ from msprof_analyze.prof_common.constant import Constant
 
 class TestMstxSum(unittest.TestCase):
 
-    @patch("msprof_analyze.prof_exports.base_stats_export.BaseStatsExport.read_export_db")
-    def test__mapper_func_should_return_mstx_stats_df(self, mock_read_export_db):
+    @patch("msprof_analyze.prof_exports.mstx_step_export.MstxStepExport.read_export_db")
+    @patch("msprof_analyze.prof_exports.mstx_event_export.MstxMarkExport.read_export_db")
+    @patch("msprof_analyze.prof_exports.mstx_event_export.MstxRangeExport.read_export_db")
+    def test__mapper_func_should_return_mstx_stats_df(self, mock_read_export_db_range, mock_read_export_db_mark,
+                                                      mock_read_export_db_step):
         data_map = {
             Constant.RANK_ID: 0,
             Constant.PROFILER_DB_PATH: "",
@@ -49,7 +52,9 @@ class TestMstxSum(unittest.TestCase):
             "device_end_ts": [1737359047221347417, 1737359067240932028],
             "tid": [1479977011069833, 1479977011069833]
         })
-        mock_read_export_db.side_effect = [step_df, mark_df, range_df]
+        mock_read_export_db_range.return_value = range_df
+        mock_read_export_db_mark.return_value = mark_df
+        mock_read_export_db_step.return_value = step_df
         recipe = MstxSum({})
         result = recipe._mapper_func(data_map, "MstxSum")
         expected_result = pd.DataFrame({
@@ -84,9 +89,9 @@ class TestMstxSum(unittest.TestCase):
         })
         recipe = MstxSum({})
         recipe.reducer_func(mapper_res)
-        self.assertEqual(recipe.all_fwk_stats.shape, (2, 10))
-        self.assertEqual(recipe.all_device_stats.shape, (2, 10))
-        self.assertEqual(recipe.all_cann_stats.shape, (2, 10))
+        self.assertEqual(recipe.all_fwk_stats.shape, (2, 13))
+        self.assertEqual(recipe.all_device_stats.shape, (2, 13))
+        self.assertEqual(recipe.all_cann_stats.shape, (2, 13))
 
     @patch("msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.BaseRecipeAnalysis.dump_data")
     @patch("msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.BaseRecipeAnalysis.add_helper_file")

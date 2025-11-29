@@ -73,9 +73,9 @@ def stdev(df, aggregated):
     return np.sqrt((var_sum + dev_sum) / (instance - 1)) if (instance - 1) else 0
 
 
-def convert_unit(df: pd.DataFrame, src_unit, dst_unit):
+def convert_unit(df: pd.DataFrame, src_unit, dst_unit, factor):
     df.loc[:, df.columns.str.endswith(src_unit)] = df.loc[:, df.columns.str.endswith(src_unit)].apply(
-        lambda x: x / 1000.0)
+        lambda x: x / factor)
     df = df.rename(columns=lambda x: x.replace(src_unit, "".join(["(", dst_unit, ")"])))
     return df
 

@@ -42,6 +42,7 @@ class BaseRecipeAnalysis(ABC):
     TP_SIZE = "tensor_model_parallel_size"
     PP_SIZE = "pipeline_model_parallel_size"
     DP_SIZE = "data_parallel_size"
+    FACTOR = 1000.0
 
     def __init__(self, params):
         self._collection_dir = params.get(Constant.COLLECTION_PATH, "")
@@ -132,7 +133,7 @@ class BaseRecipeAnalysis(ABC):
         else:
             result_csv = os.path.join(self.output_path, file_name)
             logger.info(f"Exporting data to CSV file: {result_csv}")
-            data = convert_unit(data, self.DB_UNIT, self.UNIT)
+            data = convert_unit(data, self.DB_UNIT, self.UNIT, self.FACTOR)
             FileManager.create_csv_from_dataframe(result_csv, data, index=index)
 
     def create_notebook(self, filename, notebook_template_dir=None, replace_dict=None):
