@@ -23,6 +23,8 @@ from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.mstx_event_export import MstxMarkExport, MstxRangeExport
 from msprof_analyze.prof_exports.mstx_step_export import MstxStepExport
+from msprof_analyze.cluster_analyse.recipes.mstx_sum.mstx_sum_recipe_builder import MstxSumRecipeTreeBuilder
+from msprof_analyze.cluster_analyse.recipes.mstx_sum.mstx_sum_recipe_builder import MstxSumRecipeNodeType
 
 logger = get_logger()
 
@@ -140,6 +142,9 @@ class MstxSum(BaseRecipeAnalysis):
     START_SUFFIX = "_start"
     STOP_SUFFIX = "_stop"
 
+    UNIT = "Ms"
+    FACTOR = 1000000.0
+
     def __init__(self, params):
         super().__init__(params)
         logger.info("MstxSum init.")
@@ -152,6 +157,41 @@ class MstxSum(BaseRecipeAnalysis):
     def base_dir(self):
         return os.path.basename(os.path.dirname(__file__))
 
+    def stats_format_columns(self, df: pd.DataFrame):
+        rename_map = {
+            "25%": "Q1Ns", "50%": "MedianNs", "75%": "Q3Ns",
+            0.25: "Q1Ns", 0.5: "MedianNs", 0.75: "Q3Ns",
+            "Q1": "Q1Ns", "Q3": "Q3Ns", "min": "MinNs", "max": "MaxNs",
+            "median": "MedianNs", "sum": "SumNs", "std": "StdNs",
+            "mean": "MeanNs", "count": "Count"
+        }
+
+        formatted_df = df.rename(rename_map, axis="columns")
+        stats_cols = ["Count", "MeanNs", "StdNs", "MinNs", "MinRank", "Q1Ns", "MedianNs",
+                      "Q3Ns", "MaxNs", "MaxRank", "SumNs", "Dispersion(%)"]
+        other_cols = [col for col in formatted_df.columns if col not in stats_cols]
+        return formatted_df[stats_cols + other_cols]
+
+    def describe_duration(self, grouped_df, duration_col, rank_col):
+        stats_df = grouped_df[duration_col].describe()
+        stats_df['SumNs'] = grouped_df[duration_col].sum()
+        max_ranks, min_ranks = [], []
+        for _, group in grouped_df:
+            duration_series, rank_series = group[duration_col], group[rank_col]
+            if duration_series.empty:
+                max_rank = min_rank = None
+            elif duration_series.max() == 0 and duration_series.min() == 0:
+                max_rank = min_rank = 0
+            else:
+                max_idx, min_idx = duration_series.idxmax(), duration_series.idxmin()
+                max_rank = rank_series.get(max_idx)
+                min_rank = rank_series.get(min_idx)
+            max_ranks.append(max_rank)
+            min_ranks.append(min_rank)
+        stats_df['MaxRank'], stats_df['MinRank'] = max_ranks, min_ranks
+        stats_df['Dispersion(%)'] = ((stats_df['max'] - stats_df['75%']) / stats_df['SumNs']).fillna(0) * 100
+        return self.stats_format_columns(stats_df)
+
     def reducer_func(self, mapper_res):
         mapper_res = list(filter(lambda df: df is not None, mapper_res))
         if not mapper_res:
@@ -161,21 +201,46 @@ class MstxSum(BaseRecipeAnalysis):
         all_fwk_stats = []
         all_cann_stats = []
         all_device_stats = []
+        self.mark_stats = pd.concat(mapper_res)
+        self.mark_stats.reset_index(inplace=True)
+        self.mark_stats.rename(columns={'index': 'Index'}, inplace=True)
+        self.calculate_ratio('CannDurationNs')
+        self.calculate_ratio('FrameworkDurationNs')
+        self.calculate_ratio('DeviceDurationNs')
+        self.mark_stats = self.mark_stats.sort_values(by='CannDurationRatio(%)', ascending=False)
+        self.mark_stats = self.mark_stats.reindex(columns=["Name", "FrameworkDurationNs", "FrameworkDurationRatio(%)",
+                                                           "CannDurationNs", "CannDurationRatio(%)",
+                                                           "DeviceDurationNs", "DeviceDurationRatio(%)",
+                                                           "Rank", "StepId"])
+        self.mark_stats = self.mark_stats.reset_index(drop=True)
         mark_step_df = self.mark_stats.groupby("StepId")
         for step_id, df in mark_step_df:
             name_gdf = df.groupby("Name")
-            fwk_stats = describe_duration(name_gdf["FrameworkDurationNs"]).assign(StepId=step_id)
-            fwk_stats.sort_values(by=["SumNs"], inplace=True, ascending=False)
+            fwk_stats = self.describe_duration(name_gdf, "FrameworkDurationNs", "Rank").assign(StepId=step_id)
+            fwk_stats.sort_values(by=["Dispersion(%)"], inplace=True, ascending=False)
             all_fwk_stats.append(fwk_stats)
-            cann_stats = describe_duration(name_gdf["CannDurationNs"]).assign(StepId=step_id)
-            cann_stats.sort_values(by=["SumNs"], inplace=True, ascending=False)
+            cann_stats = self.describe_duration(name_gdf, "CannDurationNs", "Rank").assign(StepId=step_id)
+            cann_stats.sort_values(by=["Dispersion(%)"], inplace=True, ascending=False)
             all_cann_stats.append(cann_stats)
-            device_stats = describe_duration(name_gdf["DeviceDurationNs"]).assign(StepId=step_id)
-            device_stats.sort_values(by=["SumNs"], inplace=True, ascending=False)
+            device_stats = self.describe_duration(name_gdf, "DeviceDurationNs", "Rank").assign(StepId=step_id)
+            device_stats.sort_values(by=["Dispersion(%)"], inplace=True, ascending=False)
             all_device_stats.append(device_stats)
         self.all_fwk_stats = pd.concat(all_fwk_stats)
         self.all_cann_stats = pd.concat(all_cann_stats)
         self.all_device_stats = pd.concat(all_device_stats)
+
+    def calculate_ratio(self, calculate_type):
+        self.mark_stats['total_DurationNs'] = self.mark_stats.groupby('Rank')[calculate_type].transform('sum')
+        non_zero_rows = self.mark_stats['total_DurationNs'] != 0
+        self.mark_stats.loc[non_zero_rows, calculate_type.replace('Ns', '') + "Ratio(%)"] = ((self.mark_stats.loc[
+                                                                                                  non_zero_rows,
+                                                                                                  calculate_type] /
+                                                                                              self.mark_stats.loc[
+                                                                                                  non_zero_rows,
+                                                                                                  'total_DurationNs'])
+                                                                                             * 100)
+        self.mark_stats.loc[~non_zero_rows, calculate_type.replace('Ns', '') + "Ratio(%)"] = 0
+        self.mark_stats = self.mark_stats.drop(columns=['total_DurationNs'], errors='ignore')
 
     def run(self, context):
         mapper_res = self.mapper_func(context)
@@ -189,7 +254,7 @@ class MstxSum(BaseRecipeAnalysis):
             logger.error("Unknown export type.")
 
     def save_notebook(self):
-        self.dump_data(self.mark_stats, "mark_stats.csv")
+        self.dump_data(self.mark_stats, "mark_stats.csv", index=False)
         self.dump_data(self.all_fwk_stats, "all_fwk_stats.csv")
         self.dump_data(self.all_cann_stats, "all_cann_stats.csv")
         self.dump_data(self.all_device_stats, "all_device_stats.csv")
@@ -211,6 +276,9 @@ class MstxSum(BaseRecipeAnalysis):
             step_df = pd.DataFrame({"start_ns": [0], "end_ns": [float("inf")], "step_id": [0]})
         mark_df = MstxMarkExport(profiler_db_path, analysis_class, step_range).read_export_db()
         range_df = MstxRangeExport(profiler_db_path, analysis_class, step_range).read_export_db()
+        tree_builder = MstxSumRecipeTreeBuilder(range_df)
+        tree_builder.build_tree("cann_start_ts", "cann_end_ts", "msg",
+                                MstxSumRecipeNodeType.DEFAULT_NODE)
         mstx_res = []
         if not mark_df.empty:
             mstx_res += handle_mark_data(mark_df, rank_id)
