@@ -266,7 +266,7 @@ class AnalyzerController:
             AnalyzerController._init_async_analysis_env(kwargs)
 
         try:
-            if output_path is not None:
+            if output_path:  # 前段传入空字符串视为正常场景，这里不能用is not None判断
                 output_path = PathManager.get_realpath(output_path)
                 if os.path.exists(output_path):
                     PathManager.check_output_directory_path(output_path)
@@ -614,7 +614,7 @@ class AnalyzerController:
         profiling_path = PathManager.get_realpath(self.kwargs.get("profiling_path"))
         benchmark_profiling_path = self.kwargs.get("benchmark_profiling_path")
         PathManager.check_input_directory_path(profiling_path)
-        if benchmark_profiling_path is not None:
+        if benchmark_profiling_path:  # 前段传入空字符串视为正常场景，这里不能用is not None判断
             benchmark_profiling_path = PathManager.get_realpath(benchmark_profiling_path)
             PathManager.check_input_directory_path(benchmark_profiling_path)
 
