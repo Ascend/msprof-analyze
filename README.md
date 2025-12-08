@@ -275,11 +275,18 @@ msprof-analyze advisor all -d ./prof_data -o ./advisor_output
   * MindSpore 场景：参见“性能数据采集 > [MindSpore](https://www.hiascend.com/document/detail/zh/mindstudio/81RC1/msquickstart/atlasquick_train_0017.html)”。
   * msMonitor 场景：参见“msmonitor > [msmonitor](https://gitcode.com/Ascend/msmonitor)”。
 
+### 版本配套说明
+- msprof-analyze支持AscendPyTorch 1.11.0或更高版本，支持的PyTorch和CANN以及PyTorch和python软件版本配套关系请参见《[Ascend Extension for PyTorch插件](https://gitcode.com/Ascend/pytorch)》。
+- msprof-analyze支持MindSpore 2.4.0或更高版本，支持的MindSpore和CANN以及MindSpore和python软件版本配套关系请参见《[MindSpore版本发布列表](https://www.mindspore.cn/versions)》。
+- msprof-analyze支持的固件驱动版本与配套CANN软件支持的固件驱动版本相同，开发者可通过“[昇腾社区-固件与驱动](https://www.hiascend.com/hardware/firmware-drivers/community?product=2&model=28&cann=8.0.RC3.alpha003&driver=1.0.25.alpha)”页面根据产品型号与CANN软件版本获取配套的固件与驱动。
+
+
 ### 发布程序包下载链接
 | profiler版本 | 发布日期       | 下载链接                                                                                                                                                       | 校验码                                                       |
 |------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------ |
-| 8.2.0a2    | 2025-10-13 | [msprof_analyze-8.2.0a2-py3-none-any.whl](https://ptdbg.obs.cn-north-4.myhuaweicloud.com/profiler/package/8.2.0a2/msprof_analyze-8.2.0a2-py3-none-any.whl) | f16e08fc4b342a2d2229d173166fe49d70d9185fe30d9159d5e27f88f3853bf8 |
-| 8.2.0a1    | 2025-08-26 | [msprof_analyze-8.2.0a1-py3-none-any.whl](https://ptdbg.obs.cn-north-4.myhuaweicloud.com/profiler/package/8.2.0a1/msprof_analyze-8.2.0a1-py3-none-any.whl) | ee3e9944d205300af925d8f482da2c2cf00536196445d0652b17621303d76586 |
+| 8.3.0b2    | 2025-12-08 | [msprof_analyze-8.3.0b2-py3-none-any.whl](https://ptdbg.obs.cn-north-4.myhuaweicloud.com/profiler/package/8.3.0b2/msprof_analyze-8.3.0b2-py3-none-any.whl) | 6a676eb5d924ad88fd9e248237d5f6361817affd1b94f98a9dd97733d2f9e864 |
+| 8.3.0b1    | 2025-12-01 | [msprof_analyze-8.3.0b1-py3-none-any.whl](https://ptdbg.obs.cn-north-4.myhuaweicloud.com/profiler/package/8.3.0b1/msprof_analyze-8.3.0b1-py3-none-any.whl) | 7d2a87e7bdafa854a4cdeb738b22433cf84fa888778bde50d413f720934abf58 |
+| 8.2.0      | 2025-11-29 | [msprof_analyze-8.2.0-py3-none-any.whl](https://ptdbg.obs.cn-north-4.myhuaweicloud.com/profiler/package/8.2.0/msprof_analyze-8.2.0-py3-none-any.whl)       | 82e29632cb0b4445f631b0434e1e2be17c89d1b444938dbd4da38450aa4c5fc8 |
 | 8.1.0      | 2025-07-30 | [msprof_analyze-8.1.0-py3-none-any.whl](https://ptdbg.obs.cn-north-4.myhuaweicloud.com/profiler/package/8.1.0/msprof_analyze-8.1.0-py3-none-any.whl)       | 064f68ff22c88d91d8ec8c47045567d030d1f9774169811c618c06451ef697e4 |
 | 2.0.2      | 2025-03-31 | [msprof_analyze-2.0.2-py3-none-any.whl](https://ptdbg.obs.myhuaweicloud.com/profiler/package/2.0.2/msprof_analyze-2.0.2-py3-none-any.whl)                  | 4227ff628187297b2f3bc14b9dd3a8765833ed25d527f750bc266a8d29f86935 |
 | 2.0.1      | 2025-02-28 | [msprof_analyze-2.0.1-py3-none-any.whl](https://ptdbg.obs.myhuaweicloud.com/profiler/package/2.0.1/msprof_analyze-2.0.1-py3-none-any.whl)                  | 82dfe2c779dbab9015f61d36ea0c32d832b6d182454b3f7db68e6c0ed49c0423 |
