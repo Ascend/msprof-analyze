@@ -97,6 +97,15 @@ def double_hash(data):
 
     return ((hash_values[0] << uint32_bits) | hash_values[1])
 
+def calculate_zscore(x, mean, std):
+    if std != 0:
+        zscore = (x - mean) / std
+    elif x > mean:
+        zscore = 100
+    else:
+        zscore = -100
+    return zscore
+
 
 class UnionFind(object):
     """Disjoint Set Union"""
