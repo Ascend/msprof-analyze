@@ -123,7 +123,8 @@ class SlowRankPPStageAnalysis(BaseRecipeAnalysis):
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
-        df = CommunicationTimeExport(profiler_db_path, analysis_class).read_export_db()
+        step_range = data_map.get(Constant.STEP_RANGE)
+        df = CommunicationTimeExport(profiler_db_path, analysis_class, step_range).read_export_db()
         return df
 
 
