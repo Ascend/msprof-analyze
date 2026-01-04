@@ -331,6 +331,7 @@ class Constant(object):
 
     DEFAULT_OPERATOR_TYPE = 'None_type'
     DEFAULT_DURATION_ZERO = 0.0
+    DURATION_TIME = "duration"
 
     ADVISOR_LOG_LEVEL = "ADVISOR_LOG_LEVEL"
     DEFAULT_LOG_LEVEL = "INFO"

@@ -84,6 +84,6 @@ ORDER BY
 
 class MstxDPMarkExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_nam, step_range):
+    def __init__(self, db_path, recipe_nam):
         super().__init__(db_path, recipe_name, {})
         self._query = MARK_QUERY
