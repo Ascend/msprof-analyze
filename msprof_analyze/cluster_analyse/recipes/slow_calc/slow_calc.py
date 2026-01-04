@@ -111,7 +111,7 @@ class SlowCalc(BaseRecipeAnalysis):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
 
-        db_service = DatabaseService(profiler_db_path)
+        db_service = DatabaseService(profiler_db_path, {})
         db_service.add_table_for_query("STRING_IDS")
         dict_table = db_service.query_data()
         if "STRING_IDS" not in dict_table:
