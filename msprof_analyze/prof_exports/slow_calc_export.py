@@ -40,6 +40,6 @@ SIMPLE_QUERY = f"""
 
 
 class SlowCalcExport(BaseStatsExport):
-    def __init__(self, db_path, recipe_name):
-        super().__init__(db_path, recipe_name)
+    def __init__(self, db_path, recipe_name, step_range):
+        super().__init__(db_path, recipe_name, {})
         self._query = SIMPLE_QUERY
