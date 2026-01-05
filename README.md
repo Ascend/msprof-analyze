@@ -192,6 +192,8 @@ msprof-analyze cluster -m [feature_option] -d <profiling_path> [global_option] [
 | hccl_sum | 通信类算子信息汇总。                                                                                | -   |
 | pp_chart | pp流水图，针对pp并行下各个阶段的耗时分析与可视化能力。                                                             | [link](./docs/zh/pp_chart_instruct.md) |
 | slow_rank | 根据当前的快慢卡统计算法，展示各个rank得出的快慢卡影响次数，识别慢卡出现的原因。                                                | -  |
+| slow_link | 集群慢链路异常分析 | -  |
+| slow_rank_pp_stage | pp stage通信对比分析 | -  |
 
 #### Host下发类特性
 

@@ -106,6 +106,37 @@ def calculate_zscore(x, mean, std):
         zscore = -100
     return zscore
 
+def detect_outliers_z_score(data, threshold=3):
+    """
+    使用 Z-Score 方法判断是否存在异常值。
+    Z-Score 是一种统计方法，用于衡量数据点与均值的标准差距离。
+    如果某个数据点的 Z-Score 超过阈值（默认为3），则认为它是异常值。
+
+    返回值：
+    - True：存在异常值
+    - False：不存在异常值
+    """
+    # 计算数据的均值
+    mean = np.mean(data)  # 均值表示数据的中心位置
+
+    # 计算数据的标准差
+    std = np.std(data)  # 标准差表示数据的离散程度
+
+    # 如果标准差为0，直接返回 False（不存在异常值）
+    if std == 0:
+        return False
+
+    # 计算 Z-Score 的上阈值和下阈值
+    z_scores_upper_threshold = threshold * std + mean
+    z_scores_lower_threshold = -threshold * std + mean
+
+    # 判断是否存在 Z-Score 超过阈值的数据点
+    has_outliers = any(x > z_scores_upper_threshold or x < z_scores_lower_threshold for x in data)
+
+    # 返回是否存在异常值的布尔值
+    return has_outliers
+
+
 
 class UnionFind(object):
     """Disjoint Set Union"""
