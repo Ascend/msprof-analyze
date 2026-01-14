@@ -20,4 +20,4 @@ class DynamicShapePrompt(object):
     ENABLE_COMPILED_SUGGESTION = "在python脚本入口加入以下代码关闭在线编译：\n" \
                                  "'torch_npu.npu.set_compile_mode(jit_compile=False) \n " \
                                  "torch_npu.npu.config.allow_internal_format = False' \n"
-    RELEASE_SUGGESTION = "详细信息请参考：<a href=\"{}\" target='_blank'>链接</a>"
+    RELEASE_SUGGESTION = "详细信息请参考：<a href=\"{}\" title='按住 Ctrl（Windows/Linux）或 Cmd（Mac）并点击以在新标签页中打开'>链接</a>"

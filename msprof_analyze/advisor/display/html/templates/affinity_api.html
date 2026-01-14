@@ -15,7 +15,7 @@
         {% if empty_stacks %}
         <a style="font-weight: bold" id="timeline_api_instruction">Suggestion: </a>
         <a>These APIs have no code stack. If parameter 'with_stack=False' was set while profiling, please refer to</a>
-        <a href="{{with_stack_doc_url|safe}}" target="_blank">Ascend Profiler</a> to set
+        <a href="{{with_stack_doc_url|safe}}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">Ascend Profiler</a> to set
             <span style="font-weight:bold;">'with_stack=True'</span>. Otherwise, ignore following affinity APIs due to backward broadcast lack of stack.
         {% endif %}
 
@@ -31,7 +31,7 @@
           <div>
             <a style="font-weight: bold" id="timeline_api_instruction">Suggestion: </a>
             <a>Detailed information of affinity apis please refer to</a>
-            <a href="{{api_doc_url|safe}}#{{api_name|safe}}" target="_blank">API instructions</a>
+            <a href="{{api_doc_url|safe}}#{{api_name|safe}}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">API instructions</a>
           </div>
           <div class="collapsible">
           {% for stack in stacks %}

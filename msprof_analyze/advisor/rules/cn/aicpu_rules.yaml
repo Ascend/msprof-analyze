@@ -89,19 +89,19 @@ ExampleGuideChecker:
   - IndexPutChecker:
       op_type: [index]
       url: *AICPU_DOC_URL
-      suggestion: "请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换index算子。"
+      suggestion: "请参考<a href='{}' title='按住 Ctrl（Windows/Linux）或 Cmd（Mac）并点击以在新标签页中打开'>链接</a>修改源码，尝试用等价的算子替换index算子。"
 
   - NonzeroChecker:
       op_type: [ indexput, indexputv2 ]
       url: *AICPU_DOC_URL
-      suggestion: "请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换indexput算子。"
+      suggestion: "请参考<a href='{}' title='按住 Ctrl（Windows/Linux）或 Cmd（Mac）并点击以在新标签页中打开'>链接</a>修改源码，尝试用等价的算子替换indexput算子。"
 
   - CastChecker:
       op_type: [ argmin ]
       url: *AICPU_DOC_URL
-      suggestion: "请参考<a href='{}' target='_blank'>链接</a>更新cann-tookit包到7.0.RC1及以上的版本。"
+      suggestion: "请参考<a href='{}' title='按住 Ctrl（Windows/Linux）或 Cmd（Mac）并点击以在新标签页中打开'>链接</a>更新cann-tookit包到7.0.RC1及以上的版本。"
 
   - CastChecker:
       op_type: [ nonzero ]
       url: *AICPU_DOC_URL
-      suggestion: "请参考<a href='{}' target='_blank'>链接</a>修改源码，尝试用等价的算子替换nonzero算子。"
+      suggestion: "请参考<a href='{}' title='按住 Ctrl（Windows/Linux）或 Cmd（Mac）并点击以在新标签页中打开'>链接</a>修改源码，尝试用等价的算子替换nonzero算子。"

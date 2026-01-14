@@ -89,19 +89,19 @@ ExampleGuideChecker:
   - IndexPutChecker:
       op_type: [index]
       url: *AICPU_DOC_URL
-      suggestion: 'Please modify source code followed by this <a href="{}" target="_blank">LINK</a>, try to replace index operator with equivalent operator.'
+      suggestion: 'Please modify source code followed by this <a href="{}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">LINK</a>, try to replace index operator with equivalent operator.'
 
   - NonzeroChecker:
       op_type: [ indexput, indexputv2 ]
       url: *AICPU_DOC_URL
-      suggestion: 'Please modify source code followed by this <a href="{}" target="_blank">LINK</a>, try to replace indexput operator with equivalent operator.'
+      suggestion: 'Please modify source code followed by this <a href="{}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">LINK</a>, try to replace indexput operator with equivalent operator.'
 
   - CastChecker:
       op_type: [ argmin ]
       url: *AICPU_DOC_URL
-      suggestion: 'Please update your cann-tookit to at least 7.0.RC1 version by this <a href="{}" target="_blank">LINK</a>.'
+      suggestion: 'Please update your cann-tookit to at least 7.0.RC1 version by this <a href="{}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">LINK</a>.'
 
   - CastChecker:
       op_type: [ nonzero ]
       url: *AICPU_DOC_URL
-      suggestion: 'Please modify source code followed by this <a href="{}" target="_blank">LINK</a>, try to replace nonzero operator with equivalent operator.'
+      suggestion: 'Please modify source code followed by this <a href="{}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">LINK</a>, try to replace nonzero operator with equivalent operator.'

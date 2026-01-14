@@ -52,11 +52,11 @@
                         <a style="font-weight: bold">Suggestion: </a>
                         {% if language == 'en' %}
                             <u>These APIs have no stack. If parameter 'with_stack=False' was set while profiling, please refer to</u>
-                            <a href="{{with_stack_doc_url|safe}}" target="_blank">Ascend Profiler</a>
+                            <a href="{{with_stack_doc_url|safe}}" title="Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab">Ascend Profiler</a>
                             <u>to set 'with_stack=True'.</u>
                         {% else %}
                             <u>当前API没有堆栈信息。如果在性能分析时设置了参数'with_stack=False'，请参考</u>
-                            <a href="{{with_stack_doc_url|safe}}" target="_blank">Ascend Profiler</a>
+                            <a href="{{with_stack_doc_url|safe}}" title="按住 Ctrl（Windows/Linux）或 Cmd（Mac）并点击以在新标签页中打开">Ascend Profiler</a>
                             <u>来设置'with_stack=True'。</u>
                         {% endif %}
                     {% else %}

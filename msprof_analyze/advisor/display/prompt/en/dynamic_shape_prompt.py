@@ -21,4 +21,4 @@ class DynamicShapePrompt(object):
         "Please place the following code at the entrance of the python script to disable jit compile.\n " \
         "Code: `torch_npu.npu.set_compile_mode(jit_compile=False) \n " \
         "torch_npu.npu.config.allow_internal_format = False`.\n"
-    RELEASE_SUGGESTION = "for details please refer to link : <a href={} target='_blank'>LINK</a>"
+    RELEASE_SUGGESTION = "for details please refer to link : <a href={} title='Hold Ctrl (Windows/Linux) or Cmd (Mac) and click to open in a new tab'>LINK</a>"
