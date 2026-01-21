@@ -1,4 +1,4 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
+# Copyright (c) 2026, Huawei Technologies Co., Ltd.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0  (the "License");
@@ -12,10 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
-import os
 import importlib
 import numpy as np
+import os
+import sys
 import torch
 import torch_npu
 
@@ -37,11 +37,12 @@ def execute_graph(graph_path, inputs_data, inputs_shape, inputs_dtype, outputs_d
 
 
 class Autofuse:
+    DOMAIN = "autofuse"
     def __init__(self, params):
         self.whole_graph = params.whole_graph
         self.subgraph_dir = params.subgraph_dir
         self.dump_path = params.dump_path
-        self.output = params.output
+        self.output_path = params.output_path
         self.fused_ops = {}
 
     @staticmethod
@@ -99,19 +100,18 @@ class Autofuse:
     def get_prof_config(self):
         experimental_config = torch_npu.profiler._ExperimentalConfig(
             export_type=[
-                torch_npu.profiler.ExportType.Db,
-                torch_npu.profiler.ExportType.Text,
+                torch_npu.profiler.ExportType.Db
             ],
             profiler_level=torch_npu.profiler.ProfilerLevel.Level1,
             aic_metrics=torch_npu.profiler.AiCMetrics.PipeUtilization,
-            mstx_domain_include=['autofuse'],
+            mstx_domain_include=[self.DOMAIN],
             mstx=True,
         )
         prof = torch_npu.profiler.profile(
             activities=[
                 torch_npu.profiler.ProfilerActivity.NPU
             ],
-            on_trace_ready=torch_npu.profiler.tensorboard_trace_handler(self.output),
+            on_trace_ready=torch_npu.profiler.tensorboard_trace_handler(self.output_path),
             experimental_config=experimental_config)
         return prof
 
@@ -121,8 +121,8 @@ class Autofuse:
             self.extract_value(op)
         self.get_dump_data()
         prof = self.get_prof_config()
-        prof.start()
         stream = torch_npu.npu.current_stream()
+        prof.start()
         for op_name, op_data in self.fused_ops.items():
             subgraph = os.path.join( self.subgraph_dir, f"{op_name}.txt")
             if not os.path.exists(subgraph):
@@ -136,9 +136,9 @@ class Autofuse:
             if not outputs_data:
                 logger.error(f"No output .npy files found for fused op '{op_name}' in '{self.dump_path}'")
                 continue
-            range_id = torch_npu.npu.mstx.range_start(op_name, stream, domain='autofuse')
+            range_id = torch_npu.npu.mstx.range_start(op_name, stream, domain=self.DOMAIN)
             execute_graph(subgraph, inputs_data, op_data["inputs_shape"], op_data["inputs_dtype"], outputs_data)
-            torch_npu.npu.mstx.range_end(range_id, domain='autofuse')
+            torch_npu.npu.mstx.range_end(range_id, domain=self.DOMAIN)
         prof.stop()
 
 
@@ -147,4 +147,4 @@ if __name__ == "__main__":
     try:
         Autofuse(args).run()
     except Exception as err:
-        logger.error(err)
+        logger.error(err, exc_info=True)
