@@ -1,4 +1,4 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
+# Copyright (c) 2026, Huawei Technologies Co., Ltd.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0  (the "License");
@@ -18,6 +18,7 @@ import subprocess
 import sys
 from typing import List
 from msprof_analyze.prof_common.logger import get_logger
+from msprof_analyze.prof_common.path_manager import PathManager
 
 logger = get_logger()
 
@@ -48,8 +49,14 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Autofuse Performance Comparison")
     parser.add_argument("-f", "--whole_graph", type=str, required=True,
                         help="The JSON file converted from ge_proto_xxxx_Build.txt")
-    parser.add_argument("-d", "--subgraph_dir", type=str, required=True, help="Subgraph directory")
-    parser.add_argument("-m", "--dump_path", type=str, required=True, help="Dump path")
-    parser.add_argument("-o", "--output", type=str, default=os.getcwd(), help="output directory")
+    parser.add_argument("-d", "--subgraph_dir", type=str, required=True, help="Path of subgraph directory")
+    parser.add_argument("-p", "--dump_path", type=str, required=True, help="Path of datadump")
+    parser.add_argument("-o", "--output_path", type=str, default=os.getcwd(), help="Path of comparison result")
     args = parser.parse_args()
+    PathManager.check_input_file_path(args.whole_graph)
+    PathManager.check_input_directory_path(args.subgraph_dir)
+    PathManager.check_input_directory_path(args.dump_path)
+    if not os.path.exists(args.output_path):
+        PathManager.make_dir_safety(args.output_path)
+    PathManager.check_output_directory_path(args.output_path)
     return args
