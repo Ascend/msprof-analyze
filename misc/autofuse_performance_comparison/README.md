@@ -85,11 +85,11 @@ python3 autofuse_performance_comparison.py -f <whole_graph> -d <subgraph_dir> -p
 **参数说明**
 
 | 参数 | 可选/必选 | 说明 |
-| ----- | ----- | ----- |
-| -f<br>--whole_graph  | 必选 | json格式的整图文件，例如`ge_proto_00000094_graph_1_Build.json`。 |
-| -d<br>--subgraph_dir | 必选 | 存放所有txt格式子图文件（例如：autofuse_pointwise_0_Abs_Add.txt）的目录。 |
-| -p<br>--dump_path   | 可选 | 存放所有融合算子npy格式的dump数据的目录。 |
-| -o<br>--output_path | 可选 | 该目录下生成两个子目录autofuse_enabled和autofuse_disabled，分别保存自动融合开关开启和关闭时采集的性能数据，默认为当前路径。用户一般无需关注这个性能数据，只需要查看[输出结果](#输出结果文件说明)即可。 |
+| ----- |-------| ----- |
+| -f<br>--whole_graph  | 必选    | json格式的整图文件，例如`ge_proto_00000094_graph_1_Build.json`。 |
+| -d<br>--subgraph_dir | 必选    | 存放所有txt格式子图文件（例如：autofuse_pointwise_0_Abs_Add.txt）的目录。 |
+| -p<br>--dump_path   | 必选    | 存放所有融合算子npy格式的dump数据的目录。 |
+| -o<br>--output_path | 可选    | 该目录下生成两个子目录autofuse_enabled和autofuse_disabled，分别保存自动融合开关开启和关闭时采集的性能数据，默认为当前路径。用户一般无需关注这个性能数据，只需要查看[输出结果](#输出结果文件说明)即可。 |
 
 **使用示例**
 

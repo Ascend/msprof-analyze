@@ -139,8 +139,8 @@ class ComparisonGenerator:
         with Workbook(file_path) as workbook:
             worksheet = workbook.add_worksheet()
             str_format = workbook.add_format(self.BOLD_STR)
-            green_foramt = workbook.add_format(self.GREEN_BOLD)
-            yellow_foramt = workbook.add_format(self.YELLOW_BOLD)
+            green_format = workbook.add_format(self.GREEN_BOLD)
+            yellow_format = workbook.add_format(self.YELLOW_BOLD)
             default_ratio_format = workbook.add_format(self.DEFAULT_RATIO)
             red_ratio_format = workbook.add_format(self.RED_RATIO)
             float_format = workbook.add_format(self.DEFAULT_FLOAT)
@@ -148,10 +148,10 @@ class ComparisonGenerator:
             r_idx = 0
             start_col_disabled = 1
             end_col_disabled = start_col_disabled + num_metrics - 1
-            worksheet.merge_range(r_idx, start_col_disabled, r_idx, end_col_disabled, "autofuse_disabled", green_foramt)
+            worksheet.merge_range(r_idx, start_col_disabled, r_idx, end_col_disabled, "autofuse_disabled", green_format)
             start_col_enabled = end_col_disabled + 1
             end_col_enabled = start_col_enabled + num_metrics - 1
-            worksheet.merge_range(r_idx, start_col_enabled, r_idx, end_col_enabled, "autofuse_enabled", yellow_foramt)
+            worksheet.merge_range(r_idx, start_col_enabled, r_idx, end_col_enabled, "autofuse_enabled", yellow_format)
             r_idx += 2
             duration_diff_ratio_col = end_col_enabled + 1
             worksheet.set_column(0, 0, 30)
@@ -160,9 +160,9 @@ class ComparisonGenerator:
                 if c_idx < start_col_disabled:
                     worksheet.write(r_idx, c_idx, header, str_format)
                 elif start_col_disabled <= c_idx <= end_col_disabled:
-                    worksheet.write(r_idx, c_idx, header, green_foramt)
+                    worksheet.write(r_idx, c_idx, header, green_format)
                 elif start_col_enabled <= c_idx <= end_col_enabled:
-                    worksheet.write(r_idx, c_idx, header, yellow_foramt)
+                    worksheet.write(r_idx, c_idx, header, yellow_format)
                 elif c_idx == duration_diff_ratio_col:
                     worksheet.write(r_idx, c_idx, header, str_format)
             r_idx += 1

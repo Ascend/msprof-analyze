@@ -141,7 +141,7 @@ class ComparisonGenerator:
             logger.error(f"Invalid profiling data, the db path is {db_path}")
             return
         filtered_df = df[~df[self.COL_NAME].isin(self.EXCLUDE_OPS)]
-        grouped_df = filtered_df.groupby(self.COL_MESSAGE).apply(self.process_group)
+        grouped_df = filtered_df.groupby(self.COL_MESSAGE).apply(self.process_group).reset_index(drop=True)
         grouped_df.dropna(inplace=True)
         grouped_df[self.COL_DURATION_DIFF_RATIO] = (grouped_df[self.COL_TRITON_DURATION] /
                                                     grouped_df[self.COL_ORIGINAL_TOTAL_DURATION])
@@ -149,7 +149,7 @@ class ComparisonGenerator:
 
     def generate_view(self):
         if self._result_data is None or self._result_data.empty:
-            self("Invalid comparison result, please check if the comparison result exists.")
+            logger.error("Invalid comparison result, please check if the comparison result exists.")
             return
         file_path = os.path.join(self.output_path,
             f"inductor_triton_performance_comparison_result_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.xlsx")
@@ -166,8 +166,8 @@ class ComparisonGenerator:
         with Workbook(file_path) as workbook:
             worksheet = workbook.add_worksheet()
             str_format = workbook.add_format(self.BOLD_STR)
-            green_foramt = workbook.add_format(self.GREEN_BOLD)
-            yellow_foramt = workbook.add_format(self.YELLOW_BOLD)
+            green_format = workbook.add_format(self.GREEN_BOLD)
+            yellow_format = workbook.add_format(self.YELLOW_BOLD)
             default_ratio_format = workbook.add_format(self.DEFAULT_RATIO)
             red_ratio_format = workbook.add_format(self.RED_RATIO)
             float_format = workbook.add_format(self.DEFAULT_FLOAT)
@@ -178,9 +178,9 @@ class ComparisonGenerator:
                 worksheet.set_column(c_idx, c_idx, 60)
             for c_idx, header in enumerate(data_cols):
                 if c_idx < num_metrics:
-                    worksheet.write(r_idx, c_idx, header, green_foramt)
+                    worksheet.write(r_idx, c_idx, header, green_format)
                 elif c_idx < num_metrics * 2:
-                    worksheet.write(r_idx, c_idx, header, yellow_foramt)
+                    worksheet.write(r_idx, c_idx, header, yellow_format)
                 else:
                     worksheet.write(r_idx, c_idx, header, str_format)
             r_idx += 1
@@ -207,7 +207,7 @@ class ComparisonGenerator:
             try:
                 fx_module.run()
             except Exception as err:
-                self(f"Unexpected error for '{fx_module}': {err}", exc_info=True)
+                logger.error(f"Unexpected error for '{fx_module}': {err}", exc_info=True)
                 continue
             torch_npu.npu.mstx.range_end(range_id)
         prof.stop()
