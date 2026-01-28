@@ -31,14 +31,10 @@ from msprof_analyze.prof_common.logger import get_logger
 logger = get_logger()
 
 
-def execute_graph(graph_path, inputs_data, inputs_shape, inputs_dtype, outputs_data):
-    module = importlib.import_module("ExecuteGraph_C")
-    module.execute_graph(graph_path, inputs_data, inputs_shape, inputs_dtype, outputs_data)
-
-
 class Autofuse:
     DOMAIN = "autofuse"
     def __init__(self, params):
+        self.module = importlib.import_module("ExecuteGraph_C")
         self.whole_graph = params.whole_graph
         self.subgraph_dir = params.subgraph_dir
         self.dump_path = params.dump_path
@@ -115,6 +111,9 @@ class Autofuse:
             experimental_config=experimental_config)
         return prof
 
+    def execute_graph(self, graph_path, inputs_data, inputs_shape, inputs_dtype, outputs_data):
+        self.module.execute_graph(graph_path, inputs_data, inputs_shape, inputs_dtype, outputs_data)
+
     def run(self):
         ops = self.get_ops(self.whole_graph)
         for op in ops:
@@ -136,8 +135,17 @@ class Autofuse:
             if not outputs_data:
                 logger.error(f"No output .npy files found for fused op '{op_name}' in '{self.dump_path}'")
                 continue
+            if len(inputs_data) != len(op_data["inputs_shape"]):
+                logger.error(f"The number of input data does not match the number of "
+                             f"input shapes for fused op '{op_name}'")
+                continue
             range_id = torch_npu.npu.mstx.range_start(op_name, stream, domain=self.DOMAIN)
-            execute_graph(subgraph, inputs_data, op_data["inputs_shape"], op_data["inputs_dtype"], outputs_data)
+            try:
+                self.execute_graph(subgraph, inputs_data, op_data["inputs_shape"],
+                                   op_data["inputs_dtype"], outputs_data)
+            except Exception as e:
+                logger.error(f"Execute graph failed for fused op '{op_name}': {e}")
+                continue
             torch_npu.npu.mstx.range_end(range_id, domain=self.DOMAIN)
         prof.stop()
 
