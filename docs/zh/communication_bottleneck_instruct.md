@@ -10,11 +10,11 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见msprof-analyze的[工具安装](../../README.md#工具安装)。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[采集profiling性能数据指导](../../README.md#采集profiling性能数据指导)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
 
 ## 通信瓶颈分析
 
@@ -88,36 +88,36 @@ msprof_analyze/cluster_analyse/recipes/communication_bottleneck/config.json
 
 | 参数 | 可选/必选 | 说明 |
 | ---- | --------- | ---- |
-| slow_npu_happen | 可选 | slow_npu_happen参数含义，float类型，默认值0.05。当快慢卡时间差异比例小于此值时，认为无慢卡问题。 |
-| diff_waiting_time | 可选 | diff_waiting_time参数含义，int类型，默认值100000。等待时间差异阈值（纳秒），Device侧等待时间比Host侧多于此值时，认为是Device Bound问题，约为100us。 |
-| start_ns_shifted | 可选 | start_ns_shifted参数含义，int类型，默认值1000000。起始时间偏移阈值（纳秒），偏移小于此值时认为对齐，约为1ms。 |
-| device_bound_proportion | 可选 | device_bound_proportion参数含义，float类型，默认值0.5。当Device Bound问题占比超过此比例时，判定为Device侧瓶颈。 |
+| slow_npu_happen | 可选 | 设置快慢卡识别阈值，当快慢卡时间差异比例小于此值时，认为无慢卡问题。float类型，默认值0.05，此值为百分比。 |
+| diff_waiting_time | 可选 | 等待时间差异阈值，Device侧等待时间比Host侧多于此值时，认为是Device Bound问题，约为100us。int类型，默认值100000，单位ns。 |
+| start_ns_shifted | 可选 | 起始时间偏移阈值，偏移小于此值时认为对齐，约为1ms。int类型，默认值1000000，单位ns。 |
+| device_bound_proportion | 可选 | 设置Device侧瓶颈阈值，当Device Bound问题占比超过此比例时，判定为Device侧瓶颈。float类型，默认值0.5，此值为百分比。 |
 
 ## 输出结果文件说明
 
-**CommunicationBottleneck表**  
+**CommunicationBottleneck表**
 
 表字段如下：
 
 | 字段名称       | 说明                               |
 | -------------- |----------------------------------|
-| startTime(us)  | 目标卡上通信算子的开始时间戳，TEXT类型，单位为微秒(us)。 |
-| endTime(us)    | 目标卡上通信算子的结束时间戳，TEXT类型，单位为微秒(us)。  |
-| duration(us)   | 目标卡上通信算子的持续时间，REAL类型，单位为微秒(us)。  |
+| startTime(us)  | 目标卡上通信算子的开始时间戳，TEXT类型，单位为us。 |
+| endTime(us)    | 目标卡上通信算子的结束时间戳，TEXT类型，单位为us。  |
+| duration(us)   | 目标卡上通信算子的持续时间，REAL类型，单位为us。  |
 | communicationOp| 通信算子的名称，TEXT类型。                  |
-| slowRankId     | 慢卡卡号，INTEGER类型，当存在慢卡时有效。         |
-| fastRankId     | 快卡卡号，INTEGER类型，当存在慢卡时有效。         |
+| slowRankId     | 慢卡卡号，INTEGER类型，当存在快慢卡时有效。        |
+| fastRankId     | 快卡卡号，INTEGER类型，当存在快慢卡时有效。        |
 | reason         | 分析结果，TEXT类型。                     |
 
-**communication_bottleneck.csv**  
+**communication_bottleneck.csv**
 
 CSV文件列名如下：
 
 | 字段名称         | 说明                              |
 |------------------|---------------------------------|
-| Start Time(us)   | 目标卡上通信算子的开始时间戳，TEXT类型，单位为微秒(us)。 |
-| End Time(us)     | 目标卡上通信算子的结束时间戳，TEXT类型，单位为微秒(us)。 |
-| Duration(us)     | 目标卡上通信算子的持续时间，REAL类型，单位为微秒(us)。 |
+| Start Time(us)   | 目标卡上通信算子的开始时间戳，TEXT类型，单位为us。 |
+| End Time(us)     | 目标卡上通信算子的结束时间戳，TEXT类型，单位为us。 |
+| Duration(us)     | 目标卡上通信算子的持续时间，REAL类型，单位为us。 |
 | Communication Op | 通信算子的名称，TEXT类型。                 |
 | Slow Rank ID     | 慢卡卡号，INTEGER类型，当存在慢卡时有效。                  |
 | Fast Rank ID     | 快卡卡号，INTEGER类型，当存在慢卡时有效。                  |

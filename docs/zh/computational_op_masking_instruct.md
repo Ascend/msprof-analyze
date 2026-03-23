@@ -10,11 +10,11 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见msprof-analyze的[工具安装](../../README.md#工具安装)。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[采集profiling性能数据指导](../../README.md#采集profiling性能数据指导)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
 
 ## 集群性能数据细粒度拆解
 
@@ -39,7 +39,7 @@ msprof-analyze -m computational_op_masking [--export_type <export_type>] [--step
 | -d                | 必选    | 集群性能数据文件夹路径。                                                                         |
 | -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。               |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](../../README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
 **使用示例**
 
@@ -59,20 +59,20 @@ msprof-analyze -m computational_op_masking --export_type db --step_id 11 --paral
 
 ComputationalOperatorMaskingLinearity表字段如下：
 
-| 字段名称                                      | 类型      | 说明                               |
-|-------------------------------------------|---------|----------------------------------|
-| stepId                                    | INTEGER | 卡号。                              |
-| parallelType                              | TEXT    | 算子并行方式。                          |
-| stepStartTime                             | INTEGER | step开始时间。                        |
-| stepEndTime                               | INTEGER | step结束时间。                        |
-| totalCommunicationOperatorTime            | INTEGER | step内通信总耗时。                      |
-| timeRatioOfStepCommunicationOperator      | REAL    | step内通信总耗时与step总耗时的比值。           |
-| totalTimeWithoutCommunicationBlackout     | INTEGER | step内通信算子被计算算子掩盖的总时间。            |
-| ratioOfUnmaskedCommunication              | REAL    | step内通信算子被计算算子掩盖的总时间与step总耗时的比值。 |
+| 字段名称                              | 类型    | 说明                                                     |
+| ------------------------------------- | ------- | -------------------------------------------------------- |
+| stepId                                | INTEGER | 迭代ID。                                                 |
+| parallelType                          | TEXT    | 算子并行方式。                                           |
+| stepStartTime                         | INTEGER | step开始时间。                                           |
+| stepEndTime                           | INTEGER | step结束时间。                                           |
+| totalCommunicationOperatorTime        | INTEGER | step内通信总耗时。                                       |
+| timeRatioOfStepCommunicationOperator  | REAL    | step内通信总耗时与step总耗时的比值。                     |
+| totalTimeWithoutCommunicationBlackout | INTEGER | step内通信算子被计算算子掩盖的总时间。                   |
+| ratioOfUnmaskedCommunication          | REAL    | step内通信算子被计算算子掩盖的总时间与step总耗时的比值。 |
 
 上表中时间相关字段，统一使用微秒（us）
 
-**输出结果分析：**
+**输出结果分析**
 
 * 通过分析计算、通信找到性能瓶颈。
 * 通过比较集群内各卡耗时指标差异，定位性能问题。例如，computing计算耗时波动显著，通常表明存在卡间不同步、计算卡性能不均的情况，而通信传输耗时差异过大时，则需优先排查参数面网络是否存在拥塞或配置异常。
