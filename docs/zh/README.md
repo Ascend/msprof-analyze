@@ -8,16 +8,16 @@
 
 **环境准备**
 
-完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
 msprof-analyze工具将Profiling性能数据作为输入，进行性能数据分析，支持分析如下场景的性能数据：
 
-  * msProf场景性能数据采集，具体操作请参见《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/overview.md)》。
+  * msProf场景性能数据采集，具体操作请参见《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start.md)》。
   * PyTorch场景性能数据采集，具体操作请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
   * MindSpore场景性能数据采集，具体操作请参见《[MindSpore调优工具](https://www.hiascend.com/document/detail/zh/mindstudio/830/T&ITools/Profiling/atlasprofiling_16_0118.html)》。
-  * msMonitor场景性能数据采集，具体操作请参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/tree/master/docs/zh/overview.md)》。
+  * msMonitor场景性能数据采集，具体操作请参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start.md)》。
 
 ## 工具使用
 
@@ -44,7 +44,7 @@ msprof-analyze -m [feature_option] -d <profiling_path> [global_option] [analyze_
 * `[global_option]`：全局参数，具体请参见[全局参数](#全局参数)章节，可选。  
 * `[analyze_option]`：分析能力参数，具体请参见[分析能力参数](#分析能力参数)章节，可选。  
 
-详细使用样例请参考[使用样例](#使用样例)章节。
+详细使用样例请参见[使用样例](#使用样例)章节。
 
 对于msprof-analyze version < 8.2.0a1的版本，需在命令中添加`cluster子`命令，格式如下：
 
@@ -184,7 +184,7 @@ msprof-analyze compare -d ./ascend_pt  # 昇腾NPU性能数据目录
 * 宏观性能拆分：按计算、通信、空闲三大维度统计耗时占比差异，快速识别性能损耗主要场景。
 * 细粒度对比：按算子（如 Conv、MatMul）、框架接口等粒度展示耗时差异，定位具体性能差距点。
 
-> 对比规则维度、参数说明及报告解读，请参考 [msprof-analyze compare](compare_tool_instruct.md)子功能介绍文档。
+> 对比规则维度、参数说明及报告解读，请参见[msprof-analyze compare](./compare_tool_instruct.md)子功能介绍文档。
 
 #### 专家建议（advisor）子功能
 
@@ -200,7 +200,7 @@ msprof-analyze advisor all -d ./prof_data -o ./advisor_output
 * `mstt_advisor_{timestamp}.html`按重要程度标记的优化建议
 * `mstt_advisor_{timestamp}.xlsx`问题综述与详细的分析信息
 
-> 详细分析规则、参数配置及结果解读，请参考 [msprof-analyze advisor](advisor_instruct.md)子功能介绍文档。
+> 详细分析规则、参数配置及结果解读，请参见[msprof-analyze advisor](advisor_instruct.md)子功能介绍文档。
 
 #### 集群分析（cluster）子功能
 
@@ -218,18 +218,18 @@ python3 cluster_analysis.py -m all  # 分析能力
                             -o ./compare_output  # 集群分析结果输出目录
 ```
 
-> 集群分析子功能已整合至msprof-analyze下，详细分析规则、参数配置，请参考[工具使用](#工具使用)。
+> 集群分析子功能已整合至msprof-analyze下，详细分析规则、参数配置，请参见[工具使用](#工具使用)。
 
 ### 输出结果文件说明
 
-msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果交付件表](recipe_output_format_introduct.md)文档。
+msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果交付件表](./recipe_output_format_introduct.md)文档。
 
 ## 扩展功能
 
 ### 自定义开发指导
 
-用户可自定义一套性能数据的分析规则，需要详细了解性能分析的开发人员，具体开发指导请参见[自定义分析能力开发指导](custom_analysis_guide.md)。
+用户可自定义一套性能数据的分析规则，需要详细了解性能分析的开发人员，具体开发指导请参见[自定义分析能力开发指导](./custom_analysis_guide.md)。
 
 ### 集群算子耗时分析
 
-集群场景下，基于多卡性能数据的op_summary信息，统计并展示各卡中执行最快、最慢、均值和方差的TopN算子。具体请参见[集群算子耗时分析](cluster_kernels_analysis_instruct.md)。
+集群场景下，基于多卡性能数据的op_summary信息，统计并展示各卡中执行最快、最慢、均值和方差的TopN算子。具体请参见[集群算子耗时分析](./cluster_kernels_analysis_instruct.md)。
