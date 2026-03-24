@@ -2,8 +2,6 @@
 
 ## 简介
 
-在集群训练过程中，Device侧会出现空闲（Free）时间段，即不在执行计算任务也不在执行通信任务的时间段。这些空闲时间可能是性能瓶颈的体现，需要深入分析其产生原因。
-
 空闲时间原因分析（free_analysis）提供了对Device侧大块空闲时间的自动分析能力，能够识别空闲时间产生的原因，帮助用户定位性能问题。该分析能力可以识别以下情况：
 
 * Device侧仍有任务在执行（但不属于计算/通信统计范围）
@@ -14,11 +12,11 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见msprof-analyze的[工具安装](../../README.md#工具安装)。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[采集profiling性能数据指导](../../README.md#采集profiling性能数据指导)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
 
 ## 空闲时间原因分析
 
@@ -42,7 +40,7 @@ msprof-analyze -m free_analysis -d <cluster_data> [-o <output_path>] [--export_t
 | --export_type | 可选 | 指定输出文件类型，可选db或text，默认为db。              |
 | --top_num | 可选 | 每个rank输出的Top空闲时间数量（按duration排序），默认为10。 |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](../../README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
 **使用示例**
 
@@ -69,13 +67,13 @@ msprof-analyze -m free_analysis -d ./xxx/cluster_data -o ./xxx/output_path --top
 
 | 字段 | 说明                                         |
 | ---- |--------------------------------------------|
-| rankId | 卡号，INTEGER类型，单位为ns。                        |
-| startTime(us) | 空闲时间开始时间戳，TEXT类型，单位为ns。                    |
-| endTime(us) | 空闲时间结束时间戳，TEXT类型，单位为ns。                     |
-| duration(us) | 空闲时间持续时间，REAL类型，单位为ns。                     |
-| pytorchIdleTime(us) | PyTorch层idle时间，REAL类型，单位为ns。无数据时可能为0或NULL。 |
-| cannIdleTime(us) | CANN层idle时间，REAL类型，单位为ns。无数据时可能为0或NULL。    |
-| reason | 空闲原因描述，TEXT类型，单位为ns。                       |
+| rankId | 卡号，INTEGER类型。                        |
+| startTime(us) | 空闲时间开始时间戳，TEXT类型，单位为us。                  |
+| endTime(us) | 空闲时间结束时间戳，TEXT类型，单位为us。                   |
+| duration(us) | 空闲时间持续时间，REAL类型，单位为us。                   |
+| pytorchIdleTime(us) | PyTorch层idle时间，REAL类型，单位为us。无数据时可能为0或NULL。 |
+| cannIdleTime(us) | CANN层idle时间，REAL类型，单位为us。无数据时可能为0或NULL。  |
+| reason | 空闲原因描述，TEXT类型。                       |
 
 **free_analysis.csv**  
 
@@ -83,10 +81,10 @@ CSV文件列名如下：
 
 | 字段 | 说明 |
 | ---- | ---- |
-| Rank ID | 卡号，TEXT类型，单位为ns。 |
-| Start Time(us) | 空闲时间开始时间戳，TEXT类型，单位为ns。 |
-| End Time(us) | 空闲时间结束时间戳，TEXT类型，单位为ns。 |
-| Duration(us) | 空闲时间持续时间，REAL类型，单位为ns。 |
-| Pytorch Idle Time(us) | PyTorch层idle时间，REAL类型，单位为ns。 |
-| Cann Idle Time(us) | CANN层idle时间，REAL类型，单位为ns。 |
-| Reason | 空闲原因描述，TEXT类型，单位为ns。 |
+| Rank ID | 卡号，TEXT类型。 |
+| Start Time(us) | 空闲时间开始时间戳，TEXT类型，单位为us。 |
+| End Time(us) | 空闲时间结束时间戳，TEXT类型，单位为us。 |
+| Duration(us) | 空闲时间持续时间，REAL类型，单位为us。 |
+| Pytorch Idle Time(us) | PyTorch层idle时间，REAL类型，单位为us。 |
+| Cann Idle Time(us) | CANN层idle时间，REAL类型，单位为us。 |
+| Reason | 空闲原因描述，TEXT类型。 |

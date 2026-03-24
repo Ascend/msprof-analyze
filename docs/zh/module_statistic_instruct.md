@@ -13,7 +13,7 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见msprof-analyze的[工具安装](../../README.md#工具安装)。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
@@ -56,7 +56,7 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 | -o   | 可选      | 指定输出文件路径。                       |
 | --export_type   | 可选      | 指定输出文件类型，可选db或text。             |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](../../README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
 **输出说明**  
 
