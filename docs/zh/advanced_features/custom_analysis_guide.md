@@ -63,7 +63,7 @@
 
    1. 使用DatabaseService可配置单表的查询。
 
-      可参考：[mstx2commop.py](../../msprof_analyze/cluster_analyse/recipes/mstx2commop/mstx2commop.py)
+      可参考：[mstx2commop.py](../../../msprof_analyze/cluster_analyse/recipes/mstx2commop/mstx2commop.py)
 
       使用样例：
 

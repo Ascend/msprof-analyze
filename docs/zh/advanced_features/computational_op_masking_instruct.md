@@ -10,11 +10,11 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](.//README.md#使用前准备)章节。
 
 ## 集群性能数据细粒度拆解
 
