@@ -10,7 +10,7 @@
 
 **环境准备**
 
-将[cluster_prof_info_analysis.py](../../msprof_analyze/cluster_analyse/cluster_kernels_analysis/cluster_prof_info_analysis.py)脚本拷贝到一个文件夹里，并安装对应的Python库。
+将[cluster_prof_info_analysis.py](../../../msprof_analyze/cluster_analyse/cluster_kernels_analysis/cluster_prof_info_analysis.py)脚本拷贝到一个文件夹里，并安装对应的Python库。
 
 ```bash
 pip install pandas

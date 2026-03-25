@@ -13,7 +13,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 
 ### 环境准备
 
-完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
 
 ### 数据准备
 
