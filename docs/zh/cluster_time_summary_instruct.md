@@ -12,11 +12,11 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见msprof-analyze的[工具安装](../../README.md#工具安装)。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[采集profiling性能数据指导](../../README.md#采集profiling性能数据指导)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
 
 ## 集群性能数据细粒度拆解
 
@@ -38,7 +38,7 @@ msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 | -d   | 必选      | 集群性能数据文件夹路径。                                 |
 | -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。               |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](../../README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
 **使用示例**
 

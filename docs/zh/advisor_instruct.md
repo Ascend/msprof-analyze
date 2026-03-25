@@ -4,13 +4,13 @@
 
 advisor（专家建议）功能是将Ascend PyTorch Profiler或者MindSpore Profiler采集的性能数据进行分析，并输出性能调优建议。
 
-Ascend PyTorch Profiler采集方法请参见《[性能调优工具](https://www.hiascend.com/document/detail/zh/mindstudio/81RC1/T&ITools/Profiling/atlasprofiling_16_0090.html)》，MindSpore Profiler采集方法请参见《[性能调试](https://www.mindspore.cn/mindinsight/docs/zh-CN/r2.3/performance_profiling_ascend.html)》。
+Ascend PyTorch Profiler采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》，MindSpore Profiler采集方法请参见《[性能调试](https://www.mindspore.cn/mindinsight/docs/zh-CN/r2.3/performance_profiling_ascend.html)》。
 
 ## 使用前准备
 
 **环境准备**
 
-* 命令行方式使用advisor功能，需要安装msprof-analyze，具体请参见《[msprof-analyze工具安装指南](install_guide.md)》。
+* 命令行方式使用advisor功能，需要安装msprof-analyze，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 * Jupyter Notebook方式使用advisor功能，需要做以下准备：
 
   1.安装Jupyter Notebook工具，Jupyter Notebook工具的具体安装和使用指导请至Jupyter Notebook工具官网查找。
@@ -27,7 +27,7 @@ Ascend PyTorch Profiler采集方法请参见《[性能调优工具](https://www.
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[采集profiling性能数据指导](../../README.md#采集profiling性能数据指导)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
 
 **约束**
 
@@ -110,18 +110,18 @@ msprof-analyze advisor命令行包含如下三个子命令：
 
 **参数说明**
 
-| 参数                               | 说明                                                         | 是否必选 |
-| ---------------------------------- | ------------------------------------------------------------ | -------- |
-| -d<br>--profiling_path             | 性能数据文件或目录所在路径，Ascend PyTorch Profiler采集场景指定为`*_ascend_pt`性能数据结果目录，MindSpore Profiler采集场景指定为`*_ascend_ms`性能数据结果目录。集群数据需要指定到`*_ascend_pt`或`*_ascend_ms`的父目录。 | 是       |
-| -bp<br/>--benchmark_profiling_path | 基准性能数据所在目录，用于性能比对。性能数据通过Profiling工具采集获取。<br>**computation和schedule不支持该参数。** | 否       |
-| -o<br/>--output_path               | 分析结果输出路径，完成advisor分析操作后会在该目录下保存分析结果数据。默认未配置，为当前目录。 | 否       |
-| -cv<br/>--cann_version             | 使用Profiling工具采集时对应的CANN软件版本。目前配套的兼容版本为“6.3.RC2”，“7.0.RC1”、“7.0.0”、“8.0.RC1”，此字段不填默认按“8.0.RC1”版本数据进行处理，其余版本采集的Profiling数据在分析时可能会导致不可知问题。可通过在环境中执行如下命令获取其version字段：`cat /usr/local/Ascend/cann/aarch64-linux/ascend_toolkit_install.info` | 否       |
-| -tv<br/>--torch_version            | 运行环境的torch版本，默认为1.11.0，支持torch1.11.0和torch2.1.0，当运行环境torch版本为其他版本如torch1.11.3时，可以忽略小版本号差异选择相近的torch版本如1.11.0。 | 否       |
-| -pt<br/>--profiling_type           | 配置性能数据采集使用的Profiling工具类型。可取值：<br>        pytorch：使用Ascend Pytorch Profiler接口方式采集的性能数据时配置，默认值。<br/>        mindspore：使用MindSpore Profiler接口方式采集的性能数据时配置。<br/>        mslite：使用[Benchmark](https://gitee.com/ascend/tools/tree/master/ais-bench_workload/tool/ais_bench)工具采集的性能数据时配置。不建议使用。<br>**schedule不支持该参数。** | 否       |
-| --force                            | 强制执行advisor。配置后可强制跳过如下情况：<br/>        指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>        csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 | 否       |
-| -l<br/>--language                  | 设置分析结果输出的语言，可取值：<br/>        cn：输出中文，默认值。<br/>        en：输出英文。 | 否       |
-| --debug                            | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 | 否       |
-| -h，-H<br/>--help                  | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     | 否       |
+| 参数                               | 可选/必选 | 说明                                                         |
+| ---------------------------------- | --------- | ------------------------------------------------------------ |
+| -d<br>--profiling_path             | 必选      | 性能数据文件或目录所在路径，Ascend PyTorch Profiler采集场景指定为`*_ascend_pt`性能数据结果目录，MindSpore Profiler采集场景指定为`*_ascend_ms`性能数据结果目录。集群数据需要指定到`*_ascend_pt`或`*_ascend_ms`的父目录。 |
+| -bp<br/>--benchmark_profiling_path | 可选      | 基准性能数据所在目录，用于性能比对。性能数据通过Profiling工具采集获取。<br>**computation和schedule不支持该参数。** |
+| -o<br/>--output_path               | 可选      | 分析结果输出路径，完成advisor分析操作后会在该目录下保存分析结果数据。默认未配置，为当前目录。 |
+| -cv<br/>--cann_version             | 可选      | 使用Profiling工具采集时对应的CANN软件版本。目前配套的兼容版本为“6.3.RC2”，“7.0.RC1”、“7.0.0”、“8.0.RC1”，此字段不填默认按“8.0.RC1”版本数据进行处理，其余版本采集的Profiling数据在分析时可能会导致不可知问题。可通过在环境中执行如下命令获取其version字段：`cat /usr/local/Ascend/cann/aarch64-linux/ascend_toolkit_install.info` |
+| -tv<br/>--torch_version            | 可选      | 运行环境的torch版本，默认为1.11.0，支持torch1.11.0和torch2.1.0，当运行环境torch版本为其他版本如torch1.11.3时，可以忽略小版本号差异选择相近的torch版本如1.11.0。 |
+| -pt<br/>--profiling_type           | 可选      | 配置性能数据采集使用的Profiling工具类型。可取值：<br>        pytorch：使用Ascend Pytorch Profiler接口方式采集的性能数据时配置，默认值。<br/>        mindspore：使用MindSpore Profiler接口方式采集的性能数据时配置。<br/>        mslite：使用[Benchmark](https://gitee.com/ascend/tools/tree/master/ais-bench_workload/tool/ais_bench)工具采集的性能数据时配置。不建议使用。<br>**schedule不支持该参数。** |
+| --force                            | 可选      | 强制执行advisor。配置后可强制跳过如下情况：<br/>        指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>        csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| -l<br/>--language                  | 可选      | 设置分析结果输出的语言，可取值：<br/>        cn：输出中文，默认值。<br/>        en：输出英文。 |
+| --debug                            | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
+| -h，-H<br/>--help                  | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
 **使用示例**
 
@@ -353,7 +353,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 有标杆是指执行msprof-analyze advisor时，配置-bp参数，指定基准性能数据进行比对。
 
-有标杆单卡场景：不进行overall模块的分析，performance problem analysis模块与有标杆场景下的performance problem analysis模块结果一致。
+有标杆单卡场景：不进行overall模块的分析，performance problem analysis模块与无标杆场景下的performance problem analysis模块结果一致。
 
 有标杆集群场景：
 

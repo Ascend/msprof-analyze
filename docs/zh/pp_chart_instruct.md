@@ -15,7 +15,7 @@
 
 **环境准备**
 
-安装msprof-analyze工具，具体请参见《[msprof-analyze工具安装指南](install_guide.md)》。
+完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
@@ -133,7 +133,7 @@ msprof-analyze cluster -m pp_chart -d <cluster_data_path>
 | ---- | --------- | ------------------------------------------------- |
 | -d   | 必选      | 指定[数据准备](#使用前准备)中采集到的集群数据路径。 |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](../../README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
 **使用示例**
 
@@ -156,7 +156,7 @@ StepTaskInfo表字段如下：
 | endNs   | 前向反向task在device上结束时间，INTEGER类型。 |
 | type    | 类型，不同类型显示不同颜色，INTEGER类型。 |
 
-用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://www.hiascend.com/document/detail/zh/mindstudio/81RC1/GUI_baseddevelopmenttool/msascendinsightug/Insight_userguide_0002.html)》。
+用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/quick_start/system_start.md)》。
 
 在MindStudio Insight工具导入分析后的性能数据，在Summary页面点击Generate后按照如下截图配置。
 
