@@ -101,7 +101,7 @@ class TestComputeAdvice(unittest.TestCase):
         # create csv files
         csv_header = ['Step Id', 'Model ID', 'Task ID', 'Stream ID', 'Name', 'Type', 'Accelerator Core',
                       'Start Time(us)',
-                      'Duration(us)', 'Wait Time(us)', 'Block Dim', 'Mix Block Dim', 'Input Shapes', 'Input Data Types',
+                      'Duration(us)', 'Wait Time(us)', 'Block Num', 'Mix Block Num', 'Input Shapes', 'Input Data Types',
                       'Input Formats', 'Output Shapes', 'Output Data Types', 'Output Formats', 'Context ID',
                       'aicore_time(us)',
                       'aic_total_cycles', 'aic_mac_fp16_ratio', 'aic_mac_int8_ratio', 'aic_cube_fops',

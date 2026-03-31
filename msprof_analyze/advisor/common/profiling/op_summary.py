@@ -122,6 +122,7 @@ class OpSummary(OpSummaryBase):
 class OpSummaryDB(OpSummaryBase):
     FILE_PATTERN_MSG = "ascend_*_profiler.db"
     FILE_INFO = "op summary from db"
+    COLUMN_BLOCK_NUM = "blockNum"
 
     file_pattern_list = [r'^ascend_pytorch_profiler(?:_\d+)?\.db$',
                          r'^ascend_mindspore_profiler(?:_\d+)?\.db$',
@@ -132,8 +133,7 @@ class OpSummaryDB(OpSummaryBase):
         SELECT 
             (SELECT value FROM STRING_IDS WHERE id = t.name) AS op_name,
             t.globalTaskId,
-            t.blockDim AS block_dim,
-            t.mixBlockDim AS mix_block_dim,
+            {block_dim_state}
             (SELECT value FROM STRING_IDS WHERE id = t.opType) AS op_type,
             (SELECT value FROM STRING_IDS WHERE id = t.taskType) AS task_type,
             (SELECT value FROM STRING_IDS WHERE id = t.inputFormats) AS input_formats,
@@ -260,11 +260,25 @@ class OpSummaryDB(OpSummaryBase):
     def export_compute_task(self, db_path):
         # check whether opState in COMPUTE_TASK_INFO
         if self._check_table_column_exists(db_path, Constant.TABLE_COMPUTE_TASK_INFO, TableConstant.OP_STATE):
-            comp_info_sql = self.COMPUTE_INFO_SQL.format(op_state=self.SELECT_OP_STATE)
+            op_state = self.SELECT_OP_STATE
             self.has_op_state = True
         else:
-            comp_info_sql = self.COMPUTE_INFO_SQL.format(op_state="")
+            op_state = ""
             self.has_op_state = False
+        if self._check_table_column_exists(db_path, Constant.TABLE_COMPUTE_TASK_INFO, self.COLUMN_BLOCK_NUM):
+            block_dim_state = """
+            t.blockNum AS block_dim,
+            t.mixBlockNum AS mix_block_dim,
+            """
+        else:
+            block_dim_state = """
+            t.blockDim AS block_dim,
+            t.mixBlockDim AS mix_block_dim,
+            """
+        comp_info_sql = self.COMPUTE_INFO_SQL.format(
+            op_state=op_state,
+            block_dim_state=block_dim_state
+        )
         # export basic compute_task_info, task_pmu_info
         basic_df = self._execute_sql(db_path, comp_info_sql, [Constant.TABLE_COMPUTE_TASK_INFO])
         pmu_df = self._execute_sql(db_path, self.PMU_SQL, [Constant.TABLE_TASK_PMU_INFO])

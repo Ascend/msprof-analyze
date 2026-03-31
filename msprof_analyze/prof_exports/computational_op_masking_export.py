@@ -50,8 +50,6 @@ class ComputeTaskInfoWithExport(BaseStatsExport):
         SELECT 
             (SELECT value FROM STRING_IDS WHERE id = t.name) AS op_name,
             t.globalTaskId,
-            t.blockDim AS block_dim,
-            t.mixBlockDim AS mix_block_dim,
             (SELECT value FROM STRING_IDS WHERE id = t.opType) AS op_type,
             (SELECT value FROM STRING_IDS WHERE id = t.taskType) AS task_type
         FROM 
