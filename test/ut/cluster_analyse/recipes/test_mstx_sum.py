@@ -22,11 +22,12 @@ from msprof_analyze.prof_common.constant import Constant
 
 class TestMstxSum(unittest.TestCase):
 
+    @patch("msprof_analyze.prof_common.db_manager.DBManager.check_tables_in_db")
     @patch("msprof_analyze.prof_exports.mstx_step_export.MstxStepExport.read_export_db")
     @patch("msprof_analyze.prof_exports.mstx_event_export.MstxMarkExport.read_export_db")
     @patch("msprof_analyze.prof_exports.mstx_event_export.MstxRangeExport.read_export_db")
     def test__mapper_func_should_return_mstx_stats_df(self, mock_read_export_db_range, mock_read_export_db_mark,
-                                                      mock_read_export_db_step):
+                                                      mock_read_export_db_step, mock_check_tables_in_db):
         data_map = {
             Constant.RANK_ID: 0,
             Constant.PROFILER_DB_PATH: "",
@@ -52,6 +53,7 @@ class TestMstxSum(unittest.TestCase):
             "device_end_ts": [1737359047221347417, 1737359067240932028],
             "tid": [1479977011069833, 1479977011069833]
         })
+        mock_check_tables_in_db.return_value = True
         mock_read_export_db_range.return_value = range_df
         mock_read_export_db_mark.return_value = mark_df
         mock_read_export_db_step.return_value = step_df

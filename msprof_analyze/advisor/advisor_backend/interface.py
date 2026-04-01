@@ -49,7 +49,3 @@ class FactoryController:
     def create_advice_factory(self, mode: str, input_path: str):
         collection_path = input_path if input_path else self.collection_path
         return self.FACTORY_LIB.get(mode)(collection_path)
-
-
-if __name__ == "__main__":
-    Interface()

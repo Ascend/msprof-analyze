@@ -18,7 +18,7 @@ class OperatorPrompt(object):
     PYTORCH_OPERATOR_TUNE_SUGGESTION = "通过AOE优化算子，使用样例如下：\n" \
                                         "'aoe --job_type=2 --model_path=$user_dump_path " \
                                         "--tune_ops_file={}'\n"
-    MSLITE_OPERATOR_TUNE_SUGGESTION = f"在Mindpore Lite 框架通过AOE优化算子，使用样例如下：\n" \
+    MSLITE_OPERATOR_TUNE_SUGGESTION = f"在MindSpore Lite 框架通过AOE优化算子，使用样例如下：\n" \
                                       f"converter_lite --fmk=ONNX --optimize=ascend_oriented --saveType=MINDIR " \
                                       f"--modelFile=$user_model.onnx --outputFile=user_model " \
                                       f"--configFile=./config.txt\n"

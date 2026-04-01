@@ -29,13 +29,15 @@ WHERE COMPUTE_TASK_INFO.opType = (
     FROM STRING_IDS 
     WHERE value = 'GroupedMatmul'
 )
-{}
+And TASK.startNs >= ? And TASK.endNs <= ?
     """
 
 
 class InputShapeExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        filter_statement = "And TASK.startNs >= ? And TASK.endNs <= ?" if step_range else ""
-        self._query = GROUPED_MATMUL_QUERY.format(filter_statement)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = GROUPED_MATMUL_QUERY
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]

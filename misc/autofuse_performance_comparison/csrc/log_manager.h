@@ -17,8 +17,6 @@
 #pragma once
 #include <cstdio>
 #include <cstring>
-#include <unistd.h>
-#include <sys/syscall.h>
 
 #define FILENAME (strrchr("/" __FILE__, '/') + 1)
 #define DEBUG(format, ...) do {                                           \

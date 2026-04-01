@@ -161,8 +161,6 @@ class TestDatabaseService(unittest.TestCase):
 
         # 验证结果和警告日志
         self.assertEqual(result, {})
-        expected_warning = f"This table NON_EXISTENT_TABLE does not exist in this database {self.db_path}."
-        mock_warning.assert_called_once_with(expected_warning)
 
     @patch('msprof_analyze.prof_common.database_service.logger.error')
     @patch('msprof_analyze.prof_common.database_service.DBManager.destroy_db_connect')

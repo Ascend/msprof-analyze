@@ -68,8 +68,16 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
         self.reducer_func(mapper_res)
         if self._export_type == Constant.DB:
             self.save_db()
+        elif self._export_type == Constant.TEXT:
+            logger.info("Reset export_type to db")
+            self.save_db()  # It may be invoked by other recipe, so it must be set to 'db' here.
         else:
             logger.error(f"CommGroupMap: {self._export_type} is not supported for export type.")
+
+    def generate_communication_group_mapping(self, context):
+        mapper_res = self.mapper_func(context)
+        self.reducer_func(mapper_res)
+        return self.group_df
 
     def reducer_func(self, mapper_res):
         # concat and process all comm group

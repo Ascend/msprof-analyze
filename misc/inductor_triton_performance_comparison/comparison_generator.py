@@ -208,7 +208,6 @@ class ComparisonGenerator:
                 fx_module.run()
             except Exception as err:
                 logger.error(f"Unexpected error for '{fx_module}': {err}", exc_info=True)
-                continue
             torch_npu.npu.mstx.range_end(range_id)
         prof.stop()
         try:

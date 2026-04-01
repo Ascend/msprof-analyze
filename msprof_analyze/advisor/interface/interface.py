@@ -138,7 +138,3 @@ class Interface:
             analyzer.html_render.save_to_file(f'mstt_advisor_{Timer().strftime}.html')
 
         return result if not output_dict else dict(result.data)
-
-
-if __name__ == "__main__":
-    Interface()

@@ -26,7 +26,7 @@ from test.st.utils import ST_DATA_PATH
 
 class TestClusterAnalyseMindsporeDb(TestCase):
     """
-       Test cluster analyse mindspore db
+       Test cluster analyse MindSpore db
     """
     CLUSTER_PATH = os.path.join(ST_DATA_PATH, "cluster_data_mindspore_db")
     OUTPUT_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "TestClusterAnalyseMindsporeDb")

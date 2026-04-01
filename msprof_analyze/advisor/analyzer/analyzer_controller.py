@@ -266,7 +266,7 @@ class AnalyzerController:
             AnalyzerController._init_async_analysis_env(kwargs)
 
         try:
-            if output_path:  # 前段传入空字符串视为正常场景，这里不能用is not None判断
+            if output_path:  # 前端传入空字符串视为正常场景，这里不能用is not None判断
                 output_path = PathManager.get_realpath(output_path)
                 if os.path.exists(output_path):
                     PathManager.check_output_directory_path(output_path)
@@ -813,7 +813,7 @@ class AnalyzerController:
         ascend_pt_dirs = [path for path in path_list if os.path.isdir(path) and path.endswith("ascend_pt")]
         ascend_ms_dirs = [path for path in path_list if os.path.isdir(path) and path.endswith("ascend_ms")]
         if ascend_ms_dirs and ascend_pt_dirs:
-            logger.error("Cannot analyze pytorch and mindspore meantime.")
+            logger.error("Cannot analyze PyTorch and MindSpore meantime.")
             return False
         if not ascend_pt_dirs and not ascend_ms_dirs:
             return False

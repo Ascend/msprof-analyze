@@ -23,6 +23,7 @@ import pandas as pd
 from msprof_analyze.cluster_analyse.recipes.freq_analysis.freq_analysis import FreqAnalysis
 from msprof_analyze.prof_common.constant import Constant
 
+
 NAMESPACE = "msprof_analyze.cluster_analyse.recipes"
 
 

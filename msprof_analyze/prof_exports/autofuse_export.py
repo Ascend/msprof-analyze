@@ -54,5 +54,8 @@ ORDER BY
 
 class AutofuseExport(BaseStatsExport):
     def __init__(self, db_path):
-        super().__init__(db_path, None, {})
+        super().__init__(db_path, "", {})
         self._query = QUERY
+
+    def get_param_order(self):
+        return []

@@ -36,19 +36,18 @@ class PPChartExport(BaseStatsExport):
         msg LIKE '%forward%'
         OR msg LIKE '%backward%'
         OR msg LIKE '%WeightGradStore_pop%'
-        {}
+        AND MSTX_EVENTS.startNs >= ? and MSTX_EVENTS.startNs <= ?
     ORDER BY
         TASK.startNs
     """
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        self._query = self._build_query(db_path, step_range)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = self._build_query(db_path)
 
-    def _build_query(self, db_path, step_range):
+    def _build_query(self, db_path):
         str1 = "0 AS step,"
         str2 = ""
-        filter_statement = "AND MSTX_EVENTS.startNs >= ? and MSTX_EVENTS.startNs <= ?" if step_range else ""
         if DBManager.check_tables_in_db(db_path, Constant.TABLE_STEP_TIME):
             str1 = "step_time.id AS step,"
             str2 = """
@@ -56,4 +55,7 @@ class PPChartExport(BaseStatsExport):
                 ON MSTX_EVENTS.startNs >= step_time.startNs
                 AND MSTX_EVENTS.endNs <= step_time.endNs
             """
-        return self.QUERY.format(str1, str2, filter_statement)
+        return self.QUERY.format(str1, str2)
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]

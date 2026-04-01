@@ -82,20 +82,25 @@ class ComputeOpSum(BaseRecipeAnalysis):
         mapper_res = self.mapper_func(context)
         self.reducer_func(mapper_res)
 
-        if self._export_type == "db":
+        if self._export_type == Constant.DB:
             self.save_db()
-        elif self._export_type == "notebook":
+        elif self._export_type == Constant.NOTEBOOK:
+            self.save_csv()
             self.save_notebook()
+        elif self._export_type == Constant.TEXT:
+            self.save_csv()
         else:
             logger.error("Unknown export type.")
 
     def save_notebook(self):
+        self.create_notebook("stats.ipynb")
+        self.add_helper_file("cluster_display.py")
+
+    def save_csv(self):
         self.dump_data(self.all_rank_stats, "all_stats.csv")
         self.dump_data(self.per_rank_stats_by_optype, "rank_stats_by_optype.csv")
         if not self.exclude_op_name:
             self.dump_data(self.per_rank_stats_by_opname, "rank_stats_by_opname.csv")
-        self.create_notebook("stats.ipynb")
-        self.add_helper_file("cluster_display.py")
 
     def save_db(self):
         self.dump_data(self.all_rank_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_ALL_RANK_STATS)

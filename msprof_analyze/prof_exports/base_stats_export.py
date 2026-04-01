@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
+from abc import ABC, abstractmethod
 
 import pandas as pd
 
@@ -23,15 +24,31 @@ from msprof_analyze.prof_common.logger import get_logger
 logger = get_logger()
 
 
-class BaseStatsExport:
+class BaseStatsExport(ABC):
 
-    def __init__(self, db_path, analysis_class, step_range):
+    def __init__(self, db_path, analysis_class, param_dict=None):
+        """Base class for stats export.
+
+        Args:
+            db_path (str): path to sqlite db.
+            analysis_class (str): recipe / analysis name.
+            param_dict (dict, optional): SQL 参数字典。
+        """
         self._db_path = db_path
         self._analysis_class = analysis_class
-        self._step_range = step_range
+        self._param_dict = param_dict
         self._query = None
-        self._param = (self._step_range.get(Constant.START_NS),
-                       self._step_range.get(Constant.END_NS)) if self._step_range else None
+        self._param = self._build_param_list()
+
+    @abstractmethod
+    def get_param_order(self):
+        """Return the order of parameters for SQL query.
+
+        Returns:
+            list: List of parameter names in the order they appear in SQL placeholders.
+                  For example, if SQL has "WHERE x >= ? AND y <= ?", return ["x", "y"].
+        """
+        pass
 
     def get_query(self):
         return self._query
@@ -55,3 +72,16 @@ class BaseStatsExport:
         except Exception as e:
             logger.error(f"File {self._db_path} read failed error: {e}")
             return None
+
+    def _build_param_list(self):
+        """Build parameter list from param_dict according to param_order."""
+        param_order = self.get_param_order()
+        if not param_order or not self._param_dict:
+            return None
+        param_list = []
+        for param_name in param_order:
+            if param_name in self._param_dict:
+                param_list.append(self._param_dict.get(param_name))
+            else:
+                logger.warning(f"param {param_name} not in param_dict.")
+        return param_list if param_list else None

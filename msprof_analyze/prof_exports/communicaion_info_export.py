@@ -144,17 +144,23 @@ FROM ClusterStepTraceTime
 class CommunicationInfoExport(BaseStatsExport):
 
     def __init__(self, db_path, is_pta):
-        super().__init__(db_path, "None", {})
+        super().__init__(db_path, "None", param_dict=None)
         self._query = QUERY_COMMUNICATION_PTA if is_pta else QUERY_COMMUNICATION_MINDSPORE
+
+    def get_param_order(self):
+        return [] # 不使用任何参数
 
 
 class ClusterAnalysisExport(BaseStatsExport):
     def __init__(self, db_path, data_simplification):
-        super().__init__(db_path, "None", {})
+        super().__init__(db_path, "None", param_dict=None)
         self.cluster_time_table = "ClusterCommunicationTime" if data_simplification else "ClusterCommAnalyzerTime"
         self.cluster_band_table = "ClusterCommunicationBandwidth" if data_simplification \
                                   else "ClusterCommAnalyzerBandwidth"
         self.cluster_group_table = "CommunicationGroupMapping" if data_simplification else "CommunicationGroup"
+
+    def get_param_order(self):
+        return []
 
 
 class ClusterStepTraceTimeExport(ClusterAnalysisExport):

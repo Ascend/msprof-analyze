@@ -188,7 +188,7 @@ class ComparisonGenerator:
             return
         # Execute msprof to collect performance data when disabling autofuse and enabling autofuse
         os.environ["AUTOFUSE_FLAGS"] = "--enable_autofuse=false"
-        cmd = ["python3", py_path, "-f", self.whole_graph, "-d", self.subgraph_dir, "-m", self.dump_path,
+        cmd = ["python3", py_path, "-f", self.whole_graph, "-d", self.subgraph_dir, "-p", self.dump_path,
                "-o", self.autofuse_disabled_path]
         if subprocess_cmd(cmd):
             logger.info("Collected profiling data with autofuse disabled.")
@@ -196,7 +196,7 @@ class ComparisonGenerator:
             logger.error("Failed to collect profiling data with autofuse disabled.")
             return
         os.environ["AUTOFUSE_FLAGS"] = "--enable_autofuse=true"
-        cmd = ["python3", py_path, "-f", self.whole_graph, "-d", self.subgraph_dir, "-m", self.dump_path,
+        cmd = ["python3", py_path, "-f", self.whole_graph, "-d", self.subgraph_dir, "-p", self.dump_path,
                "-o", self.autofuse_enabled_path]
         if subprocess_cmd(cmd):
             logger.info("Collected profiling data with autofuse enabled.")

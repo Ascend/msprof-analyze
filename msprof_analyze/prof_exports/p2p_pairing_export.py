@@ -15,6 +15,7 @@
 
 from string import Template
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
+from msprof_analyze.prof_common.constant import Constant
 
 
 QUERY = Template("""
@@ -55,12 +56,12 @@ class P2PPairingExport(BaseStatsExport):
     CTI_GROUP_NAME = "ctiGroupName"
 
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
         filter_statement = """
             JOIN CANN_API ON CANN_API.connectionId = co.connectionId
             WHERE CANN_API.startNs >= ? and CANN_API.startNs <= ?
-        """ if step_range else ""
+        """
         self._query = QUERY.safe_substitute(
             opNameId=self.CO_OP_NAME,
             opName=self.OP_NAME,
@@ -74,3 +75,6 @@ class P2PPairingExport(BaseStatsExport):
             ctiGroupName=self.CTI_GROUP_NAME,
             condition=filter_statement
         )
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]

@@ -107,8 +107,10 @@ class CommMatrixSum(BaseRecipeAnalysis):
         mapper_res = self.mapper_func(context)
         self.reducer_func(mapper_res)
 
-        if self._export_type == "db":
+        if self._export_type == Constant.DB:
             self.save_db()
+        elif self._export_type == Constant.TEXT:
+            self.save_csv()
         else:
             logger.error("communication_matrix_sum is not supported for notebook export type.")
 
@@ -166,6 +168,9 @@ class CommMatrixSum(BaseRecipeAnalysis):
     def save_db(self):
         self.dump_data(self.cluster_matrix_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
                        self.TABLE_CLUSTER_COMM_MATRIX, index=False)
+
+    def save_csv(self):
+        self.dump_data(self.cluster_matrix_df, "cluster_communication_matrix.csv", index=False)
 
     def _generate_rank_map(self, mapper_res):
         rank_map = {}
