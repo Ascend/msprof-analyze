@@ -16,6 +16,8 @@
 import json
 import os
 import pandas as pd
+from datetime import datetime
+from datetime import timezone
 
 from msprof_analyze.cluster_analyse.common_func.context import ConcurrentContext
 from msprof_analyze.cluster_analyse.common_func.table_constant import TableConstant
@@ -53,6 +55,7 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         self.params = params
         self.db_paths = self._get_rank_db()
         self.stats_data = None
+        self.communication_group_mapping = None
 
     @property
     def base_dir(self):
@@ -96,9 +99,11 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         data_service.add_table_for_query(Constant.TABLE_STEP_TIME, ["id", "startNs", "endNs"])
         df = data_service.query_data().get(Constant.TABLE_STEP_TIME)
         if df is None or df.empty:
-            logger.warning(f"There is no STEP_TIME data in {profiler_db_path}.")
-            return None
-        df["stepTime"] = (df["endNs"] - df["startNs"]) / Constant.TIME_UNIT_SCALE
+            df = pd.DataFrame(
+                {"id": [-1], "stepTime": None}
+            )
+        else:
+            df["stepTime"] = (df["endNs"] - df["startNs"]) / Constant.TIME_UNIT_SCALE
         result_df = df[["id", "stepTime"]].rename(columns={"id": "step"})
         result_df.insert(0, "rank", rank_id)
         return result_df
@@ -115,13 +120,16 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
             logger.warning(f"There is no TABLE_STEP_TRACE data in {analysis_db_path}.")
             return None
         df.insert(0, "rank", rank_id)
-        df["step"] = df["step"].astype(int)
+        df["step"] = df["step"].fillna("-1").astype(int)
         return df
 
     def calculate_communication_time(self, data_map, analysis_class):
         analysis_db_path = data_map.get(Constant.PROFILER_DB_PATH)
+        profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         step_range = data_map.get(Constant.STEP_RANGE)
-        df = CommunicationOpWithStepExport(analysis_db_path, analysis_class, step_range).read_export_db()
+        df = CommunicationOpWithStepExport(analysis_db_path, analysis_class, step_range,
+            step_exits=DBManager.check_tables_in_db(profiler_db_path,
+                                                    Constant.TABLE_COMM_ANALYZER_TIME,)).read_export_db()
         if df is None or df.empty:
             logger.warning(f"There is no communication op data in {analysis_db_path}.")
             return None
@@ -135,14 +143,8 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
             return transmit_and_wait_df
 
         # 得到group_name与rank_set的对应关系
-        cluster_db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
-        data_service = DatabaseService(cluster_db_path, {})
-        data_service.add_table_for_query(Constant.TABLE_COMMUNICATION_GROUP_MAPPING,
-                                         [TableConstant.RANK_SET, TableConstant.GROUP_ID])
-        df_dict = data_service.query_data()
-        rank_set_df = df_dict.get(Constant.TABLE_COMMUNICATION_GROUP_MAPPING, None)
+        rank_set_df = self.communication_group_mapping
         if rank_set_df is None or rank_set_df.empty:
-            logger.error(f"There is no {Constant.TABLE_COMMUNICATION_GROUP_MAPPING} data in {cluster_db_path}.")
             return transmit_and_wait_df
 
         # 将"(2)"或者"(2,4,6,8)"这样从CommunicationGroupMapping的rank_set列读取出来的字符串转换为集合
@@ -191,8 +193,8 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
         step_range = data_map.get(Constant.STEP_RANGE)
-        df = (MemoryAndDispatchTimeExport(profiler_db_path, analysis_class, step_range).
-              read_export_db())
+        df = MemoryAndDispatchTimeExport(profiler_db_path, analysis_class, step_range,
+            step_exits=DBManager.check_tables_in_db(profiler_db_path, Constant.TABLE_STEP_TIME)).read_export_db()
         if df is None or df.empty:
             logger.warning(f"Can not get memcpy task info from {profiler_db_path}.")
             return pd.DataFrame(columns=columns)
@@ -235,6 +237,9 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         merged_df = all_dfs[0]
         for df in all_dfs[1:]:
             merged_df = pd.merge(merged_df, df, on=['rank', 'step'], how='outer')
+        # 缺少step id的情况下需要补充stepTime
+        merged_df.loc[merged_df["stepTime"].isna(), "stepTime"] = merged_df["computing"] + merged_df[
+            "communication_not_overlapped"] + merged_df["free"]
         # 将所有NaN替换为0
         merged_df = merged_df.fillna(0)
         # 根据 step 和 rank 列对合并后的 DataFrame 进行排序
@@ -261,24 +266,40 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
     def run(self, context: ConcurrentContext):
         logger.info("ClusterTimeSummary init.")
 
-        if self._export_type != Constant.DB:
-            logger.error("cluster_time_summary only supports export db.")
+        if self._export_type not in [Constant.DB, Constant.TEXT]:
+            logger.error(f"Invalid export type: {self._export_type} for 'cluster time summary', "
+                         f"required to be {Constant.DB} or {Constant.TEXT}")
             return
 
         # Prepare: 需要CommunicationGroupMap
-        db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
-        if not DBManager.check_tables_in_db(db_path, Constant.TABLE_COMMUNICATION_GROUP_MAPPING):
-            if not self.run_communication_group_map_recipe(context) or \
-                    not DBManager.check_tables_in_db(db_path, Constant.TABLE_COMMUNICATION_GROUP_MAPPING):
-                logger.error(f"Create {Constant.TABLE_COMMUNICATION_GROUP_MAPPING} table failed!")
-                return
+        if not self.run_communication_group_map_recipe(context):
+            return
 
         # 数据处理与分析
         try:
             self.mapper_func(context)
             context.wait_all_futures()
             self.stats_data = self.aggregate_stats(context)
-            self.save_db()
+            if self._export_type == Constant.DB:
+                self.dump_data(self.stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+                               Constant.TABLE_CLUSTER_TIME_SUMMARY, index=False)
+            elif self._export_type == Constant.TEXT:
+                file_name = f"cluster_time_summary_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.csv"
+                self.stats_data = self.stats_data.rename(columns={
+                    "rank": "Rank",
+                    "step": "Step",
+                    "stepTime": "Step Time(us)",
+                    "computation": "Computation(us)",
+                    "communicationNotOverlapComputation": "Communication Not Overlap Computation(us)",
+                    "communicationOverlapComputation": "Communication Overlap Computation(us)",
+                    "communication": "Communication(us)",
+                    "free": "Free(us)",
+                    "communicationWaitStageTime": "Communication Wait Stage Time(us)",
+                    "communicationTransmitStageTime": "Communication Transmit Stage Time(us)",
+                    "memory": "Memory(us)",
+                    "memoryNotOverlapComputationCommunication": "Memory Not Overlap Computation Communication(us)",
+                })
+                self.dump_data(self.stats_data, file_name=file_name, index=False)
         except Exception as err:
             logger.error("Execute ClusterTimeSummary with exception: %s" % str(err))
             return
@@ -290,18 +311,11 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         logger.info(f"Run CommunicationGroupMap recipe first to get {Constant.TABLE_COMMUNICATION_GROUP_MAPPING} table")
         try:
             group_map_recipe = CommunicationGroupMap(self.params)
-            group_map_recipe.run(context)
+            self.communication_group_mapping = group_map_recipe.generate_communication_group_mapping(context)
         except Exception as e:
             logger.error(f"Run CommunicationGroupMap recipe failed: {e}!")
             return False
         return True
-
-    def save_db(self):
-        if self.stats_data is None or self.stats_data.empty:
-            logger.warning(f"No stats data, skip save_db for ClusterTimeSummary")
-            return
-        self.dump_data(self.stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       Constant.TABLE_CLUSTER_TIME_SUMMARY, index=False)
 
     def _filter_by_step_id(self, df):
         if self._step_id == Constant.VOID_STEP or 'step' not in df.columns:

@@ -133,7 +133,7 @@ class ProfDataAllocate:
 
         # 检查是否多种类型文件同时存在
         if pytorch_data_map and mindspore_data_map:
-            logger.error(f"Can not analysis pytorch and mindspore at the same time!")
+            logger.error(f"Can not analysis PyTorch and MindSpore at the same time!")
             self.prof_type = Constant.INVALID
             return False
 
@@ -178,7 +178,7 @@ class ProfDataAllocate:
         ms_processor = MindsporeDataPreprocessor(ascend_ms_dirs)
         ms_data_map = ms_processor.get_data_map()
         if pt_data_map and ms_data_map:
-            logger.error("Can not analyze pytorch and mindspore meantime.")
+            logger.error("Can not analyze PyTorch and MindSpore meantime.")
             self.prof_type = Constant.INVALID
             return False
         if pt_data_map:

@@ -38,6 +38,12 @@ class OpPerf:
     def __init__(self, op_row: Dict):
         if "OP Type" in op_row.keys():
             Constant.update_title()
+        if "Block Num" in op_row.keys():
+            self.block_num = op_row.get("Block Num")
+            self.mix_block_dim = op_row.get("Mix Block Num")
+        else:
+            self.block_num = op_row.get("Block Dim")
+            self.mix_block_dim = op_row.get("Mix Block Dim")
         self.row = op_row
         self.model_name = op_row.get("Model Name")
         self.model_id = op_row.get("Model ID")
@@ -50,9 +56,6 @@ class OpPerf:
         self.task_start_time = op_row.get("Start Time(us)")
         self.task_duration = op_row.get("Duration(us)")
         self.task_wait_time = op_row.get("Wait Time(us)")
-        self.block_dim = op_row.get("Block Dim")
-        self.mix_block_dim = op_row.get("Mix Block Dim")
-
         self.hf32_eligible = op_row.get("HF32 Eligible")
         self.input_shapes = op_row.get("Input Shapes")
         self.input_data_types = op_row.get("Input Data Types")

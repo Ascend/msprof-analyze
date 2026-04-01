@@ -1,10 +1,8 @@
 # 昇腾迁移融合算子API替换样例
 
-部分torch原生的API在下发和执行时会包括多个小算子，下发和执行耗时较长，可以通过替换成NPU API/mx_driving API来使能融合算子，提升训练性能。
+部分torch原生的API在下发和执行时会包括多个小算子，下发和执行耗时较长，可以通过替换成NPU API来使能融合算子，提升训练性能。
 
 torch_npu API的功能和参数描述见[API列表](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/torch_npu接口列表.md)。
-
-mx_driving API的功能和参数描述见[API列表](https://gitcode.com/Ascend/DrivingSDK/tree/master/docs/api/context)
 
 ## 优化器替换
 
@@ -406,103 +404,3 @@ class NPUFlashAttention():
         result, softmax_max, softmax_sum, softmax_out, seed, offset, numels = self.npu_exec(q_npu, k_npu, v_npu, atten_mask)
         # result shape (1, 128, 4096)
 ```
-
-## mx_driving API替换
-
-### mx_driving.npu_max_pool2d
-torch原生代码示例如下:
-```python
-from torch import nn
-import torch.nn.functional as F
-kernel_size = 3
-stride = 2
-padding = 1
-x = torch.randn(18, 64, 464, 800).npu()
-res = F.max_pool2d(x, kernel_size, stride, padding)
-```
-
-mx_driving代码示例如下：
-```python
-import torch, torch_npu
-from mx_driving import npu_max_pool2d
-kernel_size = 3
-stride = 2
-padding = 1
-x = torch.randn(18, 64, 464, 800).npu()
-res = npu_max_pool2d(x, kernel_size, stride, padding)
-```
-
-### mx_driving.npu_fused_bias_leaky_relu
-torch原生代码示例如下:
-```python
-import torch
-import torch.nn.functional as F
-
-negative_slope = -0.1
-B, N, H, W = [18, 256, 232, 400]
-x = np.random.uniform(1, 1, [B, N, H, W]).astype(np.float32)
-x = torch.from_numpy(x)
-bias = np.random.uniform(-2.0, 2.0, N).astype(np.float32)
-bias = torch.from_numpy(bias)
-
-out = F.leak_relu(x + bias, negative_slope)
-```
-mx_driving代码示例如下：
-```python
-import torch, torch_npu
-import numpy as np
-from mx_driving import npu_fused_bias_leaky_relu
-
-negative_slope = -0.1
-scale = 0.25
-
-B, N, H, W = [18, 256, 232, 400]
-x = np.random.uniform(1, 1, [B, N, H, W]).astype(np.float32)
-x = torch.from_numpy(x)
-bias = np.random.uniform(-2.0, 2.0, N).astype(np.float32)
-bias = torch.from_numpy(bias)
-
-out = npu_fused_bias_leaky_relu(x.npu(), bias.npu(), negative_slope, scale)
-```
-### mx_driving.cal_anchors_heading
-torch原生代码示例如下:
-```python
-batch_size = 2
-anchors_num = 64
-seq_length = 24
-anchors = torch.randn((batch_size, anchors_num, seq_length, 2)).npu()
-origin_pos = torch.randn((batch_size, 2)).npu()
-if origin_pos is None:
-    input_add_start = torch.cat((torch.zeros_like(anchors[:, :, 0:1, :]), anchors), dim=-2)
-elif len(origin_pos.shape) == 2:
-    input_add_start = torch.cat((origin_pos.unsqueeze(1).unsqueeze(1).repeat(1, anchors.shape[1], 1, 1), anchors), dim=-2)
-
-xy_diff = input_add_start[:, :, 1:, :] - input_add_start[:, :, :-1, :]
-heading_valid = torch.logical_or(xy_diff[..., 0] > 0.1, xy_diff[..., 1] > 0.1)
-heading = torch.atan2(xy_diff[..., 1], xy_diff[..., 0])
-
-for t in range(heading.shape[2]):
-    heading_t = heading[:, :, t]
-    heading_valid_t = heading_valid[:, :, t]
-    if t == 0:
-        heading_t[heading_valid_t == False] = 0
-    else:
-        heading_t[heading_valid_t == False] = heading[:, :, t - 1][heading_valid_t == False]
-out = heading
-```
-
-mx_driving代码示例如下：
-```python
-import torch
-import torch_npu
-import mx_driving
-
-batch_size = 2
-anchors_num = 64
-seq_length = 24
-anchors = torch.randn((batch_size, anchors_num, seq_length, 2)).npu()
-origin_pos = torch.randn((batch_size, 2)).npu()
-heading = mx_driving.cal_anchors_heading(anchors, origin_pos)
-out = heading
-```
-

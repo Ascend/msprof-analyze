@@ -21,6 +21,7 @@ from msprof_analyze.cluster_analyse.common_func.utils import describe_duration
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
+from msprof_analyze.prof_common.db_manager import DBManager
 from msprof_analyze.prof_exports.mstx_event_export import MstxMarkExport, MstxRangeExport
 from msprof_analyze.prof_exports.mstx_step_export import MstxStepExport
 from msprof_analyze.cluster_analyse.recipes.mstx_sum.mstx_sum_recipe_builder import MstxSumRecipeTreeBuilder
@@ -246,20 +247,25 @@ class MstxSum(BaseRecipeAnalysis):
         mapper_res = self.mapper_func(context)
         self.reducer_func(mapper_res)
 
-        if self._export_type == "db":
+        if self._export_type == Constant.DB:
             self.save_db()
-        elif self._export_type == "notebook":
+        elif self._export_type == Constant.NOTEBOOK:
+            self.save_csv()
             self.save_notebook()
+        elif self._export_type == Constant.TEXT:
+            self.save_csv()
         else:
             logger.error("Unknown export type.")
 
     def save_notebook(self):
+        self.create_notebook("stats.ipynb")
+        self.add_helper_file("cluster_display.py")
+
+    def save_csv(self):
         self.dump_data(self.mark_stats, "mark_stats.csv", index=False)
         self.dump_data(self.all_fwk_stats, "all_fwk_stats.csv")
         self.dump_data(self.all_cann_stats, "all_cann_stats.csv")
         self.dump_data(self.all_device_stats, "all_device_stats.csv")
-        self.create_notebook("stats.ipynb")
-        self.add_helper_file("cluster_display.py")
 
     def save_db(self):
         self.dump_data(self.mark_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_MARK_STATS)
@@ -271,9 +277,9 @@ class MstxSum(BaseRecipeAnalysis):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
         step_range = data_map.get(Constant.STEP_RANGE)
-        step_df = MstxStepExport(profiler_db_path, analysis_class, step_range).read_export_db()
-        if step_df is None or step_df.empty:
-            step_df = pd.DataFrame({"start_ns": [0], "end_ns": [float("inf")], "step_id": [0]})
+        step_df = pd.DataFrame({"start_ns": [0], "end_ns": [float("inf")], "step_id": [0]})
+        if DBManager.check_tables_in_db(profiler_db_path, Constant.TABLE_STEP_TIME):
+            step_df = MstxStepExport(profiler_db_path, analysis_class, step_range).read_export_db()
         mark_df = MstxMarkExport(profiler_db_path, analysis_class, step_range).read_export_db()
         range_df = MstxRangeExport(profiler_db_path, analysis_class, step_range).read_export_db()
         tree_builder = MstxSumRecipeTreeBuilder(range_df)

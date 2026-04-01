@@ -39,7 +39,7 @@ LEFT JOIN
 LEFT JOIN
     STRING_IDS AS INPUTSHAPES_IDS
     ON INPUTSHAPES_IDS.id = COMPUTE_TASK_INFO.inputShapes
-{}
+WHERE TASK.startNs >= ? and TASK.startNs <= ?
     """
 
 QUERY_EXCLUDE_OPNAME = """
@@ -61,21 +61,25 @@ LEFT JOIN
 LEFT JOIN
     STRING_IDS AS INPUTSHAPES_IDS
     ON INPUTSHAPES_IDS.id = COMPUTE_TASK_INFO.inputShapes
-{}
+WHERE TASK.startNs >= ? and TASK.startNs <= ?
 """
 
 
 class ComputeOpSumExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        filter_statement = "WHERE TASK.startNs >= ? and TASK.startNs <= ?" if step_range else ""
-        self._query = QUERY.format(filter_statement)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = QUERY
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]
 
 
 class ComputeOpSumExportExcludeOpName(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        filter_statement = "WHERE TASK.startNs >= ? and TASK.startNs <= ?" if step_range else ""
-        self._query = QUERY_EXCLUDE_OPNAME.format(filter_statement)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = QUERY_EXCLUDE_OPNAME
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]

@@ -29,42 +29,46 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
     cd misc/autofuse_performance_comparison
     bash build.sh
     ```
+
   脚本执行成功后，autofuse_performance_comparison/lib64路径下生成ExecuteGraph_C.so。
 
 **数据准备**
+
 1. 开启自动融合开关。
+
     ```shell
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
-    自动融合开关的更多介绍，请参见《[AutoFuse使能方式](https://www.hiascend.com/document/detail/zh/canncommercial/850/graph/autofuse/autofuse_1_0004.html)》。
 
+    自动融合开关的更多介绍，请参见《[AutoFuse使能方式](https://www.hiascend.com/document/detail/zh/canncommercial/850/graph/autofuse/autofuse_1_0004.html)》。
 
 2. TensorFlow模型运行时开启datadump和自动融合，获取datadump数据和Build图。
 
-- 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
+    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
 
-- 开启graphdump，可设置以下几个环境变量：
+    2. 开启graphdump，可设置以下几个环境变量：
 
-    ```shell
-    export PRINT_MODEL=1
-    export DUMP_GE_GRAPH=1
-    export DUMP_GRAPH_LEVEL=1
-    export DUMP_GRAPH_PATH=<dump_path>
-    ```
-    关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html)》。
+        ```bash
+        export PRINT_MODEL=1
+        export DUMP_GE_GRAPH=1
+        export DUMP_GRAPH_LEVEL=1
+        export DUMP_GRAPH_PATH=<dump_path>
+        ```
+
+        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html)》。
 
 3. 数据处理。
 
-- dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
+   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
 
-    例如AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365转换为npy文件可以得到AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.0.npy、AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.1.npy和AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.output.0.npy。
+      例如AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365转换为npy文件可以得到AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.0.npy、AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.1.npy和AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.output.0.npy。
 
+   2. 整图txt文件（例如ge_proto_00000094_graph_1_Build.txt）转换为json格式。
 
-- 整图txt文件（例如ge_proto_00000094_graph_1_Build.txt）转换为json格式。
-    ```shell
-    # 需要source CANN的环境变量
-    atc --mode=5 --om=<graph_txt_file_path> --json=<graph_json_file_path>
-    ```
+       ```bash
+       # 需要source CANN的环境变量
+       atc --mode=5 --om=<graph_txt_file_path> --json=<graph_json_file_path>
+       ```
 
 ## GE自动融合性能对比
 
@@ -78,7 +82,7 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
 
 **命令格式**
 
-```shell
+```bash
 python3 autofuse_performance_comparison.py -f <whole_graph> -d <subgraph_dir> -p <dump_path> [-o <output_path>]
 ```
 
@@ -95,7 +99,7 @@ python3 autofuse_performance_comparison.py -f <whole_graph> -d <subgraph_dir> -p
 
 完成使用前准备后，执行如下命令。
 
-```shell
+```bash
 cd misc/autofuse_performance_comparison/autofuse_core
 python3 autofuse_performance_comparison.py -f /data/graph_path/ge_proto_00000094_graph_1_Build.json -d /data/graph_path -p /data/dump_path
 ```
@@ -110,7 +114,7 @@ GE自动融合性能对比的输出结果在autofuse_performance_comparison_resu
 
 ![GE自动融合性能对比结果](../../docs/zh/figures/autofuse_performance_comparison.png)
 
-**表头字段说明：**
+**字段说明**
 
 | 字段        | 说明                            |
 | --------- |-------------------------------|
@@ -122,5 +126,5 @@ GE自动融合性能对比的输出结果在autofuse_performance_comparison_resu
 其他表头详细介绍请参见[op_summary](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/Profiling/atlasprofiling_16_0067.html)中aic_metrics为PipeUtilization时的字段说明。
 
 **输出结果分析：**
-- 融合算子耗时占融合前算子总耗时的百分比小于100%，则认为融合算子性能提升，反之则认为融合算子性能下降。
 
+融合算子耗时占融合前算子总耗时的百分比小于100%，则认为融合算子性能提升，反之则认为融合算子性能下降。

@@ -18,7 +18,7 @@ class OperatorPrompt(object):
     PYTORCH_OPERATOR_TUNE_SUGGESTION = "Optimize operator by AOE, such as:\n" \
                                        "'aoe --job_type=2 --model_path=$user_dump_path " \
                                        "--tune_ops_file={}'\n"
-    MSLITE_OPERATOR_TUNE_SUGGESTION = "Optimize operator by AOE in mindspore lite framework, such as:\n" \
+    MSLITE_OPERATOR_TUNE_SUGGESTION = "Optimize operator by AOE in MindSpore lite framework, such as:\n" \
                                       "converter_lite --fmk=ONNX --optimize=ascend_oriented --saveType=MINDIR " \
                                       "--modelFile=$user_model.onnx --outputFile=user_model " \
                                       "--configFile=./config.txt\n"

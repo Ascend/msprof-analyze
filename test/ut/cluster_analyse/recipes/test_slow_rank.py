@@ -108,6 +108,29 @@ class TestVoteAnalysis(unittest.TestCase):
         self.assertEqual(res, golden_res)
 
 
+    def test_calculate_basic_stats(self):
+        time_list = [1.5, 2.5, 3.5, 4.5]
+        result = SlowRankVoteAnalysis.calculate_basic_stats(time_list)
+
+        expected = {
+            'Count': 4,
+            'MeanNs': 3.0,
+            'StdNs': 1.290994,
+            'MinNs': 1.5,
+            'Q1Ns': 2.25,
+            'MedianNs': 3.0,
+            'Q3Ns': 3.75,
+            'MaxNs': 4.5,
+            'SumNs': 12.0
+        }
+
+        for key in expected:
+            if key == 'StdNs':
+                self.assertAlmostEqual(result[key], expected[key], places=2)
+            else:
+                self.assertEqual(result[key], expected[key])
+
+
 class TestSlowRankAnalysis(unittest.TestCase):
 
     @patch("msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.BaseRecipeAnalysis.dump_data")
@@ -121,12 +144,14 @@ class TestSlowRankAnalysis(unittest.TestCase):
                 "rankId": [0, 0],
                 "groupName": ["100%enp189s0f1_55000_0_1738895521183247", "100%enp189s0f1_55000_0_1738895521183247"],
                 "opName": ["hcom_broadcast__559_0_1", "hcom_broadcast__559_0_1"],
+                "startNs": [10.0, 20.0],
                 "communication_time": [16225.3, 555.7]
             }),
             pd.DataFrame({
                 "rankId": [1, 1],
                 "groupName": ["100%enp189s0f1_55000_0_1738895521183247", "100%enp189s0f1_55000_0_1738895521183247"],
                 "opName": ["hcom_broadcast__559_0_1", "hcom_broadcast__559_0_1"],
+                "startNs": [15.0, 22.0],
                 "communication_time": [24224.1, 555.6]
             })
         ]

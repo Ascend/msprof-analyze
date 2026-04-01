@@ -88,6 +88,8 @@ def judge_slow_rank(time_list):
 class SlowRankAnalysis(BaseRecipeAnalysis):
     def __init__(self, params):
         super().__init__(params)
+        self.perpector_df = None
+        self.stat_df = None
         logger.info("Slow Rank Analysis init.")
 
     @property
@@ -113,22 +115,31 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
             return
 
         analyzer = SlowRankVoteAnalysis(comm_ops_df)
-        perpector_df = analyzer.run()
-
+        self.perpector_df, self.stat_df = analyzer.run()
+        if self.perpector_df is None or self.perpector_df.empty:
+            logger.info(f"No slow rank found, skip data dump.")
+            return
         if self._export_type == Constant.DB:
-            self.save_db(perpector_df)
-        elif self._export_type == "notebook":
-            self.save_notebook(perpector_df)
+            self.save_db()
+        elif self._export_type == Constant.NOTEBOOK:
+            self.save_csv()
+            self.save_notebook()
+        elif self._export_type == Constant.TEXT:
+            self.save_csv()
         else:
             logger.error("SlowRank analysis is not supported for notebook export type.")
 
-    def save_db(self, perpector_df):
-        self.dump_data(perpector_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowRank")
+    def save_db(self, ):
+        self.dump_data(self.perpector_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowRank")
+        self.dump_data(self.stat_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowOpStats", index=False)
 
-    def save_notebook(self, perpector_df):
-        self.dump_data(perpector_df, "rank_stats.csv")
+    def save_notebook(self):
         self.create_notebook("stats.ipynb")
         self.add_helper_file("cluster_display.py")
+
+    def save_csv(self):
+        self.dump_data(self.perpector_df, "rank_stats.csv")
+        self.dump_data(self.stat_df, "slow_op_stats.csv", index=False)
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
@@ -140,6 +151,25 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
 class SlowRankVoteAnalysis:
     def __init__(self, comm_ops):
         self.comm_ops = comm_ops
+
+    @staticmethod
+    def calculate_basic_stats(time_list):
+        """计算基础统计量"""
+        if not time_list:
+            return {}
+
+        series = pd.Series(time_list)
+        return {
+            'Count': len(time_list),
+            'MeanNs': series.mean(),
+            'StdNs': series.std(),
+            'MinNs': series.min(),
+            'Q1Ns': series.quantile(0.25),
+            'MedianNs': series.median(),
+            'Q3Ns': series.quantile(0.75),
+            'MaxNs': series.max(),
+            'SumNs': series.sum()
+        }
 
     def grouping_ops(self):
         """按照通信域、算子名称对通信算子进行分组"""
@@ -167,24 +197,44 @@ class SlowRankVoteAnalysis:
 
     def run(self):
         grouped_ops_dict = self.grouping_ops()
-        perpector_dict = self.analysis(grouped_ops_dict)
-        return perpector_dict
+        perpector_df, stats_df = self.analysis(grouped_ops_dict)
+        return perpector_df, stats_df
 
     def analysis(self, grouped_ops_dict):
         rank_id_arr = self.comm_ops["rankId"].values
         comm_time_arr = self.comm_ops["communication_time"].values
+        comm_start_arr = self.comm_ops["startNs"].values
         perpector_dict = defaultdict(lambda: 0)
-        for _, ops_same_group in grouped_ops_dict.items():
-            for _, ops_list in ops_same_group.items():
+        record = []
+        for group_name, ops_same_group in grouped_ops_dict.items():
+            for op_name, ops_list in ops_same_group.items():
                 time_list = [comm_time_arr[op_idx] for op_idx in ops_list]
                 perpector_rank_idx = judge_slow_rank(time_list)
-                if perpector_rank_idx:
-                    for rank_idx in perpector_rank_idx:
-                        slow_rank = rank_id_arr[ops_list[rank_idx]]
-                        perpector_dict[slow_rank] += 1
+                if not perpector_rank_idx:
+                    continue
+                slow_ranks = []
+                start_times = []
+                for rank_idx in perpector_rank_idx:
+                    slow_rank = rank_id_arr[ops_list[rank_idx]]
+                    perpector_dict[slow_rank] += 1
+                    slow_ranks.append(slow_rank)
+                    start_times.append(comm_start_arr[ops_list[rank_idx]])
+                # 计算统计信息
+                stats = self.calculate_basic_stats(time_list)
+                record.append({
+                    'SlowRank': ",".join(str(rank_id) for rank_id in slow_ranks),
+                    'OpName': op_name,
+                    'GroupName': group_name,
+                    'Timestamp': min(start_times),
+                    **stats
+                })
 
         perpector_df = pd.DataFrame(columns=["rankId", "slowAffectCount"])
         for rank, perpector_times in perpector_dict.items():
             perpector_df.loc[len(perpector_df)] = [rank, perpector_times]
         perpector_df.set_index(["rankId"], inplace=True)
-        return perpector_df
+
+        stats_df = pd.DataFrame(record)
+        if not stats_df.empty:
+            stats_df = stats_df.sort_values(by='Timestamp').reset_index(drop=True)
+        return perpector_df, stats_df

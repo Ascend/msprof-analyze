@@ -1,0 +1,8 @@
+{
+    "threshold": {
+        "slow_npu_happen": 0.05,
+        "diff_waiting_time": 100000,
+        "start_ns_shifted": 1000000,
+        "device_bound_proportion": 0.5
+    }
+}

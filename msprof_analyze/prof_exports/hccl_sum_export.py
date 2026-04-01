@@ -33,13 +33,15 @@ LEFT JOIN
 LEFT JOIN
     STRING_IDS AS GROUP_NAME_IDS
     ON GROUP_NAME_IDS.id = COMMUNICATION_OP.groupName
-{}
+WHERE COMMUNICATION_OP.startNs >= ? and COMMUNICATION_OP.startNs <= ?
     """
 
 
 class HcclSumExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        filter_stat = "WHERE COMMUNICATION_OP.startNs >= ? and COMMUNICATION_OP.startNs <= ?" if step_range else ""
-        self._query = QUERY.format(filter_stat)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = QUERY
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]

@@ -73,7 +73,6 @@ class DatabaseService:
             return result_data
         for table_name, columns in self._table_info.items():
             if not DBManager.judge_table_exists(cursor, table_name):
-                logger.warning(f"This table {table_name} does not exist in this database {self._db_path}.")
                 continue
             table_columns = DBManager.get_table_columns_name(cursor, table_name)
             if not columns:

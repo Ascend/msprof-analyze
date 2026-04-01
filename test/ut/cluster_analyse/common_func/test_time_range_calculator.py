@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+import pandas as pd
 
 from msprof_analyze.cluster_analyse.common_func.time_range_calculator import RangeCaculator, TimeRange, \
     CommunicationTimeRange
@@ -94,6 +95,33 @@ class TestTimeRangeCalculator(unittest.TestCase):
         self.assertEqual(pure_comm[0].start_ts, 1)
         self.assertEqual(pure_comm[0].end_ts, 2)
         self.assertEqual(len(free_time), 0)
+
+    def test_generate_free_intervals_when_tasks_overlap_then_merge_and_return_intervals(self):
+        tasks_df = pd.DataFrame({
+            'task_start': [1100, 1150, 1300],
+            'task_end': [1200, 1250, 1400]
+        })
+        result = RangeCaculator.generate_free_intervals(
+            1000, 2000, tasks_df, start_col='task_start', end_col='task_end')
+        # 前两个任务重叠，应该合并为 [1100, 1250]
+        self.assertEqual(result, [[1000, 1100], [1250, 1300], [1400, 2000]])
+
+    def test_generate_free_intervals_when_tasks_cover_with_gaps_then_return_gap_intervals(self):
+        tasks_df = pd.DataFrame({
+            'start': [1000, 1200, 1400, 1600],
+            'end': [1100, 1300, 1500, 1700]
+        })
+        result = RangeCaculator.generate_free_intervals(1000, 2000, tasks_df)
+        self.assertEqual(result, [[1100, 1200], [1300, 1400], [1500, 1600], [1700, 2000]])
+
+    def test_generate_free_intervals_when_tasks_unsorted_then_sort_and_process(self):
+        tasks_df = pd.DataFrame({
+            'start': [1500, 1100, 1300],
+            'end': [1600, 1200, 1400]
+        })
+        result = RangeCaculator.generate_free_intervals(1000, 2000, tasks_df)
+        # 应该按 start 排序后处理
+        self.assertEqual(result, [[1000, 1100], [1200, 1300], [1400, 1500], [1600, 2000]])
 
 
 if __name__ == '__main__':

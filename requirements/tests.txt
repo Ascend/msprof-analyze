@@ -15,3 +15,5 @@ xlsxwriter
 sqlalchemy
 beautifulsoup4
 openpyxl
+ipython
+ipywidgets

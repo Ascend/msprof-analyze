@@ -55,6 +55,8 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         self.reducer_func(mapper_res)
         if self._export_type == Constant.DB:
             self.save_db()
+        elif self._export_type == Constant.TEXT:
+            self.save_csv()
         else:
             logger.error("Unknown export type.")
 
@@ -84,6 +86,10 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
                        self.TABLE_CLUSTER_COMM_TIME, index=False)
         self.dump_data(self.communication_bandwidth, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
                        self.TABLE_CLUSTER_COMM_BANDWIDTH, index=False)
+
+    def save_csv(self):
+        self.dump_data(self.communication_time, "cluster_communication_time.csv", index=False)
+        self.dump_data(self.communication_bandwidth, "cluster_communication_bandwidth.csv", index=False)
 
     def check_table_exist(self, table):
         db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)

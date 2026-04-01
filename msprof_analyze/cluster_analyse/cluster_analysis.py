@@ -132,7 +132,8 @@ def cluster_analysis_main():
     parser.add_argument('--force', action='store_true',
                         help="Indicates whether to skip verification of the owner, size, and permissions.")
     parser.add_argument("--parallel_mode", type=str, help="context mode", default="concurrent")
-    parser.add_argument("--export_type", type=str, help="recipe export type", choices=["db", "notebook"], default="db")
+    parser.add_argument("--export_type", type=str, help="recipe export type", choices=["db", "notebook", "text"],
+                        default="db")
     parser.add_argument("--rank_list", type=str, help="Rank id list", default='all')
     parser.add_argument("--step_id", type=int, help="Step id", default=Constant.VOID_STEP)
 

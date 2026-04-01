@@ -33,7 +33,7 @@ context_settings['ignore_unknown_options'] = True
 @click.option('--force', is_flag=True,
               help="Indicates whether to skip verification of the owner, size, and permissions.")
 @click.option("--parallel_mode", type=str, help="context mode", default="concurrent")
-@click.option("--export_type", help="recipe export type", type=click.Choice(["db", "notebook"]), default="db")
+@click.option("--export_type", help="recipe export type", type=click.Choice(["db", "notebook", "text"]), default="db")
 @click.option("--rank_list", type=str, help="Rank id list", default='all')
 @click.option("--step_id", type=int, help="Step id", default=Constant.VOID_STEP)
 @click.option('--version', '-V', '-v', is_flag=True,

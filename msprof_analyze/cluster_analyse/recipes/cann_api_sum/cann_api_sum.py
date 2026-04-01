@@ -76,16 +76,17 @@ class CannApiSum(BaseRecipeAnalysis):
     def run(self, context):
         mapper_res = self.mapper_func(context)
         self.reducer_func(mapper_res)
-        if self._export_type == "db":
+        if self._export_type == Constant.DB:
             self.save_db()
-        elif self._export_type == "notebook":
+        elif self._export_type == Constant.NOTEBOOK:
+            self.save_csv()
             self.save_notebook()
+        elif self._export_type == Constant.TEXT:
+            self.save_csv()
         else:
             logger.error("Unknown export type.")
 
     def save_notebook(self):
-        self.dump_data(self._stats_rank_data, "rank_stats.csv", index=False)
-        self.dump_data(self._stats_data, "all_stats.csv")
         self.create_notebook("stats.ipynb")
         self.add_helper_file("cluster_display.py")
 
@@ -93,6 +94,10 @@ class CannApiSum(BaseRecipeAnalysis):
         self.dump_data(self._stats_rank_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSumRank",
                        index=False)
         self.dump_data(self._stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSum")
+
+    def save_csv(self):
+        self.dump_data(self._stats_rank_data, "rank_stats.csv", index=False)
+        self.dump_data(self._stats_data, "all_stats.csv")
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)

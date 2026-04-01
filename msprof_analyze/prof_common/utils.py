@@ -18,6 +18,7 @@ import os
 from email.utils import parseaddr
 from typing import Dict, List
 from urllib.parse import urlparse
+from decimal import Decimal
 
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.path_manager import PathManager
@@ -94,3 +95,13 @@ def compute_ratio(dividend: float, divisor: float):
         return 0
     else:
         return round(dividend / divisor, 4)
+
+def convert_ns_to_us(ns_value):
+    if ns_value is None:
+        return None
+    return round(ns_value * 0.001, 3)
+
+def convert_ns_to_us_str(ns_value):
+    if ns_value is None:
+        return None
+    return str(Decimal(ns_value) / Decimal(1000))

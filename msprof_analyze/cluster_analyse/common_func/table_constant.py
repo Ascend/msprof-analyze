@@ -51,3 +51,4 @@ class TableConstant:
     TABLE_TASK = "TASK"
     TABLE_META_DATA = "META_DATA"
     TABLE_COMM_ANALYZER_MATRIX = "CommAnalyzerMatrix"
+    TABLE_MSTX_EVENTS = "MSTX_EVENTS"

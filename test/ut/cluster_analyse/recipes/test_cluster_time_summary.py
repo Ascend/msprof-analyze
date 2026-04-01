@@ -105,12 +105,13 @@ class TestClusterTimeSummary(unittest.TestCase):
         self.assertAlmostEqual(res["stepTime"].tolist(), [35.0, 40.0])
 
     @mock.patch("msprof_analyze.prof_common.database_service.DatabaseService.query_data")
-    def test_calculate_step_time_when_query_fail_then_return_none(self, mock_query_data):
+    def test_calculate_step_time_when_step_time_is_not_existed_then_return_df(self, mock_query_data):
         mock_query_data.return_value = {Constant.TABLE_STEP_TIME: pd.DataFrame()}
         recipe = ClusterTimeSummary(self.PARAMS)
         res = recipe.calculate_step_time({Constant.PROFILER_DB_PATH: "/rank0/ascend_pytorch_profiler_0.db",
                                           Constant.RANK_ID: 1}, "ClusterTimeSummary")
-        self.assertIsNone(res)
+        expected_res = pd.DataFrame({"rank": [1], "step": [-1], "stepTime": [None]})
+        self.assertTrue(res.equals(expected_res))
 
     @mock.patch("msprof_analyze.prof_common.database_service.DatabaseService.query_data")
     def test_calculate_step_trace_time_when_query_success_when_return_valid_df(self, mock_query_data):
@@ -124,6 +125,7 @@ class TestClusterTimeSummary(unittest.TestCase):
         })
         expected_df = step_trace_df.copy()
         expected_df.insert(0, "rank", 1)
+        expected_df["step"] = expected_df["step"].astype(int)
 
         mock_query_data.return_value = {Constant.TABLE_STEP_TRACE: step_trace_df}
         recipe = ClusterTimeSummary(self.PARAMS)
@@ -171,23 +173,16 @@ class TestClusterTimeSummary(unittest.TestCase):
         res = recipe.calculate_memory_and_not_overlapped_time(self.RANK_1_DATA_MAP, "ClusterTimeSummary")
         self.assertTrue(res.equals(expected))
 
-    @mock.patch("msprof_analyze.prof_common.database_service.DatabaseService.query_data")
-    def test_calculate_transmit_and_wait_df_when_group_complete_then_compute_wait_and_transmit(self, mock_query_data):
-        # Prepare CommunicationGroupMapping with rank_set matching hashed group id
-        group_id = 0  # will be replaced by hashed groupName inside function, so we set to same later
-        rank_set_df = pd.DataFrame({
+    def test_calculate_transmit_and_wait_df_when_group_complete_then_compute_wait_and_transmit(self):
+        comm_df = self.COMMUNICATION_DF
+        recipe = ClusterTimeSummary(self.PARAMS)
+        recipe.communication_group_mapping = pd.DataFrame({
             "rank_set": ["(0,1)"],
             "group_name": ["15277154023019599672"],
             "group_id": ["group_0"],
             "pg_name": ["default_group"]
         })
-        mock_query_data.return_value = {Constant.TABLE_COMMUNICATION_GROUP_MAPPING: rank_set_df}
-
-        comm_df = self.COMMUNICATION_DF
-        recipe = ClusterTimeSummary(self.PARAMS)
-        mock_query_data.return_value = {Constant.TABLE_COMMUNICATION_GROUP_MAPPING: rank_set_df}
         res = recipe.calculate_transmit_and_wait_df(comm_df)
-
         expected = pd.DataFrame({
             "rank": [0, 1],
             "step": [1, 1],
@@ -278,17 +273,15 @@ class TestClusterTimeSummary(unittest.TestCase):
             mock_dump.assert_not_called()
             mock_check_tables.assert_not_called()
 
-    @mock.patch(NAMESPACE_RECIPE + ".DBManager.check_tables_in_db", side_effect=[False])
     @mock.patch.object(ClusterTimeSummary, "run_communication_group_map_recipe", return_value=False)
-    def test_run_when_comm_group_map_creation_fails_then_return(self, mock_run_group, mock_check_tables):
+    def test_run_when_comm_group_map_creation_fails_then_return(self, mock_run_group):
         recipe = ClusterTimeSummary(self.PARAMS)
         with mock.patch(NAMESPACE_RECIPE + ".BaseRecipeAnalysis.dump_data") as mock_dump:
             recipe.run(context=FakeContext())
             mock_dump.assert_not_called()
-        self.assertEqual(mock_check_tables.call_count, 1)
         mock_run_group.assert_called_once()
 
-    @mock.patch(NAMESPACE_RECIPE + ".DBManager.check_tables_in_db", side_effect=[True])
+    @mock.patch(NAMESPACE_RECIPE + ".ClusterTimeSummary.run_communication_group_map_recipe", side_effect=[True])
     def test_run_when_all_ok_then_save_db(self, mock_check_tables):
         recipe = ClusterTimeSummary(self.PARAMS)
         fake_df = pd.DataFrame({"rank": [0], "step": [1], "stepTime": [1.0]})

@@ -138,6 +138,15 @@ def detect_outliers_z_score(data, threshold=3):
 
 
 
+def ensure_numeric_columns(df, columns, target_type='int64'):
+    if df is None or df.empty:
+        return df
+    for col in columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(target_type)
+    return df
+
+
 class UnionFind(object):
     """Disjoint Set Union"""
 

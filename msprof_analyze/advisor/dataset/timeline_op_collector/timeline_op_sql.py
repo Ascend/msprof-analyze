@@ -48,10 +48,10 @@ class TimelineEventDBSQL:
     QUEYR_CANN_API_SQL = """
     SELECT 
         CASE type.name
-            WHEN 'acl' THEN CONCAT('AscendCL@', str.value)
-            WHEN 'runtime' THEN CONCAT('Runtime@', str.value)
-            WHEN 'node' THEN CONCAT('Node@', str.value)
-            WHEN 'model' THEN CONCAT('Model@', str.value)
+            WHEN 'acl' THEN 'AscendCL@' || str.value
+            WHEN 'runtime' THEN 'Runtime@' || str.value
+            WHEN 'node' THEN 'Node@' || str.value
+            WHEN 'model' THEN 'Model@' || str.value
             ELSE str.value
         END AS name,
         api.startNs / 1000.0 AS ts,

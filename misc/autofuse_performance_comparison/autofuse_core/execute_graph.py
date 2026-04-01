@@ -145,7 +145,6 @@ class Autofuse:
                                    op_data["inputs_dtype"], outputs_data)
             except Exception as e:
                 logger.error(f"Execute graph failed for fused op '{op_name}': {e}")
-                continue
             torch_npu.npu.mstx.range_end(range_id, domain=self.DOMAIN)
         prof.stop()
 

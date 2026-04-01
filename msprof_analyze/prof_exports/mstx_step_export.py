@@ -17,8 +17,6 @@ import re
 import pandas as pd
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
-from msprof_analyze.prof_common.db_manager import DBManager
-from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
@@ -37,31 +35,9 @@ ORDER BY
 
 class MstxStepExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
         self._query = QUERY
 
-    def read_export_db(self):
-        try:
-            if not self._db_path:
-                logger.error("db path is None.")
-                return None
-            query = self.get_query()
-            if query is None:
-                logger.error("query is None.")
-                return None
-            conn, cursor = DBManager.create_connect_db(self._db_path, Constant.ANALYSIS)
-
-            if not DBManager.judge_table_exists(cursor, "STEP_TIME"):
-                DBManager.destroy_db_connect(conn, cursor)
-                return pd.DataFrame(columns=['step_id', 'start_ns', 'end_ns'])
-
-            if self._param is not None and re.search(Constant.SQL_PLACEHOLDER_PATTERN, query):
-                data = pd.read_sql(query, conn, params=self._param)
-            else:
-                data = pd.read_sql(query, conn)
-            DBManager.destroy_db_connect(conn, cursor)
-            return data
-        except Exception as e:
-            logger.error(f"File {self._db_path} read failed error: {e}")
-            return None
+    def get_param_order(self):
+        return []

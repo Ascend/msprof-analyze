@@ -32,7 +32,7 @@ WITH
             upper_quartile(endNs - startNs) AS upper_quartile_duration
         FROM
             CANN_API
-        {}
+        WHERE CANN_API.startNs >= ? and CANN_API.startNs <= ?
         GROUP BY name
     ),
     totals AS (
@@ -62,7 +62,9 @@ ORDER BY 2 DESC;
 
 class CannApiSumExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        filter_statement = "WHERE CANN_API.startNs >= ? and CANN_API.startNs <= ?" if step_range else ""
-        self._query = QUERY.format(filter_statement)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = QUERY
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]

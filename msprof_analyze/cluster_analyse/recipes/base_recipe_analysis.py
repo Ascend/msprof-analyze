@@ -43,6 +43,7 @@ class BaseRecipeAnalysis(ABC):
     PP_SIZE = "pipeline_model_parallel_size"
     DP_SIZE = "data_parallel_size"
     FACTOR = 1000.0
+    DEFAULT_STEP_RANGE = {Constant.START_NS: 0, Constant.END_NS: Constant.MAX_INTEGER}
 
     def __init__(self, params):
         self._collection_dir = params.get(Constant.COLLECTION_PATH, "")
@@ -237,7 +238,7 @@ class BaseRecipeAnalysis(ABC):
         for rank_id in rank_ids:
             rank_path = self._data_map[rank_id]
             db_path_dict = {Constant.RANK_ID: rank_id, Constant.PROFILER_DB_PATH: "", Constant.ANALYSIS_DB_PATH: "",
-                            Constant.STEP_RANGE: {}}
+                            Constant.STEP_RANGE: self.DEFAULT_STEP_RANGE, Constant.PROFILING_PATH: rank_path}
             profiler_db_path = self._get_profiler_db_path(rank_id, rank_path)
             analysis_db_path = self._get_analysis_db_path(rank_path)
             if os.path.exists(profiler_db_path):
@@ -282,13 +283,13 @@ class BaseRecipeAnalysis(ABC):
     def _get_step_range(self, db_path):
         step_range = {}
         if self._step_id == Constant.VOID_STEP:
-            return step_range
+            return self.DEFAULT_STEP_RANGE
         conn, cursor = DBManager.create_connect_db(db_path)
         if not DBManager.judge_table_exists(cursor, "STEP_TIME"):
             logger.error(f"The STEP_TIME table does not exist in the database: {db_path}, "
                          f"the parameter step_id will not take effect.")
             DBManager.destroy_db_connect(conn, cursor)
-            return step_range
+            return self.DEFAULT_STEP_RANGE
 
         step_time = []
         sql = f"select id, startNs, endNs from STEP_TIME"
@@ -309,6 +310,7 @@ class BaseRecipeAnalysis(ABC):
             logger.error(f"Invalid step_id {self._step_id} in the database: {db_path}, "
                          f"step_id must be an element of the set ({step_list}), "
                          f"the parameter step_id will not take effect.")
+            return self.DEFAULT_STEP_RANGE
         return step_range
 
     def _mapper_func(self, data_map, analysis_class):

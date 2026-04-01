@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
+from msprof_analyze.prof_common.constant import Constant
 
 QUERY = """
 SELECT
@@ -35,13 +36,15 @@ WHERE
     AND si.value LIKE '%"dataType":%'
     AND si.value LIKE '%"groupName":%'
     AND si.value LIKE '%"opName":%'
-    {}
+    AND ms.startNs >= ? and ms.startNs <= ?
     """
 
 
 class Mstx2CommopExport(BaseStatsExport):
 
-    def __init__(self, db_path, recipe_name, step_range):
-        super().__init__(db_path, recipe_name, step_range)
-        filter_stat = "AND ms.startNs >= ? and ms.startNs <= ?" if step_range else ""
-        self._query = QUERY.format(filter_stat)
+    def __init__(self, db_path, recipe_name, param_dict):
+        super().__init__(db_path, recipe_name, param_dict)
+        self._query = QUERY
+
+    def get_param_order(self):
+        return [Constant.START_NS, Constant.END_NS]
