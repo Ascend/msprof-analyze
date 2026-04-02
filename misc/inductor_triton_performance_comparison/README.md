@@ -36,9 +36,11 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 1. 准备包含inductor场景的脚本或者模型。
 
     ```python
-    def run(a, b):
+    import torch
+   
+    def add(a, b):
         return a + b
-    inductor_add = torch.compile(run)
+    inductor_add = torch.compile(add)
     ```
 
    上面示例代码定义了一个名为add的函数，然后使用torch.compile进行编译，后端默认是inductor。

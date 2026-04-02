@@ -16,7 +16,7 @@ compare（性能比对）功能支持比较GPU与NPU之间、NPU与NPU之间的�
 
 ### 环境准备
 
-完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 ### 数据准备
 

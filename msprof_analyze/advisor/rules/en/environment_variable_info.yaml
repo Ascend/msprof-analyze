@@ -6,15 +6,15 @@ HCCL_RDAM_TC:
   desc: "Configure the DSCP value of RoCE packets sent by the network port.\n
          In the DS field of IP datagram header, the rightmost 6 bits are DSCP, and leftmost 2 bits are 0.\n
          It should be set to DSCP * 4. Default value is 132, that is, DSCP is 33 (132=33*4)."
-  suggest: "Please refer to https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424"
-  suggest_html: "Please refer to <a href=https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424 target='_blank'>LINK</a>"
+  suggest: "Please refer to https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html"
+  suggest_html: "Please refer to <a href=https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html target='_blank'>LINK</a>"
 HCCL_RDMA_SL:
   desc: "Specify the priority of the RDMA NIC.\n
          The value must be the same as the PFC priority for the NIC.\n
          Otherwise, the performance may deteriorate.\n
          The value range is [0, 7], and default value is 4."
-  suggest: "Please refer to https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424"
-  suggest_html: "Please refer to <a href=https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424 target='_blank'>LINK</a>"
+  suggest: "Please refer to https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html"
+  suggest_html: "Please refer to <a href=https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html target='_blank'>LINK</a>"
 ACLNN_CACHE_LIMIT:
   desc: "Number of cached aclnn operators."
   suggest: "Setting a large number when aclnn and host bound, such as 'export ACLNN_CACHE_LIMIT=100000'"
