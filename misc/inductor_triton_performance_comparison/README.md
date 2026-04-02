@@ -37,7 +37,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
     ```python
     import torch
-   
+      
     def add(a, b):
         return a + b
     inductor_add = torch.compile(add)

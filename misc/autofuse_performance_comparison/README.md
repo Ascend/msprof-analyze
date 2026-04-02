@@ -123,7 +123,7 @@ GE自动融合性能对比的输出结果在autofuse_performance_comparison_resu
 | Duration(us) | 融合算子耗时，单位us。|
 | Duration Diff Ratio | 融合算子耗时占融合前算子总耗时的百分比。 |
 
-其他表头详细介绍请参见[op_summary](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/Profiling/atlasprofiling_16_0067.html)中aic_metrics为PipeUtilization时的字段说明。
+其他表头详细介绍请参见[op_summary](https://gitcode.com/Ascend/msprof/blob/26.0.0/docs/zh/profile_data_file_references.md#op_summary%EF%BC%88%E7%AE%97%E5%AD%90%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF%EF%BC%89)中aic_metrics为PipeUtilization时的字段说明。
 
 **输出结果分析：**
 

@@ -14,10 +14,10 @@
 
 msprof-analyze工具将Profiling性能数据作为输入，进行性能数据分析，支持分析如下场景的性能数据：
 
-  * msProf场景性能数据采集，具体操作请参见《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start.md)》。
+  * msProf场景性能数据采集，具体操作请参见《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/26.0.0/docs/zh/quick_start.md)》。
   * PyTorch场景性能数据采集，具体操作请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
   * MindSpore场景性能数据采集，具体操作请参见《[MindSpore调优工具](https://www.hiascend.com/document/detail/zh/mindstudio/830/T&ITools/Profiling/atlasprofiling_16_0118.html)》。
-  * msMonitor场景性能数据采集，具体操作请参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start.md)》。
+  * msMonitor场景性能数据采集，具体操作请参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.0.0/docs/zh/quick_start.md)》。
 
 ## 工具使用
 
