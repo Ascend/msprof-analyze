@@ -4,7 +4,7 @@
 
 本节介绍如何采集pp流水图数据、使用msprof-analyze工具分析pp流水图，以及使用MindStudio Insight工具呈现pp流水图进行数据分析。
 
-**pp流水图**指的是将实际pp域内的流水排布进行可视化呈现，可以分析全局通信与前向反向关键耗时信息。对于transformer的模型1F1B、DualpipeV等pp并行策略，当前无法可视化展示。
+**pp流水图**指的是将实际pp域内的流水排布进行可视化呈现，可以分析全局通信与前向反向关键耗时信息。对于transformer的模型1F1B、DualPipeV等pp并行策略，当前无法可视化展示。
 
 **1F1B和DualPipeV的理论效果图**
 
@@ -15,7 +15,7 @@
 
 **环境准备**
 
-完成msprof_analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](./install_guide.md)》。
 
 **数据准备**
 
@@ -30,7 +30,7 @@
 
 * 若项目使用Megatron框架，可直接按照场景一的方法进行打点操作；若项目使用Mindspeed框架，需先确认是否开启DualPipeV功能，若已开启，则按照**场景二**的方法进行打点操作；若无法明确区分，如果能找到对应项目中与打点相关的两个核心文件，在这两个文件的打点代码位置处，添加对应的打点逻辑，确保覆盖所有可能场景。
 
-**场景一：传统pipeline，关闭DualpipeV**
+**场景一：传统pipeline，关闭DualPipeV**
 
 1. 在```megatron/core/pipeline_parallel/schedules.py```里添加如下代码（添加在```backward_step```函数定义的后面）。如下所示：
 
@@ -156,7 +156,7 @@ StepTaskInfo表字段如下：
 | endNs   | 前向反向task在device上结束时间，INTEGER类型。 |
 | type    | 类型，不同类型显示不同颜色，INTEGER类型。 |
 
-用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/quick_start/system_start.md)》。
+用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/master)》。
 
 在MindStudio Insight工具导入分析后的性能数据，在Summary页面点击Generate后按照如下截图配置。
 

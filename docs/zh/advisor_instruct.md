@@ -166,13 +166,13 @@ msprof-analyze advisor命令行包含如下三个子命令：
 
 ## advisor功能介绍（Jupyter Notebook方式）
 
-1. 进入msprof_analyze\advisor目录执行如下命令启动Jupyter Notebook工具。
+1. 进入msprof_analyze/advisor目录执行如下命令启动Jupyter Notebook工具。
 
    ```bash
    jupyter notebook
    ```
 
-   执行成功则自动启动浏览器读取msprof_analyze\advisor目录，如下示例：
+   执行成功则自动启动浏览器读取msprof_analyze/advisor目录，如下示例：
 
    ![jupyter_report](./figures/jupyter_report.png)
 

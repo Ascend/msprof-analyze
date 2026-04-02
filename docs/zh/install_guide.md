@@ -26,22 +26,20 @@ Successfully installed msprof-analyze-{version}
 
 2. whl包校验。
 
-   1. 根据以上下载链接下载whl包到Linux安装环境。
+   进入whl包所在目录，执行如下命令。
 
-   2. 进入whl包所在目录，执行如下命令。
+   ```bash
+   sha256sum {name}.whl
+   ```
 
-      ```bash
-      sha256sum {name}.whl
-      ```
+   {name}为whl包名称。
 
-      {name}为whl包名称。
+   若回显呈现对应版本whl包一致的**校验码**，则表示下载了正确的性能工具whl安装包。示例如下：
 
-      若回显呈现对应版本whl包一致的**校验码**，则表示下载了正确的性能工具whl安装包。示例如下：
-
-      ```bash
-      sha256sum msprof_analyze-1.0-py3-none-any.whl
-      xx *msprof_analyze-1.0-py3-none-any.whl
-      ```
+   ```bash
+   sha256sum msprof_analyze-1.0-py3-none-any.whl
+   xx *msprof_analyze-1.0-py3-none-any.whl
+   ```
 
 3. whl包安装。
 

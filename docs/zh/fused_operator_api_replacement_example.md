@@ -146,7 +146,7 @@ output = torch_npu.npu_scaled_masked_softmax(x, mask, scale)
 
 **示例一**
 
-替换torch.nn.functional.fast_gelu方法，实现上有些差异，激活函数输出结果会不同。
+替换torch.nn.functional.gelu方法，实现上有些差异，激活函数输出结果会不同。
 
 torch原生代码示例如下：
 

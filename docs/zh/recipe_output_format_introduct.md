@@ -12,7 +12,7 @@
 
 A列： Step数，是采集性能数据时设置的，一般来说集群性能数据采集一个step足够，如果采集多个step，需要先筛选一下。
 
-B列： Type，主要分两种，rank和stage, 和后面的index强相关，可以理解为一个是单卡rank，一个是rank group（pp 并行的stage），如果type为stage，则后面D-K列信息为rank group下的最大值。
+B列： Type，主要分两种，rank和stage，和后面的index强相关，可以理解为一个是单卡rank，一个是rank group（pp 并行的stage），如果type为stage，则后面D-K列信息为rank group下的最大值。
 
 C列：Index，与type相关，表示卡号。
 
@@ -69,9 +69,9 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 **Tips**：可以根据rank互联的带宽以及链路类型，判断是否有慢链路的问题。
 
-- "LOCAL"是片内拷贝，速度最高。
-- “HCCS”或“PCIE”是节点内片间拷贝，速度居中。
-- “RDMA”是节点间拷贝，速度最低。
+- LOCAL是片内拷贝，速度最高。
+- HCCS或“PCIE”是节点内片间拷贝，速度居中。
+- RDMA是节点间拷贝，速度最低。
 
 ## cluster_communication.json
 

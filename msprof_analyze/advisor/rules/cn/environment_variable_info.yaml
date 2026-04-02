@@ -7,15 +7,15 @@ HCCL_RDAM_TC:
   desc: "配置网络端口发送的RoCE数据包的DSCP值。\n
          在IP数据报头的DS字段中，最右侧的6位是DSCP，最左侧的2位是0。\n
          应将其设置为DSCP*4。默认值为132，即DSCP为33（132=33*4）。"
-  suggest: "请参考 https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424"
-  suggest_html: "请参考 <a href=https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424 target='_blank'>链接</a>"
+  suggest: "请参考 https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html"
+  suggest_html: "请参考 <a href=https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html target='_blank'>链接</a>"
 HCCL_RDMA_SL:
   desc: "指定RDMA NIC的优先级。\n
         该值必须与NIC的PFC优先级相同。\n
         否则，性能可能会恶化。\n
         取值范围为[0,7]，默认值为4。"
-  suggest: "请参考 https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424"
-  suggest_html: "请参考 <a href=https://support.huawei.com/enterprise/zh/doc/EDOC1100371278/5eeeed85?idPath=23710424 target='_blank'>链接</a>"
+  suggest: "请参考 https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html"
+  suggest_html: "请参考 <a href=https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html target='_blank'>链接</a>"
 ACLNN_CACHE_LIMIT:
   desc: "缓存的aclnn算子的数量。"
   suggest: "在alcnn和host耗时过长时，可以设置一个较大的数字，例如'export ACLNN_CACHE_LIMIT=100000'。"
