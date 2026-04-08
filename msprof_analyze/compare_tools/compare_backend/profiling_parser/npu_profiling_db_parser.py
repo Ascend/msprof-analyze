@@ -36,6 +36,7 @@ logger = get_logger()
 
 
 class NPUProfilingDbParser:
+    MEMORY_B_TO_KB = 1024
     pytorch_api_sql = """
     SELECT 
         PYTORCH_API.startNs AS "startNs",
@@ -317,9 +318,10 @@ class NPUProfilingDbParser:
             task_queue_data = DBManager.fetch_all_data(self.cursor, sql, param=param)
             queue_dict = {}
             for data in task_queue_data:
-                if data.get("name") == "Enqueue":
+                name = data.get("name") or ""
+                if name.startswith("Enqueue"):
                     queue_dict.setdefault(data.get("connectionId"), {})["enqueue"] = data
-                else:
+                elif name.startswith("Dequeue"):
                     queue_dict.setdefault(data.get("connectionId"), {})["dequeue"] = data
             task_queue_data = []
             for data in queue_dict.values():
@@ -346,13 +348,14 @@ class NPUProfilingDbParser:
                     if allocation_time > task_queue.get(Constant.END_NS):
                         task_queue_index += 1
                         continue
-                    self.result_data.update_memory_list({Constant.SIZE: op_memory.get("size"),
+                    self.result_data.update_memory_list({Constant.SIZE: op_memory.get("size", 0) /
+                                                                        self.MEMORY_B_TO_KB,
                                                          Constant.TS: task_queue.get(Constant.TS) / Constant.NS_TO_US,
                                                          Constant.ALLOCATION_TIME: allocation_time / Constant.NS_TO_US,
                                                          Constant.RELEASE_TIME: release_time / Constant.NS_TO_US})
                     break
             else:
-                self.result_data.update_memory_list({Constant.SIZE: op_memory.get("size"),
+                self.result_data.update_memory_list({Constant.SIZE: op_memory.get("size", 0) / self.MEMORY_B_TO_KB,
                                                      Constant.TS: allocation_time / Constant.NS_TO_US,
                                                      Constant.ALLOCATION_TIME: allocation_time / Constant.NS_TO_US,
                                                      Constant.RELEASE_TIME: release_time / Constant.NS_TO_US})

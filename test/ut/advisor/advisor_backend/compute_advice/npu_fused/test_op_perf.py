@@ -37,8 +37,8 @@ class TestOpPerf(unittest.TestCase):
             "Start Time(us)": 100,
             "Duration(us)": 50,
             "Wait Time(us)": 0,
-            "Block Dim": 1,
-            "Mix Block Dim": 1,
+            "Block Num": 1,
+            "Mix Block Num": 1,
             "HF32 Eligible": False,
             "Input Shapes": '"2,3;4,5"',  # two shapes
             "Input Data Types": '"float32;int32"',  # two dtypes
