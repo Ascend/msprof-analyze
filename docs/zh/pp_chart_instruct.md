@@ -156,7 +156,7 @@ StepTaskInfo表字段如下：
 | endNs   | 前向反向task在device上结束时间，INTEGER类型。 |
 | type    | 类型，不同类型显示不同颜色，INTEGER类型。 |
 
-用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/master)》。
+用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/26.0.0/docs/zh/user_guide/overview.md)》。
 
 在MindStudio Insight工具导入分析后的性能数据，在Summary页面点击Generate后按照如下截图配置。
 
