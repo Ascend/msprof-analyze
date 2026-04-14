@@ -480,7 +480,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-对应第三种情况：当npu因为各种原因，出现降频现象时，除了1800MHz，800MHz，还有出现其他异常频率。
+对应第三种情况：当npu因为各种原因，出现降频现象时，除了1800MHz，800MHz，还会出现其他异常频率。
 
 格式：
 
@@ -581,7 +581,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 设置-m p2p_pairing时，不会生成cluster_analysis.db。
 
-说明：该分析能力主要是为了显示P2P算子的连线，让用户看到发送和接收的src_rank和dst_rank。**目前MindStudio Insight暂时没有做这一块的适配。**
+说明：该分析能力主要是为了显示P2P算子的连线，让用户看到发送和接收的src_rank和dst_rank。**MindStudio Insight当前未适配该场景。**
 
 结果：
 
@@ -601,7 +601,7 @@ def step_wrapper(func, msg: str):
     def wrapper(*args, **kwargs):
         new_msg = {"name": msg}
         if msg == "forward_step_with_model_graph" and kwargs.get("extra_block_kwargs") is not None:
-            new_msg["name"] = "forward_backward_overlaping"
+            new_msg["name"] = "forward_backward_overlapping"
         if "current_microbatch" in kwargs:
             new_msg["current_microbatch"] = kwargs["current_microbatch"]
         if msg == "WeightGradStore_pop" and len(WeightGradStore.cache) == 0:

@@ -38,7 +38,7 @@ msprof-analyze -m communication_bottleneck -d <cluster_data> [-o <output_path>] 
 
 | 参数 | 可选/必选 | 说明 |
 | ---- | --------- | -------------------------------------------------------- |
-| -m   | 必选      | 设置为communication_bottleneck，通信瓶颈分析能力。 |
+| -m   | 必选      | 设置为communication_bottleneck，通信瓶颈分析功能。 |
 | -d   | 必选      | 集群性能数据文件夹路径。 |
 | -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。 |
 | --rank_id | 可选 | 指定要分析的目标rank ID，默认为0。分析该rank的通信操作，并对比所有rank的执行情况。 |

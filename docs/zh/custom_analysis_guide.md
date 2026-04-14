@@ -12,7 +12,7 @@
 
    例如：msprof_analyze/cluster_analyse/recipes/cann_api_sum/cann_api_sum.py，其中目录名和文件名要保持一致，该目录名也会作为使用msprof-analyze cluster工具启动该自定义分析的开关参数。
 
-2. 在xxx.py文件进行性能数据分析规则的开发，开发要求继承BaseRecipeAnalysis，实现run函数。
+2. 在xxx.py文件中进行性能数据分析规则的开发，开发要求继承BaseRecipeAnalysis，实现run函数。
 
    典型的run函数实现：
 

@@ -61,7 +61,7 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 **使用示例**
 
 ```bash
-python3 cluster_prof_info_analysis.py –d ./cluster_data -t csv -n 5
+python3 cluster_prof_info_analysis.py -d ./cluster_data -t csv -n 5
 ```
 
 ## 输出结果文件说明

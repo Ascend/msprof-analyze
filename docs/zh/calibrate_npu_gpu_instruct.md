@@ -72,10 +72,10 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
    # - vllm 推理时候打开 enforce_eager=True
    
    dir_model="/path/to/model"
-   dir_ouput_prof="/path/to/model_profile_npu"
+   dir_output_prof="/path/to/model_profile_npu"
    
    # 通过 VLLM_TORCH_PROFILER_DIR 环境变量开启性能采集，设置性能数据落盘位置，也可以在终端设置该环境变量
-   export VLLM_TORCH_PROFILER_DIR=${dir_ouput_prof}
+   export VLLM_TORCH_PROFILER_DIR=${dir_output_prof}
    export ASCEND_RT_VISIBLE_DEVICES=0,1
    
    echo "Start Profiling"
@@ -96,7 +96,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
    **关键配置说明：**
 
    * **环境变量**：`VLLM_TORCH_PROFILER_DIR` 设置性能数据输出路径。
-   * **打点配置**：需修改 vLLM-Ascend 代码，在 `experimental_config` 中设置 `msprof_tx=True` 和 `export_type=['text', 'db']`。
+   * **打点配置**：需修改 vLLM-Ascend 代码，在 `experimental_config` 中设置 `mstx=True` 和 `export_type=['text', 'db']`。
    * **eager 模式**：当前只支持 eager 模式，请使用 `--enforce-eager` 确保算子逐条执行。
 
 3. 数据文件要求
@@ -202,7 +202,7 @@ from vllm.sampling_params import BeamSearchParams
 # --- START OF INJECTION ---
 -import nvtx
 +import torch_npu
-+import torch_nn as nn
++import torch.nn as nn
 import torch.cuda.profiler as cuda_profiler
 original_call = nn.Module.__call__
 

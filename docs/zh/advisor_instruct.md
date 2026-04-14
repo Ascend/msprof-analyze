@@ -300,7 +300,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 schedule模块包含GC Analysis、亲和API、aclOpCompile、SyncBatchNorm、SynchronizeStream和Fusible Operator Analysis等多项检测。
 
-其中Fusible Operator Analysis解析结果仅打屏展示和保存在`mstt_advisor_{timestamp}.xlsx`文件中，包含“基于host瓶颈的算子序列分析”和“基于mte瓶颈的算子序列分析”页签，如下图：
+其中Fusible Operator Analysis解析结果打印展示并保存在`mstt_advisor_{timestamp}.xlsx`文件中，包含“基于host瓶颈的算子序列分析”和“基于mte瓶颈的算子序列分析”页签，如下图：
 
 ![Fusible_Operator_Analysis](./figures/Fusible_Operator_Analysis.png)
 
