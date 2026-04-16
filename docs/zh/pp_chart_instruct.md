@@ -66,7 +66,7 @@
                new_msg["name"] = "forward_backward_overlaping"
            if "current_microbatch" in kwargs:
                new_msg["current_microbatch"] = kwargs["current_microbatch"]
-           if msg == "WeightGradStore_pop" and len(WeightGradStore.cache) == 0:
+           if msg == "WeightGradStore.pop" and len(WeightGradStore.cache) == 0:
                mstx_state_step_range_id = None
            else:
                mstx_state_step_range_id = torch_npu.npu.mstx.range_start(str(new_msg), torch_npu.npu.current_stream())

@@ -6,7 +6,7 @@ torch_npu API的功能和参数描述见[API列表](https://www.hiascend.com/doc
 
 ## 优化器替换
 
-替换优化器一般都能有较大的性能受益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0036.html)。下文以AdamW优化器为例，其他优化器的替换方式一致。
+替换优化器一般都能有较大的性能收益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0036.html)。下文以AdamW优化器为例，其他优化器的替换方式一致。
 
 ### torch_npu.optim.NpuFusedAdamW
 

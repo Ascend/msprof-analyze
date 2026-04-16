@@ -132,7 +132,7 @@ compare（性能比对）功能支持比较GPU与NPU之间、NPU与NPU之间的�
 
 **功能说明**
 
-性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，以打屏的形式输出总体指标，帮助用户定界劣化的方向。
+性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，打印输出总体指标，帮助用户定界劣化的方向。
 
 性能比对工具支持使用**命令行**和**脚本**两种方式执行性能数据比对操作，这两种方式均支持**通用参数**和**算子性能比对特有参数**。
 
@@ -225,13 +225,13 @@ python performance_compare.py [基准性能数据文件] [比对性能数据文�
 
 其中FA_MASK、CONV_MASK、MATMUL_MASK为GPU和NPU共有的上层应用operator的识别关键词，CUBE_MASK为底层GPU kernel cube识别的关键词，TRANS_MASK为底层NPU转换类kernel识别的关键词。
 
-比对结果分为打屏和performance_comparison_result_{timestamp}.xlsx两种形式输出，其中打屏输出为概要信息，xlsx文件保存详细结果。
+比对结果分为打印输出和performance_comparison_result_{timestamp}.xlsx两种形式输出，其中打印输出为概要信息，xlsx文件保存详细结果。
 
 **输出说明**
 
 - 输出总体比对结果到执行终端中，详细的比对结果在`performance_comparison_result_*.xlsx`
 - `performance_comparison_result_*.xlsx`文件详见[输出结果文件说明](#输出结果文件说明)。
-- 总体性能比对结果以打屏的形式呈现时，字段如下：
+- 总体性能比对结果以打印的形式呈现，字段如下：
 
 | 字段                                    | 说明                                                         |
 | --------------------------------------- | ------------------------------------------------------------ |
@@ -257,7 +257,7 @@ python performance_compare.py [基准性能数据文件] [比对性能数据文�
 
 ### 总体性能
 
-总体性能比对结果在performance_comparison_result_*.xlsx中OverallMetrics的sheet页呈现时，示例如下：
+总体性能比对结果在performance_comparison_result_*.xlsx中OverallMetrics的sheet页呈现，示例如下：
 
 ![OverallMetrics](./figures/OverallMetrics.png)
 
@@ -317,7 +317,7 @@ Index列完整字段说明：
 ```python
 with torch_npu.profiler.profile(
         activities=[torch_npu.profiler.ProfilerActivity.NPU],
-        schedule=torch_npu.profiler.schedule(wait=1, warmup=1, active=1, repeat=1, skip_first=10),
+        schedule=torch_npu.profiler.schedule(wait=1, warmup=1, active=1, repeat=1, skip_first=1),
         on_trace_ready=torch_npu.profiler.tensorboard_trace_handler("./result"),
 ) as prof:
         for step in range(steps):
@@ -337,7 +337,7 @@ activities配置仅采集NPU数据，不配置experimental_config参数以及其
 
 算子性能比对结果在performance_comparison_result_{timestamp}.xlsx中OperatorCompare和OperatorCompareStatistic的sheet页呈现。
 
-- OperatorCompareStatistic：算子为粒度的统计呈现，按照算子在device上的总耗时与基准算子的差距值（Diff Duration(ms)列）进行逆序。
+- OperatorCompareStatistic：以算子为粒度的统计呈现，按照算子在device上的总耗时与基准算子的差距值（Diff Duration(ms)列）进行逆序。
 - OperatorCompare：算子比对的明细展示，可以查看每一个算子对应的kernel详情。
 - Diff Ratio：比较算子在device上执行总耗时 / 基准算子在device上执行总耗时，红色代表劣化。
 - Device Duration(us)：该算子下发到device上执行的所有kernel耗时的总和。
@@ -402,7 +402,7 @@ ModuleCompare：模块及模块下算子比对的明细展示，可以查看每�
 
 算子内存比对结果在performance_comparison_result_*.xlsx中MemoryCompare和MemoryCompareStatistic的sheet页呈现。
 
-- MemoryCompareStatistic：算子为粒度的统计呈现，按照算子占用的总内存与基准算子的差距值(Diff Memory(MB))进行逆序。
+- MemoryCompareStatistic：以算子为粒度的统计呈现，按照算子占用的总内存与基准算子的差距值(Diff Memory(MB))进行逆序。
 
 - MemoryCompare：算子内存比对的明细展示，可以查看每一个算子申请内存的详情。
 
