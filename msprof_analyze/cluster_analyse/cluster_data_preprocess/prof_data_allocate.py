@@ -115,8 +115,8 @@ class ProfDataAllocate:
             Constant.MINDSPORE: defaultdict(list),
             Constant.MSMONITOR: defaultdict(list)
         }
-        # 处理输入路径，搜索路径下所有文件夹与文件，max_depth=10
-        for root, dirs, files in PathManager.limited_depth_walk(self.profiling_path):
+        # 处理输入路径，搜索路径下所有文件夹与文件，max_depth=5
+        for root, dirs, files in PathManager.limited_depth_walk(self.profiling_path, max_depth=5):
             self._scan_dirs_for_profiler_db(root, dirs, data_maps)
             self._scan_files_for_msmonitor_db(root, files, data_maps[Constant.MSMONITOR])
 

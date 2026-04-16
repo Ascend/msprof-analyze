@@ -68,11 +68,14 @@ class Interface:
         return self.collection_path
 
     def allocate_prof_data(self):
+        logger.info("Start allocate profiling data.")
         allocator = ProfDataAllocate(self.collection_path)
         if not allocator.allocate_prof_data():
             return {}
-        return {Constant.DATA_MAP: allocator.data_map, Constant.DATA_TYPE: allocator.data_type,
+        res = {Constant.DATA_MAP: allocator.data_map, Constant.DATA_TYPE: allocator.data_type,
                 Constant.PROFILING_TYPE: allocator.prof_type}
+        logger.info(f"Finish allocate profiling data: {len(allocator.data_map)} ranks, data type: {allocator.data_type}, profiling type: {allocator.prof_type}")
+        return res
 
     def run(self):
         PathManager.check_input_directory_path(self.collection_path)
