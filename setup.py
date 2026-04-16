@@ -46,7 +46,7 @@ requires = FileManager.read_common_file('requirements/build.txt').splitlines()
 tests_requires = FileManager.read_common_file('requirements/tests.txt').splitlines()
 tests_requires.extend(set(requires))
 
-version = FileManager.read_common_file('version.txt').strip()
+version = os.getenv("WHL_VERSION", FileManager.read_common_file('version.txt').strip())
 
 CONFIG_FILE_PATH = "config/config.ini"
 PathManager.check_input_file_path(CONFIG_FILE_PATH)
