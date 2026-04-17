@@ -14,6 +14,8 @@
 # limitations under the License.
 
 import os
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 
 from msprof_analyze.cluster_analyse.analysis.base_analysis import BaseAnalysis
 from msprof_analyze.prof_common.db_manager import DBManager
@@ -27,9 +29,25 @@ from msprof_analyze.cluster_analyse.cluster_data_preprocess.mindspore_data_prepr
 logger = get_logger()
 
 
+@dataclass
+class HostInfoScanTask:
+    rank_id: str
+    profiling_dir: str
+    db_path: str
+
+
+@dataclass
+class HostInfoScanResult:
+    host_uid: str = ""
+    host_name: str = ""
+    rank_device_info: list = field(default_factory=list)
+    warning_items: list = field(default_factory=list)
+
+
 class HostInfoAnalysis(BaseAnalysis):
     TABLE_HOST_INFO = "HOST_INFO"
     TABLE_RANK_DEVICE_MAP = "RANK_DEVICE_MAP"
+    DEFAULT_WORKERS = Constant.DEFAULT_PROCESSES
 
     def __init__(self, param: dict):
         super().__init__(param)
@@ -83,43 +101,95 @@ class HostInfoAnalysis(BaseAnalysis):
         DBManager.executemany_sql(db_conn, sql, self.all_rank_device_info)
 
     def analyze_host_info(self):
-        print_empty_host_info = ""
+        tasks = self._build_rank_tasks()
+        results = self._scan_all_ranks(tasks)
+        self._merge_results(results)
+
+    def _build_rank_tasks(self):
+        tasks = []
         for rank_id, profiling_dir in self.data_map.items():
-            host_info = []
-            rank_device_info = []
-            db_path = self._get_db_path(rank_id, profiling_dir)
-            if (os.path.exists(db_path) and DBManager.check_tables_in_db(db_path, self.TABLE_HOST_INFO)):
-                conn, curs = DBManager.create_connect_db(db_path)
-                sql = "select * from {0}".format(self.TABLE_HOST_INFO)
-                host_info = DBManager.fetch_all_data(curs, sql, is_dict=False)
-                DBManager.destroy_db_connect(conn, curs)
-            if not (host_info and host_info[0]):
-                if not print_empty_host_info:
-                    print_empty_host_info = f"No {self.TABLE_HOST_INFO} data in {self.data_type} file."
-                continue
-            if (os.path.exists(db_path) and DBManager.check_tables_in_db(db_path, self.TABLE_RANK_DEVICE_MAP)):
-                conn, curs = DBManager.create_connect_db(db_path)
-                sql = "select * from {0}".format(self.TABLE_RANK_DEVICE_MAP)
-                rank_device_info = DBManager.fetch_all_data(curs, sql, is_dict=False)
-                DBManager.destroy_db_connect(conn, curs)
-            if self.is_msprof:
-                device_id = MsprofDataPreprocessor.get_device_id(profiling_dir)
-                rank_device_info = [[rank_id, device_id]]
-            if self.is_mindspore:
-                prof_dir = MindsporeDataPreprocessor.get_msprof_dir(profiling_dir)
-                device_id = MsprofDataPreprocessor.get_device_id(prof_dir)
-                rank_device_info = [[rank_id, device_id]]
-            if not (rank_device_info and rank_device_info[0]):
-                if not print_empty_host_info:
-                    print_empty_host_info = f"No {self.TABLE_RANK_DEVICE_MAP} data in {self.data_type} file."
-                continue
-            host_uid, host_name = str(host_info[0][0]), str(host_info[0][1])
-            for idx, data in enumerate(rank_device_info):
-                rank_device_info[idx] = list(data) + [host_uid, profiling_dir]
-            self.all_rank_host_info[host_uid] = host_name
-            self.all_rank_device_info.extend(rank_device_info)
-        if print_empty_host_info:
-            logger.warning(print_empty_host_info)
+            tasks.append(HostInfoScanTask(
+                rank_id=str(rank_id),
+                profiling_dir=profiling_dir,
+                db_path=self._get_db_path(rank_id, profiling_dir)
+            ))
+        return tasks
+
+    def _scan_all_ranks(self, tasks):
+        if not tasks:
+            return []
+        max_workers = min(len(tasks), self.DEFAULT_WORKERS)
+        if max_workers <= 1:
+            return [self._scan_single_rank(task) for task in tasks]
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            return list(executor.map(self._scan_single_rank, tasks))
+
+    def _scan_single_rank(self, task: HostInfoScanTask):
+        if not task.db_path or not os.path.exists(task.db_path):
+            return self._build_warning_result(task, self.TABLE_HOST_INFO, self.TABLE_RANK_DEVICE_MAP)
+
+        conn, curs = DBManager.create_connect_db(task.db_path)
+        if not (conn and curs):
+            return self._build_warning_result(task, self.TABLE_HOST_INFO, self.TABLE_RANK_DEVICE_MAP)
+        host_info, rank_device_info = [], []
+        try:
+            host_info = self._query_table_data(curs, self.TABLE_HOST_INFO, first_row_only=True)
+            rank_device_info = self._get_rank_device_info(task, curs)
+        finally:
+            DBManager.destroy_db_connect(conn, curs)
+
+        missing_tables = []
+        if not (host_info and host_info[0]):
+            missing_tables.append(self.TABLE_HOST_INFO)
+        if not (rank_device_info and rank_device_info[0]):
+            missing_tables.append(self.TABLE_RANK_DEVICE_MAP)
+        if missing_tables:
+            return self._build_warning_result(task, *missing_tables)
+
+        host_uid, host_name = str(host_info[0][0]), str(host_info[0][1])
+        rank_device_info = [list(data) + [host_uid, task.profiling_dir] for data in rank_device_info]
+        return HostInfoScanResult(
+            host_uid=host_uid,
+            host_name=host_name,
+            rank_device_info=rank_device_info
+        )
+
+    def _merge_results(self, results):
+        self.all_rank_host_info = {}
+        self.all_rank_device_info = []
+        warning_groups = {}
+        for result in results:
+            if result.warning_items:
+                for warning_table, warning_rank_id in result.warning_items:
+                    warning_groups.setdefault(warning_table, []).append(str(warning_rank_id))
+            if result.host_uid and result.host_name:
+                self.all_rank_host_info[result.host_uid] = result.host_name
+            if result.rank_device_info:
+                self.all_rank_device_info.extend(result.rank_device_info)
+        aggregated_warning = self._build_aggregated_warning_message(warning_groups)
+        if aggregated_warning:
+            logger.warning(aggregated_warning)
+
+    def _get_rank_device_info(self, task: HostInfoScanTask, curs):
+        if self.is_msprof:
+            device_id = MsprofDataPreprocessor.get_device_id(task.profiling_dir)
+            return [[task.rank_id, device_id]] if device_id is not None else []
+        if self.is_mindspore:
+            prof_dir = MindsporeDataPreprocessor.get_msprof_dir(task.profiling_dir)
+            if not prof_dir:
+                return []
+            device_id = MsprofDataPreprocessor.get_device_id(prof_dir)
+            return [[task.rank_id, device_id]] if device_id is not None else []
+        return self._query_table_data(curs, self.TABLE_RANK_DEVICE_MAP)
+
+    @staticmethod
+    def _query_table_data(curs, table_name, first_row_only=False):
+        if not DBManager.judge_table_exists(curs, table_name):
+            return []
+        sql = f"select * from {table_name}"
+        if first_row_only:
+            sql += " limit 1"
+        return DBManager.fetch_all_data(curs, sql, is_dict=False)
 
     def _get_db_path(self, rank_id, profiling_dir):
         if self.is_msprof:
@@ -127,3 +197,19 @@ class HostInfoAnalysis(BaseAnalysis):
         if self.is_mindspore:
             return os.path.join(profiling_dir, Constant.SINGLE_OUTPUT, f"ascend_mindspore_profiler_{rank_id}.db")
         return os.path.join(profiling_dir, Constant.SINGLE_OUTPUT, f"ascend_pytorch_profiler_{rank_id}.db")
+
+    def _build_warning_result(self, task: HostInfoScanTask, *table_names: str):
+        warning_items = [(table_name, str(task.rank_id)) for table_name in table_names]
+        return HostInfoScanResult(warning_items=warning_items)
+
+    @staticmethod
+    def _build_aggregated_warning_message(warning_groups):
+        message_parts = []
+        for table_name, rank_ids in warning_groups.items():
+            unique_rank_ids = list(dict.fromkeys(rank_ids))
+            message_parts.append(
+                f"No {table_name} data for rank(s): [{','.join(unique_rank_ids)}] in db file."
+            )
+        if not message_parts:
+            return ""
+        return " ".join(message_parts)
