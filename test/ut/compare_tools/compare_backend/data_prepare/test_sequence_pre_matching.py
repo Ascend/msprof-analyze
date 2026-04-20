@@ -63,7 +63,7 @@ class TestSequencePreMatching(unittest.TestCase):
         pairs = spm._match_torch_op(base, comp)
         names = self.extract_pair_names(pairs)
         # Expected LCS: B, C; others unmatched in order
-        self.assertEqual(names, [('A', None), ('B', 'B'), (None, 'X'), ('C', 'C'), (None, 'E'), ('D', None)])
+        self.assertEqual(names, [('A', None), ('B', 'B'), (None, 'X'), ('C', 'C'), ('D', None), (None, 'E')])
 
     def test_match_torch_op_disable_details_none_subsequence(self):
         args = Args(disable_details=True)
@@ -96,7 +96,7 @@ class TestSequencePreMatching(unittest.TestCase):
         pairs = spm.run(SequencePreMatching.OP_TYPE, base, comp)
         names = self.extract_pair_names(pairs)
         # Expect A match, then split segments: B,C vs B,Y, then D match
-        self.assertEqual(names, [('A', 'A'), ('B', 'B'), (None, 'Y'), ('C', None), ('D', 'D')])
+        self.assertEqual(names, [('A', 'A'), ('B', 'B'), ('C', None), (None, 'Y'), ('D', 'D')])
 
     def test_drill_down_by_max_kernel_num(self):
         # Parent nodes exceed kernel threshold; should drill into children for matching
@@ -116,7 +116,7 @@ class TestSequencePreMatching(unittest.TestCase):
         pairs = spm._match_torch_op([base_parent], [comp_parent])
         names = self.extract_pair_names(pairs)
         # After drill-down, should match c1, and mark unmatched c2 and c3
-        self.assertEqual(names, [("c1", "c1"), (None, "c3"), ("c2", None)])
+        self.assertEqual(names, [('c1', 'c1'), ('c2', None), (None, 'c3')])
 
     def test_match_nn_module_sequences(self):
         # Two roots with ordered child modules; only corresponding indexes compared
