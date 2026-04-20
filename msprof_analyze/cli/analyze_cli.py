@@ -37,12 +37,16 @@ def analyze_cli(**kwargs):
                      name="all",
                      short_help='Analyze timeline fusion operators, operators and graph,\
                                  operators dispatching and cluster.')
-@click.option('--profiling_path', '-d', 'profiling_path', type=click.Path(), required=True,
+@click.option('--profiling_path', '-d', 'profiling_path',
+              type=click.Path(exists=True, file_okay=False, resolve_path=True), required=True,
               callback=PathManager.expanduser_for_cli, help='Directory of profiling data')
-@click.option('--benchmark_profiling_path', '-bp', 'benchmark_profiling_path', type=click.Path(),
+@click.option('--benchmark_profiling_path', '-bp', 'benchmark_profiling_path',
+              type=click.Path(exists=True, file_okay=False, resolve_path=True),
               callback=PathManager.expanduser_for_cli,
               help='Directory of benchmark profiling data, used for compare performance')
-@click.option('--output_path', '-o', 'output_path', type=click.Path(), callback=PathManager.expanduser_for_cli,
+@click.option('--output_path', '-o', 'output_path',
+              type=click.Path(file_okay=False, writable=True, executable=True),
+              callback=PathManager.expanduser_for_cli,
               help='Path of analysis output')
 @click.option('--cann_version', '-cv', 'cann_version',
               type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),

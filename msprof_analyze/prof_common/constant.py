@@ -57,7 +57,7 @@ class Constant(object):
     MAX_COMMON_SIZE = 1024 * 1024 * 1024
     MAX_TRACE_SIZE = 1024 * 1024 * 1024 * 5
     MAX_PATH_LENGTH = 4096
-    MAX_READ_DB_FILE_BYTES = 1024 * 1024 * 1024 * 8
+    MAX_READ_DB_FILE_BYTES = 1024 * 1024 * 1024 * 20
 
     # communication
     P2P = "p2p"

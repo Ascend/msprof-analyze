@@ -40,27 +40,32 @@ class DBManager:
         """
         create and connect database
         """
-        if check_db_path_valid(db_path):
+        if not check_db_path_valid(db_path):
+            return EmptyClass("empty conn"), EmptyClass("empty curs")
+        db_file_exist = os.path.exists(db_path)
+        try:
+            conn = sqlite3.connect(db_path)
+        except sqlite3.Error as err:
+            logger.error(f"Connect db failed: {err}")
+            return EmptyClass("empty conn"), EmptyClass("empty curs")
+        if not db_file_exist:
             try:
-                conn = sqlite3.connect(db_path)
-            except sqlite3.Error as err:
-                logger.error(err)
-                return EmptyClass("empty conn"), EmptyClass("empty curs")
-            try:
-                if mode == Constant.ANALYSIS:
-                    try:
-                        for func_name, params_count, class_name in SqlExtentionAggregateFunc:
-                            conn.create_aggregate(func_name, params_count, class_name)
-                    except sqlite3.Error as err:
-                        logger.error(err)
-                if isinstance(conn, sqlite3.Connection):
-                    curs = conn.cursor()
-                    os.chmod(db_path, Constant.FILE_AUTHORITY)
-                    return conn, curs
-            except sqlite3.Error as err:
-                logger.error(err)
-                return EmptyClass("empty conn"), EmptyClass("empty curs")
-        return EmptyClass("empty conn"), EmptyClass("empty curs")
+                os.chmod(db_path, Constant.FILE_AUTHORITY)
+            except PermissionError:
+                logger.error(f"Cannot chmod db file (ignore): {db_path}")
+            except Exception as err:
+                logger.error(f"Chmod db failed: {err}")
+        try:
+            # 注册自定义聚合函数
+            if mode == Constant.ANALYSIS:
+                for func_name, params_count, class_name in SqlExtentionAggregateFunc:
+                    conn.create_aggregate(func_name, params_count, class_name)
+            curs = conn.cursor()
+            return conn, curs
+        except sqlite3.Error as err:
+            logger.error(f"Init cursor failed: {err}")
+            conn.close()
+            return EmptyClass("empty conn"), EmptyClass("empty curs")
 
     @staticmethod
     def destroy_db_connect(conn: any, curs: any) -> None:

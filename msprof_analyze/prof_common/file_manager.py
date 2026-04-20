@@ -35,7 +35,7 @@ class FileManager:
         result_data = {}
         if file_size <= 0:
             return result_data
-        if not AdditionalArgsManager().force and file_size > Constant.MAX_FILE_SIZE:
+        if not AdditionalArgsManager().force and file_size > Constant.MAX_JSON_SIZE:
             logger.warning(f"The file({file_path}) size is {file_size} Byte, exceeds the preset max value. "
                            f"{Constant.FORCE_BYPASSES_SECURITY}")
             return result_data
@@ -52,7 +52,7 @@ class FileManager:
         file_size = os.path.getsize(file_path)
         if file_size <= 0:
             return []
-        if not AdditionalArgsManager().force and file_size > Constant.MAX_FILE_SIZE:
+        if not AdditionalArgsManager().force and file_size > Constant.MAX_CSV_SIZE:
             logger.warning(f"The file({file_path}) size is {file_size} Byte, exceeds the preset max value. "
                            f"{Constant.FORCE_BYPASSES_SECURITY}")
             return []

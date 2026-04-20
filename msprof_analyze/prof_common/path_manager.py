@@ -17,8 +17,11 @@ import re
 import shutil
 import platform
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
+
+logger = get_logger()
 
 
 def is_root():
@@ -140,7 +143,7 @@ class PathManager:
             if not os.path.exists(path):
                 continue
             if os.stat(path).st_uid != os.getuid():
-                raise RuntimeError(f"The path does not belong to you: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
+                logger.warning(f"The path does not belong to you: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
 
     @classmethod
     def check_path_writeable(cls, path):
@@ -158,7 +161,7 @@ class PathManager:
         if AdditionalArgsManager().force or is_root():
             return
         if not os.access(path, os.W_OK):
-            msg = f"The path is not writable: {path}. {Constant.FORCE_BYPASSES_SECURITY}"
+            msg = f"The path is not writable: {path}"
             raise RuntimeError(msg)
 
     @classmethod
@@ -180,7 +183,7 @@ class PathManager:
         if AdditionalArgsManager().force or is_root():
             return
         if not os.access(path, os.R_OK):
-            msg = f"The path is not readable: {path}. {Constant.FORCE_BYPASSES_SECURITY}"
+            msg = f"The path is not readable: {path}"
             raise RuntimeError(msg)
 
     @classmethod
@@ -188,7 +191,7 @@ class PathManager:
         if AdditionalArgsManager().force or is_root():
             return
         if not os.access(path, os.X_OK):
-            raise RuntimeError(f"The path is not executable: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
+            raise RuntimeError(f"The path is not executable: {path}")
 
     @classmethod
     def check_others_writable(cls, path):
@@ -196,7 +199,7 @@ class PathManager:
             return
         st = os.stat(path)
         if st.st_mode & 0o022:
-            raise RuntimeError(f"The path is writable by others: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
+            logger.warning(f"The path is writable by others: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
 
     @classmethod
     def remove_path_safety(cls, path: str):

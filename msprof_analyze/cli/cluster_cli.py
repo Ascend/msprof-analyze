@@ -25,11 +25,12 @@ context_settings['ignore_unknown_options'] = True
 
 @click.command(context_settings=context_settings, name="cluster",
                short_help='Analyze cluster data to locate performance bottleneck')
-@click.option('--profiling_path', '-d', type=click.Path(), required=True, callback=PathManager.expanduser_for_cli,
-              help='path of the profiling data')
+@click.option('--profiling_path', '-d', type=click.Path(exists=True, file_okay=False, resolve_path=True),
+              required=True, callback=PathManager.expanduser_for_cli, help='path of the profiling data')
 @click.option('--mode', '-m', type=click.Choice(ALL_FEATURE_LIST), default='all')
-@click.option('--output_path', '-o', type=click.Path(), default='', callback=PathManager.expanduser_for_cli,
-              help='Path of cluster analysis output')
+@click.option('--output_path', '-o',
+              type=click.Path(file_okay=False, writable=True, executable=True),
+              callback=PathManager.expanduser_for_cli, help='Path of cluster analysis output')
 @click.option('--force', is_flag=True,
               help="Indicates whether to skip verification of the owner, size, and permissions.")
 @click.option("--parallel_mode", type=str, help="context mode", default="concurrent")

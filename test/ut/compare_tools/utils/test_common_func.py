@@ -133,7 +133,7 @@ class TestCommonFunc(unittest.TestCase):
         comparison_ops = ["b", "c", "e"]
 
         result = longest_common_subsequence_matching(base_ops, comparison_ops, lambda x: x)
-        expected = [["a", None], ["b", "b"], ["c", "c"], [None, "e"], ["d", None]]
+        expected = [['a', None], ['b', 'b'], ['c', 'c'], ['d', None], [None, 'e']]
         self.assertEqual(result, expected)
 
         # 测试空列表情况
