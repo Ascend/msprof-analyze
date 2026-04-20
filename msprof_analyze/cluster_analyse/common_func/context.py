@@ -19,6 +19,7 @@ from functools import partial
 from concurrent import futures
 from collections import defaultdict
 
+from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -64,13 +65,22 @@ class Context(object):
         raise NotImplementedError
 
 
+def init_subprocess(config_dict):
+    from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
+    AdditionalArgsManager().init(config_dict)
+
+
 class ConcurrentContext(Context):
 
     def __init__(self, executor=None):
         self._mode = Constant.CONCURRENT_MODE
         super().__init__()
         self._custom = executor is None
-        self._executor = executor or futures.ProcessPoolExecutor(max_workers=os.cpu_count())
+        config = {
+            "force": AdditionalArgsManager().force,
+        }
+        self._executor = executor or futures.ProcessPoolExecutor(max_workers=os.cpu_count(),
+                                                                 initializer=init_subprocess, initargs=(config,))
         self.future_dict = defaultdict(list)
 
     def __enter__(self):

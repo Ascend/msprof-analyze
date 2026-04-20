@@ -21,7 +21,9 @@ from msprof_analyze.cluster_analyse.analysis.step_trace_time_analysis import Ste
 from msprof_analyze.cluster_analyse.analysis.host_info_analysis import HostInfoAnalysis
 from msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis import ClusterBaseInfoAnalysis
 from msprof_analyze.cluster_analyse.common_func.context import Context
+from msprof_analyze.cluster_analyse.common_func.context import init_subprocess
 from msprof_analyze.cluster_analyse.common_func.analysis_loader import get_class_from_name
+from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.cluster_analyse.recipes.communication_group_map.communication_group_map import CommunicationGroupMap
@@ -30,6 +32,12 @@ from msprof_analyze.cluster_analyse.recipes.communication_time_sum.communication
 from msprof_analyze.cluster_analyse.recipes.communication_matrix_sum.communication_matrix_sum import CommMatrixSum
 
 logger = get_logger()
+
+
+def run_task(analysis_cls, params, completed_processes, lock, config):
+    init_subprocess(config)
+    analysis = analysis_cls(params)
+    analysis.run(completed_processes, lock)
 
 
 class AnalysisFacade:
@@ -55,12 +63,14 @@ class AnalysisFacade:
 
         # 自定义进度条格式，显示已完成任务数量和总数量
         bar_format = '{l_bar}{bar} | {n_fmt}/{total_fmt}'
-
+        config = {
+            "force": AdditionalArgsManager().force,
+        }
         with tqdm(total=num_processes, desc="Cluster analyzing", bar_format=bar_format) as pbar:
             for analysis in analysis_module:
                 pbar.n = completed_processes.value
                 pbar.refresh()
-                process = Process(target=analysis(self.params).run, args=(completed_processes, lock))
+                process = Process(target=run_task, args=(analysis, self.params, completed_processes, lock, config))
                 process.start()
                 process_list.append(process)
 

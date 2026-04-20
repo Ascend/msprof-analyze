@@ -168,8 +168,6 @@ class CalibrateNpuGpu(BaseRecipeAnalysis):
 
     def run(self, context):
         PathManager.check_input_file_path(self.baseline_profiling_path)
-        PathManager.check_path_owner_consistent([self.baseline_profiling_path])
-
         logger.info("Analyzing GPU profile...")
         gpu_analyzer = GPUAnalyzer(self.baseline_profiling_path, self._recipe_name)
         gpu_df_dict = gpu_analyzer.get_aggregated_df()

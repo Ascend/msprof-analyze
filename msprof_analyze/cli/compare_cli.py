@@ -24,9 +24,11 @@ from msprof_analyze.advisor.utils.utils import debug_option
 
 @click.command(context_settings=Constant.CONTEXT_SETTINGS, name="compare",
                short_help='Compare the performance differences between GPUs and NPUs.')
-@click.option('--profiling_path', '-d', 'comparison_profiling_path', type=click.Path(), required=True,
+@click.option('--profiling_path', '-d', 'comparison_profiling_path',
+              type=click.Path(exists=True, resolve_path=True), required=True,
               callback=PathManager.expanduser_for_cli, help='Path of the profiling data')
-@click.option('--benchmark_profiling_path', '-bp', 'base_profiling_path', type=click.Path(), required=True,
+@click.option('--benchmark_profiling_path', '-bp', 'base_profiling_path',
+              type=click.Path(exists=True, resolve_path=True), required=True,
               callback=PathManager.expanduser_for_cli, help="Path of the benchmark data")
 @click.option('--enable_profiling_compare', is_flag=True, help="Enable overall performance comparison")
 @click.option('--enable_operator_compare', is_flag=True, help="Enable operator performance comparison")
@@ -36,7 +38,9 @@ from msprof_analyze.advisor.utils.utils import debug_option
 @click.option('--enable_kernel_compare', is_flag=True, help="Enable kernel performance comparison")
 @click.option('--disable_details', is_flag=True, help="Hide detailed comparison")
 @click.option('--disable_module', is_flag=True, help="Hide module comparison")
-@click.option('--output_path', '-o', 'output_path', type=click.Path(), callback=PathManager.expanduser_for_cli,
+@click.option('--output_path', '-o', 'output_path',
+              type=click.Path(file_okay=False, writable=True, executable=True),
+              callback=PathManager.expanduser_for_cli,
               help="Path of comparison result")
 @click.option('--max_kernel_num', 'max_kernel_num', type=int, help="The number of kernels per torch op is limited")
 @click.option('--op_name_map', type=ast.literal_eval, default='{}',
