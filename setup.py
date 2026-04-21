@@ -27,15 +27,6 @@ from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.utils import SafeConfigReader
 
-extras = {
-    "test": [
-        "pytest==6.2.4",
-        "pytest-cookies==0.6.1",
-        "pytest-cov==2.12.0",
-        "mock==4.0.3",
-    ]
-}
-
 sections = {
     'URL': ['msprof_analyze_url'],
     'EMAIL': ['ms_email']
@@ -63,10 +54,7 @@ try:
 except Exception as e:
     raise RuntimeError("The configuration file is incomplete and not configured ms_email information.") from e
 
-root_path = os.path.dirname(os.path.abspath(__file__))
-msprof_analyze_path = os.path.join(root_path, "msprof_analyze")
-child_packages = find_packages(msprof_analyze_path, exclude=["example"])
-msprof_analyze_packages = [f"msprof_analyze.{package}" for package in child_packages]
+
 setup(
     name="msprof-analyze",
     version=version,
@@ -77,14 +65,11 @@ setup(
     url=url,
     author="MindStudio",
     author_email=author_email,
-    package_dir={"": root_path,
-                 "msprof_analyze": msprof_analyze_path},
-    packages=find_packages(root_path, exclude=["example"]) + msprof_analyze_packages,
-    include_package_data=False,
+    packages=find_packages(include=["msprof_analyze*"], exclude=["test*", "misc*"]),
+    include_package_data=True,
     python_requires='>=3.7',
     install_requires=requires,
-    package_data={'': ['*.json', '*.ini', '*.txt', '*.yaml', '*.html', '*.ipynb']},
-    tests_require=tests_requires,
+    extras_require={"test": tests_requires},
     license='Apache License 2.0',
     entry_points="""
         [console_scripts]
