@@ -20,25 +20,13 @@ import sys
 
 
 def set_python_path():
-    cluster_analyse_root = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cluster_analyse")
-    compare_tools_root = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "compare_tools")
-    advisor_root = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "advisor")
-    advisor_backend_root = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "advisor", "advisor_backend")
-    profiler_parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    msprof_analyze_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     # Update PYTHONPATH
     python_path = os.environ.get("PYTHONPATH", "")
     if not python_path:
-        python_path += cluster_analyse_root
+        python_path += msprof_analyze_root
     else:
-        python_path += f":{cluster_analyse_root}"
-    python_path += f":{compare_tools_root}"
-    python_path += f":{advisor_root}"
-    python_path += f":{advisor_backend_root}"
-    python_path += f":{profiler_parent_dir}"
+        python_path += f":{msprof_analyze_root}"
     os.environ["PYTHONPATH"] = python_path
 
 

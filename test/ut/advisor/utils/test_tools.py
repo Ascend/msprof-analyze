@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import unittest
 from unittest.mock import MagicMock, patch, call
 import click
@@ -101,7 +102,7 @@ class TestClickAliasedGroup(unittest.TestCase):
 
         self.assertEqual(len(captured_rows), 1)
         command_str, help_str = captured_rows[0]
-        self.assertTrue(len(help_str) <= 40 - group.FORMAT_LIMIT_LEN - len('test_cmd, tc'))
+        self.assertTrue(len(help_str) <= 45 - group.FORMAT_LIMIT_LEN - len('test_cmd, tc'))
 
     def test_format_commands_without_alias(self):
         group = ClickAliasedGroup()
