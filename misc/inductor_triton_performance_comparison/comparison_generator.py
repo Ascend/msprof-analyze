@@ -35,7 +35,7 @@ logger = get_logger()
 class ComparisonGenerator:
     DB_PATTERN = "*_ascend_pt/ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler.db"
     MSTX_MESSAGE = "inductor_triton"
-    TRITON_OP_PREFIX = "triton_unk_fused"
+    TRITON_OP_PREFIX = "triton_"
     COL_MESSAGE = "message"
     COL_NAME = "Name"
     COL_DURATION = "Duration(us)"
