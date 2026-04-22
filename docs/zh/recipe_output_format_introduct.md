@@ -1,6 +1,6 @@
 # recipe结果和cluster_analysis.db交付件表结构说明
 
-> [!NOTE] 说明
+> [!NOTE]
 >
 > - msprof-analyze配置--mode参数时可分析并输出cluster_analysis.db交付件，本节介绍该交付件的表结构和字段说明。
 >

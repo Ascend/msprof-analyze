@@ -15,8 +15,8 @@
 msprof-analyze工具将Profiling性能数据作为输入，进行性能数据分析，支持分析如下场景的性能数据：
 
   * msProf场景性能数据采集，具体操作请参见《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/26.0.0/docs/zh/quick_start.md)》。
-  * PyTorch场景性能数据采集，具体操作请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
-  * MindSpore场景性能数据采集，具体操作请参见《[MindSpore调优工具](https://www.hiascend.com/document/detail/zh/mindstudio/830/T&ITools/Profiling/atlasprofiling_16_0118.html)》。
+  * PyTorch场景性能数据采集，具体操作请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+  * MindSpore场景性能数据采集，具体操作请参见《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/mindspore_profiler_user_guide.md)》。
   * msMonitor场景性能数据采集，具体操作请参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.0.0/docs/zh/quick_start.md)》。
 
 ## 工具使用
@@ -36,7 +36,7 @@ msprof-analyze为性能分析工具的主命令，可直接配置：
 msprof-analyze（version ≥ 8.2.0a1）性能分析工具通过命令行方式启动性能分析。命令格式如下：
 
 ```bash
-msprof-analyze -m [feature_option] -d <profiling_path> [global_option] [analyze_option]
+msprof-analyze [-m <feature_option>] -d <profiling_path> [global_option] [analyze_option]
 ```
 
 * `-m`：指定分析能力，`[feature_option]`可指定对应特性，具体请参见[分析特性介绍](#分析特性介绍)章节，必选。  

@@ -4,7 +4,7 @@
 
 advisor（专家建议）功能是将Ascend PyTorch Profiler或者MindSpore Profiler采集的性能数据进行分析，并输出性能调优建议。
 
-Ascend PyTorch Profiler采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》，MindSpore Profiler采集方法请参见《[性能调试](https://www.mindspore.cn/mindinsight/docs/zh-CN/r2.3/performance_profiling_ascend.html)》。
+Ascend PyTorch Profiler采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》，MindSpore Profiler采集方法请参见《[性能调试](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/mindspore_profiler_user_guide.md)》。
 
 ## 使用前准备
 
