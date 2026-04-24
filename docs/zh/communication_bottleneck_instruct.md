@@ -45,7 +45,7 @@ msprof-analyze -m communication_bottleneck -d <cluster_data> [-o <output_path>] 
 | --top_num | 可选 | 指定要分析的TopN个通信操作，默认为10。只分析耗时最长的N个通信操作。 |
 | --export_type | 可选 | 指定输出文件类型，可选db或text，默认为db。              |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](../../README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
 **使用示例**
 

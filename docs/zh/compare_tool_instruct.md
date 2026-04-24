@@ -103,7 +103,7 @@ compare（性能比对）功能支持比较GPU与NPU之间、NPU与NPU之间的�
 
   当前MindSpore场景仅支持NPU环境性能数据与PyTorch GPU性能数据进行比对；以及MindSpore训练工程在NPU上，不同版本之间的性能数据进行比对。
 
-  通过MindSpore性能调试工具采集NPU的性能数据，建议只采集或只解析一个step的性能数据，参考链接：[性能调试（Ascend）](https://www.mindspore.cn/mindinsight/docs/zh-CN/r2.3/performance_profiling_ascend.html)。
+  通过MindSpore性能调试工具采集NPU的性能数据，建议只采集或只解析一个step的性能数据，参考链接：[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/mindspore_profiler_user_guide.md)。
 
   MindSpore性能调试工具采集结果数据目录结构如下：
 

@@ -73,7 +73,7 @@ Successfully installed msprof-analyze-{version}
 
 3. 编译whl包。
 
-   > [!NOTE] 说明
+   > [!NOTE]
    >
    > 在安装如下依赖时，请注意使用满足条件的较新版本软件包，关注并修补存在的漏洞，尤其是已公开的CVSS打分大于7分的高危漏洞。
 
