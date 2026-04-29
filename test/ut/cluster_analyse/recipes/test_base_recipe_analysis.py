@@ -16,7 +16,7 @@
 import json
 import os
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 import pandas as pd
 
@@ -51,8 +51,7 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
 
             def run(self, context):
                 pass
-        with (patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path') as
-            mock_check_output_directory_path):
+        with patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path'):
             self.analysis = ConcreteRecipeAnalysis(self.params)
 
     def test_enter_exit(self):
@@ -209,6 +208,58 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
         self.assertEqual(result[0][Constant.PROFILER_DB_PATH], 'test_profiler.db')
         self.assertEqual(result[0][Constant.ANALYSIS_DB_PATH], 'test_analysis.db')
         self.assertEqual(result[0][Constant.STEP_RANGE], {'id': 1})
+
+    @patch('msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.logger.warning')
+    @patch('os.path.exists')
+    def test_get_rank_db_filters_by_required_db_keys_and_logs_summary(self, mock_exists, mock_warning):
+        class RequiredDbRecipeAnalysis(BaseRecipeAnalysis):
+            @property
+            def base_dir(self):
+                return 'test_dir'
+
+            @property
+            def required_db_keys(self):
+                return [Constant.PROFILER_DB_PATH, Constant.ANALYSIS_DB_PATH]
+
+            def run(self, context):
+                pass
+
+        params = dict(self.params)
+        params[Constant.RANK_LIST] = '0,1,9'
+        with patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path'):
+            analysis = RequiredDbRecipeAnalysis(params)
+
+        analysis._get_step_range = MagicMock(return_value={'id': 1})
+        analysis._get_profiler_db_path = MagicMock(side_effect=lambda rank_id, _: f'profiler_{rank_id}.db')
+        analysis._get_analysis_db_path = MagicMock(
+            side_effect=lambda rank_path: f'analysis_{os.path.basename(rank_path)}.db'
+        )
+        mock_exists.side_effect = lambda path: path in {'profiler_0.db', 'analysis_0.db', 'profiler_1.db'}
+
+        result = analysis._get_rank_db()
+
+        self.assertEqual(result, [{
+            Constant.RANK_ID: 0,
+            Constant.PROFILER_DB_PATH: 'profiler_0.db',
+            Constant.ANALYSIS_DB_PATH: 'analysis_0.db',
+            Constant.STEP_RANGE: {'id': 1},
+            Constant.PROFILING_PATH: '/tmp/to/data/0'
+        }])
+        mock_warning.assert_has_calls([
+            call('Invalid Rank id: [9].'),
+            call('test_recipe: missing analysis DB file (analysis.db) for 1 rank(s) [1]; these ranks will be skipped.')
+        ])
+
+    @patch.object(BaseRecipeAnalysis, '_get_rank_db')
+    def test_mapper_func_returns_empty_when_no_valid_rank_db(self, mock_get_rank_db):
+        mock_get_rank_db.return_value = []
+        context = MagicMock()
+
+        result = self.analysis.mapper_func(context)
+
+        self.assertEqual(result, [])
+        context.map.assert_not_called()
+        context.wait.assert_not_called()
 
     def test_get_profiler_db_path(self):
         # 测试 _get_profiler_db_path 函数

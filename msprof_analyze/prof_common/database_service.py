@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import re
 
 import pandas as pd
@@ -65,6 +66,9 @@ class DatabaseService:
     def query_data(self):
         result_data = {}
         if not self._table_info or not self._db_path:
+            return result_data
+        if not os.path.exists(self._db_path):
+            logger.error(f"Db file does not exist: {self._db_path}")
             return result_data
         try:
             conn, cursor = DBManager.create_connect_db(self._db_path)

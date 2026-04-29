@@ -44,6 +44,10 @@ class BaseRecipeAnalysis(ABC):
     DP_SIZE = "data_parallel_size"
     FACTOR = 1000.0
     DEFAULT_STEP_RANGE = {Constant.START_NS: 0, Constant.END_NS: Constant.MAX_INTEGER}
+    DB_DISPLAY_NAMES = {
+        Constant.PROFILER_DB_PATH: "profiler DB file (e.g. ascend_pytorch_profiler_xxx.db)",
+        Constant.ANALYSIS_DB_PATH: "analysis DB file (analysis.db)"
+    }
 
     def __init__(self, params):
         self._collection_dir = params.get(Constant.COLLECTION_PATH, "")
@@ -84,6 +88,10 @@ class BaseRecipeAnalysis(ABC):
         """
         raise NotImplementedError("Property base_dir need to be implemented.")
 
+    @property
+    def required_db_keys(self):
+        return [Constant.PROFILER_DB_PATH]
+
     @staticmethod
     def _filter_data(mapper_data):
         return [(rank, data) for rank, data in mapper_data if data is not None and len(data) != 0]
@@ -107,10 +115,13 @@ class BaseRecipeAnalysis(ABC):
         raise NotImplementedError("Function run need to be implemented.")
 
     def mapper_func(self, context):
+        db_paths = self._get_rank_db()
+        if not db_paths:
+            return []
         return context.wait(
             context.map(
                 self._mapper_func,
-                self._get_rank_db(),
+                db_paths,
                 analysis_class=self._recipe_name
             )
         )
@@ -235,6 +246,7 @@ class BaseRecipeAnalysis(ABC):
                 else:
                     invalid_rank_id.append(str(rank_id))
         db_paths = []
+        missing_required_db_rank_ids = {db_key: [] for db_key in self.required_db_keys}
         for rank_id in rank_ids:
             rank_path = self._data_map[rank_id]
             db_path_dict = {Constant.RANK_ID: rank_id, Constant.PROFILER_DB_PATH: "", Constant.ANALYSIS_DB_PATH: "",
@@ -244,20 +256,36 @@ class BaseRecipeAnalysis(ABC):
             if os.path.exists(profiler_db_path):
                 db_path_dict[Constant.PROFILER_DB_PATH] = profiler_db_path
                 db_path_dict[Constant.STEP_RANGE] = self._get_step_range(profiler_db_path)
-            else:
-                logger.warning(f"Profiler DB file not found, rank id: {rank_id}, db path: {profiler_db_path}.")
+            if os.path.exists(analysis_db_path):
+                db_path_dict[Constant.ANALYSIS_DB_PATH] = analysis_db_path
 
-            if self._prof_type != Constant.MSMONITOR:
-                if os.path.exists(analysis_db_path):
-                    db_path_dict[Constant.ANALYSIS_DB_PATH] = analysis_db_path
-                else:
-                    logger.warning(f"Analysis DB file not found, rank id: {rank_id}, db path: {analysis_db_path}.")
+            missing_keys = [key for key in self.required_db_keys if not db_path_dict.get(key)]
+            if missing_keys:
+                for missing_key in missing_keys:
+                    missing_required_db_rank_ids[missing_key].append(rank_id)
+                continue
+            db_paths.append(db_path_dict)
 
-            if db_path_dict.get(Constant.PROFILER_DB_PATH):
-                db_paths.append(db_path_dict)
         if invalid_rank_id:
             logger.warning(f"Invalid Rank id: [{','.join(invalid_rank_id)}].")
+        for db_key, missing_rank_ids in missing_required_db_rank_ids.items():
+            if not missing_rank_ids:
+                continue
+            db_name = self.DB_DISPLAY_NAMES.get(db_key, db_key)
+            rank_summary = self._format_rank_summary(missing_rank_ids)
+            logger.warning(
+                f"{self._recipe_name}: missing {db_name} for {len(missing_rank_ids)} rank(s) "
+                f"[{rank_summary}]; these ranks will be skipped."
+            )
         return db_paths
+
+    @staticmethod
+    def _format_rank_summary(rank_ids, max_count=10):
+        rank_ids = sorted(set(rank_ids))
+        if len(rank_ids) <= max_count:
+            return ",".join(str(rank_id) for rank_id in rank_ids)
+        prefix = ",".join(str(rank_id) for rank_id in rank_ids[:max_count])
+        return f"{prefix},...({len(rank_ids)} total)"
 
     def _get_profiler_db_path(self, rank_id, data_path):
         if self._prof_type == Constant.MSPROF:

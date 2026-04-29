@@ -46,6 +46,10 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
     def base_dir(self):
         return os.path.basename(os.path.dirname(__file__))
 
+    @property
+    def required_db_keys(self):
+        return [Constant.ANALYSIS_DB_PATH]
+
     def run(self, context):
         if not self.check_table_exist(self.TABLE_COMMUNICATION_GROUP_MAPPING):
             if not self.run_communication_group_map_recipe(context):

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+from unittest.mock import patch
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.compute_op_sum.compute_op_sum import ComputeOpSum
@@ -67,3 +68,16 @@ class TestComputeOpSum(unittest.TestCase):
         self.assertEqual(recipe.all_rank_stats.shape, (3, 9))
         self.assertEqual(recipe.per_rank_stats_by_optype.shape, (3, 10))
         self.assertEqual(recipe.per_rank_stats_by_opname.shape, (3, 10))
+
+    @patch("msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.BaseRecipeAnalysis.dump_data")
+    @patch("msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.BaseRecipeAnalysis.mapper_func")
+    def test_run_should_return_early_when_mapper_result_is_empty(self, mock_mapper_func, mock_dump_data):
+        mock_mapper_func.return_value = []
+        recipe = ComputeOpSum(self.PARAMS)
+
+        recipe.run(context=None)
+
+        mock_dump_data.assert_not_called()
+        self.assertIsNone(recipe.all_rank_stats)
+        self.assertIsNone(recipe.per_rank_stats_by_optype)
+        self.assertIsNone(recipe.per_rank_stats_by_opname)

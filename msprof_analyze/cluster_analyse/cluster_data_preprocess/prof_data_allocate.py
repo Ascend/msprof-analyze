@@ -208,6 +208,15 @@ class ProfDataAllocate:
             rank_id = self._extract_rank_id_from_profiler_db(file_name, prof_type)
             if rank_id is not None:
                 data_maps[prof_type][rank_id].append(root)
+                return
+        # 处理pytorch集群分析只保存了analysis.db的情况
+        analysis_db = os.path.join(root, Constant.ASCEND_PROFILER_OUTPUT, "analysis.db")
+        if not os.path.exists(analysis_db):
+            return
+        rank_id = DataPreprocessor.get_rank_id(root)
+        if rank_id != -1:
+            data_maps[Constant.PYTORCH][rank_id].append(root)
+
 
     def _scan_files_for_msmonitor_db(self, root: str, files: List[str], msmonitor_map: Dict):
         msmonitor_pattern = self.DB_PATTERNS[Constant.MSMONITOR]

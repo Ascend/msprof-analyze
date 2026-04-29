@@ -208,6 +208,23 @@ class TestProfDataAllocate(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(allocator.prof_type, Constant.PYTORCH)
         self.assertEqual(allocator.data_type, Constant.DB)
+
+    def test_allocate_db_prof_data_when_only_analysis_db_exists_then_return_true(self):
+        rank_root = os.path.join(self.TEST_DIR, "worker_0_20260101120000_ascend_pt")
+        profiler_output = os.path.join(rank_root, Constant.ASCEND_PROFILER_OUTPUT)
+        os.makedirs(profiler_output)
+        with open(os.path.join(rank_root, "profiler_info_3.json"), 'w') as f:
+            f.write("profiler_info")
+        with open(os.path.join(profiler_output, "analysis.db"), 'w') as f:
+            f.write("analysis")
+
+        allocator = ProfDataAllocate(self.TEST_DIR)
+        result = allocator.allocate_db_prof_data()
+
+        self.assertTrue(result)
+        self.assertEqual(allocator.prof_type, Constant.PYTORCH)
+        self.assertEqual(allocator.data_type, Constant.DB)
+        self.assertEqual(allocator.data_map, {3: rank_root})
     
     @patch('msprof_analyze.prof_common.path_manager.PathManager.limited_depth_walk')
     @patch(NAMESPACE + 'ProfDataAllocate.match_file_pattern_in_dir')
@@ -224,10 +241,11 @@ class TestProfDataAllocate(unittest.TestCase):
         
         self.assertTrue(result)
         self.assertIn(1, allocator._msmonitor_data_map)
-    
+
+
     @patch('msprof_analyze.prof_common.path_manager.PathManager.limited_depth_walk')
     @patch(NAMESPACE + 'ProfDataAllocate.match_file_pattern_in_dir')
-    def test_allocate_db_prof_data_when_both_pytorch_and_mindspore_then_return_false(self, mock_match_file, mock_walk):
+    def test_allocate_db_prof_data_when_both_pytorch_and_mindspore_then_recognize_pytorch(self, mock_match_file, mock_walk):
         """Test DB prof data allocation when both PyTorch and MindSpore data exist"""
         # Mock directory structure with both types
         mock_walk.return_value = [
@@ -236,12 +254,12 @@ class TestProfDataAllocate(unittest.TestCase):
                                                                          "ascend_mindspore_profiler_2.db"])
         ]
         mock_match_file.side_effect = ["ascend_pytorch_profiler_1.db", "ascend_mindspore_profiler_2.db"]
-        
+
         allocator = ProfDataAllocate(self.TEST_DIR)
         result = allocator.allocate_db_prof_data()
-        
-        self.assertFalse(result)
-        self.assertEqual(allocator.prof_type, Constant.INVALID)
+
+        self.assertTrue(result)
+        self.assertEqual(allocator.prof_type, Constant.PYTORCH)
     
     @patch('msprof_analyze.prof_common.path_manager.PathManager.limited_depth_walk')
     def test_allocate_db_prof_data_when_no_data_exists_then_return_false(self, mock_walk):

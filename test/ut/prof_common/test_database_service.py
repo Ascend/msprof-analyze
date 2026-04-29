@@ -112,13 +112,15 @@ class TestDatabaseService(unittest.TestCase):
     @patch('msprof_analyze.prof_common.database_service.DBManager.get_table_columns_name')
     @patch('msprof_analyze.prof_common.database_service.DBManager.judge_table_exists')
     @patch('msprof_analyze.prof_common.database_service.DBManager.create_connect_db')
-    def test_query_data_successful(self, mock_create_connect, mock_judge_table,
+    @patch('msprof_analyze.prof_common.database_service.os.path.exists')
+    def test_query_data_successful(self, mock_exists, mock_create_connect, mock_judge_table,
                                    mock_get_columns, mock_read_sql, mock_destroy_connect):
         """测试成功查询数据的情况"""
         # 创建模拟的数据库连接和游标
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_create_connect.return_value = (mock_conn, mock_cursor)
+        mock_exists.return_value = True
 
         # 设置表存在和列信息
         mock_judge_table.return_value = True
@@ -167,13 +169,15 @@ class TestDatabaseService(unittest.TestCase):
     @patch('msprof_analyze.prof_common.database_service.DBManager.get_table_columns_name')
     @patch('msprof_analyze.prof_common.database_service.DBManager.judge_table_exists')
     @patch('msprof_analyze.prof_common.database_service.DBManager.create_connect_db')
-    def test_query_data_invalid_columns(self, mock_create_connect, mock_judge_table,
+    @patch('msprof_analyze.prof_common.database_service.os.path.exists')
+    def test_query_data_invalid_columns(self, mock_exists, mock_create_connect, mock_judge_table,
                                         mock_get_columns, mock_destroy_connect, mock_error):
         """测试查询无效列的情况"""
         # 创建模拟的数据库连接和游标
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_create_connect.return_value = (mock_conn, mock_cursor)
+        mock_exists.return_value = True
 
         # 设置表存在但列不匹配
         mock_judge_table.return_value = True
