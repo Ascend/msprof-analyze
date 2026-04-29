@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import click
+import os
+import sys
 
 from msprof_analyze.cli.analyze_cli import analyze_cli
 from msprof_analyze.cli.complete_cli import auto_complete_cli
@@ -69,6 +71,72 @@ class SpecialHelpOrder(click.Group):
         return super(SpecialHelpOrder, self).parse_args(ctx, args)
 
 
+class CliLogo:
+    """MindStudio CLI logo printer."""
+
+    RESET = "\033[0m"
+    DIM_GRAY = "\033[38;5;240m"
+    BOLD_WHITE = "\033[1;97m"
+    HIGHLIGHT = "\033[48;5;21;38;5;46m"  # green on blue
+
+    def _should_use_color_logo(self) -> bool:
+        """Check if we should use colored logo with ANSI escape codes."""
+        if not sys.stderr.isatty():
+            return False
+        term = os.environ.get("TERM")
+        return term is not None and term not in ("dumb", "unknown")
+
+    def _render_simple(self) -> str:
+        """Return the plain ASCII logo."""
+        return (
+            "=================================================================" "\n"
+            "                   >>>>>   MindStudio   <<<<<" "\n"
+            "    THE END-TO-END TOOLCHAIN TO UNLEASH HUAWEI ASCEND COMPUTE" "\n"
+            "=================================================================" "\n\n"
+        )
+
+    def _render_colored(self) -> str:
+        """Return the colored logo with ANSI escape codes."""
+        return (
+            f"{self.DIM_GRAY}================================================================="
+            f"{self.RESET}\n"
+            f"{self.BOLD_WHITE}                   >>>>>  "
+            f"{self.HIGHLIGHT} MindStudio {self.RESET}{self.BOLD_WHITE}  <<<<<{self.RESET}\n"
+            f"{self.BOLD_WHITE}    THE END-TO-END TOOLCHAIN TO UNLEASH HUAWEI ASCEND COMPUTE"
+            f"{self.RESET}\n"
+            f"{self.DIM_GRAY}================================================================="
+            f"{self.RESET}\n\n"
+        )
+
+    def print_logo(self) -> None:
+        """Print the MindStudio logo to stderr."""
+        content = self._render_colored() if self._should_use_color_logo() else self._render_simple()
+        sys.stderr.write(content)
+        sys.stderr.flush()
+
+
+def _has_help_option(ctx) -> bool:
+    """检查命令行参数中是否包含帮助选项"""
+    # 获取原始命令行参数
+    args = sys.argv[1:] if len(sys.argv) > 1 else []
+
+    # 帮助选项列表
+    help_options = ['-H', '-h', '--help']
+
+    # 检查是否有帮助选项
+    for arg in args:
+        if arg in help_options:
+            return True
+
+    # 也检查 protected_args（click 内部存储）
+    if hasattr(ctx, 'protected_args'):
+        for arg in ctx.protected_args:
+            if arg in help_options:
+                return True
+
+    return False
+
+
 @click.group(context_settings=CONTEXT_SETTINGS, cls=SpecialHelpOrder, invoke_without_command=True)
 @click.option('--version', '-V', '-v', is_flag=True,
               callback=print_version_callback, expose_value=False,
@@ -76,6 +144,11 @@ class SpecialHelpOrder(click.Group):
 @click.pass_context
 def msprof_analyze_cli(ctx, **kwargs):
     """如果没有子命令，默认执行 cluster"""
+    # 检查是否包含帮助选项
+    if not _has_help_option(ctx):
+        logo = CliLogo()
+        logo.print_logo()
+
     if is_root():
         logger.warning(
             "Security Warning: Do not run this tool as root. "
