@@ -17,7 +17,11 @@ import unittest
 from unittest.mock import patch, MagicMock
 import os
 import shutil
-from msprof_analyze.cluster_analyse.analysis.host_info_analysis import HostInfoAnalysis
+from msprof_analyze.cluster_analyse.analysis.host_info_analysis import (
+    HostInfoAnalysis,
+    HostInfoScanResult,
+    HostInfoScanTask,
+)
 from msprof_analyze.prof_common.constant import Constant
 
 
@@ -135,86 +139,162 @@ class TestHostInfoAnalysis(unittest.TestCase):
         mock_db_manager.create_tables.assert_not_called()
         mock_db_manager.executemany_sql.assert_not_called()
     
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.DBManager')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.MsprofDataPreprocessor')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.MindsporeDataPreprocessor')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
-    def test_analyze_host_info_msprof_when_mode_is_msprof_and_info_exists(self, mock_logger, \
-                        mock_mindspore, mock_msprof, mock_db_manager):
-        self.analysis.is_msprof = True
-        mock_db_path = os.path.join(self.test_dir, 'test.db')
-        mock_db_manager.check_tables_in_db.return_value = True
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_db_manager.create_connect_db.return_value = (mock_conn, mock_cursor)
-        mock_db_manager.fetch_all_data.side_effect = [
-            [['host_uid_0', 'host_name_0']],
-            [['0', 'device0']],
-            [['host_uid_1', 'host_name_1']], 
-            [['1', 'device1']]
+    @patch.object(HostInfoAnalysis, '_scan_all_ranks')
+    @patch.object(HostInfoAnalysis, '_build_rank_tasks')
+    def test_analyze_host_info_when_scan_result_exists(self, mock_build_tasks, mock_scan_all_ranks):
+        mock_tasks = [MagicMock()]
+        mock_build_tasks.return_value = mock_tasks
+        mock_scan_all_ranks.return_value = [
+            HostInfoScanResult(
+                host_uid='host_uid_0',
+                host_name='host_name_0',
+                rank_device_info=[['0', 'device0', 'host_uid_0', self.profiling_dir_0]]
+            ),
+            HostInfoScanResult(
+                host_uid='host_uid_1',
+                host_name='host_name_1',
+                rank_device_info=[['1', 'device1', 'host_uid_1', self.profiling_dir_1]]
+            )
         ]
 
-        mock_msprof.get_device_id.side_effect = ['device0', 'device1']
-        mock_msprof.get_msprof_profiler_db_path.return_value = mock_db_path
+        self.analysis.analyze_host_info()
 
-        with patch('os.path.exists', return_value=True):
-            self.analysis.analyze_host_info()
-
-        expected_host_info = {
+        mock_build_tasks.assert_called_once()
+        mock_scan_all_ranks.assert_called_once_with(mock_tasks)
+        self.assertEqual(self.analysis.all_rank_host_info, {
             'host_uid_0': 'host_name_0',
             'host_uid_1': 'host_name_1'
-        }
-        self.assertEqual(self.analysis.all_rank_host_info, expected_host_info)
-        self.assertEqual(len(self.analysis.all_rank_device_info), 2)
-        expected_device_info_0 = ['0', 'device0', 'host_uid_0', self.profiling_dir_0]
-        expected_device_info_1 = ['1', 'device1', 'host_uid_1', self.profiling_dir_1]
-        self.assertIn(expected_device_info_0, self.analysis.all_rank_device_info)
-        self.assertIn(expected_device_info_1, self.analysis.all_rank_device_info)
-    
+        })
+        self.assertEqual(self.analysis.all_rank_device_info, [
+            ['0', 'device0', 'host_uid_0', self.profiling_dir_0],
+            ['1', 'device1', 'host_uid_1', self.profiling_dir_1]
+        ])
+
     @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.DBManager')
     @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.MsprofDataPreprocessor')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.MindsporeDataPreprocessor')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
-    def test_analyze_host_info_when_no_host_info(self, mock_logger, mock_mindspore, mock_msprof, mock_db_manager):
-        mock_db_path = os.path.join(self.test_dir, 'test.db')
-        mock_db_manager.check_tables_in_db.return_value = True
+    def test_scan_single_rank_msprof_when_info_exists(self, mock_msprof, mock_db_manager):
+        self.analysis.is_msprof = True
+        task = HostInfoScanTask('0', self.profiling_dir_0, os.path.join(self.test_dir, 'test.db'))
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_db_manager.create_connect_db.return_value = (mock_conn, mock_cursor)
-        
-        mock_db_manager.fetch_all_data.side_effect = [
-            [],                               
-            [['0', 'device0']],               
-            [],                               
-            [['1', 'device1']]                
-        ]
+        mock_db_manager.judge_table_exists.return_value = True
+        mock_db_manager.fetch_all_data.return_value = [['host_uid_0', 'host_name_0']]
+        mock_msprof.get_device_id.return_value = 'device0'
+
         with patch('os.path.exists', return_value=True):
-            self.analysis.analyze_host_info()
-        
-        self.assertEqual(self.analysis.all_rank_host_info, {})
-        self.assertEqual(self.analysis.all_rank_device_info, [])
-        self.assertTrue(mock_logger.warning.called)
-    
+            result = self.analysis._scan_single_rank(task)
+
+        self.assertEqual(result.host_uid, 'host_uid_0')
+        self.assertEqual(result.host_name, 'host_name_0')
+        self.assertEqual(result.rank_device_info, [['0', 'device0', 'host_uid_0', self.profiling_dir_0]])
+        mock_db_manager.create_connect_db.assert_called_once_with(task.db_path)
+        mock_db_manager.fetch_all_data.assert_called_once_with(mock_cursor, "select * from HOST_INFO limit 1",
+                                                               is_dict=False)
+        mock_db_manager.destroy_db_connect.assert_called_once_with(mock_conn, mock_cursor)
+
     @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.DBManager')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.MsprofDataPreprocessor')
-    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.MindsporeDataPreprocessor')
     @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
-    def test_analyze_host_info_when_db_not_exist(self, mock_logger, mock_mindspore, mock_msprof, mock_db_manager):
-        mock_db_manager.check_tables_in_db.return_value = True
-        
-        with patch('os.path.exists', return_value=False):
-            self.analysis.analyze_host_info()
-        
+    def test_analyze_host_info_when_no_host_info(self, mock_logger, mock_db_manager):
+        task = HostInfoScanTask('0', self.profiling_dir_0, os.path.join(self.test_dir, 'test.db'))
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_manager.create_connect_db.return_value = (mock_conn, mock_cursor)
+        mock_db_manager.judge_table_exists.return_value = True
+        mock_db_manager.fetch_all_data.return_value = []
+
+        with patch('os.path.exists', return_value=True):
+            result = self.analysis._scan_single_rank(task)
+
+        self.assertEqual(
+            result.warning_items,
+            [("HOST_INFO", "0"), ("RANK_DEVICE_MAP", "0")]
+        )
+        self.analysis._merge_results([result])
         self.assertEqual(self.analysis.all_rank_host_info, {})
         self.assertEqual(self.analysis.all_rank_device_info, [])
-        self.assertTrue(mock_logger.warning.called)
-    
+        mock_logger.warning.assert_called_once_with(
+            "No HOST_INFO data for rank(s): [0] in db file. "
+            "No RANK_DEVICE_MAP data for rank(s): [0] in db file."
+        )
+
+    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
+    def test_analyze_host_info_when_db_not_exist(self, mock_logger):
+        task = HostInfoScanTask('0', self.profiling_dir_0, os.path.join(self.test_dir, 'test.db'))
+
+        with patch('os.path.exists', return_value=False):
+            result = self.analysis._scan_single_rank(task)
+
+        self.assertEqual(
+            result.warning_items,
+            [("HOST_INFO", "0"), ("RANK_DEVICE_MAP", "0")]
+        )
+        self.analysis._merge_results([result])
+        self.assertEqual(self.analysis.all_rank_host_info, {})
+        self.assertEqual(self.analysis.all_rank_device_info, [])
+        mock_logger.warning.assert_called_once_with(
+            "No HOST_INFO data for rank(s): [0] in db file. "
+            "No RANK_DEVICE_MAP data for rank(s): [0] in db file."
+        )
+
     @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.DBManager')
     @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
     def test_analyze_host_info_when_no_tables(self, mock_logger, mock_db_manager):
-        mock_db_manager.check_tables_in_db.return_value = False
+        task = HostInfoScanTask('0', self.profiling_dir_0, os.path.join(self.test_dir, 'test.db'))
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_manager.create_connect_db.return_value = (mock_conn, mock_cursor)
+        mock_db_manager.judge_table_exists.return_value = False
+
         with patch('os.path.exists', return_value=True):
-            self.analysis.analyze_host_info()
-        
+            result = self.analysis._scan_single_rank(task)
+
+        self.assertEqual(
+            result.warning_items,
+            [("HOST_INFO", "0"), ("RANK_DEVICE_MAP", "0")]
+        )
+        self.analysis._merge_results([result])
         self.assertEqual(self.analysis.all_rank_host_info, {})
         self.assertEqual(self.analysis.all_rank_device_info, [])
+        mock_logger.warning.assert_called_once_with(
+            "No HOST_INFO data for rank(s): [0] in db file. "
+            "No RANK_DEVICE_MAP data for rank(s): [0] in db file."
+        )
+
+    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
+    def test_merge_results_when_multiple_warning_types_then_log_summary_once(self, mock_logger):
+        results = [
+            HostInfoScanResult(
+                warning_items=[("HOST_INFO", "1"), ("RANK_DEVICE_MAP", "1")]
+            ),
+            HostInfoScanResult(
+                warning_items=[("RANK_DEVICE_MAP", "2")]
+            ),
+        ]
+
+        self.analysis._merge_results(results)
+
+        mock_logger.warning.assert_called_once_with(
+            "No HOST_INFO data for rank(s): [1] in db file. "
+            "No RANK_DEVICE_MAP data for rank(s): [1,2] in db file."
+        )
+
+    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
+    def test_merge_results_when_warning_and_data_coexist_then_data_is_merged(self, mock_logger):
+        results = [
+            HostInfoScanResult(
+                host_uid='host_uid_0',
+                host_name='host_name_0',
+                rank_device_info=[['0', 'device0', 'host_uid_0', self.profiling_dir_0]],
+                warning_items=[("HOST_INFO", "0")]
+            )
+        ]
+
+        self.analysis._merge_results(results)
+
+        self.assertEqual(self.analysis.all_rank_host_info, {'host_uid_0': 'host_name_0'})
+        self.assertEqual(
+            self.analysis.all_rank_device_info,
+            [['0', 'device0', 'host_uid_0', self.profiling_dir_0]]
+        )
+        mock_logger.warning.assert_called_once_with("No HOST_INFO data for rank(s): [0] in db file.")
