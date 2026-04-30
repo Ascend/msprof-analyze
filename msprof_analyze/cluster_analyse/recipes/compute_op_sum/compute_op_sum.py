@@ -81,6 +81,8 @@ class ComputeOpSum(BaseRecipeAnalysis):
     def run(self, context):
         mapper_res = self.mapper_func(context)
         self.reducer_func(mapper_res)
+        if self.all_rank_stats is None or self.per_rank_stats_by_optype is None:
+            return
 
         if self._export_type == Constant.DB:
             self.save_db()

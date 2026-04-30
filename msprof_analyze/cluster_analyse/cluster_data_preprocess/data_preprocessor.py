@@ -92,11 +92,12 @@ class DataPreprocessor:
     def get_data_map(self):
         pass
 
-    def get_rank_id(self, dir_name: str) -> int:
+    @staticmethod
+    def get_rank_id(dir_name: str) -> int:
         files = os.listdir(dir_name)
         for file_name in files:
-            if file_name.startswith(self.PROFILER_INFO_HEAD) and file_name.endswith(self.PROFILER_INFO_EXTENSION):
-                rank_id_str = file_name[len(self.PROFILER_INFO_HEAD): -1 * len(self.PROFILER_INFO_EXTENSION)]
+            if file_name.startswith(DataPreprocessor.PROFILER_INFO_HEAD) and file_name.endswith(DataPreprocessor.PROFILER_INFO_EXTENSION):
+                rank_id_str = file_name[len(DataPreprocessor.PROFILER_INFO_HEAD): -1 * len(DataPreprocessor.PROFILER_INFO_EXTENSION)]
                 try:
                     rank_id = int(rank_id_str)
                 except ValueError:

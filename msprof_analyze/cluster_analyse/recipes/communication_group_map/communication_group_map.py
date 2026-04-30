@@ -39,6 +39,10 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
     def base_dir(self):
         return os.path.basename(os.path.dirname(__file__))
 
+    @property
+    def required_db_keys(self):
+        return [Constant.ANALYSIS_DB_PATH]
+
     @staticmethod
     def get_comm_type_from_op_name(op_name: str):
         op_name_lower = op_name.lower()
@@ -65,6 +69,8 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
 
     def run(self, context):
         mapper_res = self.mapper_func(context)
+        if not mapper_res:
+            return
         self.reducer_func(mapper_res)
         if self._export_type == Constant.DB:
             self.save_db()
@@ -76,6 +82,8 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
 
     def generate_communication_group_mapping(self, context):
         mapper_res = self.mapper_func(context)
+        if not mapper_res:
+            return pd.DataFrame()
         self.reducer_func(mapper_res)
         return self.group_df
 

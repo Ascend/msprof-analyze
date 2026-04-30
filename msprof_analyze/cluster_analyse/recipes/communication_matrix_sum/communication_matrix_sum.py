@@ -43,6 +43,10 @@ class CommMatrixSum(BaseRecipeAnalysis):
     def base_dir(self):
         return os.path.basename(os.path.dirname(__file__))
 
+    @property
+    def required_db_keys(self):
+        return [Constant.ANALYSIS_DB_PATH]
+
     @classmethod
     def _get_parallel_group_info(cls, profiler_db_path):
         rank_map = {}

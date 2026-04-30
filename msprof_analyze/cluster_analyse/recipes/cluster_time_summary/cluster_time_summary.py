@@ -61,6 +61,10 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
     def base_dir(self):
         return os.path.basename(os.path.dirname(__file__))
 
+    @property
+    def required_db_keys(self):
+        return [Constant.PROFILER_DB_PATH, Constant.ANALYSIS_DB_PATH]
+
     @classmethod
     def get_memory_not_overlap(cls, df: pd.DataFrame):
         memory_not_overlap_time = 0  # free的时间段里面memory的总时间（异步拷贝）

@@ -96,7 +96,7 @@ class AnalysisFacade:
                 self.params[Constant.RECIPE_NAME] = recipe_class[0]
                 with recipe_class[1](self.params) as recipe:
                     recipe.run(context)
-            logger.info(f"Recipe {recipe_class[0]} analysis launched successfully.")
+            logger.info(f"Recipe {recipe_class[0]} analysis finished.")
         except Exception as e:
             logger.error(f"Recipe {recipe_class[0]} analysis launched failed, {e}.")
 

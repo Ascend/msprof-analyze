@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import re
 from abc import ABC, abstractmethod
 
@@ -57,6 +58,9 @@ class BaseStatsExport(ABC):
         try:
             if not self._db_path:
                 logger.error("db path is None.")
+                return None
+            if not os.path.exists(self._db_path):
+                logger.error(f"Db file does not exist: {self._db_path}")
                 return None
             query = self.get_query()
             if query is None:

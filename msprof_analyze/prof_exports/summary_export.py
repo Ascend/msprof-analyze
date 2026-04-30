@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import pandas as pd
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
@@ -158,6 +160,9 @@ class KernelDetailsExport:
             if not self._db_path:
                 logger.error("db path is None.")
                 return None
+            if not os.path.exists(self._db_path):
+                logger.error(f"Db file does not exist: {self._db_path}")
+                return None
 
             compute_df = self._export_compute_task()
             communication_df = self._execute_sql(COMMUNICATION_INFO_SQL, [Constant.TABLE_COMMUNICATION_OP])
@@ -233,6 +238,9 @@ class KernelDetailsExport:
         return total_df
 
     def _check_table_column_exists(self, table_name, column_name):
+        if not os.path.exists(self._db_path):
+            logger.error(f"Db file does not exist: {self._db_path}")
+            return False
         conn, cursor = DBManager.create_connect_db(self._db_path, Constant.ANALYSIS)
         if not conn:
             return False
@@ -248,6 +256,9 @@ class KernelDetailsExport:
             DBManager.destroy_db_connect(conn, cursor)
 
     def _execute_sql(self, query, required_tables=None):
+        if not os.path.exists(self._db_path):
+            logger.error(f"Db file does not exist: {self._db_path}")
+            return pd.DataFrame()
         conn, cursor = DBManager.create_connect_db(self._db_path, Constant.ANALYSIS)
         if not conn:
             return pd.DataFrame()
