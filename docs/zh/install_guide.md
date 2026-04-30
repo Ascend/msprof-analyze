@@ -1,8 +1,14 @@
 # msprof-analyze工具安装指南
 
-msprof-analyze的安装方式包括：**pip安装**、**whl包安装**和**编译安装**。
+## 安装说明
+
+本文主要介绍msprof-analyze工具的安装、升级和卸载。当前支持**pip安装**和**源码编译安装**方式。
 
 ## pip安装
+
+pip安装支持**PyPI远程安装**和**下载whl安装**两种方式。
+
+### PyPI远程安装
 
 ```shell
 pip install msprof-analyze
@@ -20,26 +26,31 @@ pip install msprof-analyze
 Successfully installed msprof-analyze-{version}
 ```
 
-## whl包安装
+### 下载whl包安装
 
-1. whl包获取。 请通过[版本说明-发布程序包下载链接](release_notes.md#发布程序包下载链接)下载whl包。
+1. 请参考[msprof-analyze Release](https://gitcode.com/Ascend/msprof-analyze/releases)下载msprof-analyze的whl软件包和对应数字签名文件（.sha256）。
 
-2. whl包校验。
+   下载本软件即表示您同意《[华为企业业务最终用户许可协议（EULA）](https://e.huawei.com/cn/about/eula)》的条款和条件。
 
-   进入whl包所在目录，执行如下命令。
+2. 验证whl包的完整性。
 
-   ```bash
-   sha256sum {name}.whl
-   ```
+   1. 在whl包所在目录执行如下命令获取whl软件包的sha256校验码。
 
-   {name}为whl包名称。
+      ```bash
+      sha256sum {name}.whl
+      ```
 
-   若回显呈现对应版本whl包一致的**校验码**，则表示下载了正确的性能工具whl安装包。示例如下：
+      打印如下示例信息。
 
-   ```bash
-   sha256sum msprof_analyze-1.0-py3-none-any.whl
-   xx *msprof_analyze-1.0-py3-none-any.whl
-   ```
+      ```ColdFusion
+      {sha256} {name}.whl
+      ```
+
+   2. 用记事本打开数字签名文件查看sha256校验码。
+
+   3. 比对两个文件的sha256校验码是否一致。
+
+      若两个校验码一致，则表示下载了正确的软件包；若不一致，请不要使用该软件包，需要支持与服务请在论坛求助或提交技术工单。
 
 3. whl包安装。
 
@@ -55,11 +66,11 @@ Successfully installed msprof-analyze-{version}
    Successfully installed msprof_analyze-{version}
    ```
 
-## 编译安装
+## 源码编译安装
 
 1. 安装依赖。
 
-   编译前需要安装wheel。
+   源码编译前需要安装wheel。
 
    ```bash
    pip3 install wheel
@@ -78,6 +89,7 @@ Successfully installed msprof-analyze-{version}
    > 在安装如下依赖时，请注意使用满足条件的较新版本软件包，关注并修补存在的漏洞，尤其是已公开的CVSS打分大于7分的高危漏洞。
 
    ```bash
+   cd msprof-analyze
    pip3 install -r requirements.txt && python3 setup.py bdist_wheel
    ```
 
