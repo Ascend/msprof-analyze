@@ -48,6 +48,7 @@ class HostInfoAnalysis(BaseAnalysis):
     TABLE_HOST_INFO = "HOST_INFO"
     TABLE_RANK_DEVICE_MAP = "RANK_DEVICE_MAP"
     DEFAULT_WORKERS = Constant.DEFAULT_PROCESSES
+    MAX_WARNING_RANK_DISPLAY = 64
 
     def __init__(self, param: dict):
         super().__init__(param)
@@ -203,12 +204,24 @@ class HostInfoAnalysis(BaseAnalysis):
         return HostInfoScanResult(warning_items=warning_items)
 
     @staticmethod
+    def _format_warning_rank_ids(rank_ids):
+        unique_rank_ids = sorted(set(rank_ids), key=int)
+        rank_count = len(unique_rank_ids)
+        if rank_count <= HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY:
+            return f"[{','.join(unique_rank_ids)}]"
+        display_rank_ids = unique_rank_ids[:HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY]
+        return (
+            f"[{','.join(display_rank_ids)},...] "
+            f"({rank_count} ranks missing in total)"
+        )
+
+    @staticmethod
     def _build_aggregated_warning_message(warning_groups):
         message_parts = []
         for table_name, rank_ids in warning_groups.items():
-            unique_rank_ids = list(dict.fromkeys(rank_ids))
             message_parts.append(
-                f"No {table_name} data for rank(s): [{','.join(unique_rank_ids)}] in db file."
+                f"No {table_name} data for rank(s): "
+                f"{HostInfoAnalysis._format_warning_rank_ids(rank_ids)} in db file."
             )
         if not message_parts:
             return ""

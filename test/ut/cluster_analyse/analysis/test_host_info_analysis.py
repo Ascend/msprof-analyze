@@ -298,3 +298,21 @@ class TestHostInfoAnalysis(unittest.TestCase):
             [['0', 'device0', 'host_uid_0', self.profiling_dir_0]]
         )
         mock_logger.warning.assert_called_once_with("No HOST_INFO data for rank(s): [0] in db file.")
+
+    @patch('msprof_analyze.cluster_analyse.analysis.host_info_analysis.logger')
+    def test_merge_results_when_missing_rank_count_exceeds_limit_then_log_partial_ranks_with_total(self, mock_logger):
+        rank_count = HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY + 2
+        results = [
+            HostInfoScanResult(
+                warning_items=[("HOST_INFO", str(rank_id))]
+            )
+            for rank_id in range(rank_count)
+        ]
+
+        self.analysis._merge_results(results)
+
+        displayed_ranks = ",".join(str(rank_id) for rank_id in range(HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY))
+        mock_logger.warning.assert_called_once_with(
+            f"No HOST_INFO data for rank(s): [{displayed_ranks},...] "
+            f"({rank_count} ranks missing in total) in db file."
+        )
