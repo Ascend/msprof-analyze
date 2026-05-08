@@ -2,7 +2,6 @@
 <h1 align="center">MindStudio Profiler Analyze</h1>
 <div align="center">
   <p>🚀 <b>昇腾性能分析工具</b></p>
-
 [📖工具文档](./docs/zh/getting_started/quick_start.md) |
 [🔥昇腾社区](https://www.hiascend.com/developer/software/mindstudio) |
 [🌐Release](https://gitcode.com/Ascend/msprof-analyze/releases)
@@ -85,6 +84,10 @@ msprof-analyze
 
 欢迎大家为社区做贡献。如果有任何疑问或建议，请提交 [Issues](https://gitcode.com/Ascend/msprof-analyze/issues)，我们会尽快回复。感谢您的支持。
 
+|                   📱 关注 MindStudio 公众号                   | 💬 更多交流与支持                                             |
+| :----------------------------------------------------------: | :----------------------------------------------------------- |
+| <img src="https://raw.gitcode.com/Ascend/msot/files/master/docs/zh/figures/readme/officialAccount.png" width="120"><br><sub>*扫码关注获取最新动态*</sub> | 💡 **加入微信交流群**：<br>关注公众号，回复“交流群”即可获取入群二维码。<br><br>🛠️ **其他渠道**：<br>👉 昇腾助手：[![WeChat](https://img.shields.io/badge/WeChat-07C160?style=flat-square&logo=wechat&logoColor=white)](https://gitcode.com/Ascend/msot/blob/master/docs/zh/figures/readme/xiaozhushou.png)<br>👉 昇腾论坛：[![Website](https://img.shields.io/badge/Website-%231e37ff?style=flat-square&logo=RSS&logoColor=white)](https://www.hiascend.com/forum/) |
+
 ## 🤝 致谢
 
 本工具由华为公司的下列部门联合贡献：
@@ -98,4 +101,4 @@ msprof-analyze
 
 ## 关于MindStudio团队
 
-华为 MindStudio 全流程开发工具链团队致力于提供端到端的昇腾 AI 应用开发解决方案，使能开发者高效完成训练开发、推理开发和算子开发。欢迎通过 [昇腾社区](https://www.hiascend.com/developer/software/mindstudio) 了解更多相关产品与资料。
+华为 MindStudio 全流程开发工具链团队致力于提供端到端的昇腾 AI 应用开发解决方案，使能开发者高效完成训练开发、推理开发和算子开发。更多信息请访问 [昇腾社区](https://www.hiascend.com/developer/software/mindstudio) 和 [昇腾论坛](https://www.hiascend.com/forum/)。
