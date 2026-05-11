@@ -2,9 +2,11 @@
 <h1 align="center">MindStudio Profiler Analyze</h1>
 <div align="center">
   <p>🚀 <b>昇腾性能分析工具</b></p>
-[📖工具文档](./docs/zh/getting_started/quick_start.md) |
-[🔥昇腾社区](https://www.hiascend.com/developer/software/mindstudio) |
-[🌐Release](https://gitcode.com/Ascend/msprof-analyze/releases)
+
+[![doc](https://badgen.net/badge/doc/readthedocs/green)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/)
+[![License](https://badgen.net/badge/License/MulanPSL-2.0/blue)](https://raw.gitcode.com/Ascend/msinsight/files/master/License)
+[![Version](https://badgen.net/badge/Version/26.0.0-alpha.1/green)](https://gitcode.com/Ascend/msprof-analyze/releases) 
+[![Ascend](https://img.shields.io/badge/Hardware-Ascend-orange.svg)](https://www.hiascend.com/)
 
 </div>
 
