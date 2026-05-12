@@ -9,7 +9,7 @@
 * Ascend PyTorch Profiler 采集的 DB 格式集群数据
 * msMonitor 采集的集群轻量化 DB 数据
 
-采集指南请参见 [《数据准备》](../getting_started/profiling_data_guide.md)。
+采集指南请参见《[数据准备](../getting_started/profiling_data_guide.md)》。
 
 使用 Ascend PyTorch Profiler 时，需要采集或离线解析出 `db` 类型结果。示例如下：
 
@@ -49,7 +49,7 @@ msprof-analyze -m free_analysis -d ./cluster_data -o ./output
 - `-d`：指定 profiling 数据路径。
 - `-o`：指定输出路径；未配置时，结果默认保存在输入路径下的 `cluster_analysis_output` 目录。
 
-更多参数说明详见 [《参数说明》](#参数说明)。
+更多参数说明详见《[参数说明](#参数说明)》。
 
 ## 分析能力
 
@@ -103,6 +103,8 @@ msprof-analyze -m free_analysis -d ./cluster_data -o ./output
 
 msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果交付件表](./recipe_output_format_introduct.md)文档。
 
+## 附录
+
 ### 参数说明
 
 #### 全局参数
@@ -119,7 +121,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | --parallel_mode       | 可选     | 设置收集多卡、多节点db数据时的并发方式。取值为concurrent（使用concurrent.feature进程池实现并发）。                                                                                                                                       |
 | -v，-V<br/>--version | 可选 | 查看版本号。                                                                                                                                                                                                 |
 | -h，-H<br>--help     | 可选 | 命令行参数帮助信息。                                                                                                                                                                                             |
-| auto-completion     | 可选 | 自动补全，配置后在当前视图下配置msprof-analyze工具所有的子参数时，可以使用Tab将所有子参数自动补全。                                                      | -
+| auto-completion     | 可选 | 自动补全，配置后在当前视图下配置msprof-analyze工具所有的子参数时，可以使用Tab将所有子参数自动补全。                                                      |
 
 #### 分析能力参数
 

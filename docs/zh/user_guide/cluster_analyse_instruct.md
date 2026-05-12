@@ -35,19 +35,32 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 
 #### text 类型结果
 
-打开某张卡采集到的 *_ascend_pt 目录，可用的 text 类型结果必须包含以下文件：
+打开某张卡采集到的 *_ascend_pt 目录，可用的 text 类型结果必须包含以下目录和文件：
 
-- `profiler_info_*.json`
-- `ASCEND_PROFILER_OUTPUT/step_trace_time.csv`
-- `ASCEND_PROFILER_OUTPUT/communication.json`
-- `ASCEND_PROFILER_OUTPUT/communication_matrix.json`
+```text
+*_ascend_pt
+├── ASCEND_PROFILER_OUTPUT
+    ├── step_trace_time.csv
+    ├── communication.json
+    └── communication_matrix.json
+└── profiler_info_*.json
+```
 
 #### db 类型结果
 
-打开某张卡采集到的 *_ascend_pt 目录，可用的 db 类型结果通常应包含以下文件：
+打开某张卡采集到的 *_ascend_pt 目录，可用的 db 类型结果通常应包含以下目录和文件：
 
-- `ASCEND_PROFILER_OUTPUT/analysis.db`
-- `ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db`
+```text
+*_ascend_pt
+├── ASCEND_PROFILER_OUTPUT
+    ├── analysis.db
+    └── ascend_pytorch_profiler_{rank_id}.db
+└── profiler_info_*.json
+```
+
+> [!NOTE]
+>
+> 对于PyTorch集群性能数据需要汇总分析的场景，由于数据量较大，转存的代价高，且数据分析耗时长。因此可单独保存`analysis.db`和`profiler_info_*.json`文件（须保留原有目录结构）进行`msprof-analyze cluster`分析，可节省分析耗时完成基本的性能分析。
 
 ### 集群输入目录要求
 
@@ -84,20 +97,20 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 
    参数说明：
    
-   | 参数名                | 说明                                                         | 是否必选 |
-   | --------------------- | ------------------------------------------------------------ | -------- |
-   | --profiling_path或-d  | 性能数据汇集目录。未配置-o参数时，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 | 是       |
-   | --output_path或-o     | 自定义输出路径，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 | 否       |
-   | --mode或-m            | 数据解析模式，取值详见“**--mode参数说明**”表。               | 否       |
-   | --force               | 强制执行cluster。配置后可强制跳过如下情况：<br/>        指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>        csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 | 否       |
+   | 参数名               | 可选/必选 | 说明                                                         |
+   | -------------------- | --------- | ------------------------------------------------------------ |
+   | --profiling_path或-d | 必选      | 性能数据汇集目录。未配置-o参数时，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
+   | --output_path或-o    | 可选      | 自定义输出路径，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
+   | --mode或-m           | 可选      | 数据解析模式，取值详见“**--mode参数说明**”表。               |
+   | --force              | 可选      | 强制执行cluster。配置后可强制跳过如下情况：<br>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br>&#8226; csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br>配置该参数表示开启强制执行，默认未配置表示关闭。 |
    
    --mode参数说明：
    
-   | 参数名               | 说明                                                         | 是否必选 |
-   | -------------------- | ------------------------------------------------------------ | -------- |
-   | communication_matrix | 解析通信矩阵数据。                                           | 否       |
-   | communication_time   | 解析通信耗时数据。                                           | 否       |
-   | all                  | 同时解析通信矩阵communication_matrix和通信耗时数据communication_time，--mode参数默认值为all。 | 否       |
+   | 参数名               | 可选/必选 | 说明                                                         |
+   | -------------------- | --------- | ------------------------------------------------------------ |
+   | communication_matrix | 可选      | 解析通信矩阵数据。                                           |
+   | communication_time   | 可选      | 解析通信耗时数据。                                           |
+   | all                  | 可选      | 同时解析通信矩阵communication_matrix和通信耗时数据communication_time，--mode参数默认值为all。 |
 
 3. 推荐使用 MindStudio Insight 工具导入生成的 `cluster_analysis_output` 文件夹进行可视化展示，如下图所示。具体使用方法请参见《[MindStudio Insight用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/overview.md)》。
 
@@ -157,7 +170,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 * 根据Bubble时间的占比和理论计算公式判断bubble设置是否合理，是否stage间有不均衡现象。
 
-以上时间理论上都应该处于持平状态，即最大值小于最小值5%，否则就可能出现慢卡。
+以上时间理论上都应该处于持平状态，即最大值最小值的差值不高于5%，否则就可能出现慢卡。
 
 #### cluster_communication_matrix.json
 
@@ -165,7 +178,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 直接打开json（vscode或json查看器）, 搜索"Total", 会有多个搜索结果，一般来说链路带宽信息的结构：
 
-```bash
+```json
 {src_rank}-{dst_rank}: {
     "Transport Type": "LOCAL",
     "Transit Time(ms)": 0.02462,
