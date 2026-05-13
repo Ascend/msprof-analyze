@@ -123,7 +123,7 @@ class KernelDetailsBean:
         return self.name.lower().startswith("aclnninplacecopy") and "tensormove" in self.name.lower()
 
     def is_flash_attention(self):
-        return "flashattention" in self.op_type.lower()
+        return "flashattention" in self.op_type.lower() or "fusedinferattention" in self.op_type.lower()
 
     def is_matmul(self):
         return "matmul" in self.op_type.lower()
