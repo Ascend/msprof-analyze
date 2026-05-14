@@ -19,6 +19,7 @@ import pandas as pd
 from msprof_analyze.cluster_analyse.common_func.utils import stdev
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.cann_api_sum_export import CannApiSumExport
 
@@ -26,6 +27,10 @@ logger = get_logger()
 
 
 class CannApiSum(BaseRecipeAnalysis):
+    SUGGESTION = """
+    CannApiSumRank / rank_stats.csv：按 rank 分别统计各类 CANN API 的耗时与分布，用它再定位是哪些 rank 导致该 API 异常。
+    CannApiSum / all_stats.csv：汇总所有 rank 上各类 CANN API 的耗时与分布，用它先定位整体最耗时、波动最大的热点 API。
+    """
 
     def __init__(self, params):
         super().__init__(params)
@@ -94,10 +99,26 @@ class CannApiSum(BaseRecipeAnalysis):
         self.dump_data(self._stats_rank_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSumRank",
                        index=False)
         self.dump_data(self._stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSum")
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": ["CannApiSumRank", "CannApiSum"]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def save_csv(self):
         self.dump_data(self._stats_rank_data, "rank_stats.csv", index=False)
         self.dump_data(self._stats_data, "all_stats.csv")
+        set_json_success(
+            msg_dict={
+                "csv_path": [
+                    os.path.join(self.output_path, "rank_stats.csv"),
+                    os.path.join(self.output_path, "all_stats.csv")
+                ],
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)

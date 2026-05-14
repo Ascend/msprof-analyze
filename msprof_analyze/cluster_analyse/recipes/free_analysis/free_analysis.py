@@ -20,6 +20,7 @@ from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_colu
 from msprof_analyze.cluster_analyse.common_func.time_range_calculator import RangeCaculator
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.utils import convert_ns_to_us, convert_ns_to_us_str
 from msprof_analyze.prof_exports import free_analysis_export
@@ -43,6 +44,7 @@ class FreeAnalysis(BaseRecipeAnalysis):
     DEFAULT_TOP_NUM = 10
     TOP_NUM = "top_num"
     DIFF_WAIT_THRESHOLD_NS = 50 * 1000  # 50 us
+    SUGGESTION = "按 rank 记录每段空闲的时长、PyTorch/CANN 层空闲时间及空闲原因，识别每个rank中耗时最长的空闲时间及其产生原因。"
 
     def __init__(self, params):
         super().__init__(params)
@@ -180,6 +182,13 @@ class FreeAnalysis(BaseRecipeAnalysis):
             "FreeAnalysis",
             index=False
         )
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": ["FreeAnalysis"]
+            },
+            suggestion=self.SUGGESTION
+        )
     
     def save_csv(self, free_time_df):
         if free_time_df is None or free_time_df.empty:
@@ -197,6 +206,12 @@ class FreeAnalysis(BaseRecipeAnalysis):
         }
         csv_df = free_time_df.rename(columns=column_mapping)
         self.dump_data(csv_df, "free_analysis.csv", index=False)
+        set_json_success(
+            msg_dict={
+                "csv_path": os.path.join(self.output_path, "free_analysis.csv")
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         rank_id = data_map.get(Constant.RANK_ID)

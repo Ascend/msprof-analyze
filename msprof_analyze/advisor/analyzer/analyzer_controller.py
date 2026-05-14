@@ -24,6 +24,7 @@ from pathlib import Path
 
 import psutil
 
+from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.advisor.analyzer.cluster.slow_rank_analyzer import SlowRankAnalyzer
 from msprof_analyze.advisor.analyzer.cluster.slow_link_analyzer import SlowLinkAnalyzer
@@ -39,6 +40,8 @@ from msprof_analyze.cluster_analyse.cluster_data_preprocess.pytorch_data_preproc
 from msprof_analyze.cluster_analyse.cluster_data_preprocess.mindspore_data_preprocessor import MindsporeDataPreprocessor
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
+from msprof_analyze.prof_common.logger import is_agent_mode
 
 # 以spawn模式启动多进程，避免fork主进程资源。如果主进程逻辑较为复杂，fork可能会导致异常。
 mp.set_start_method("spawn", force=True)
@@ -657,11 +660,21 @@ class AnalyzerController:
             self.slow_link_analyzer = SlowLinkAnalyzer(profiling_path, output_path=self.kwargs.get("output_path"))
             job_list = self.do_cluster_analysis(profiling_path, benchmark_profiling_path)
 
+        is_agent = is_agent_mode()
         for i, (dimension, scope, interface, kwargs) in enumerate(job_list[::-1]):
             result_list.append(
-                interface.get_result(dimension, scope, render_html=i == len(job_list) - 1, output_dict=False,
-                                     **kwargs)
+                interface.get_result(
+                    dimension,
+                    scope,
+                    render_html=i == len(job_list) - 1 and not is_agent,
+                    output_dict=False,
+                    **kwargs
+                )
             )
+
+        if is_agent:
+            self._stdout_advisor_result()
+            return
 
         for result in result_list[::-1]:
             if result and hasattr(result, "show"):
@@ -943,3 +956,27 @@ class AnalyzerController:
             logger.info("Enable computation comparison of fast and slow rank/step")
             job_list += self._profiling_comparison([kwargs])
         return job_list
+
+    def _stdout_advisor_result(self):
+        tables = ["问题综述", "整网耗时分析", "慢卡分析", "慢链路分析",
+                  "problems", "Overall Summary", "slow rank", "slow link"]
+        prefixes = ['Api Compare', 'Kernel Compare']
+        def should_output(sheet_name):
+            return sheet_name in tables or any(sheet_name.startswith(p) for p in prefixes)
+        optimize_result = OptimizeResult()
+        sheet_data = optimize_result.data
+        result = {}
+        if isinstance(sheet_data, dict):
+            for sheet_name, value in sheet_data.items():
+                if not should_output(sheet_name):
+                    continue
+                headers = value.get("headers", []) if isinstance(value, dict) else []
+                data = value.get("data", []) if isinstance(value, dict) else []
+                result[sheet_name] = {
+                    "headers": headers,
+                    "data": data,
+                }
+        if not result:
+            set_json_success(suggestion="No optimization suggestions found.")
+            return
+        set_json_success(msg_dict=result)

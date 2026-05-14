@@ -22,6 +22,7 @@ from msprof_analyze.cluster_analyse.common_func.analysis_loader import get_class
 from msprof_analyze.cluster_analyse.common_func.table_constant import TableConstant
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.database_service import DatabaseService
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.db_manager import DBManager
@@ -34,6 +35,10 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
     TABLE_CLUSTER_COMM_BANDWIDTH = "ClusterCommunicationBandwidth"
 
     TABLE_COMMUNICATION_GROUP_MAPPING = "CommunicationGroupMapping"
+    SUGGESTION = f"""
+    ClusterCommunicationTime / cluster_communication_time.csv：按 step、rank、通信算子名记录通信总耗时、传输耗时、等待耗时、同步耗时及对应占比，识别具体通信算子的瓶颈类型。
+    ClusterCommunicationBandwidth / cluster_communication_bandwidth.csv：按 step、rank、通信算子名记录通信算子的传输类型、数据量、耗时、带宽、大包占比与通信次数。用它快速识别低带宽通信算子。"
+    """
 
     def __init__(self, params):
         super().__init__(params)
@@ -90,10 +95,26 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
                        self.TABLE_CLUSTER_COMM_TIME, index=False)
         self.dump_data(self.communication_bandwidth, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
                        self.TABLE_CLUSTER_COMM_BANDWIDTH, index=False)
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [self.TABLE_CLUSTER_COMM_TIME, self.TABLE_CLUSTER_COMM_BANDWIDTH]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def save_csv(self):
         self.dump_data(self.communication_time, "cluster_communication_time.csv", index=False)
         self.dump_data(self.communication_bandwidth, "cluster_communication_bandwidth.csv", index=False)
+        set_json_success(
+            msg_dict={
+                "csv_path": [
+                    os.path.join(self.output_path, "cluster_communication_time.csv"),
+                    os.path.join(self.output_path, "cluster_communication_bandwidth.csv")
+                ]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def check_table_exist(self, table):
         db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)

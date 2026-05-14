@@ -19,6 +19,7 @@ import pandas as pd
 from msprof_analyze.cluster_analyse.common_func.utils import describe_duration
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.hccl_sum_export import HcclSumExport
 
@@ -43,6 +44,12 @@ class HcclSum(BaseRecipeAnalysis):
 
     TOP_NUM = "top_num"
     DEFAULT_TOP_NUM = 15
+    SUGGESTION = """
+    HcclAllRankStats / all_stats.csv：汇总所有 rank 上各类 HCCL 通信算子的耗时分布，用它找整体最耗时、波动最大的通信类型，重点关注集合通信算子。
+    HcclPerRankStats / rank_stats.csv：按 rank 统计各类 HCCL 通信算子的耗时分布，用它定位是哪几个 rank 的通信异常。
+    HcclTopOpStats / top_op_stats.csv：统计全局最慢的 Top N 通信算子实例并给出最慢/最快 rank，用它从“通信类型”继续下钻到“具体慢算子”。
+    HcclGroupNameMap / group_name_map.csv：给出通信域和其中包含的 ranks，用它辅助判断异常通信是否集中在某个通信组。
+    """
 
     def __init__(self, params):
         super().__init__(params)
@@ -123,12 +130,31 @@ class HcclSum(BaseRecipeAnalysis):
         self.dump_data(self.per_rank_stats, "rank_stats.csv")
         self.dump_data(self.top_op_stats, "top_op_stats.csv")
         self.dump_data(self.group_name_map, "group_name_map.csv")
+        set_json_success(
+            msg_dict={
+                "csv_path": [
+                    os.path.join(self.output_path, "all_stats.csv"),
+                    os.path.join(self.output_path, "rank_stats.csv"),
+                    os.path.join(self.output_path, "top_op_stats.csv"),
+                    os.path.join(self.output_path, "group_name_map.csv")
+                ]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def save_db(self):
         self.dump_data(self.all_rank_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_ALL_RANK_STATS)
         self.dump_data(self.per_rank_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_PER_RANK_STATS)
         self.dump_data(self.top_op_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_TOP_OP_STATS)
         self.dump_data(self.group_name_map, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_GROUP_NAME_MAP)
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [self.TABLE_ALL_RANK_STATS, self.TABLE_PER_RANK_STATS,
+                           self.TABLE_TOP_OP_STATS, self.TABLE_GROUP_NAME_MAP]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
