@@ -19,6 +19,7 @@ import pandas as pd
 from msprof_analyze.cluster_analyse.common_func.utils import describe_duration
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.compute_op_sum_export import ComputeOpSumExport
 from msprof_analyze.prof_exports.compute_op_sum_export import ComputeOpSumExportExcludeOpName
@@ -33,6 +34,11 @@ class ComputeOpSum(BaseRecipeAnalysis):
 
     EXCLUDE_OP_NAME = "exclude_op_name"
     DEFAULT_SWITCH = False
+    SUGGESTION = """
+    ComputeOpAllRankStats / all_stats.csv：汇总所有 rank 上各类计算算子按 OpType + TaskType 的耗时分布，用它先找整体最重的计算类型。
+    ComputeOpPerRankStatsByOpType / per_rank_stats_by_optype.csv：按 rank 统计各类计算算子的耗时分布，用它定位是哪几个 rank 的某类计算算子异常慢。
+    ComputeOpPerRankStatsByOpName / per_rank_stats_by_opname.csv：按 rank 统计具体算子名、类型和输入 shape 的耗时分布，用它继续下钻到“是哪一个具体算子/shape 组合导致变慢”。
+    """
 
     def __init__(self, params):
         super().__init__(params)
@@ -103,6 +109,16 @@ class ComputeOpSum(BaseRecipeAnalysis):
         self.dump_data(self.per_rank_stats_by_optype, "rank_stats_by_optype.csv")
         if not self.exclude_op_name:
             self.dump_data(self.per_rank_stats_by_opname, "rank_stats_by_opname.csv")
+        set_json_success(
+            msg_dict={
+                "csv_path": [
+                    os.path.join(self.output_path, "all_stats.csv"),
+                    os.path.join(self.output_path, "rank_stats_by_optype.csv"),
+                    os.path.join(self.output_path, "rank_stats_by_opname.csv")
+                ]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def save_db(self):
         self.dump_data(self.all_rank_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_ALL_RANK_STATS)
@@ -111,6 +127,17 @@ class ComputeOpSum(BaseRecipeAnalysis):
         if not self.exclude_op_name:
             self.dump_data(self.per_rank_stats_by_opname, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
                        self.TABLE_PER_RANK_STATS_BY_OPNAME)
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [
+                    self.TABLE_ALL_RANK_STATS,
+                    self.TABLE_PER_RANK_STATS_BY_OPTYPE,
+                    self.TABLE_PER_RANK_STATS_BY_OPNAME
+                ]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)

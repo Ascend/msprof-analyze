@@ -21,7 +21,7 @@ from collections import defaultdict
 
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
-from msprof_analyze.prof_common.logger import get_logger
+from msprof_analyze.prof_common.logger import get_logger, set_agent_mode, is_agent_mode
 
 logger = get_logger()
 
@@ -68,6 +68,8 @@ class Context(object):
 def init_subprocess(config_dict):
     from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
     AdditionalArgsManager().init(config_dict)
+    if is_agent_mode():
+        set_agent_mode()
 
 
 class ConcurrentContext(Context):

@@ -31,14 +31,15 @@ CONTEXT_SETTINGS = dict(help_option_names=['-H', '-h', '--help'],
                         max_content_width=160)
 
 COMMAND_PRIORITY = {
-    "advisor": 1,
+    "cluster": 1,
     "compare": 2,
-    "cluster": 3,
+    "advisor": 3,
     "auto-completion": 4
 }
 
 
 class SpecialHelpOrder(click.Group):
+    SKIP_PARAM_NAMES = {'help', 'version'}
 
     def __init__(self, *args, **kwargs):
         super(SpecialHelpOrder, self).__init__(*args, **kwargs)
@@ -55,20 +56,83 @@ class SpecialHelpOrder(click.Group):
 
     def get_help(self, ctx):
         self.list_commands = self.list_commands_for_help
-        return super(SpecialHelpOrder, self).get_help(ctx)
+        original_help = super(SpecialHelpOrder, self).get_help(ctx)
+        commands_help = ['\n\nSubcommands Options:']
+        for cmd_name in self.list_commands_for_help(ctx):
+            cmd = self.get_command(ctx, cmd_name)
+            if not cmd:
+                continue
+            cmd_help = cmd.get_short_help_str()
+            commands_help.append(f'\n  {cmd_name}: {cmd_help}')
+            # Group 类型命令，显示子命令及其参数
+            if hasattr(cmd, 'list_commands'):
+                commands_help.extend(self._get_subcommand_help(cmd, cmd_name, ctx))
+            else:
+                # 普通命令，直接显示参数
+                commands_help.extend(self._get_command_params(cmd, indent='    '))
+        return original_help + '\n'.join(commands_help)
 
     def parse_args(self, ctx, args):
         # 检查是否有已知的子命令
         has_subcommand = any(arg in self.list_commands(ctx) for arg in args if not arg.startswith('-'))
-
+        # 检查包含help参数
+        has_help = any(arg in ['-H', '-h', '--help'] for arg in args)
         # 如果没有子命令但有参数，自动添加 cluster 子命令
-        if not has_subcommand and args:
+        if not has_subcommand and args and not has_help:
             args = ['cluster'] + args
-        # 如果没有子命令也没有参数，执行--help
+        # 如果没有子命令也没有参数，显示所有help信息
         elif not has_subcommand and not args:
-            args = ['cluster', '--help']
-
+            args = ['--help']
         return super(SpecialHelpOrder, self).parse_args(ctx, args)
+
+    def _should_skip_param(self, param):
+        """检查是否应该跳过该参数"""
+        if param.name in self.SKIP_PARAM_NAMES:
+            return True
+        if param.is_eager:
+            return True
+        if not (hasattr(param, 'opts') and param.opts):
+            return True
+        return False
+
+    def _format_param(self, param):
+        """格式化单个参数"""
+        param_names = ', '.join(param.opts)
+        help_text = getattr(param, 'help', '') or ''
+        required = '<required>' if getattr(param, 'required', False) else '<optional>'
+        return f'{param_names:<40}{required} {help_text}'
+
+    def _get_command_params(self, cmd, indent='    '):
+        """获取命令的参数列表"""
+        params_help = []
+        if not hasattr(cmd, 'params'):
+            return params_help
+        for param in cmd.params:
+            if self._should_skip_param(param):
+                continue
+            help_text = getattr(param, 'help', '') or ''
+            if not help_text:
+                continue
+            formatted = self._format_param(param)
+            params_help.append(f'{indent}{formatted}')
+        return params_help
+
+    def _get_subcommand_help(self, cmd, cmd_name, ctx):
+        """获取 Group 类型命令的子命令help信息"""
+        subcommands_help = []
+        if not hasattr(cmd, 'list_commands'):
+            return subcommands_help
+        subcommands = cmd.list_commands(ctx)
+        if not subcommands:
+            return subcommands_help
+        for subcmd_name in subcommands:
+            subcmd = cmd.get_command(ctx, subcmd_name)
+            if not subcmd:
+                continue
+            subcmd_help = subcmd.get_short_help_str()
+            subcommands_help.append(f'\n    {cmd_name} {subcmd_name}: {subcmd_help}')
+            subcommands_help.extend(self._get_command_params(subcmd, indent='      '))
+        return subcommands_help
 
 
 class CliLogo:
@@ -162,4 +226,3 @@ msprof_analyze_cli.add_command(analyze_cli, name="advisor")
 msprof_analyze_cli.add_command(compare_cli, name="compare")
 msprof_analyze_cli.add_command(cluster_cli, name="cluster")
 msprof_analyze_cli.add_command(auto_complete_cli, name="auto-completion")
-

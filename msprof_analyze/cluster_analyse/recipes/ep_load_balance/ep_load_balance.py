@@ -20,6 +20,7 @@ import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.ep_load_balance_ecport import InputShapeExport
 from msprof_analyze.prof_common.database_service import DatabaseService
@@ -34,6 +35,10 @@ class EPLoadBalance(BaseRecipeAnalysis):
     META_DATA = "META_DATA"
     Top_Num = 20
     GROUPEP = "exp"
+    SUGGESTION = """
+    EPTokensSummary：汇总各 rank 及对应 EP 分组下 GroupedMatmul 算子输入首维 token 总量，用它全局梳理所有 EP 分组、各卡的专家 token 承载量级，直观判断整体专家流量分布基底情况。
+    TopEPTokensInfo：统计存在负载不均的 EP 分组及组内 token 最大最小差值，用它直接筛选出负载不均最严重的专家并行分组，精准定位需要调优的 EP 组。
+    """
 
     def __init__(self, params):
         super().__init__(params)
@@ -102,6 +107,13 @@ class EPLoadBalance(BaseRecipeAnalysis):
                        index=False)
         self.dump_data(self.top_ep_tokens_map, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TOP_EP_TOKENS_INFO,
                        index=False)
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [self.EP_TOKENS_SUMMARY, self.TOP_EP_TOKENS_INFO]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)

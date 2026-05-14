@@ -21,6 +21,7 @@ import numpy as np
 
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.cluster_time_summary_export import CommunicationTimeExport
 from msprof_analyze.cluster_analyse.recipes.slow_rank.dixon_table import DIXON_TABLE_995
@@ -86,6 +87,10 @@ def judge_slow_rank(time_list):
 
 
 class SlowRankAnalysis(BaseRecipeAnalysis):
+    SUGGESTION = """
+    SlowRank / slow_rank.csv：基于“同名通信算子属同一次集合通信，结束时间相近且先开始的 rank 等待后开始的 rank”的假设，通过离群值算法找到每次集合通信中耗时异常短的算子所在 rank 并累计投票。用它先快速确定重点排查对象。
+    SlowOpStats / slow_op_stats.csv：统计这些慢卡投票对应的通信算子，可进一步定位慢卡在该算子前的具体瓶颈操作。
+    """
     def __init__(self, params):
         super().__init__(params)
         self.perpector_df = None
@@ -132,6 +137,13 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
     def save_db(self, ):
         self.dump_data(self.perpector_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowRank")
         self.dump_data(self.stat_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowOpStats", index=False)
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": ["SlowRank", "SlowOpStats"]
+            },
+            suggestion="根据当前的快慢卡统计算法，展示各个rank得出的快慢卡影响次数，识别慢卡出现的原因。",
+        )
 
     def save_notebook(self):
         self.create_notebook("stats.ipynb")
@@ -140,6 +152,15 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
     def save_csv(self):
         self.dump_data(self.perpector_df, "rank_stats.csv")
         self.dump_data(self.stat_df, "slow_op_stats.csv", index=False)
+        set_json_success(
+            msg_dict={
+                "csv_path": [
+                    os.path.join(self.output_path, "rank_stats.csv"),
+                    os.path.join(self.output_path, "slow_op_stats.csv")
+                ]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)

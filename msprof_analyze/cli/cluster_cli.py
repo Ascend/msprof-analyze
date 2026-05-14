@@ -13,11 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import click
+import os
 
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.cluster_analyse.cluster_analysis import ALL_FEATURE_LIST, Interface
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.advisor.version import print_version_callback, cli_version
+from msprof_analyze.prof_common.logger import set_agent_mode
+from msprof_analyze.prof_common.json_output import cli_json_output
 
 context_settings = dict(Constant.CONTEXT_SETTINGS)
 context_settings['ignore_unknown_options'] = True
@@ -40,13 +43,12 @@ context_settings['ignore_unknown_options'] = True
 @click.option('--version', '-V', '-v', is_flag=True,
               callback=print_version_callback, expose_value=False,
               is_eager=True, help=cli_version())
+@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
 @click.argument('args', nargs=-1)
+@cli_json_output
 def cluster_cli(**kwargs) -> None:
-    """
-    subcommand:\n
-        compare    Compare the performance diffs between GPUs and NPUs. try 'msprof-analyze compare -h' for detail\n
-        advisor    Analyze and give performance optimization suggestion.try 'msprof-analyze advisor -h' for detail\n
-        cluster    default run as cluster subcommand
-    """
+    if kwargs.get('agent'):
+        os.environ["AGENT_MODE"] = "agent"
+        set_agent_mode()
     Interface(kwargs).run()
 

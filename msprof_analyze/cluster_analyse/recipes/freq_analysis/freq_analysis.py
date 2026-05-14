@@ -19,6 +19,7 @@ import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.database_service import DatabaseService
 
@@ -28,6 +29,10 @@ logger = get_logger()
 class FreqAnalysis(BaseRecipeAnalysis):
     COMMON_FREQ = 1800
     FREE_FREQ = 800
+    SUGGESTION = """
+    FreeFrequencyRanks：统计因设备长时间空闲自动降至 800MHz 的 rank 列表及对应频率区间，用它区分空闲休眠式降频，排查是否存在算力空转、任务调度不饱满问题。
+    AbnormalFrequencyRanks：统计出现非标准 1800MHz/800MHz 以外异常频率的 rank 及频率明细，用它精准定位硬件 / 调度异常导致的非自愿降频，快速锁定异常 NPU 卡。
+    """
 
     def __init__(self, params):
         super().__init__(params)
@@ -81,6 +86,13 @@ class FreqAnalysis(BaseRecipeAnalysis):
             logger.info("No rank found with abnormal aicore frequency.")
         if len(self.free_freq_ranks) > 0 or len(self.abnormal_freq_ranks) > 0:
             logger.info("Please verify result in output file.")
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": ["FreeFrequencyRanks", "AbnormalFrequencyRanks"]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def run(self, context):
         mapper_res = self.mapper_func(context)

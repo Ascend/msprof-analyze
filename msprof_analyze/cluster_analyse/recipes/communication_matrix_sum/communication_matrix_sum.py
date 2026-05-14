@@ -18,6 +18,7 @@ import os
 import pandas as pd
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.logger import get_logger
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.database_service import DatabaseService
 from msprof_analyze.cluster_analyse.common_func.utils import double_hash
@@ -33,6 +34,7 @@ class CommMatrixSum(BaseRecipeAnalysis):
     MATRIX_DATA = "matrix_data"
     RANK_SET = "rank_set"
     P2P_HCOM = ["hcom_send", "hcom_receive", "hcom_batchsendrecv"]
+    SUGGESTION = "集群场景通信矩阵汇总分析，可以根据rank互联的带宽以及链路类型，判断是否有慢链路的问题。"
 
     def __init__(self, params):
         super().__init__(params)
@@ -223,9 +225,22 @@ class CommMatrixSum(BaseRecipeAnalysis):
                 db_df[column] = db_df[column].astype("float64")
         self.dump_data(db_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
                        self.TABLE_CLUSTER_COMM_MATRIX, index=False)
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [self.TABLE_CLUSTER_COMM_MATRIX]
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def save_csv(self):
         self.dump_data(self.cluster_matrix_df, "cluster_communication_matrix.csv", index=False)
+        set_json_success(
+            msg_dict={
+                "csv_path": os.path.join(self.output_path, "cluster_communication_matrix.csv")
+            },
+            suggestion=self.SUGGESTION
+        )
 
     def _generate_rank_map(self, mapper_res):
         rank_map = {}

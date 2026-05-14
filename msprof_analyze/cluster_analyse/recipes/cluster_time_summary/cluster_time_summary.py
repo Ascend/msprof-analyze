@@ -26,6 +26,7 @@ from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseReci
 from msprof_analyze.cluster_analyse.recipes.communication_group_map.communication_group_map import CommunicationGroupMap
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_exports.cluster_time_summary_export import CommunicationOpWithStepExport
 from msprof_analyze.prof_exports.cluster_time_summary_export import MemoryAndDispatchTimeExport
 from msprof_analyze.prof_common.database_service import DatabaseService
@@ -49,6 +50,7 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
     STEP_TRACE = "step_trace"
     COMMUNICATION = "communication"
     MEMORY = "memory"
+    SUGGESTION = "ClusterTimeSummary / cluster_time_summary.csv：分析计算、通信、内存拷贝、空闲时间占比，找到性能瓶颈。"
 
     def __init__(self, params):
         super().__init__(params)
@@ -287,6 +289,13 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
             if self._export_type == Constant.DB:
                 self.dump_data(self.stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
                                Constant.TABLE_CLUSTER_TIME_SUMMARY, index=False)
+                set_json_success(
+                    msg_dict={
+                        "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                        "tables": [Constant.TABLE_CLUSTER_TIME_SUMMARY]
+                    },
+                    suggestion=self.SUGGESTION
+                )
             elif self._export_type == Constant.TEXT:
                 file_name = f"cluster_time_summary_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.csv"
                 self.stats_data = self.stats_data.rename(columns={
@@ -304,6 +313,12 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
                     "memoryNotOverlapComputationCommunication": "Memory Not Overlap Computation Communication(us)",
                 })
                 self.dump_data(self.stats_data, file_name=file_name, index=False)
+                set_json_success(
+                    msg_dict={
+                        "csv_path": os.path.join(self.output_path, file_name)
+                    },
+                    suggestion=self.SUGGESTION
+                )
         except Exception as err:
             logger.error("Execute ClusterTimeSummary with exception: %s" % str(err))
             return

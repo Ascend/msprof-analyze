@@ -121,6 +121,7 @@ msprof-analyze advisor命令行包含如下三个子命令：
 | --force                            | 可选      | 强制执行advisor。配置后可强制跳过如下情况：<br/>        指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>        csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 |
 | -l<br/>--language                  | 可选      | 设置分析结果输出的语言，可取值：<br/>        cn：输出中文，默认值。<br/>        en：输出英文。 |
 | --debug                            | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
+| --agent                            | 可选      | 分析结果以json格式输出至标准输出，不写入文件。配置该参数表示开启stdout，默认未配置表示关闭。 |
 | -h，-H<br/>--help                  | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
 **使用示例**
@@ -226,7 +227,7 @@ overall模块仅识别问题，不提供调优建议。
 
 comparison模块内容如下图示例，识别标杆和待比对性能数据的Kernel和API数据，无标杆场景的comparison是集群内部快慢卡的性能数据对比。包括：
 
-- Kernel compare of Rank*Step* and Rank*Step*：Kernel的待比对总耗时、待比对平均耗时、待比对最大耗时、待比对最小耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）和Diff Avg Ratio（标杆平均耗时/待比对平均耗时）。
+- Kernel compare of RankStep and RankStep：Kernel的待比对总耗时、待比对平均耗时、待比对最大耗时、待比对最小耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）和Diff Avg Ratio（标杆平均耗时/待比对平均耗时）。
 
   Diff Total Ratio和Diff Avg Ratio大于1则表示当前环境性能更优，小于1则表示当前环境有待优化，等于1则表示当前环境与标杆环境性能接近。
 
@@ -234,7 +235,7 @@ comparison模块内容如下图示例，识别标杆和待比对性能数据的K
 
   其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
 
-- Api compare of Rank*Step* and Rank*Step*：API的待比对总耗时、待比对API自身耗时（除去API调用的子API的耗时）、待比对平均耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）、Diff Self Ratio（标杆API自身耗时/待比对API自身耗时）、Diff Avg Ratio（标杆平均耗时/待比对平均耗时）和Diff Calls Ratio（标杆执行次数/待比对执行次数）。
+- Api compare of RankStep and RankStep：API的待比对总耗时、待比对API自身耗时（除去API调用的子API的耗时）、待比对平均耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）、Diff Self Ratio（标杆API自身耗时/待比对API自身耗时）、Diff Avg Ratio（标杆平均耗时/待比对平均耗时）和Diff Calls Ratio（标杆执行次数/待比对执行次数）。
 
   Diff Total Ratio、Diff Self Ratio、Diff Avg Ratio和Diff Calls Ratio大于1则表示当前环境性能更优，小于1则表示当前环境有待优化，等于1则表示当前环境与标杆环境性能接近。
 

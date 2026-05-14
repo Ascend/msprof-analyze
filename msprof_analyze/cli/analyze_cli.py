@@ -15,6 +15,7 @@
 
 import logging
 import click
+import os
 
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.advisor.analyzer.analyzer_controller import AnalyzerController
@@ -23,8 +24,15 @@ from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.common.enum_params_parser import EnumParamsParser
 from msprof_analyze.advisor.utils.utils import debug_option
 from msprof_analyze.advisor.interface.interface import Interface
+from msprof_analyze.prof_common.logger import set_agent_mode
+from msprof_analyze.prof_common.json_output import cli_json_output
 
 logger = logging.getLogger()
+
+def _handle_agent_mode(kwargs):
+    if kwargs.get('agent'):
+        os.environ["AGENT_MODE"] = "agent"
+        set_agent_mode()
 
 
 @click.group(name="analyze", cls=ClickAliasedGroup)
@@ -35,8 +43,8 @@ def analyze_cli(**kwargs):
 
 @analyze_cli.command(context_settings=CONTEXT_SETTINGS,
                      name="all",
-                     short_help='Analyze timeline fusion operators, operators and graph,\
-                                 operators dispatching and cluster.')
+                     short_help='Analyze timeline fusion operators, operators and graph, '
+                                'operators dispatching and cluster.')
 @click.option('--profiling_path', '-d', 'profiling_path',
               type=click.Path(exists=True, file_okay=False, resolve_path=True), required=True,
               callback=PathManager.expanduser_for_cli, help='Directory of profiling data')
@@ -68,8 +76,11 @@ def analyze_cli(**kwargs):
               required=False,
               default="cn",
               help="Language of the profiling advisor.")
+@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
 @debug_option
+@cli_json_output
 def analyze_all(**kwargs) -> None:
+    _handle_agent_mode(kwargs)
     try:
         AnalyzerController().do_analysis(Interface.all_dimension, **kwargs)
     except Exception as e:
@@ -107,8 +118,11 @@ def analyze_all(**kwargs) -> None:
               required=False,
               default="cn",
               help="Language of the profiling advisor.")
+@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
 @debug_option
+@cli_json_output
 def analyze_schedule(**kwargs) -> None:
+    _handle_agent_mode(kwargs)
     try:
         AnalyzerController().do_analysis([Interface.SCHEDULE], **kwargs)
     except Exception as e:
@@ -146,8 +160,11 @@ def analyze_schedule(**kwargs) -> None:
               required=False,
               default="cn",
               help="Language of the profiling advisor.")
+@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
 @debug_option
+@cli_json_output
 def analyze_computation(**kwargs) -> None:
+    _handle_agent_mode(kwargs)
     try:
         AnalyzerController().do_analysis([Interface.COMPUTATION], **kwargs)
     except Exception as e:
