@@ -21,10 +21,10 @@ from typing import List
 
 import pandas as pd
 
-from msprof_analyze.advisor.advisor_backend.logger import Logger
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = Logger()
+logger = get_logger()
 
 
 @dataclass

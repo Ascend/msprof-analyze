@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
 from msprof_analyze.advisor.analyzer.communication.alignment.byte_alignment_checker import ByteAlignmentChecker
@@ -22,7 +22,7 @@ from msprof_analyze.advisor.dataset.profiling.profiling_dataset import Profiling
 from msprof_analyze.advisor.dataset.communication.hccl_detail_dataset import HcclDetailDataset
 from msprof_analyze.advisor.result.result import OptimizeResult
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class ByteAlignmentAnalyzer(BaseAnalyzer):

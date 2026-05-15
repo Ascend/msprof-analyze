@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import itertools
 from collections import deque
 from dataclasses import dataclass
@@ -24,7 +24,7 @@ from typing import List, Tuple, Dict
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.advisor.utils.file import FileOpen
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @dataclass

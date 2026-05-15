@@ -13,7 +13,7 @@
 # limitations under the License.
 import os
 from collections import OrderedDict
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.utils.utils import Timer
 from msprof_analyze.advisor.result.result import OptimizeResult
@@ -46,7 +46,7 @@ from msprof_analyze.advisor.analyzer.schedule.fusible_ops.fusible_operator_analy
 from msprof_analyze.advisor.analyzer.computation.ai_core_performance.ai_core_performance_analyzer import \
     AICorePerformanceAnalyzer
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class Interface:

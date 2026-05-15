@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import Any, List
 
@@ -24,7 +24,7 @@ from msprof_analyze.advisor.dataset.profiling.db_manager import ConnectionManage
 from msprof_analyze.advisor.dataset.profiling.profiling_parser import ProfilingParser
 from msprof_analyze.advisor.utils.utils import check_path_valid
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class GeInfo(ProfilingParser):

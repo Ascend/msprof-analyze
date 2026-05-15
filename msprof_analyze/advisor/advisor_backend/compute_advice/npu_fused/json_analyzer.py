@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 import pandas as pd
 
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.trace_view_json import TraceViewJson
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class JSONAnalyzer(object):

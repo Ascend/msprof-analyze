@@ -15,12 +15,14 @@
 # limitations under the License.
 
 import itertools
-import logging
 from functools import lru_cache
 from collections import deque
 from typing import Dict, Generator, List, Callable, Hashable, Tuple
 
 import networkx as nx
+from msprof_analyze.prof_common.logger import get_logger
+
+logger = get_logger()
 
 
 class IsomorphismsIterArgsConfig:
@@ -317,7 +319,7 @@ def get_next_candidates(config: CandidateArgsConfig) -> List[Dict[Hashable, Hash
                 next_edge_edges.append((_node, next_node, None))
 
     if len(next_edge_edges) == 0:
-        logging.warning("Find node without any edge, which is invalid.")
+        logger.warning("Find node without any edge, which is invalid.")
         return []
     # Step2: verify candidate nodes that have such edges in the host graph
     candidate_nodes = []

@@ -17,11 +17,11 @@
 profiling info
 """
 import decimal
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 from msprof_analyze.advisor.utils.utils import lazy_property
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class Info:

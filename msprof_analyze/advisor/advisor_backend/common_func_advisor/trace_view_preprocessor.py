@@ -20,9 +20,9 @@ from typing import Optional
 from dataclasses import dataclass
 
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.constant import Constant
-from msprof_analyze.advisor.advisor_backend.logger import Logger
+from msprof_analyze.prof_common.logger import get_logger
 
-logger = Logger()
+logger = get_logger()
 
 
 @dataclass

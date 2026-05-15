@@ -15,14 +15,14 @@
 # limitations under the License.
 
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import typing
 
 from msprof_analyze.advisor.common.timeline.event import AdvisorDict
 from msprof_analyze.prof_common.singleton import singleton
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @singleton

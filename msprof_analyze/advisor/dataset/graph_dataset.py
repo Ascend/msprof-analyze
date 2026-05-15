@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
 from msprof_analyze.advisor.dataset.dataset import Dataset
@@ -21,7 +21,7 @@ from msprof_analyze.advisor.common.graph.graph_parser import HostGraphParser
 from msprof_analyze.advisor.common.graph.graph import Graph
 from msprof_analyze.advisor.utils.utils import load_parameter, lazy_property, get_file_path_from_directory
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class GraphDataset(Dataset):

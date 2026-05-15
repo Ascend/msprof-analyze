@@ -15,7 +15,6 @@
 
 import json
 
-import logging
 import multiprocessing as mp
 import os
 import queue
@@ -30,13 +29,12 @@ import ijson
 import click
 from tqdm import tqdm
 
-from msprof_analyze.advisor.utils.log import init_logger, get_log_level
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.logger import get_logger, set_debug_mode
 from msprof_analyze.prof_common.singleton import singleton
 from msprof_analyze.prof_common.path_manager import PathManager
 
-logger = logging.getLogger()
-logger.setLevel(get_log_level())
+logger = get_logger()
 permission_warned: Set = set()
 
 
@@ -49,7 +47,7 @@ def debug_option(f):
                         is_flag=True,
                         expose_value=False,
                         is_eager=True,
-                        callback=init_logger,
+                        callback=set_debug_mode,
                         help="Debug Mode. Shows full stack trace when error occurs.")(f)
 
 

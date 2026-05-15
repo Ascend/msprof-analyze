@@ -14,13 +14,13 @@
 # limitations under the License.
 from abc import ABC
 import multiprocessing
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.common.timeline.event import TimelineEvent
 from msprof_analyze.advisor.dataset.timeline_event_dataset import ScheduleAnalysisDataset
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class TimelineBaseChecker(ABC):

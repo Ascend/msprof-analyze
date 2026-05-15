@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import click
 import os
 
@@ -24,10 +23,10 @@ from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.common.enum_params_parser import EnumParamsParser
 from msprof_analyze.advisor.utils.utils import debug_option
 from msprof_analyze.advisor.interface.interface import Interface
-from msprof_analyze.prof_common.logger import set_agent_mode
+from msprof_analyze.prof_common.logger import get_logger, set_agent_mode
 from msprof_analyze.prof_common.json_output import cli_json_output
 
-logger = logging.getLogger()
+logger = get_logger()
 
 def _handle_agent_mode(kwargs):
     if kwargs.get('agent'):

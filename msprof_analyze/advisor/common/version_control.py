@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class VersionControl:

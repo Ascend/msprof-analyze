@@ -30,10 +30,6 @@ def _create_formatter():
 
 def _get_or_create_file_handler():
     """Get or create a shared file handler for quiet mode logging"""
-    root_logger = logging.getLogger()
-    for handler in root_logger.handlers:
-        if isinstance(handler, logging.FileHandler):
-            return handler
     log_file = os.environ.get("MSPROF_ANALYZE_LOG_FILE")
     if not log_file:
         timestamp = int(time.time())
@@ -72,6 +68,15 @@ def get_log_level():
         raise AttributeError(f"module 'logging' has no attribute '{log_level}', "
                              f"supported log level: {', '.join(Constant.SUPPORTED_LOG_LEVEL)}")
     return log_level
+
+
+def set_debug_mode(ctx, param, debug_mode):
+    if not debug_mode:
+        return
+    logger = logging.getLogger("msprof-analyze")
+    logger.setLevel(logging.DEBUG)
+    for handler in logger.handlers:
+        handler.setLevel(logging.DEBUG)
 
 
 def get_logger() -> logging.Logger:

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from abc import abstractmethod
 from decimal import Decimal
@@ -27,7 +27,7 @@ from msprof_analyze.advisor.dataset.profiling.info_collection import OpInfo
 from msprof_analyze.advisor.dataset.profiling.profiling_parser import ProfilingParser
 from msprof_analyze.advisor.utils.utils import format_excel_title, lazy_property
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class OpSummaryBase(ProfilingParser):

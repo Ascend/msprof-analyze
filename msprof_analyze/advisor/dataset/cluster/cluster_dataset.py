@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 import os
 import re
@@ -36,7 +36,7 @@ from msprof_analyze.prof_exports.communicaion_info_export import (ClusterCommuni
                                                                   ClusterBandwidthInfoExport,
                                                                   ClusterStepTraceTimeExport)
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class ClusterDataset(ABC, Dataset):

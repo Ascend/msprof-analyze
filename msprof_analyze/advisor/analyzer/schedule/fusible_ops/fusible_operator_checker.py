@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import List
 from collections import OrderedDict
@@ -27,7 +27,7 @@ from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.advisor.utils.utils import convert_to_float_with_warning, safe_division
 from msprof_analyze.advisor.display.html.priority_background_color import PriorityBackgroundColor
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class FusibleOperatorChecker:

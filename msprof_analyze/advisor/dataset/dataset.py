@@ -16,7 +16,7 @@
 """
 dataset module
 """
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 import re
 
@@ -25,7 +25,7 @@ from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.advisor.config.config import Config
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class Dataset:

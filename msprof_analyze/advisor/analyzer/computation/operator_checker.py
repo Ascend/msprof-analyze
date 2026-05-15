@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import copy
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from textwrap import fill
 from typing import List
 
@@ -28,7 +28,7 @@ from msprof_analyze.advisor.result.item import OptimizeItem, StatisticsItem, Opt
 from msprof_analyze.advisor.utils.utils import safe_division, convert_to_float
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class OperatorChecker(VersionControl):

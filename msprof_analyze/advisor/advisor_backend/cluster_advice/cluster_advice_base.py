@@ -19,10 +19,10 @@ from math import isclose
 
 from msprof_analyze.advisor.advisor_backend.advice_base import AdviceBase
 from msprof_analyze.cluster_analyse.cluster_analysis import Interface
-from msprof_analyze.advisor.advisor_backend.logger import Logger
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.constant import Constant
 
-logger = Logger()
+logger = get_logger()
 
 
 class ClusterAdviceBase(AdviceBase):

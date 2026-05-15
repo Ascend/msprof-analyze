@@ -15,13 +15,13 @@
 profiling info
 """
 import json
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.config.config import Config
 from msprof_analyze.advisor.utils.utils import get_file_path_from_directory
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class DeviceInfoParser:

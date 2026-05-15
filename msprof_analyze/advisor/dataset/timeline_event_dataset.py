@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import re
 import traceback
 from collections import OrderedDict
@@ -46,7 +46,7 @@ from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_collector 
     AclEventsCollector
 )
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class BaseTimelineEventDataset(Dataset):

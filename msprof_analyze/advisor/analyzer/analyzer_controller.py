@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import copy
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import json
 import sys
 import os
@@ -45,7 +45,7 @@ from msprof_analyze.prof_common.logger import is_agent_mode
 
 # 以spawn模式启动多进程，避免fork主进程资源。如果主进程逻辑较为复杂，fork可能会导致异常。
 mp.set_start_method("spawn", force=True)
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class AsyncParams:

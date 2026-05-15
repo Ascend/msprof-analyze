@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.compare_tools.compare_interface.comparison_interface import ComparisonInterface
 from msprof_analyze.advisor.advisor_backend.advice_base import AdviceBase
 from msprof_analyze.advisor.display.prompt.base_prompt import BasePrompt
 from msprof_analyze.prof_common.constant import Constant
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class OverallSummaryAdvice(AdviceBase):

@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.path_manager import PathManager
+
+logger = get_logger()
 
 
 class EnvironmentVariableDataset:
@@ -45,4 +47,4 @@ class EnvironmentVariableDataset:
         try:
             self.env_data = FileManager.read_json_file(data_path)
         except RuntimeError as e:
-            logging.error("Read json failed. %s", str(e))
+            logger.error("Read json failed. %s", str(e))

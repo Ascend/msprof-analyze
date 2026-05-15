@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import math
 import os
 from abc import abstractmethod, ABCMeta
@@ -23,7 +23,7 @@ from msprof_analyze.advisor.common.timeline.event import TimelineEvent
 from msprof_analyze.advisor.utils.utils import convert_to_float
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class BaseOpCollector(metaclass=ABCMeta):

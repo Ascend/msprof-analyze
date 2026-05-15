@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.dataset.timeline_event_dataset import ScheduleAnalysisDataset, MemCollector
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class MemoryOpsChecker:

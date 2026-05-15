@@ -16,12 +16,12 @@
 from abc import abstractmethod
 from collections import defaultdict
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.advisor_backend.advice_base import AdviceBase
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class ComputeAdviceBase(AdviceBase):

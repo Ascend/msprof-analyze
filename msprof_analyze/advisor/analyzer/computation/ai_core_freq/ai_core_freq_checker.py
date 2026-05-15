@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.config.config import Config
 from msprof_analyze.advisor.dataset.timeline_event_dataset import ComputationAnalysisDataset
@@ -22,7 +22,7 @@ from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.utils.utils import convert_to_float
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class AICoreFreqChecker:

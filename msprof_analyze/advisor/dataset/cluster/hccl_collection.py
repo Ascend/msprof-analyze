@@ -15,11 +15,11 @@
 """
 hccl info
 """
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 import pandas as pd
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class HcclInfo:

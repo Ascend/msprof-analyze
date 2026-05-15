@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from collections import defaultdict
 
@@ -30,7 +30,7 @@ from msprof_analyze.advisor.utils.utils import CheckPathAccess
 from msprof_analyze.advisor.dataset.dataset import Dataset
 from msprof_analyze.prof_exports.communicaion_info_export import CommunicationInfoExport
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @singleton

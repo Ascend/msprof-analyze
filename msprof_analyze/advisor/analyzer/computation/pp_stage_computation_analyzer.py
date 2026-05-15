@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from multiprocessing import Manager
 
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
@@ -24,7 +24,7 @@ from msprof_analyze.advisor.utils.utils import ParallelJob, get_analyze_processe
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class PPStageComputationAnalyzer(BaseAnalyzer):

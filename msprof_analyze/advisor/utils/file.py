@@ -14,13 +14,11 @@
 # limitations under the License.
 
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.utils.utils import check_path_valid
-from msprof_analyze.advisor.utils.log import get_log_level
 
-logger = logging.getLogger()
-logger.setLevel(get_log_level())
+logger = get_logger()
 
 
 class FileOpen:
