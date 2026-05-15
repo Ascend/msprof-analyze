@@ -14,19 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.common.enum_params_parser import EnumParamsParser
 from msprof_analyze.advisor.common.timeline.fusion_ops_rule import OpRule
 from msprof_analyze.advisor.common.timeline.fusion_ops_rule_handler import TimelineOpRuleHandler
-from msprof_analyze.advisor.utils.log import get_log_level
 from msprof_analyze.advisor.utils.utils import get_file_path_by_walk
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
-logger.setLevel(get_log_level())
+logger = get_logger()
 
 
 def init_timeline_ops_db(cann_version=None, profiling_type=None, profiling_version=None):

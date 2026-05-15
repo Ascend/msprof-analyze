@@ -12,15 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
-
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.advisor.dataset.environment_variable_dataset import EnvironmentVariableDataset
 from msprof_analyze.advisor.analyzer.overall.environment_variable_checker import EnvironmentVariableChecker
 from msprof_analyze.advisor.display.html.priority_background_color import PriorityBackgroundColor
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class EnvironmentVariableAnalyzer(BaseAnalyzer):
@@ -38,7 +37,7 @@ class EnvironmentVariableAnalyzer(BaseAnalyzer):
         try:
             PathManager.check_input_directory_path(self.collection_path)
         except RuntimeError as e:
-            logging.error("Invalid path: %s", str(e))
+            logger.error("Invalid path: %s", str(e))
             return self.result
         self.collection_path = PathManager.get_realpath(self.collection_path)
         checker = EnvironmentVariableChecker()

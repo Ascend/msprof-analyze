@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import copy
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
 from msprof_analyze.advisor.analyzer.computation.operator_checker import OperatorChecker
@@ -24,7 +24,7 @@ from msprof_analyze.advisor.result.item import OptimizeItem, StatisticsItem, Opt
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class DynamicShapeChecker(OperatorChecker):

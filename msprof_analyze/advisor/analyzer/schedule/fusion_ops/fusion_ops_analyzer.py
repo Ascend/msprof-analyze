@@ -14,7 +14,7 @@
 # limitations under the License.
 import os
 import multiprocessing
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import re
 
 from tqdm import tqdm
@@ -31,7 +31,7 @@ from msprof_analyze.advisor.utils.utils import format_timeline_result
 from msprof_analyze.advisor.common.timeline.fusion_ops_db import init_timeline_ops_db
 from msprof_analyze.advisor.display.html.priority_background_color import PriorityBackgroundColor
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class TimelineFusionOpsAnalyzer(BaseAnalyzer):

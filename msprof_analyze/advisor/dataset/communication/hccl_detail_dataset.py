@@ -12,13 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 from msprof_analyze.prof_common.singleton import singleton
 from msprof_analyze.advisor.common.profiling.msprof import Msprof
 from msprof_analyze.advisor.dataset.profiling.info_collection import TaskInfo, HcclOp, HcclTask
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @singleton

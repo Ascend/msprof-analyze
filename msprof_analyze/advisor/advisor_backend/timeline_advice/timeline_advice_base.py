@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from abc import abstractmethod
 from collections import defaultdict
@@ -21,8 +21,7 @@ from collections import defaultdict
 from msprof_analyze.advisor.advisor_backend.advice_base import AdviceBase
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger()
 
 
 class TimelineAdviceBase(AdviceBase):

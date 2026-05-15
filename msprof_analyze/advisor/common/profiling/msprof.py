@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import Dict, List
 import json
@@ -23,7 +23,7 @@ from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.dataset.profiling.info_collection import TaskInfo
 from msprof_analyze.advisor.dataset.profiling.profiling_parser import ProfilingParser
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class TaskChecker:

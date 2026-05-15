@@ -14,7 +14,7 @@
 # limitations under the License.
 import os
 import re
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import yaml
 
 from msprof_analyze.advisor.dataset.timeline_event_dataset import ScheduleAnalysisDataset
@@ -23,7 +23,7 @@ from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class DataloaderChecker:

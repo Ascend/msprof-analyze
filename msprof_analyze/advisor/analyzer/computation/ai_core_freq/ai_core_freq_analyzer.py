@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
 from msprof_analyze.advisor.result.result import OptimizeResult
@@ -23,7 +23,7 @@ from msprof_analyze.advisor.dataset.timeline_event_dataset import ComputationAna
 from msprof_analyze.advisor.dataset.profiling.device_info import DeviceInfoParser
 from msprof_analyze.advisor.config.config import Config
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class AICoreFreqAnalyzer(BaseAnalyzer):

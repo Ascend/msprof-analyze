@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from functools import wraps
 from typing import Dict, List, Union
@@ -29,7 +29,7 @@ from msprof_analyze.advisor.utils.utils import safe_division
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.path_manager import PathManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 ASCEND_PT = "ascend_pt"
 ASCEND_MS = "ascend_ms"

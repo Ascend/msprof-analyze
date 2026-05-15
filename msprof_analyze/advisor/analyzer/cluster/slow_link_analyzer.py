@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from typing import Dict, List
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
 from msprof_analyze.prof_common.constant import Constant
@@ -24,7 +24,7 @@ from msprof_analyze.advisor.dataset.cluster.cluster_dataset import ClusterCommun
 from msprof_analyze.advisor.utils.utils import safe_index_value, convert_to_int
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class SlowLinkAnalyzer(BaseAnalyzer):

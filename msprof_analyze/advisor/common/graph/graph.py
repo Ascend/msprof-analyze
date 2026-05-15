@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import Dict, List, Tuple, Callable, Any, Optional, Union
 
 import networkx as nx
 
 from msprof_analyze.advisor.common.graph.graph_parser import HostGraphNode, QueryGraphNode
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class Graph:
@@ -68,7 +68,7 @@ class Graph:
 
         if pre_node not in self.graph or \
                 next_node not in self.graph:
-            logging.error("Nodes between edge should be both exists.")
+            logger.error("Nodes between edge should be both exists.")
             return
 
         self.graph.add_edge(pre_node, next_node)

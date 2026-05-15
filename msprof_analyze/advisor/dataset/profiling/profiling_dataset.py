@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 
 import yaml
@@ -30,7 +30,7 @@ from msprof_analyze.advisor.utils.utils import singleton
 from msprof_analyze.prof_common.file_manager import FileManager
 
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @singleton

@@ -30,11 +30,11 @@ from msprof_analyze.advisor.advisor_backend.cluster_advice.cluster_advice_base i
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.constant import Constant
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.trace_view_preprocessor import FineTraceViewData
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.trace_view_preprocessor import TraceViewPreProcessor
-from msprof_analyze.advisor.advisor_backend.logger import Logger
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.cluster_analyse.cluster_data_preprocess.pytorch_data_preprocessor import PytorchDataPreprocessor
 from msprof_analyze.prof_common.file_manager import FileManager
 
-logger = Logger()
+logger = get_logger()
 
 
 @dataclass

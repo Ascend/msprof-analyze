@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import json
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import math
 
 from msprof_analyze.advisor.common.timeline.event import TimelineEvent
@@ -23,7 +23,7 @@ from msprof_analyze.advisor.utils.utils import convert_to_float, parse_json_with
 from msprof_analyze.advisor.dataset.profiling.device_info import DeviceInfoParser
 from msprof_analyze.advisor.config.config import Config
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class AICoreFreqDataset:

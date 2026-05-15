@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import os
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List, Dict
 from collections import defaultdict, OrderedDict
 
@@ -24,7 +24,7 @@ from msprof_analyze.advisor.config.config import Config
 from msprof_analyze.advisor.utils.utils import safe_write
 from msprof_analyze.prof_common.singleton import singleton
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @singleton

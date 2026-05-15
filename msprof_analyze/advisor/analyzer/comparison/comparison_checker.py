@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
@@ -20,7 +20,7 @@ from msprof_analyze.advisor.utils.utils import safe_index_value, convert_to_floa
 from msprof_analyze.compare_tools.compare_interface.comparison_interface import ComparisonInterface
 from msprof_analyze.prof_common.constant import Constant
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class ComparisonChecker:

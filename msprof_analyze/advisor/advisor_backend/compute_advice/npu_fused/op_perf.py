@@ -14,13 +14,13 @@
 # limitations under the License.
 import functools
 from typing import Dict
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.constant import Constant
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.constant import CoreType
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.constant import PerfColor
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class OpPerfFactory:

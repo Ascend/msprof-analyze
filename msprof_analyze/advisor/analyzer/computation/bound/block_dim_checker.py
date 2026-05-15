@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
 from msprof_analyze.advisor.analyzer.computation.operator_checker import OperatorChecker
@@ -22,7 +22,7 @@ from msprof_analyze.advisor.config.config import Config
 from msprof_analyze.advisor.dataset.profiling.profiling_dataset import ProfilingDataset
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class BlockDimChecker(OperatorChecker):

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from abc import ABC
 
 import pandas as pd
@@ -22,7 +22,7 @@ from msprof_analyze.advisor.advisor_backend.compute_advice.compute_advice_base i
 from msprof_analyze.advisor.advisor_backend.compute_advice.npu_fused.csv_analyzer import CSVAnalyzer
 from msprof_analyze.advisor.advisor_backend.compute_advice.npu_fused.json_analyzer import JSONAnalyzer
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class NpuFusedAdvice(ComputeAdviceBase, ABC):

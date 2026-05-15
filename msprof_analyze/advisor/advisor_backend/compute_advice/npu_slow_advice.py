@@ -15,7 +15,7 @@
 from abc import ABC
 import os
 import multiprocessing
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 import pandas as pd
 
@@ -24,6 +24,8 @@ from msprof_analyze.advisor.advisor_backend.compute_advice.compute_advice_base i
 from msprof_analyze.advisor.advisor_backend.compute_advice.npu_fused.op_perf import OpPerfFactory
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.constant import Constant, PerfColor
 from msprof_analyze.advisor.advisor_backend.common_func_advisor.trace_view_json import TraceViewJson
+
+logger = get_logger()
 
 
 class NpuSlowAdvice(ComputeAdviceBase, ABC):
@@ -63,7 +65,7 @@ class NpuSlowAdvice(ComputeAdviceBase, ABC):
     
     def get_call_stack(self, data: pd.DataFrame, index_id: int, ts_col: str) -> str:
         if not self.has_callstack():
-            logging.warning("There is no call stack info, please set 'with_stack=True'")
+            logger.warning("There is no call stack info, please set 'with_stack=True'")
             return ""
         trace_json = TraceViewJson(self.trace_view_path)
         return trace_json.get_call_stack(data, index_id, ts_col)

@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
 from tqdm import tqdm
@@ -25,7 +25,7 @@ from msprof_analyze.advisor.common.graph.graph_parser import QueryGraphParser
 from msprof_analyze.advisor.dataset.graph_dataset import GraphDataset
 from msprof_analyze.advisor.common.graph.graph_match import find_isomorphisms
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class GraphFusionRules:

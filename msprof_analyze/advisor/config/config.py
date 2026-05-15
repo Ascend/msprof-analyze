@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 import html
 
@@ -23,7 +23,7 @@ from msprof_analyze.prof_common.singleton import singleton
 from msprof_analyze.prof_common.utils import SafeConfigReader
 from msprof_analyze.prof_common.path_manager import PathManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 @singleton

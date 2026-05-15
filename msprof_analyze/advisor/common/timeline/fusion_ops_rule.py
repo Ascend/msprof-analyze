@@ -1,11 +1,9 @@
 #  Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 import copy
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
-from msprof_analyze.advisor.utils.log import get_log_level
 
-logger = logging.getLogger()
-logger.setLevel(get_log_level())
+logger = get_logger()
 
 
 class OpRule:

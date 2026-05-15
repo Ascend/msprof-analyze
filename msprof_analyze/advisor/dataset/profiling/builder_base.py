@@ -16,13 +16,13 @@
 """
 profiling base
 """
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import Dict, List
 
 from msprof_analyze.advisor.dataset.profiling.profiling_parser import ProfilingParser
 from msprof_analyze.advisor.utils.utils import join_prof_path
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class ProfilingBuilderBase:

@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import Dict, List
 from collections import defaultdict
@@ -24,7 +24,7 @@ from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsMan
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.advisor.dataset.cluster.hccl_collection import HcclInfo
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class GroupStatistic:

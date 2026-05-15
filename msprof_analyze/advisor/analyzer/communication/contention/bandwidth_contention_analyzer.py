@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.analyzer.communication.base_communication_analyzer import BaseCommunicationAnalyzer
 from msprof_analyze.advisor.analyzer.communication.contention.bandwidth_contention_checker import \
@@ -23,7 +23,7 @@ from msprof_analyze.advisor.dataset.communication.communication_dataset import C
 from msprof_analyze.advisor.dataset.profiling.profiling_dataset import ProfilingDataset
 from msprof_analyze.advisor.result.result import OptimizeResult
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class BandwidthContentionAnalyzer(BaseCommunicationAnalyzer):

@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
 from msprof_analyze.prof_common.constant import Constant
@@ -23,7 +23,7 @@ from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.advisor.utils.utils import get_analyze_processes, ParallelJob
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
-logger = logging.getLogger()
+logger = get_logger()
 
 
 class TimelineOpStackFinder:
