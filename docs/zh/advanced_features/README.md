@@ -73,14 +73,15 @@ msprof-analyze -m free_analysis -d ./cluster_data -o ./output
 
 ### 通信类特性
 
-| 分析能力                 | 介绍                                                         | 文档链接                                                     |
-| ------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| communication_group_map  | 集群场景通信域与并行策略呈现。                               | -                                                            |
-| communication_time_sum   | 集群场景通信时间和带宽汇总分析。                             | -                                                            |
-| communication_matrix_sum | 集群场景通信矩阵汇总分析。                                   | -                                                            |
-| hccl_sum                 | 通信类算子信息汇总。                                         | -                                                            |
+| 分析能力                     | 介绍                    | 文档链接                                                     |
+|--------------------------|-----------------------| ------------------------------------------------------------ |
+| communication_group_map  | 集群场景通信域与并行策略呈现。       | -                                                            |
+| communication_time_sum   | 集群场景通信时间和带宽汇总分析。      | -                                                            |
+| communication_matrix_sum | 集群场景通信矩阵汇总分析。         | -                                                            |
+| hccl_sum                 | 通信类算子信息汇总。            | -                                                            |
 | pp_chart                 | pp流水图数据分析，针对pp并行下各个阶段的耗时分析与可视化能力。 | [pp流水图数据分析](./pp_chart_instruct.md)           |
 | slow_rank                | 根据当前的快慢卡统计算法，展示各个rank得出的快慢卡影响次数，识别慢卡出现的原因。 | -                                                            |
+| slow_link                | 集群异常耗时的算子汇总分析，进而识别慢卡。 | -                                                            |
 | communication_bottleneck | 对于长耗时通信算子，识别快慢卡，并推测造成通信等待的Host/Device侧操作。 | [通信瓶颈分析](./communication_bottleneck_instruct.md) |
 
 ### Host下发类特性
