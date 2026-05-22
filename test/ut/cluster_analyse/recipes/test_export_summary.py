@@ -16,7 +16,7 @@
 import unittest
 from unittest.mock import patch
 import os
-import shutil
+import tempfile
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.export_summary.export_summary import ExportSummary
@@ -25,15 +25,25 @@ from msprof_analyze.prof_common.constant import Constant
 
 class TestExportSummary(unittest.TestCase):
 
+    def setUp(self):
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = self._tmp_dir.name
+
+    def tearDown(self):
+        self._tmp_dir.cleanup()
+
     def _create_recipe(self, data_map=None):
         params = {
-            Constant.COLLECTION_PATH: "/test/path",
-            Constant.DATA_MAP: data_map or {0: "/test/path/rank0", 1: "/test/path/rank1"},
+            Constant.COLLECTION_PATH: os.path.join(self.tmp_path, "collection"),
+            Constant.DATA_MAP: data_map or {
+                0: os.path.join(self.tmp_path, "rank0"),
+                1: os.path.join(self.tmp_path, "rank1")
+            },
             Constant.RECIPE_NAME: "export_summary",
             Constant.PARALLEL_MODE: "concurrent",
             Constant.EXPORT_TYPE: "db",
             Constant.PROFILING_TYPE: "pytorch",
-            Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: "/test/output",
+            Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: os.path.join(self.tmp_path, "output"),
             Constant.RANK_LIST: "all",
             Constant.STEP_ID: -1
         }
