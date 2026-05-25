@@ -20,14 +20,21 @@ from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
 
-_npu_flop_registry: dict[str, Callable] = {}
+_npu_flop_registry: dict[str, tuple[Callable, bool]] = {}
 
 
-def register_npu_flop(op_name: str):
+def register_npu_flop(op_name: str, default: bool = True):
     def decorator(func: Callable) -> Callable:
         if op_name in _npu_flop_registry:
-            raise RuntimeError(f"Duplicate registration for {op_name}")
-        _npu_flop_registry[op_name] = func
+            existing_func, existing_default = _npu_flop_registry[op_name]
+            if default:
+                pass
+            else:
+                if not existing_default:
+                    logger.warning(f"Overriding non-default FLOPs registration for {op_name}")
+                _npu_flop_registry[op_name] = (func, default)
+        else:
+            _npu_flop_registry[op_name] = (func, default)
         return func
 
     return decorator
@@ -35,7 +42,7 @@ def register_npu_flop(op_name: str):
 
 def get_flop_func(op_name: str) -> Optional[Callable]:
     if op_name in _npu_flop_registry:
-        return _npu_flop_registry[op_name]
+        return _npu_flop_registry[op_name][0]
 
     try:
         from torch.utils.flop_counter import flop_registry as torch_flop_registry
@@ -50,4 +57,4 @@ def get_flop_func(op_name: str) -> Optional[Callable]:
 
 
 def get_npu_flop_registry() -> dict[str, Callable]:
-    return dict(_npu_flop_registry)
+    return {name: entry[0] for name, entry in _npu_flop_registry.items()}
