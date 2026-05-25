@@ -70,36 +70,18 @@ class MFUHookManager:
         return cls._installed
 
     @classmethod
-    def _get_call_stack(cls) -> list[str]:
-        if not hasattr(cls._local, 'call_stack'):
-            cls._local.call_stack = []
-        return cls._local.call_stack
-
-    @classmethod
-    def _is_nested_call(cls) -> bool:
-        return len(cls._get_call_stack()) > 0
-
-    @classmethod
     def _make_wrapper(cls, op_name: str, original_func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
-            call_stack = cls._get_call_stack()
-            is_nested = len(call_stack) > 0
+            if getattr(cls._local, 'in_hook', False):
+                return original_func(*args, **kwargs)
 
-            call_stack.append(op_name)
-            cls._local.call_stack = call_stack
-
+            cls._local.in_hook = True
             try:
                 result = original_func(*args, **kwargs)
-
-                if not is_nested:
-                    cls._record_flops(op_name, args, kwargs)
-
+                cls._record_flops(op_name, args, kwargs)
                 return result
             finally:
-                call_stack = cls._get_call_stack()
-                if call_stack and call_stack[-1] == op_name:
-                    call_stack.pop()
-                cls._local.call_stack = call_stack
+                cls._local.in_hook = False
 
         wrapper.__name__ = f"mfu_hooked_{op_name}"
         wrapper.__qualname__ = f"mfu_hooked_{op_name}"
