@@ -360,20 +360,59 @@ rm -rf /workspace/vllm_profile
 
 vllm serve /data/Qwen2.5-0.5B-Instruct \
     --port 8009 \
-    --profiler-config '"'{"profiler":"torch","torch_profiler_dir":"./vllm_profile"}'"' \
+    --profiler-config '"'"'{"profiler":"torch","torch_profiler_dir":"./vllm_profile"}'"'"' \
     --trust-remote-code \
     > /tmp/vllm_server.log 2>&1 &
 
 echo "PID=$!"
 '
+```
 
+```bash
+# 如果在容器中，直接执行 
+export ASCEND_RT_VISIBLE_DEVICES=4
+export MFU_RECORD=1
+export MFU_OUTPUT_DIR=/workspace/vllm_profile
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+export VLLM_ASSETS_CACHE=/tmp/vllm_cache
+
+rm -rf /workspace/vllm_profile
+
+vllm serve /data/Qwen2.5-0.5B-Instruct \
+    --port 8009 \
+    --profiler-config '{"profiler":"torch","torch_profiler_dir":"./vllm_profile"}' \
+    --trust-remote-code \
+    > /tmp/vllm_server.log 2>&1 &
+
+echo "PID=$!"
+```
+
+``` bash
 # 等待服务就绪（约 90-120 秒）
 # 检查是否就绪：
+
 docker exec wgw_pro curl -s http://localhost:8009/health
 # 返回 HTTP 200 即就绪
 ```
-
 ### Step 5：开始 profiling、发送请求、停止 profiling
+
+```bash 
+# ① 如果在容器中开始 profiling
+curl -s -X POST http://localhost:8009/start_profile
+
+# ② 发送推理请求（curl 实现，prompt 重复 10 次）
+curl -s -X POST http://localhost:8009/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "/data/Qwen2.5-0.5B-Instruct",
+    "prompt": "Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world ",
+    "max_tokens": 30,
+    "temperature": 0
+  }'
+
+# ③ 等待 5 秒后停止 profiling，再等待 15 秒让数据落盘（合并为一行）
+sleep 5 && curl -s -X POST http://localhost:8009/stop_profile && sleep 15
+```
 
 ```bash
 # ① 开始 profiling
