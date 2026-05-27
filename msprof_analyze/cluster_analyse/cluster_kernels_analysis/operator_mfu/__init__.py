@@ -17,8 +17,26 @@ from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.npu_fl
     register_npu_flop,
     get_flop_func,
     get_npu_flop_registry,
+    get_npu_flop_targets,
 )
-from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.mfu_hook_manager import MFUHookManager
+from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.mfu_hook_manager import (
+    MFUHookManager,
+    is_mfu_enabled,
+)
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.mfu_calculator import MFUCalculator
 
 import msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.npu_flop_formulas
+
+
+def install_mfu_hooks():
+    from msprof_analyze.prof_common.logger import get_logger
+    logger = get_logger()
+    logger.info("[MFU] install_mfu_hooks() called from operator_mfu.__init__")
+    MFUHookManager.install_from_env()
+
+
+def uninstall_mfu_hooks():
+    from msprof_analyze.prof_common.logger import get_logger
+    logger = get_logger()
+    logger.info("[MFU] uninstall_mfu_hooks() called from operator_mfu.__init__")
+    MFUHookManager.uninstall()
