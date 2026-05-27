@@ -14,6 +14,9 @@
 # limitations under the License.
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
+from msprof_analyze.prof_common.logger import get_logger
+
+logger = get_logger()
 
 
 QUERY_KERNEL_SHAPES = """
@@ -60,6 +63,7 @@ QUERY_OPERATOR_ARGS = """
 QUERY_MFU_FLOPS = """
     SELECT
         mstx.startNs,
+        mstx.endNs,
         str_msg.value AS flops
     FROM
         MSTX_EVENTS mstx
@@ -70,7 +74,7 @@ QUERY_MFU_FLOPS = """
     LEFT JOIN
         ENUM_MSTX_EVENT_TYPE mstx_type ON mstx_type.id = mstx.eventType
     WHERE
-        mstx_type.name = 'marker' AND str_domain.value = 'mfu_flops'
+        mstx_type.name = 'range' AND str_domain.value = 'mfu_flops'
     ORDER BY mstx.startNs
 """
 
@@ -97,6 +101,24 @@ class MfuFlopsExport(BaseStatsExport):
     def __init__(self, db_path, recipe_name):
         super().__init__(db_path, recipe_name, param_dict=None)
         self._query = QUERY_MFU_FLOPS
+        logger.info(f"[MFU] MfuFlopsExport initialized: db_path={db_path}, recipe_name={recipe_name}")
 
     def get_param_order(self):
         return []
+
+    def fetch_data(self):
+        logger.info(f"[MFU] MfuFlopsExport.fetch_data() called")
+        try:
+            result = super().fetch_data()
+            if result:
+                logger.info(f"[MFU] MfuFlopsExport: fetched {len(result)} MFU FLOPs records")
+                for i, row in enumerate(result[:5]):
+                    logger.debug(f"[MFU]   Row {i+1}: startNs={row[0]}, endNs={row[1]}, flops={row[2]}")
+                if len(result) > 5:
+                    logger.debug(f"[MFU]   ... and {len(result) - 5} more rows")
+            else:
+                logger.warning("[MFU] MfuFlopsExport: no MFU FLOPs records found in database")
+            return result
+        except Exception as e:
+            logger.error(f"[MFU] MfuFlopsExport.fetch_data() failed: {e}")
+            raise

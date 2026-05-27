@@ -44,40 +44,47 @@ class MFUCalculator:
         self.shapes_df = None
 
     def run(self):
-        logger.info("Start MFU calculation.")
+        logger.info("[MFU] Start MFU calculation.")
+        logger.info(f"[MFU] profiler_db_path={self.profiler_db_path}")
+        logger.info(f"[MFU] profiler_path={self.profiler_path}")
         if not self.chip_peak_manager.is_valid():
-            logger.error("Can not get chip info. Skip MFU calculation.")
+            logger.error("[MFU] Can not get chip info. Skip MFU calculation.")
             return pd.DataFrame()
+        logger.info(f"[MFU] Chip info: {self.chip_peak_manager.get_chip_info() if hasattr(self.chip_peak_manager, 'get_chip_info') else 'N/A'}")
         if not self._query_kernel_shapes():
-            logger.error("Query Kernel Shapes Failed. Skip MFU calculation.")
+            logger.error("[MFU] Query Kernel Shapes Failed. Skip MFU calculation.")
             return pd.DataFrame()
+        logger.info(f"[MFU] Kernel shapes queried: {len(self.shapes_df)} rows")
 
         mfu_flops_df = self._query_mfu_flops()
         if mfu_flops_df is not None and not mfu_flops_df.empty:
-            logger.info("Using new MFU data (mfu_flops domain from mstx marks).")
+            logger.info(f"[MFU] Using new MFU data (mfu_flops domain from mstx ranges). "
+                        f"Found {len(mfu_flops_df)} FLOPs records")
             mfu = self._calculate_mfu_from_recorded_flops(mfu_flops_df)
         else:
-            logger.info("No mfu_flops marks found, falling back to legacy FLOPs calculation.")
+            logger.info("[MFU] No mfu_flops ranges found, falling back to legacy FLOPs calculation.")
             matmul_mfu = self._process_common_operator_legacy(OperatorType.MATMUL)
             fa_mfu = self._process_operator_with_additional_args_mark_legacy(
                 OperatorType.FLASH_ATTENTION, 'flash_attn_args')
             mfu = pd.concat([matmul_mfu, fa_mfu], ignore_index=True)
 
-        logger.info("MFU calculation finished")
+        logger.info(f"[MFU] MFU calculation finished, result rows: {len(mfu)}")
         return mfu
 
     def _calculate_mfu_from_recorded_flops(self, mfu_flops_df):
+        logger.info(f"[MFU] _calculate_mfu_from_recorded_flops: {len(mfu_flops_df)} FLOPs records")
         if self.op_kernel_df is None and not self._query_op_kernel_correlation():
-            logger.warning("Can not get cpu-op to device-kernel correlation. Skip MFU calculation.")
+            logger.warning("[MFU] Can not get cpu-op to device-kernel correlation. Skip MFU calculation.")
             return pd.DataFrame()
 
-        mfu_flops_df = ensure_numeric_columns(mfu_flops_df, ['startNs'])
+        mfu_flops_df = ensure_numeric_columns(mfu_flops_df, ['startNs', 'endNs'])
         mfu_flops_df['flops'] = pd.to_numeric(mfu_flops_df['flops'], errors='coerce')
         mfu_flops_df = mfu_flops_df.dropna(subset=['flops'])
         mfu_flops_df = mfu_flops_df[mfu_flops_df['flops'] > 0]
+        logger.info(f"[MFU] After filtering invalid FLOPs: {len(mfu_flops_df)} records remain")
 
         if mfu_flops_df.empty:
-            logger.warning("No valid flops values found in mfu_flops marks.")
+            logger.warning("[MFU] No valid flops values found in mfu_flops ranges.")
             return pd.DataFrame()
 
         all_kernel_types = []
@@ -92,42 +99,51 @@ class MFUCalculator:
         if df.empty:
             return pd.DataFrame()
 
-        matched_df = pd.merge_asof(
-            left=mfu_flops_df.sort_values('startNs'),
-            right=df,
-            left_on='startNs',
-            right_on='op_ts',
-            direction='forward',
-            tolerance=3 * self.UNIT_MS_TO_NS
-        )
-        matched_df = matched_df[matched_df['kernel_name'].notna()].copy()
-        matched_df = matched_df.drop_duplicates(subset=['kernel_ts', 'kernel_end'], keep='last')
+        result_rows = []
+        for _, range_row in mfu_flops_df.iterrows():
+            range_start = range_row['startNs']
+            range_end = range_row['endNs']
+            flops = range_row['flops']
 
-        if matched_df.empty:
-            return pd.DataFrame()
-
-        result_df = matched_df.copy()
-        result_df['mfu'] = -1.0
-
-        for idx, row in result_df.iterrows():
-            try:
-                flops = row['flops']
-                task_duration = row['task_duration']
-                if task_duration <= 0 or flops <= 0:
-                    continue
-
-                dtype = self._determine_dtype_from_input_types(row.get('input_types', ''))
-                chip_peak = self._get_peak_performance(dtype)
-                if chip_peak == Constant.INVALID_RETURN:
-                    continue
-
-                mfu_value = flops / (task_duration * 1e-9) / chip_peak
-                result_df.loc[idx, 'mfu'] = mfu_value
-            except Exception as err:
-                logger.error(f"Calculate MFU for kernel {row.get('kernel_name', 'unknown')} failed, err: {err}")
+            if pd.isna(range_start) or pd.isna(range_end) or range_end <= range_start:
                 continue
 
-        return result_df.filter(['kernel_name', 'kernel_ts', 'kernel_end', 'mfu'])
+            mask = (df['op_ts'] >= range_start) & (df['op_ts'] <= range_end)
+            range_kernels = df[mask]
+
+            if range_kernels.empty:
+                continue
+
+            range_kernels = range_kernels.drop_duplicates(subset=['kernel_ts', 'kernel_end'])
+
+            total_duration = range_kernels['task_duration'].sum()
+            if total_duration <= 0 or flops <= 0:
+                continue
+
+            dtype = self._determine_dtype_from_input_types(
+                range_kernels.iloc[0].get('input_types', ''))
+            chip_peak = self._get_peak_performance(dtype)
+            if chip_peak == Constant.INVALID_RETURN:
+                continue
+
+            mfu_value = flops / (total_duration * 1e-9) / chip_peak
+
+            for _, kernel_row in range_kernels.iterrows():
+                kernel_duration = kernel_row['task_duration']
+                if kernel_duration <= 0:
+                    continue
+                kernel_mfu = flops / (kernel_duration * 1e-9) / chip_peak
+                result_rows.append({
+                    'kernel_name': kernel_row['kernel_name'],
+                    'kernel_ts': kernel_row['kernel_ts'],
+                    'kernel_end': kernel_row['kernel_end'],
+                    'mfu': kernel_mfu,
+                })
+
+        if not result_rows:
+            return pd.DataFrame()
+
+        return pd.DataFrame(result_rows)
 
     def _determine_dtype_from_input_types(self, input_types_str: str):
         if not input_types_str:
@@ -208,13 +224,17 @@ class MFUCalculator:
         return op_args_df
 
     def _query_mfu_flops(self):
+        logger.info("[MFU] _query_mfu_flops: querying MFU FLOPs data from DB")
         if not DBManager.check_tables_in_db(self.profiler_db_path, TableConstant.TABLE_MSTX_EVENTS):
+            logger.warning("[MFU] MSTX_EVENTS table not found in DB, cannot query MFU FLOPs")
             return None
         export = MfuFlopsExport(self.profiler_db_path, "")
         flops_df = export.read_export_db()
         if flops_df is None or flops_df.empty:
+            logger.info("[MFU] No MFU FLOPs data found in DB (MfuFlopsExport returned empty)")
             return None
-        return ensure_numeric_columns(flops_df, ['startNs'])
+        logger.info(f"[MFU] MFU FLOPs data queried: {len(flops_df)} rows")
+        return ensure_numeric_columns(flops_df, ['startNs', 'endNs'])
 
     def _get_peak_performance(self, dtype) -> float:
         return self.chip_peak_manager.get_peak_performance(dtype)
