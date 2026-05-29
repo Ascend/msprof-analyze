@@ -333,11 +333,11 @@ class MFUHookManager:
 
     @classmethod
     def _enter_record_function(cls, flops: int, op_name: str = ""):
-        label = f"{_MFU_FLOPS_DOMAIN}:{flops}:{op_name}"
+        label = f"{flops}:{op_name}"
         try:
             import torch_npu
-            stream = torch_npu.npu.current_stream()
-            range_id = torch_npu.npu.mstx.range_start(label, stream)
+            # stream = torch_npu.npu.current_stream()
+            range_id = torch_npu.npu.mstx.range_start(label, domain=_MFU_FLOPS_DOMAIN)
             logger.info(f"[MFU] mstx.range_start: {label}, range_id={range_id}")
             return ("mstx", range_id)
         except ImportError:
@@ -371,7 +371,7 @@ class MFUHookManager:
             ctx_type, ctx_obj = ctx
             if ctx_type == "mstx":
                 import torch_npu
-                torch_npu.npu.mstx.range_end(ctx_obj)
+                torch_npu.npu.mstx.range_end(ctx_obj, domain=_MFU_FLOPS_DOMAIN)
                 logger.info(f"[MFU] mstx.range_end: {op_name}")
             elif ctx_type == "mstx_raw":
                 import mstx

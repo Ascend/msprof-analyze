@@ -78,7 +78,11 @@ class MFUCalculator:
             return pd.DataFrame()
 
         mfu_flops_df = ensure_numeric_columns(mfu_flops_df, ['startNs', 'endNs'])
-        mfu_flops_df['flops'] = pd.to_numeric(mfu_flops_df['flops'], errors='coerce')
+        # mfu_flops_df['flops'] = pd.to_numeric(mfu_flops_df['flops'], errors='coerce')
+        split_result = mfu_flops_df['flops'].astype(str).str.split('-', expand=True)
+        mfu_flops_df['flops'] = pd.to_numeric(split_result[0], errors='coerce').fillna(-1)
+        mfu_flops_df['name'] = split_result[1].fillna('')
+
         mfu_flops_df = mfu_flops_df.dropna(subset=['flops'])
         mfu_flops_df = mfu_flops_df[mfu_flops_df['flops'] > 0]
         logger.info(f"[MFU] After filtering invalid FLOPs: {len(mfu_flops_df)} records remain")
@@ -87,10 +91,11 @@ class MFUCalculator:
             logger.warning("[MFU] No valid flops values found in mfu_flops ranges.")
             return pd.DataFrame()
 
-        all_kernel_types = []
-        for types_list in OP_TYPE_MAP.values():
-            all_kernel_types.extend(types_list)
-        filter_df = self.shapes_df[self.shapes_df['type'].isin(all_kernel_types)]
+        # all_kernel_types = []
+        # for types_list in OP_TYPE_MAP.values():
+        #     all_kernel_types.extend(types_list)
+        # filter_df = self.shapes_df[self.shapes_df['type'].isin(all_kernel_types)]
+        filter_df = self.shapes_df
 
         if filter_df.empty:
             return pd.DataFrame()
@@ -104,6 +109,7 @@ class MFUCalculator:
             range_start = range_row['startNs']
             range_end = range_row['endNs']
             flops = range_row['flops']
+            name = range_row['name']
 
             if pd.isna(range_start) or pd.isna(range_end) or range_end <= range_start:
                 continue
@@ -138,6 +144,10 @@ class MFUCalculator:
                     'kernel_ts': kernel_row['kernel_ts'],
                     'kernel_end': kernel_row['kernel_end'],
                     'mfu': kernel_mfu,
+                    'flops_op_name': name,
+                    'flops': flops,
+                    'kernel_duration': kernel_duration,
+                    'chip_peak': chip_peak,
                 })
 
         if not result_rows:

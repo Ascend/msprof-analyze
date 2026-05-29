@@ -71,10 +71,8 @@ QUERY_MFU_FLOPS = """
         STRING_IDS str_msg ON mstx.message = str_msg.id
     LEFT JOIN
         STRING_IDS str_domain ON mstx.domainId = str_domain.id
-    LEFT JOIN
-        ENUM_MSTX_EVENT_TYPE mstx_type ON mstx_type.id = mstx.eventType
     WHERE
-        mstx_type.name = 'range' AND str_domain.value = 'mfu_flops'
+        str_domain.value = 'mfu_flops'
     ORDER BY mstx.startNs
 """
 
