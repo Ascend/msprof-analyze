@@ -76,9 +76,8 @@ class ModuleNode(TreeNode):
 
 
 class KernelNode(TreeNode):
-    def __init__(self, start, end, name, mfu):
+    def __init__(self, start, end, name):
         super().__init__(start, end, NodeType.KERNEL_EVENT, name)
-        self.mfu = mfu
 
 
 class TreeBuilder:

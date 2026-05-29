@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .module_statistic import ModuleStatistic
+from .operator_mfu import OperatorMfu
 
-__all__ = ['ModuleStatistic']
+__all__ = ['OperatorMfu']
