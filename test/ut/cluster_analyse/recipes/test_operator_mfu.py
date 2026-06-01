@@ -15,11 +15,17 @@
 
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.operator_mfu.operator_mfu import OperatorMfu
+from msprof_analyze.cluster_analyse.recipes.operator_mfu.tree_build import (
+    KernelNode as OperatorMfuKernelNode,
+    TreeBuilder as OperatorMfuTreeBuilder,
+)
+from msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic import ModuleStatistic
+from msprof_analyze.cluster_analyse.recipes.module_statistic.tree_build import TreeBuilder as ModuleStatisticTreeBuilder
 from msprof_analyze.prof_common.constant import Constant
 
 
@@ -72,3 +78,79 @@ class TestOperatorMfu(unittest.TestCase):
 
         self.assertEqual(20, formatted_result.iloc[0]['Kernel Duration(ns)'])
         self.assertNotIn('kernel_duration', formatted_result.columns)
+
+    def test_tree_builder_when_import_from_operator_mfu_then_reuse_module_statistic_builder(self):
+        """测试 operator_mfu 复用 module_statistic 的树构建器。"""
+        self.assertIs(OperatorMfuTreeBuilder, ModuleStatisticTreeBuilder)
+
+    def test_kernel_node_when_import_from_operator_mfu_then_keep_mfu(self):
+        """测试 operator_mfu kernel 节点保留原有 MFU 接口。"""
+        node = OperatorMfuKernelNode(0, 10, 'kernel', 0.5)
+
+        self.assertEqual(0.5, node.mfu)
+
+    def test_operator_mfu_then_inherit_module_statistic(self):
+        """测试 operator_mfu 通过继承复用 module_statistic 能力。"""
+        self.assertIsInstance(self.analysis, ModuleStatistic)
+        self.assertIs(OperatorMfu._query_framework_op_to_kernel, ModuleStatistic._query_framework_op_to_kernel)
+        self.assertIs(OperatorMfu._build_complete_tree, ModuleStatistic._build_complete_tree)
+
+    def test_generate_module_mfu_stats_then_add_mfu_to_reused_flatten_result(self):
+        """测试复用树展开结果后仍能生成 module 级 MFU。"""
+        verbose_df = pd.DataFrame([{
+            'module_parent': 'parent',
+            'module': 'module',
+            'module_start': 0,
+            'module_end': 100,
+            'op_name': 'op',
+            'op_start': 10,
+            'op_end': 20,
+            'kernel_list': 'kernel',
+            'device_time': 8,
+        }])
+        kernel_df = pd.DataFrame([{
+            'op_name': 'op',
+            'op_ts': 10,
+            'op_end': 20,
+            'mfu': 0.5,
+        }])
+        self.analysis._flatten_tree_to_dataframe = Mock(return_value=verbose_df)
+
+        result = self.analysis._generate_module_mfu_stats(Mock(), rank_id=1, kernel_df=kernel_df)
+
+        self.assertEqual(1, result.iloc[0]['rank_id'])
+        self.assertEqual('50.0%', result.iloc[0]['avg_mfu'])
+
+    def test_aggregate_module_mfu_stats_when_multiple_ranks_then_keep_rank_groups_separate(self):
+        """测试 module 级 MFU 聚合不会合并不同 rank 的数据。"""
+        df = pd.DataFrame([
+            {
+                'rank_id': 0,
+                'module_parent': 'parent',
+                'module': 'module',
+                'module_start': 0,
+                'module_end': 100,
+                'op_name': 'op',
+                'op_start': 10,
+                'kernel_list': 'kernel',
+                'device_time': 8,
+                'mfu_list': [0.5],
+            },
+            {
+                'rank_id': 1,
+                'module_parent': 'parent',
+                'module': 'module',
+                'module_start': 0,
+                'module_end': 100,
+                'op_name': 'op',
+                'op_start': 10,
+                'kernel_list': 'kernel',
+                'device_time': 8,
+                'mfu_list': [0.7],
+            },
+        ])
+
+        result = self.analysis._aggregate_module_mfu_stats(df)
+
+        self.assertEqual({0, 1}, set(result['rank_id']))
+        self.assertEqual({'50.0%', '70.0%'}, set(result['avg_mfu']))
