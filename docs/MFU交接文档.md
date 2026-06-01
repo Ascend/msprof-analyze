@@ -2,6 +2,8 @@
 
 # MFU 重构测试——交接文档
 
+> **归档说明（2026-06-01）**：本文记录迁移前排查过程。当前采集侧已迁移到 `torch_npu.profiler`，统一通过 `_ExperimentalConfig(record_flops=True)` 启用，标签格式为 `<flops>-<op_name>`。JSON 调试文件、`MFU_RECORD`、bootstrap 注入和解析侧 legacy fallback 均已移除。当前设计请参见 `docs/zh/design/MFU采集与计算重构设计文档.md`。
+>
 > **日期**: 2026-05-27
 > **作者**: AI Agent (Codex)
 > **状态**: mstx 事件采集问题排查中
@@ -570,4 +572,3 @@ docker exec wgw_pro npu-smi info
 | 问题定位                         | 已定位到 `_ExperimentalConfig(mstx=False)` 默认关闭          |
 | 下一步                          | 需要通过 profiler config 或环境变量启用 CANN profiler 的 mstx 采集 |
 | 测试脚本清理                       | 根目录有 90+ 测试/排查脚本，建议清理                                |
-

@@ -65,17 +65,16 @@ class OperatorMfu(BaseRecipeAnalysis):
             self.save_excel(mapper_res)
 
     def mapper_func(self, context):
-        data_map_list = self.get_data_map_list(context)
-        results = []
-        for data_map in data_map_list:
-            try:
-                result = self._mapper_func(data_map, self.__class__)
-                results.append(result)
-            except Exception as e:
-                logger.error(f"Error processing data map: {e}")
-                rank_id = data_map.get(Constant.RANK_ID, "unknown")
-                results.append((rank_id, pd.DataFrame(), pd.DataFrame()))
-        return results
+        db_paths = self._get_rank_db()
+        if not db_paths:
+            return []
+        return context.wait(
+            context.map(
+                self._mapper_func,
+                db_paths,
+                analysis_class=self._recipe_name
+            )
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
@@ -83,37 +82,42 @@ class OperatorMfu(BaseRecipeAnalysis):
 
         # Query data
         module_df, kernel_df = self._query_all_data(profiler_db_path, rank_id)
-        if module_df is None or module_df.empty:
+
+        # If no kernel data, return empty
+        if kernel_df is None or kernel_df.empty:
+            logger.error(f"No kernel data found for rank {rank_id}")
             return rank_id, pd.DataFrame(), pd.DataFrame()
 
         # Calculate MFU
         kernel_df = self._calculate_kernel_mfu(data_map, kernel_df)
 
-        # Build tree and process
-        root = self._build_complete_tree(module_df, kernel_df)
-        if not root:
-            logger.error(f"Empty event tree for rank {rank_id}")
-            return rank_id, pd.DataFrame(), pd.DataFrame()
-
-        # Generate kernel-level MFU list
+        # Generate kernel-level MFU list (always available)
         kernel_mfu_df = self._generate_kernel_mfu_list(kernel_df, rank_id)
 
-        # Generate module-level MFU statistics
-        module_mfu_df = self._generate_module_mfu_stats(root, rank_id)
+        # Generate module-level MFU statistics only if module data exists
+        module_mfu_df = pd.DataFrame()
+        if module_df is not None and not module_df.empty:
+            root = self._build_complete_tree(module_df, kernel_df)
+            if root:
+                module_mfu_df = self._generate_module_mfu_stats(root, rank_id)
+            else:
+                logger.warning(f"Failed to build event tree for rank {rank_id}, skipping module MFU stats")
+        else:
+            logger.info(f"No module data found for rank {rank_id}, only kernel-level MFU will be generated")
 
         return rank_id, kernel_mfu_df, module_mfu_df
 
     def _query_all_data(self, profiler_db_path, rank_id):
-        # Query module data
+        # Query module data (optional)
         module_export = ModuleMstxRangeExport(profiler_db_path, self._recipe_name)
         module_df = module_export.read_export_db()
         if module_df is None or module_df.empty:
-            logger.error(f"Can not export mstx range event from rank {rank_id}")
-            return None, None
+            logger.info(f"No mstx range event (module data) found from rank {rank_id}")
+            module_df = pd.DataFrame()
+        else:
+            module_df = ensure_numeric_columns(module_df, ['startNs', 'endNs'])
 
-        module_df = ensure_numeric_columns(module_df, ['startNs', 'endNs'])
-
-        # Query kernel data
+        # Query kernel data (required)
         kernel_df = self._query_framework_op_to_kernel(profiler_db_path)
         if kernel_df is None or kernel_df.empty:
             logger.error(f"Can not export framework op to kernel mapper from rank {rank_id}")
@@ -171,7 +175,7 @@ class OperatorMfu(BaseRecipeAnalysis):
             for (op_name, op_ts, op_end), kernels in op_groups.items():
                 op_node = TreeNode(op_ts, op_end, NodeType.CPU_OP_EVENT, op_name)
 
-                # Add kernel nodes for each op
+                # Add kernel nodes for each op, storing MFU in the node
                 for kernel in kernels:
                     kernel_mfu = kernel.get('mfu', -1.0) if 'mfu' in kernel else -1.0
                     kernel_node = KernelNode(kernel['kernel_ts'], kernel['kernel_end'],
@@ -192,21 +196,37 @@ class OperatorMfu(BaseRecipeAnalysis):
         return TreeBuilder.build_tree_from_events(all_nodes, global_start, global_end)
 
     def _generate_kernel_mfu_list(self, kernel_df, rank_id):
-        """Generate kernel-level MFU list."""
+        """Generate kernel-level MFU list with detailed information."""
         if kernel_df is None or kernel_df.empty:
+            return pd.DataFrame()
+
+        # Filter out invalid MFU values (-1)
+        valid_kernel_df = kernel_df[kernel_df.get('mfu', -1) != -1.0].copy()
+        if valid_kernel_df.empty:
+            logger.warning(f"No valid MFU data for rank {rank_id}")
             return pd.DataFrame()
 
         # Select and rename columns for kernel MFU
         kernel_mfu_list = []
-        for _, row in kernel_df.iterrows():
+        for _, row in valid_kernel_df.iterrows():
+            chip_peak_tflops = round(row.get('chip_peak', 0) / 1e12, 2) if row.get('chip_peak', 0) > 0 else 0
+            mfu = round(row.get('mfu', 0), 4)
+            # actual_tflops is calculated from flops and duration in MFUCalculator
+            actual_tflops = row.get('actual_tflops', round(mfu * chip_peak_tflops, 2))
             kernel_mfu_list.append({
                 'rank_id': rank_id,
                 'op_name': row.get('op_name', ''),
                 'kernel_name': row.get('kernel_name', ''),
                 'kernel_ts': row.get('kernel_ts', 0),
                 'kernel_end': row.get('kernel_end', 0),
-                'kernel_duration': row.get('kernel_end', 0) - row.get('kernel_ts', 0),
-                'mfu': row.get('mfu', -1.0)
+                'kernel_duration_ns': row.get('kernel_duration', row.get('kernel_end', 0) - row.get('kernel_ts', 0)),
+                'mfu': mfu,
+                'actual_tflops': actual_tflops,
+                'chip_peak_tflops': chip_peak_tflops,
+                'flops': row.get('flops', 0),
+                'flops_op_name': row.get('flops_op_name', ''),
+                'input_shapes': row.get('input_shapes', ''),
+                'output_shapes': row.get('output_shapes', ''),
             })
 
         if not kernel_mfu_list:

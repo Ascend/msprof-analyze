@@ -43,23 +43,6 @@ QUERY_KERNEL_SHAPES = """
     ORDER BY task.startNs;
 """
 
-QUERY_OPERATOR_ARGS = """
-    SELECT
-        mstx.startNs,
-        str_msg.value AS operator_args
-    FROM
-        MSTX_EVENTS mstx
-    LEFT JOIN
-        STRING_IDS str_msg ON mstx.message = str_msg.id
-    LEFT JOIN
-        STRING_IDS str_domain ON mstx.domainId = str_domain.id
-    LEFT JOIN
-        ENUM_MSTX_EVENT_TYPE mstx_type ON mstx_type.id = mstx.eventType
-    WHERE
-        mstx_type.name = 'marker' AND str_domain.value = ?
-    ORDER BY mstx.startNs
-"""
-
 QUERY_MFU_FLOPS = """
     SELECT
         mstx.startNs,
@@ -84,15 +67,6 @@ class KernelShapeExport(BaseStatsExport):
 
     def get_param_order(self):
         return []
-
-
-class OperatorArgsExport(BaseStatsExport):
-    def __init__(self, db_path, recipe_name, param_dict):
-        super().__init__(db_path, recipe_name, param_dict)
-        self._query = QUERY_OPERATOR_ARGS
-
-    def get_param_order(self):
-        return ["op_args_domain"]
 
 
 class MfuFlopsExport(BaseStatsExport):

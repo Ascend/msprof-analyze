@@ -1,5 +1,7 @@
 # MFU 采集侧重构设计文档
 
+> **归档说明（2026-06-01）**：本文是迁移前设计草稿。采集侧已经迁移到 `torch_npu.profiler`，当前实现详见 `docs/zh/design/MFU采集与计算重构设计文档.md`。
+
 ## 一、背景
 
 当前 MFU（Model FLOPs Utilization）的计算完全在解析侧（msprof-analyze）完成。解析侧从 Profiler DB 的 `COMPUTE_TASK_INFO` 表中读取 kernel 的 shape 信息，再通过 FLOPs 策略公式计算 FLOPs，最后除以 `duration × chip_peak` 得到 MFU。
@@ -241,4 +243,3 @@ ORDER BY mstx.startNs
 - 优先从 `mfu_flops` domain 读取 FLOPs
 - 如果没有 `mfu_flops` mark，fallback 到旧的策略公式计算
 - `operator_flops.py` 保留不删除，作为 fallback 使用
-
