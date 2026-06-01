@@ -16,7 +16,7 @@
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.chip_peak_flops import ChipPeakFLOPSCalculator
-from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import OperatorFLOPs
+from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import DataType, OperatorFLOPs
 from msprof_analyze.prof_exports.mfu_export import KernelShapeExport, MfuFlopsExport
 from msprof_analyze.prof_exports.module_statistic_export import FrameworkOpToKernelExport
 from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_columns
@@ -30,32 +30,28 @@ logger = get_logger()
 
 
 class MFUCalculator:
-    MFU_FLOPS_DOMAIN = "mfu_flops"
-
     def __init__(self, data_map, op_kernel_df=None):
         self.profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         self.profiler_path = data_map.get(Constant.PROFILING_PATH)
         self.chip_peak_manager = ChipPeakFLOPSCalculator(self.profiler_path)
-        self.op_kernel_df = op_kernel_df
+        self.op_kernel_df = op_kernel_df  # cpu-op与下发的device-kernel的关联关系
         self.shapes_df = None
 
     def run(self):
         logger.info("[MFU] Start MFU calculation.")
-        logger.info(f"[MFU] profiler_db_path={self.profiler_db_path}")
-        logger.info(f"[MFU] profiler_path={self.profiler_path}")
+        logger.debug(f"[MFU] profiler_db_path={self.profiler_db_path}")
+        logger.debug(f"[MFU] profiler_path={self.profiler_path}")
         if not self.chip_peak_manager.is_valid():
             logger.error("[MFU] Can not get chip info. Skip MFU calculation.")
             return pd.DataFrame()
-        logger.info(f"[MFU] Chip info: {self.chip_peak_manager.get_chip_info() if hasattr(self.chip_peak_manager, 'get_chip_info') else 'N/A'}")
         if not self._query_kernel_shapes():
             logger.error("[MFU] Query Kernel Shapes Failed. Skip MFU calculation.")
             return pd.DataFrame()
-        logger.info(f"[MFU] Kernel shapes queried: {len(self.shapes_df)} rows")
+        logger.debug(f"[MFU] Kernel shapes queried: {len(self.shapes_df)} rows")
 
         mfu_flops_df = self._query_mfu_flops()
         if mfu_flops_df is not None and not mfu_flops_df.empty:
-            logger.info(f"[MFU] Using MFU data (mfu_flops domain from mstx ranges). "
-                        f"Found {len(mfu_flops_df)} FLOPs records")
+            logger.debug(f"[MFU] Using MFU data from mstx ranges: {len(mfu_flops_df)} FLOPs records")
             mfu = self._calculate_mfu_from_recorded_flops(mfu_flops_df)
         else:
             logger.warning("[MFU] No mfu_flops ranges found. Skip MFU calculation.")
@@ -65,11 +61,13 @@ class MFUCalculator:
         return mfu
 
     def _calculate_mfu_from_recorded_flops(self, mfu_flops_df):
-        logger.info(f"[MFU] _calculate_mfu_from_recorded_flops: {len(mfu_flops_df)} FLOPs records")
+        """根据 mstx range 中记录的 FLOPs 计算 kernel 级 MFU。"""
+        logger.debug(f"[MFU] Calculate MFU from {len(mfu_flops_df)} FLOPs records")
         if self.op_kernel_df is None and not self._query_op_kernel_correlation():
             logger.warning("[MFU] Can not get cpu-op to device-kernel correlation. Skip MFU calculation.")
             return pd.DataFrame()
 
+        # range 消息格式为 "<FLOPs>-<算子名>"，格式不合法或 FLOPs 非正数的数据不参与计算。
         mfu_flops_df = ensure_numeric_columns(mfu_flops_df, ['startNs', 'endNs'])
         split_result = mfu_flops_df['flops'].astype(str).str.extract(
             r'^(?P<flops>\d+)-(?P<name>.+)$'
@@ -79,16 +77,12 @@ class MFUCalculator:
 
         mfu_flops_df = mfu_flops_df.dropna(subset=['flops'])
         mfu_flops_df = mfu_flops_df[mfu_flops_df['flops'] > 0]
-        logger.info(f"[MFU] After filtering invalid FLOPs: {len(mfu_flops_df)} records remain")
+        logger.debug(f"[MFU] Valid FLOPs records after filtering: {len(mfu_flops_df)}")
 
         if mfu_flops_df.empty:
             logger.warning("[MFU] No valid flops values found in mfu_flops ranges.")
             return pd.DataFrame()
 
-        # all_kernel_types = []
-        # for types_list in OP_TYPE_MAP.values():
-        #     all_kernel_types.extend(types_list)
-        # filter_df = self.shapes_df[self.shapes_df['type'].isin(all_kernel_types)]
         filter_df = self.shapes_df
 
         if filter_df.empty:
@@ -108,32 +102,33 @@ class MFUCalculator:
             if pd.isna(range_start) or pd.isna(range_end) or range_end <= range_start:
                 continue
 
+            # 一个 FLOPs range 对应一个算子，使用 range 内启动的 kernel 作为该算子的计算任务。
             mask = (df['op_ts'] >= range_start) & (df['op_ts'] <= range_end)
             range_kernels = df[mask]
 
             if range_kernels.empty:
                 continue
 
+            # 多表关联可能返回重复 kernel，计算前按时间范围去重。
             range_kernels = range_kernels.drop_duplicates(subset=['kernel_ts', 'kernel_end'])
 
             total_duration = range_kernels['task_duration'].sum()
             if total_duration <= 0 or flops <= 0:
                 continue
 
+            # 同一 range 下的 kernel 属于同一算子，使用首个 kernel 的输入类型获取芯片理论峰值。
             dtype = self._determine_dtype_from_input_types(
                 range_kernels.iloc[0].get('input_types', ''))
             chip_peak = self._get_peak_performance(dtype)
             if chip_peak == Constant.INVALID_RETURN:
                 continue
 
-            mfu_value = flops / (total_duration * 1e-9) / chip_peak
-
             for _, kernel_row in range_kernels.iterrows():
                 kernel_duration = kernel_row['task_duration']
                 if kernel_duration <= 0:
                     continue
                 kernel_mfu = flops / (kernel_duration * 1e-9) / chip_peak
-                # Calculate actual TFLOPS from flops and duration
+                # 实际 TFLOPS 与 MFU 均按 kernel 执行时长计算。
                 actual_tflops = round(flops / (kernel_duration * 1e-9) / 1e12, 2)
                 result_rows.append({
                     'kernel_name': kernel_row['kernel_name'],
@@ -155,14 +150,13 @@ class MFUCalculator:
         return pd.DataFrame(result_rows)
 
     def _determine_dtype_from_input_types(self, input_types_str: str):
-        if not input_types_str:
-            from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import DataType
+        """从 kernel 输入类型中提取用于计算芯片峰值的数据类型。"""
+        if not isinstance(input_types_str, str) or not input_types_str:
             return DataType.FLOAT16
 
         type_list = [t.strip().upper() for t in input_types_str.split(';') if t.strip()]
         if type_list:
             return OperatorFLOPs.format_data_type(type_list[0])
-        from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import DataType
         return DataType.FLOAT16
 
     def _query_kernel_shapes(self):
@@ -187,17 +181,19 @@ class MFUCalculator:
         return True
 
     def _query_mfu_flops(self):
-        logger.info("[MFU] _query_mfu_flops: querying MFU FLOPs data from DB")
+        """查询 mstx range 中记录的算子 FLOPs。"""
+        logger.debug("[MFU] Query MFU FLOPs data from DB")
         if not DBManager.check_tables_in_db(self.profiler_db_path, TableConstant.TABLE_MSTX_EVENTS):
-            logger.warning("[MFU] MSTX_EVENTS table not found in DB, cannot query MFU FLOPs")
+            logger.debug("[MFU] MSTX_EVENTS table not found in DB")
             return None
         export = MfuFlopsExport(self.profiler_db_path, "")
         flops_df = export.read_export_db()
         if flops_df is None or flops_df.empty:
-            logger.info("[MFU] No MFU FLOPs data found in DB (MfuFlopsExport returned empty)")
+            logger.debug("[MFU] No MFU FLOPs data found in DB")
             return None
-        logger.info(f"[MFU] MFU FLOPs data queried: {len(flops_df)} rows")
+        logger.debug(f"[MFU] MFU FLOPs data queried: {len(flops_df)} rows")
         return ensure_numeric_columns(flops_df, ['startNs', 'endNs'])
 
     def _get_peak_performance(self, dtype) -> float:
+        """获取芯片理论计算峰值。"""
         return self.chip_peak_manager.get_peak_performance(dtype)

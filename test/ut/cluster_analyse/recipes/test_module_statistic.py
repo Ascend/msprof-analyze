@@ -218,7 +218,7 @@ class TestModuleStatistic(unittest.TestCase):
         mod_parent = ModuleNode(10, 90, "mod_parent")
         mod = ModuleNode(15, 50, "mod")
         op = TreeNode(20, 30, NodeType.CPU_OP_EVENT, "op")
-        kernel = KernelNode(21, 29, "k", -1.0)
+        kernel = KernelNode(21, 29, "k")
         op.add_child(kernel)
         mod.add_child(op)
         mod_parent.add_child(mod)
@@ -255,8 +255,7 @@ class TestModuleStatistic(unittest.TestCase):
             'op_start': [1, 5, 25, 30],
             'op_end': [4, 8, 29, 33],
             'kernel_list': ['k1', 'k2', 'k1', 'k2'],
-            'device_time': [2.0, 2.0, 3.0, 2.0],
-            'mfu_list': [[0.5], [0.2], [0.5], [0.3]]
+            'device_time': [2.0, 2.0, 3.0, 2.0]
         })
         self.analysis._export_type = Constant.TEXT
         out1 = self.analysis._aggregate_module_operator_stats(df1)
@@ -269,10 +268,8 @@ class TestModuleStatistic(unittest.TestCase):
         op2_row = out1[out1['Op Name'] == 'op2'].iloc[0]
         self.assertEqual(op1_row['Total Kernel Duration(ns)'], 5.0)
         self.assertEqual(op1_row['Op Count'], 2)
-        self.assertEqual(op1_row['Avg MFU'], '50.0%')
         self.assertEqual(op2_row['Total Kernel Duration(ns)'], 4.0)
         self.assertEqual(op2_row['Op Count'], 2)
-        self.assertEqual(op2_row['Avg MFU'], '25.0%')
 
         # 输入有4条数据不能聚合
         df2 = pd.DataFrame({
@@ -284,8 +281,7 @@ class TestModuleStatistic(unittest.TestCase):
             'op_start': [1, 5, 25, 30],
             'op_end': [4, 8, 29, 33],
             'kernel_list': ['k1', 'k2', 'k1', 'k3'],
-            'device_time': [2.0, 2.0, 3.0, 2.0],
-            'mfu_list': [[0.5], [0.2], [0.5], [0.3]]
+            'device_time': [2.0, 2.0, 3.0, 2.0]
         })
         expected_stat_df = pd.DataFrame({
             'Parent Module': ['p', 'p', 'p', 'p'],
@@ -294,8 +290,7 @@ class TestModuleStatistic(unittest.TestCase):
             'Kernel List': ['k1', 'k2', 'k1', 'k3'],
             'Total Kernel Duration(ns)': [2.0, 2.0, 3.0, 2.0],
             'Avg Kernel Duration(ns)': [2.0, 2.0, 3.0, 2.0],
-            'Op Count': [1, 1, 1, 1],
-            'Avg MFU': ['50.0%', '20.0%', '50.0%', '30.0%']
+            'Op Count': [1, 1, 1, 1]
         })
         out2 = self.analysis._aggregate_module_operator_stats(df2)
         self.assertEqual(len(out2), 4)
@@ -361,15 +356,12 @@ class TestModuleStatistic(unittest.TestCase):
         result = self.analysis._query_framework_op_to_kernel(profiler_db_path)
         self.assertIsNone(result)
 
-    @patch('msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic.MFUCalculator')
     @patch('msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic.BackwardModuleCreator')
     @patch('msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic.ModuleMstxRangeExport')
-    def test_mapper_func_success(self, mock_module_export, mock_backward_creator_class, mock_mfu_calculator):
+    def test_mapper_func_success(self, mock_module_export, mock_backward_creator_class):
         mock_module_instance = Mock()
         mock_module_instance.read_export_db.return_value = self.mock_module_data
         mock_module_export.return_value = mock_module_instance
-
-        mock_mfu_calculator.return_value.run.return_value = pd.DataFrame()
 
         self.analysis._query_framework_op_to_kernel = Mock(return_value=self.mock_kernel_data)
 
@@ -409,16 +401,13 @@ class TestModuleStatistic(unittest.TestCase):
         self.assertEqual(rank_id, '0')
         self.assertTrue(result_df.empty)
 
-    @patch('msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic.MFUCalculator')
     @patch('msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic.BackwardModuleCreator')
     @patch('msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic.ModuleMstxRangeExport')
-    def test_mapper_func_with_backward_data(self, mock_module_export, mock_backward_creator_class, mock_mfu_calculator):
+    def test_mapper_func_with_backward_data(self, mock_module_export, mock_backward_creator_class):
         # 准备mock
         mock_module_instance = Mock()
         mock_module_instance.read_export_db.return_value = self.mock_module_data
         mock_module_export.return_value = mock_module_instance
-
-        mock_mfu_calculator.return_value.run.return_value = pd.DataFrame()
 
         self.analysis._query_framework_op_to_kernel = Mock(return_value=self.mock_kernel_data)
 

@@ -184,8 +184,7 @@ class ModuleStatistic(BaseRecipeAnalysis):
 
                 # 为每个op添加对应的kernel节点
                 for kernel in kernels:
-                    kernel_node = KernelNode(kernel['kernel_ts'], kernel['kernel_end'],
-                                             kernel['kernel_name'])
+                    kernel_node = KernelNode(kernel['kernel_ts'], kernel['kernel_end'], kernel['kernel_name'])
                     op_node.add_child(kernel_node)
 
                 op_nodes.append(op_node)
@@ -240,7 +239,7 @@ class ModuleStatistic(BaseRecipeAnalysis):
                 'op_start': op_node.start,
                 'op_end': op_node.end,
                 'kernel_list': ', '.join(kernel_names),
-                'device_time': total_device_time
+                'device_time': total_device_time,
             })
 
         # 使用通用的树遍历方法
@@ -282,7 +281,7 @@ class ModuleStatistic(BaseRecipeAnalysis):
                 total_kernel_duration=('device_time', 'sum'),
                 avg_kernel_duration=('device_time', 'mean'),
                 op_count=('device_time', 'count'),
-                op_start=('op_start', 'min')
+                op_start=('op_start', 'min'),
             ).reset_index()
         )
 
@@ -326,7 +325,7 @@ class ModuleStatistic(BaseRecipeAnalysis):
                     'kernel_list': 'kernelList',
                     'op_count': 'opCount',
                     'total_kernel_duration': 'totalKernelDuration(ns)',
-                    'avg_kernel_duration': 'avgKernelDuration(ns)'
+                    'avg_kernel_duration': 'avgKernelDuration(ns)',
                 }
             elif self._export_type == Constant.TEXT:
                 column_mapping = {
@@ -336,7 +335,7 @@ class ModuleStatistic(BaseRecipeAnalysis):
                     'kernel_list': 'Kernel List',
                     'op_count': 'Op Count',
                     'total_kernel_duration': 'Total Kernel Duration(ns)',
-                    'avg_kernel_duration': 'Avg Kernel Duration(ns)'
+                    'avg_kernel_duration': 'Avg Kernel Duration(ns)',
                 }
             else:
                 return stat_df

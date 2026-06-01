@@ -22,14 +22,18 @@ logger = get_logger()
 
 
 class NodeType(Enum):
+    """树节点类型。"""
+
     MODULE_EVENT_NODE = 0
     CPU_OP_EVENT = 1
     KERNEL_EVENT = 2
 
 
 class TreeNode:
+    """通用事件树节点。"""
 
     def __init__(self, start, end, node_type, name):
+        """初始化事件树节点。"""
         self.start = start
         self.end = end
         self.node_type = node_type
@@ -38,6 +42,7 @@ class TreeNode:
 
     @classmethod
     def create_from_df(cls, df, node_type, start_col, end_col, name_col):
+        """根据 DataFrame 批量创建通用节点。"""
         if df is None or df.empty:
             return []
         return [
@@ -46,24 +51,30 @@ class TreeNode:
         ]
 
     def add_child(self, node):
+        """添加子节点。"""
         self.children.append(node)
 
 
 class ModuleNode(TreeNode):
+    """module 事件节点。"""
+
     MODULE_TYPE_COL_NAME = "module_type"
     BACKWARD = 'Backward'
     FORWARD = 'Forward'
 
     def __init__(self, start, end, name, module_type=None):
+        """初始化 module 节点。"""
         super().__init__(start, end, NodeType.MODULE_EVENT_NODE, name)
         self.module_type = module_type if module_type is not None else self.FORWARD
 
     @property
     def is_backward(self):
+        """判断当前 module 是否属于反向传播。"""
         return self.module_type == self.BACKWARD
 
     @classmethod
     def create_from_df(cls, df, start_col, end_col, name_col):
+        """根据 DataFrame 批量创建 module 节点。"""
         if df is None or df.empty:
             return []
         nodes = []
@@ -76,15 +87,20 @@ class ModuleNode(TreeNode):
 
 
 class KernelNode(TreeNode):
+    """保存 MFU 的 kernel 事件节点。"""
+
     def __init__(self, start, end, name, mfu):
+        """初始化 kernel 节点。"""
         super().__init__(start, end, NodeType.KERNEL_EVENT, name)
         self.mfu = mfu
 
 
 class TreeBuilder:
+    """构建并遍历 module、op 和 kernel 事件树。"""
 
     @staticmethod
     def create_tree_nodes_from_df(df, node_type, start_col, end_col, name_col):
+        """根据节点类型从 DataFrame 创建树节点。"""
         if df is None or df.empty:
             return []
         if node_type == NodeType.MODULE_EVENT_NODE:
@@ -94,6 +110,7 @@ class TreeBuilder:
 
     @staticmethod
     def build_tree_from_events(events, global_start=None, global_end=None):
+        """根据事件时间范围构建层级树。"""
         if not events:
             logger.error("Empty events, skipping tree build")
             return None
@@ -131,7 +148,10 @@ class TreeBuilder:
 
     @staticmethod
     def traverse_module_tree(root_node, callback, max_traverse_depth=20):
+        """遍历 module 树，并对 module 的直属 op 执行回调。"""
+
         def _traverse(node, module_node_deque, depth=0):
+            """递归遍历 module 节点。"""
             if depth > max_traverse_depth:
                 logger.warning(f"Max traversal depth {max_traverse_depth} reached, traversal stopped. "
                                f"Some information may be lost")

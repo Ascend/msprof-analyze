@@ -64,13 +64,6 @@ class ChipPeakFLOPSCalculator:
     def is_valid(self):
         return self.aicore_count and self.aic_frequency
 
-    def get_chip_info(self):
-        return {
-            "aicore_count": self.aicore_count,
-            "aic_frequency_mhz": self.aic_frequency,
-            "peak_flops": {str(k): v for k, v in self.peak_flops.items()},
-        }
-
     def get_peak_performance(self, data_type: DataType):
         if not self.aicore_count or not self.aic_frequency:
             return Constant.INVALID_RETURN

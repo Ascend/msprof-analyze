@@ -14,9 +14,6 @@
 # limitations under the License.
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
-from msprof_analyze.prof_common.logger import get_logger
-
-logger = get_logger()
 
 
 QUERY_KERNEL_SHAPES = """
@@ -44,10 +41,11 @@ QUERY_KERNEL_SHAPES = """
 """
 
 QUERY_MFU_FLOPS = """
+    -- 查询 mfu_flops domain 下记录的算子 FLOPs range。
     SELECT
         mstx.startNs,
         mstx.endNs,
-        str_msg.value AS flops
+        str_msg.value as flops
     FROM
         MSTX_EVENTS mstx
     LEFT JOIN
@@ -71,26 +69,10 @@ class KernelShapeExport(BaseStatsExport):
 
 class MfuFlopsExport(BaseStatsExport):
     def __init__(self, db_path, recipe_name):
+        """初始化 MFU FLOPs 查询。"""
         super().__init__(db_path, recipe_name, param_dict=None)
         self._query = QUERY_MFU_FLOPS
-        logger.info(f"[MFU] MfuFlopsExport initialized: db_path={db_path}, recipe_name={recipe_name}")
 
     def get_param_order(self):
+        """返回 SQL 查询参数顺序。"""
         return []
-
-    def fetch_data(self):
-        logger.info(f"[MFU] MfuFlopsExport.fetch_data() called")
-        try:
-            result = super().fetch_data()
-            if result:
-                logger.info(f"[MFU] MfuFlopsExport: fetched {len(result)} MFU FLOPs records")
-                for i, row in enumerate(result[:5]):
-                    logger.debug(f"[MFU]   Row {i+1}: startNs={row[0]}, endNs={row[1]}, flops={row[2]}")
-                if len(result) > 5:
-                    logger.debug(f"[MFU]   ... and {len(result) - 5} more rows")
-            else:
-                logger.warning("[MFU] MfuFlopsExport: no MFU FLOPs records found in database")
-            return result
-        except Exception as e:
-            logger.error(f"[MFU] MfuFlopsExport.fetch_data() failed: {e}")
-            raise
