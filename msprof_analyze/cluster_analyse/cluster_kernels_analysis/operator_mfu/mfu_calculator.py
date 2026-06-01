@@ -38,33 +38,33 @@ class MFUCalculator:
         self.shapes_df = None
 
     def run(self):
-        logger.info("[MFU] Start MFU calculation.")
-        logger.debug(f"[MFU] profiler_db_path={self.profiler_db_path}")
-        logger.debug(f"[MFU] profiler_path={self.profiler_path}")
+        logger.info("Start MFU calculation.")
+        logger.debug(f"profiler_db_path={self.profiler_db_path}")
+        logger.debug(f"profiler_path={self.profiler_path}")
         if not self.chip_peak_manager.is_valid():
-            logger.error("[MFU] Can not get chip info. Skip MFU calculation.")
+            logger.error("Can not get chip info. Skip MFU calculation.")
             return pd.DataFrame()
         if not self._query_kernel_shapes():
-            logger.error("[MFU] Query Kernel Shapes Failed. Skip MFU calculation.")
+            logger.error("Query Kernel Shapes Failed. Skip MFU calculation.")
             return pd.DataFrame()
-        logger.debug(f"[MFU] Kernel shapes queried: {len(self.shapes_df)} rows")
+        logger.debug(f"Kernel shapes queried: {len(self.shapes_df)} rows")
 
         mfu_flops_df = self._query_mfu_flops()
         if mfu_flops_df is not None and not mfu_flops_df.empty:
-            logger.debug(f"[MFU] Using MFU data from mstx ranges: {len(mfu_flops_df)} FLOPs records")
+            logger.debug(f"Using MFU data from mstx ranges: {len(mfu_flops_df)} FLOPs records")
             mfu = self._calculate_mfu_from_recorded_flops(mfu_flops_df)
         else:
-            logger.warning("[MFU] No mfu_flops ranges found. Skip MFU calculation.")
+            logger.warning("No mfu_flops ranges found. Skip MFU calculation.")
             mfu = pd.DataFrame()
 
-        logger.info(f"[MFU] MFU calculation finished, result rows: {len(mfu)}")
+        logger.info(f"MFU calculation finished, result rows: {len(mfu)}")
         return mfu
 
     def _calculate_mfu_from_recorded_flops(self, mfu_flops_df):
         """根据 mstx range 中记录的 FLOPs 计算 kernel 级 MFU。"""
-        logger.debug(f"[MFU] Calculate MFU from {len(mfu_flops_df)} FLOPs records")
+        logger.debug(f"Calculate MFU from {len(mfu_flops_df)} FLOPs records")
         if self.op_kernel_df is None and not self._query_op_kernel_correlation():
-            logger.warning("[MFU] Can not get cpu-op to device-kernel correlation. Skip MFU calculation.")
+            logger.warning("Can not get cpu-op to device-kernel correlation. Skip MFU calculation.")
             return pd.DataFrame()
 
         # range 消息格式为 "<FLOPs>-<算子名>"，格式不合法或 FLOPs 非正数的数据不参与计算。
@@ -77,10 +77,10 @@ class MFUCalculator:
 
         mfu_flops_df = mfu_flops_df.dropna(subset=['flops'])
         mfu_flops_df = mfu_flops_df[mfu_flops_df['flops'] > 0]
-        logger.debug(f"[MFU] Valid FLOPs records after filtering: {len(mfu_flops_df)}")
+        logger.debug(f"Valid FLOPs records after filtering: {len(mfu_flops_df)}")
 
         if mfu_flops_df.empty:
-            logger.warning("[MFU] No valid flops values found in mfu_flops ranges.")
+            logger.warning("No valid flops values found in mfu_flops ranges.")
             return pd.DataFrame()
 
         filter_df = self.shapes_df
@@ -182,16 +182,16 @@ class MFUCalculator:
 
     def _query_mfu_flops(self):
         """查询 mstx range 中记录的算子 FLOPs。"""
-        logger.debug("[MFU] Query MFU FLOPs data from DB")
+        logger.debug("Query MFU FLOPs data from DB")
         if not DBManager.check_tables_in_db(self.profiler_db_path, TableConstant.TABLE_MSTX_EVENTS):
-            logger.debug("[MFU] MSTX_EVENTS table not found in DB")
+            logger.debug("MSTX_EVENTS table not found in DB")
             return None
         export = MfuFlopsExport(self.profiler_db_path, "")
         flops_df = export.read_export_db()
         if flops_df is None or flops_df.empty:
-            logger.debug("[MFU] No MFU FLOPs data found in DB")
+            logger.debug("No MFU FLOPs data found in DB")
             return None
-        logger.debug(f"[MFU] MFU FLOPs data queried: {len(flops_df)} rows")
+        logger.debug(f"MFU FLOPs data queried: {len(flops_df)} rows")
         return ensure_numeric_columns(flops_df, ['startNs', 'endNs'])
 
     def _get_peak_performance(self, dtype) -> float:
