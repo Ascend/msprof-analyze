@@ -83,14 +83,8 @@ class MFUCalculator:
             logger.warning("No valid flops values found in mfu_flops ranges.")
             return pd.DataFrame()
 
-        filter_df = self.shapes_df
-
-        if filter_df.empty:
-            return pd.DataFrame()
-
-        df = pd.merge(self.op_kernel_df, filter_df, on=['kernel_name', 'kernel_ts', 'kernel_end'], how='inner')
-        if df.empty:
-            return pd.DataFrame()
+        df = pd.merge(self.op_kernel_df, self.shapes_df,
+                      on=['kernel_name', 'kernel_ts', 'kernel_end'], how='inner')
 
         result_rows = []
         for _, range_row in mfu_flops_df.iterrows():

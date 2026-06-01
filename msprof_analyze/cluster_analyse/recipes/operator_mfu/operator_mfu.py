@@ -14,30 +14,24 @@
 # limitations under the License.
 
 import os
-from collections import defaultdict
 import pandas as pd
 import numpy as np
 
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.mfu_calculator import MFUCalculator
-from msprof_analyze.cluster_analyse.recipes.operator_mfu.tree_build import (NodeType, TreeNode, ModuleNode,
-                                                                            KernelNode, TreeBuilder)
+from msprof_analyze.cluster_analyse.recipes.module_statistic.module_statistic import ModuleStatistic
 from msprof_analyze.cluster_analyse.common_func.excel_utils import ExcelUtils
-from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
-from msprof_analyze.prof_exports.module_statistic_export import FrameworkOpToKernelExport, ModuleMstxRangeExport
+from msprof_analyze.prof_exports.module_statistic_export import ModuleMstxRangeExport
 from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_columns
-from msprof_analyze.prof_common.db_manager import DBManager
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
 
 
-class OperatorMfu(BaseRecipeAnalysis):
+class OperatorMfu(ModuleStatistic):
     """生成 kernel 级 MFU 明细和 module 级 MFU 统计结果。"""
     TABLE_OPERATOR_MFU = "OperatorMFU"
     TABLE_MODULE_MFU = "ModuleMFU"
-    KERNEL_RELATED_TABLE_LIST = [Constant.TABLE_COMPUTE_TASK_INFO, Constant.TABLE_COMMUNICATION_OP,
-                                 Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO]
 
     def __init__(self, params):
         """初始化算子 MFU 分析任务。"""
@@ -66,19 +60,6 @@ class OperatorMfu(BaseRecipeAnalysis):
         elif self._export_type == Constant.TEXT:
             self.save_excel(mapper_res)
 
-    def mapper_func(self, context):
-        """并发执行各 rank 的算子 MFU 分析。"""
-        db_paths = self._get_rank_db()
-        if not db_paths:
-            return []
-        return context.wait(
-            context.map(
-                self._mapper_func,
-                db_paths,
-                analysis_class=self._recipe_name
-            )
-        )
-
     def _mapper_func(self, data_map, analysis_class):
         """生成单个 rank 的 kernel 级和 module 级 MFU 结果。"""
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
@@ -103,7 +84,7 @@ class OperatorMfu(BaseRecipeAnalysis):
         if module_df is not None and not module_df.empty:
             root = self._build_complete_tree(module_df, kernel_df)
             if root:
-                module_mfu_df = self._generate_module_mfu_stats(root, rank_id)
+                module_mfu_df = self._generate_module_mfu_stats(root, rank_id, kernel_df)
             else:
                 logger.warning(f"Failed to build event tree for rank {rank_id}, skipping module MFU stats")
         else:
@@ -132,26 +113,6 @@ class OperatorMfu(BaseRecipeAnalysis):
 
         return module_df, kernel_df
 
-    def _query_framework_op_to_kernel(self, profiler_db_path):
-        """汇总不同任务表中的 framework op 与 kernel 关联关系。"""
-        valid_dfs = []
-        for table_name in self.KERNEL_RELATED_TABLE_LIST:
-            if not DBManager.check_tables_in_db(profiler_db_path, table_name):
-                continue
-            export = FrameworkOpToKernelExport(profiler_db_path, self._recipe_name, table_name)
-            df = export.read_export_db()
-            if df is not None and not df.empty:
-                valid_dfs.append(df)
-
-        if not valid_dfs:
-            return None
-
-        try:
-            return pd.concat(valid_dfs, ignore_index=True)
-        except Exception as e:
-            logger.error(f"Failed to concatenate framework op to kernel dataframes: {str(e)}")
-            return None
-
     def _calculate_kernel_mfu(self, data_map, op_kernel_df):
         """计算 kernel MFU，并合并回 op 与 kernel 的关联数据。"""
         mfu_worker = MFUCalculator(data_map, op_kernel_df)
@@ -164,44 +125,6 @@ class OperatorMfu(BaseRecipeAnalysis):
             op_kernel_df = pd.merge(op_kernel_df, mfu_df, on=['kernel_name', 'kernel_ts', 'kernel_end'], how='left')
             op_kernel_df['mfu'] = op_kernel_df['mfu'].fillna(-1.0)
             return op_kernel_df
-
-    def _build_complete_tree(self, module_df, kernel_df):
-        """构建 module、op 和 kernel 的层级树。"""
-        # 创建 module 节点。
-        module_nodes = TreeBuilder.create_tree_nodes_from_df(
-            module_df, NodeType.MODULE_EVENT_NODE, 'startNs', 'endNs', 'name')
-
-        # 创建 op 和 kernel 节点。
-        op_nodes = []
-        if kernel_df is not None and not kernel_df.empty:
-            # 按 op 的名称和时间范围分组，避免同名 op 被错误合并。
-            op_groups = defaultdict(list)
-            for _, row in kernel_df.iterrows():
-                op_groups[(row['op_name'], row['op_ts'], row['op_end'])].append(row)
-
-            # 创建 op 节点以及对应的 kernel 子节点。
-            for (op_name, op_ts, op_end), kernels in op_groups.items():
-                op_node = TreeNode(op_ts, op_end, NodeType.CPU_OP_EVENT, op_name)
-
-                # 将 MFU 保存在 kernel 节点中，供 module 级聚合使用。
-                for kernel in kernels:
-                    kernel_mfu = kernel.get('mfu', -1.0) if 'mfu' in kernel else -1.0
-                    kernel_node = KernelNode(kernel['kernel_ts'], kernel['kernel_end'],
-                                             kernel['kernel_name'], kernel_mfu)
-                    op_node.add_child(kernel_node)
-
-                op_nodes.append(op_node)
-
-        # 合并所有节点并构建树。
-        all_nodes = module_nodes + op_nodes
-        if not all_nodes:
-            logger.error("Empty node (module_event/cpu_op/kernel), skipping tree build")
-            return None
-
-        # 根节点覆盖所有事件的时间范围。
-        global_start = min(module_df['startNs'].min(), kernel_df['kernel_ts'].min(), kernel_df['op_ts'].min())
-        global_end = max(module_df['endNs'].max(), kernel_df['kernel_end'].max(), kernel_df['op_end'].max())
-        return TreeBuilder.build_tree_from_events(all_nodes, global_start, global_end)
 
     def _generate_kernel_mfu_list(self, kernel_df, rank_id):
         """生成 kernel 级 MFU 明细。"""
@@ -242,64 +165,23 @@ class OperatorMfu(BaseRecipeAnalysis):
 
         return pd.DataFrame(kernel_mfu_list)
 
-    def _generate_module_mfu_stats(self, root_node, rank_id):
+    def _generate_module_mfu_stats(self, root_node, rank_id, kernel_df):
         """生成 module 级 MFU 统计。"""
-        results = []
-
-        def process_module_op_pair(module_node, op_node, module_node_deque):
-            """将 module 与直属 op 转换为一条待聚合记录。"""
-            if not isinstance(module_node, ModuleNode):
-                return
-
-            module = module_node.name
-            module_parent = "/".join([node.name for node in module_node_deque]).strip("/")
-
-            if not module and not module_parent:
-                return
-
-            # 当前节点或父节点链包含 backward 时，将当前 module 标记为反向传播。
-            is_backward = module_node.is_backward or any(
-                isinstance(parent, ModuleNode) and parent.is_backward
-                for parent in module_node_deque
-            )
-
-            # 收集当前 op 下的所有 kernel 信息。
-            kernel_names = []
-            total_device_time = 0.0
-            mfu_list = []
-            for kernel_child in op_node.children:
-                if kernel_child.node_type == NodeType.KERNEL_EVENT:
-                    kernel_names.append(kernel_child.name)
-                    duration = kernel_child.end - kernel_child.start
-                    total_device_time += duration
-                    mfu_list.append(kernel_child.mfu)
-
-            results.append({
-                'rank_id': rank_id,
-                'module_parent': module_parent,
-                'module': module if not is_backward else f"[{ModuleNode.BACKWARD}]{module}",
-                'module_start': module_node.start,
-                'module_end': module_node.end,
-                'op_name': op_node.name,
-                'op_start': op_node.start,
-                'op_end': op_node.end,
-                'kernel_list': ', '.join(kernel_names),
-                'device_time': total_device_time,
-                'mfu_list': mfu_list
-            })
-
-        # 使用通用树遍历方法生成待聚合记录。
-        TreeBuilder.traverse_module_tree(root_node, process_module_op_pair)
-
-        if not results:
+        verbose_df = self._flatten_tree_to_dataframe(root_node)
+        if verbose_df.empty:
             return pd.DataFrame()
 
-        # 转换为 DataFrame，并按 module 和 op 的开始时间排序。
-        df = pd.DataFrame(results)
-        df = df.sort_values(by=['module_start', 'op_start'], ascending=[True, True])
-
-        # 聚合 module 级统计数据。
-        return self._aggregate_module_mfu_stats(df)
+        op_mfu_map = {}
+        for (op_name, op_ts, op_end), group in kernel_df.groupby(['op_name', 'op_ts', 'op_end'], sort=False):
+            op_mfu_map[(op_name, op_ts, op_end)] = (
+                group['mfu'].tolist() if 'mfu' in group else [-1.0] * len(group)
+            )
+        verbose_df['mfu_list'] = verbose_df.apply(
+            lambda row: op_mfu_map.get((row['op_name'], row['op_start'], row['op_end']), []),
+            axis=1,
+        )
+        verbose_df.insert(0, 'rank_id', rank_id)
+        return self._aggregate_module_mfu_stats(verbose_df)
 
     def _aggregate_module_mfu_stats(self, df):
         """聚合 module 级 MFU 统计。"""
@@ -313,9 +195,7 @@ class OperatorMfu(BaseRecipeAnalysis):
 
         # 创建 seq_key 保证唯一性，并分配 ID。
         op_seq = df.groupby(distinct_module_columns)['op_name'].transform(lambda x: '/'.join(x))
-        df['seq_key'] = df['rank_id'].astype(str) + "|" + df['module_parent'] + "|" + df['module'] + "|" + op_seq
         df['seq_id'] = pd.factorize(op_seq)[0]
-        df.drop(columns=['seq_key'], inplace=True)
 
         def compute_mfu_avg(series_of_lists):
             """按 kernel 位置计算多次调用的平均 MFU。"""
@@ -355,25 +235,12 @@ class OperatorMfu(BaseRecipeAnalysis):
 
     def _distinguish_contiguous_module(self, stat_df):
         """区分名称相同但算子序列不同的连续 module。"""
-        stat_df = stat_df.sort_values('op_start').reset_index(drop=True)
-        stat_df['index'] = stat_df.index
-        result_dfs = []
-
-        for _, group in stat_df.groupby(['rank_id', 'module_parent', 'module']):
-            group = group.copy().sort_values('index')
-            group['continuous_group'] = (group['index'].diff() != 1).cumsum()
-
-            for _, subgroup in group.groupby('continuous_group'):
-                unique_seq_ids = subgroup['seq_id'].unique()
-                if len(unique_seq_ids) > 1:
-                    seq_id_to_suffix = {seq_id: i for i, seq_id in enumerate(sorted(unique_seq_ids))}
-                    for idx in subgroup.index:
-                        suffix = seq_id_to_suffix[group.loc[idx, 'seq_id']]
-                        group.loc[idx, 'module'] = f"{group.loc[idx, 'module']}_{suffix}"
-
-            result_dfs.append(group)
-
-        return pd.concat(result_dfs, ignore_index=True).drop(columns=['index', 'continuous_group'])
+        distinguish_contiguous_module = super()._distinguish_contiguous_module
+        rank_dfs = [
+            distinguish_contiguous_module(rank_df)
+            for _, rank_df in stat_df.groupby('rank_id')
+        ]
+        return pd.concat(rank_dfs, ignore_index=True)
 
     def reducer_func(self, mapper_res):
         """合并所有 rank 的 kernel 级和 module 级结果。"""
