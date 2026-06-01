@@ -76,7 +76,7 @@ class ModuleNode(TreeNode):
 
 
 class KernelNode(TreeNode):
-    def __init__(self, start, end, name):
+    def __init__(self, start, end, name):  # module 统计不再保存 MFU。
         super().__init__(start, end, NodeType.KERNEL_EVENT, name)
 
 

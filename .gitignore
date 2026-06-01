@@ -144,4 +144,3 @@ att_advisor*.html
 *.xlsx
 operator_tuning_file*.cfg
 .ipynb_checkpoints/
-/*.py

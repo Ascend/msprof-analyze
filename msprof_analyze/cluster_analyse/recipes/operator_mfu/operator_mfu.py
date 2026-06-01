@@ -33,30 +33,32 @@ logger = get_logger()
 
 
 class OperatorMfu(BaseRecipeAnalysis):
-    """
-    Operator MFU analysis recipe.
-    Provides kernel-level MFU list and module-level MFU statistics.
-    """
+    """生成 kernel 级 MFU 明细和 module 级 MFU 统计结果。"""
     TABLE_OPERATOR_MFU = "OperatorMFU"
     TABLE_MODULE_MFU = "ModuleMFU"
     KERNEL_RELATED_TABLE_LIST = [Constant.TABLE_COMPUTE_TASK_INFO, Constant.TABLE_COMMUNICATION_OP,
                                  Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO]
 
     def __init__(self, params):
+        """初始化算子 MFU 分析任务。"""
         super().__init__(params)
 
     @property
     def base_dir(self):
+        """返回当前分析任务目录名。"""
         return os.path.basename(os.path.dirname(__file__))
 
     def run(self, context, save=True):
+        """执行算子 MFU 分析，并按导出类型保存结果。"""
         if self._export_type != Constant.DB and self._export_type != Constant.TEXT:
             logger.error(f"Invalid export type: {self._export_type} for operator mfu analysis, "
                          f"required to be {Constant.DB} or {Constant.TEXT}")
             return
         mapper_res = self.mapper_func(context)
         if not save:
-            valid_res = [(rank, df) for rank, df in mapper_res if df is not None and not df.empty]
+            valid_res = [(rank, kernel_df, module_df) for rank, kernel_df, module_df in mapper_res
+                         if ((kernel_df is not None and not kernel_df.empty)
+                             or (module_df is not None and not module_df.empty))]
             return valid_res
         if self._export_type == Constant.DB:
             kernel_mfu_df, module_mfu_df = self.reducer_func(mapper_res)
@@ -65,6 +67,7 @@ class OperatorMfu(BaseRecipeAnalysis):
             self.save_excel(mapper_res)
 
     def mapper_func(self, context):
+        """并发执行各 rank 的算子 MFU 分析。"""
         db_paths = self._get_rank_db()
         if not db_paths:
             return []
@@ -77,24 +80,25 @@ class OperatorMfu(BaseRecipeAnalysis):
         )
 
     def _mapper_func(self, data_map, analysis_class):
+        """生成单个 rank 的 kernel 级和 module 级 MFU 结果。"""
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
 
-        # Query data
+        # 查询 module 和 kernel 数据。
         module_df, kernel_df = self._query_all_data(profiler_db_path, rank_id)
 
-        # If no kernel data, return empty
+        # kernel 数据是计算 MFU 的必要输入，缺失时当前 rank 无法继续分析。
         if kernel_df is None or kernel_df.empty:
             logger.error(f"No kernel data found for rank {rank_id}")
             return rank_id, pd.DataFrame(), pd.DataFrame()
 
-        # Calculate MFU
+        # 计算 kernel 级 MFU。
         kernel_df = self._calculate_kernel_mfu(data_map, kernel_df)
 
-        # Generate kernel-level MFU list (always available)
+        # kernel 级结果不依赖 module 数据，始终优先生成。
         kernel_mfu_df = self._generate_kernel_mfu_list(kernel_df, rank_id)
 
-        # Generate module-level MFU statistics only if module data exists
+        # module 数据是可选输入，缺失时仍保留 kernel 级结果。
         module_mfu_df = pd.DataFrame()
         if module_df is not None and not module_df.empty:
             root = self._build_complete_tree(module_df, kernel_df)
@@ -103,21 +107,22 @@ class OperatorMfu(BaseRecipeAnalysis):
             else:
                 logger.warning(f"Failed to build event tree for rank {rank_id}, skipping module MFU stats")
         else:
-            logger.info(f"No module data found for rank {rank_id}, only kernel-level MFU will be generated")
+            logger.debug(f"No module data found for rank {rank_id}, only kernel-level MFU will be generated")
 
         return rank_id, kernel_mfu_df, module_mfu_df
 
     def _query_all_data(self, profiler_db_path, rank_id):
-        # Query module data (optional)
+        """查询单个 rank 的 module 数据和 kernel 数据。"""
+        # module 数据用于生成聚合统计，缺失时仍可输出 kernel 级明细。
         module_export = ModuleMstxRangeExport(profiler_db_path, self._recipe_name)
         module_df = module_export.read_export_db()
         if module_df is None or module_df.empty:
-            logger.info(f"No mstx range event (module data) found from rank {rank_id}")
+            logger.debug(f"No mstx range event (module data) found from rank {rank_id}")
             module_df = pd.DataFrame()
         else:
             module_df = ensure_numeric_columns(module_df, ['startNs', 'endNs'])
 
-        # Query kernel data (required)
+        # kernel 数据用于计算 MFU，是必要输入。
         kernel_df = self._query_framework_op_to_kernel(profiler_db_path)
         if kernel_df is None or kernel_df.empty:
             logger.error(f"Can not export framework op to kernel mapper from rank {rank_id}")
@@ -128,6 +133,7 @@ class OperatorMfu(BaseRecipeAnalysis):
         return module_df, kernel_df
 
     def _query_framework_op_to_kernel(self, profiler_db_path):
+        """汇总不同任务表中的 framework op 与 kernel 关联关系。"""
         valid_dfs = []
         for table_name in self.KERNEL_RELATED_TABLE_LIST:
             if not DBManager.check_tables_in_db(profiler_db_path, table_name):
@@ -147,10 +153,11 @@ class OperatorMfu(BaseRecipeAnalysis):
             return None
 
     def _calculate_kernel_mfu(self, data_map, op_kernel_df):
+        """计算 kernel MFU，并合并回 op 与 kernel 的关联数据。"""
         mfu_worker = MFUCalculator(data_map, op_kernel_df)
         mfu_df = mfu_worker.run()
         if mfu_df.empty or 'mfu' not in mfu_df.columns:
-            logger.warning(f"No MFU calculated for kernels.")
+            logger.warning("No MFU calculated for kernels.")
             op_kernel_df['mfu'] = -1.0
             return op_kernel_df
         else:
@@ -159,23 +166,24 @@ class OperatorMfu(BaseRecipeAnalysis):
             return op_kernel_df
 
     def _build_complete_tree(self, module_df, kernel_df):
-        # Create module nodes
+        """构建 module、op 和 kernel 的层级树。"""
+        # 创建 module 节点。
         module_nodes = TreeBuilder.create_tree_nodes_from_df(
             module_df, NodeType.MODULE_EVENT_NODE, 'startNs', 'endNs', 'name')
 
-        # Create OP and kernel nodes
+        # 创建 op 和 kernel 节点。
         op_nodes = []
         if kernel_df is not None and not kernel_df.empty:
-            # Group kernel data by op_name
+            # 按 op 的名称和时间范围分组，避免同名 op 被错误合并。
             op_groups = defaultdict(list)
             for _, row in kernel_df.iterrows():
                 op_groups[(row['op_name'], row['op_ts'], row['op_end'])].append(row)
 
-            # Create op nodes and corresponding kernel nodes
+            # 创建 op 节点以及对应的 kernel 子节点。
             for (op_name, op_ts, op_end), kernels in op_groups.items():
                 op_node = TreeNode(op_ts, op_end, NodeType.CPU_OP_EVENT, op_name)
 
-                # Add kernel nodes for each op, storing MFU in the node
+                # 将 MFU 保存在 kernel 节点中，供 module 级聚合使用。
                 for kernel in kernels:
                     kernel_mfu = kernel.get('mfu', -1.0) if 'mfu' in kernel else -1.0
                     kernel_node = KernelNode(kernel['kernel_ts'], kernel['kernel_end'],
@@ -184,34 +192,34 @@ class OperatorMfu(BaseRecipeAnalysis):
 
                 op_nodes.append(op_node)
 
-        # Merge all nodes and build tree
+        # 合并所有节点并构建树。
         all_nodes = module_nodes + op_nodes
         if not all_nodes:
             logger.error("Empty node (module_event/cpu_op/kernel), skipping tree build")
             return None
 
-        # Calculate global time range
+        # 根节点覆盖所有事件的时间范围。
         global_start = min(module_df['startNs'].min(), kernel_df['kernel_ts'].min(), kernel_df['op_ts'].min())
         global_end = max(module_df['endNs'].max(), kernel_df['kernel_end'].max(), kernel_df['op_end'].max())
         return TreeBuilder.build_tree_from_events(all_nodes, global_start, global_end)
 
     def _generate_kernel_mfu_list(self, kernel_df, rank_id):
-        """Generate kernel-level MFU list with detailed information."""
+        """生成 kernel 级 MFU 明细。"""
         if kernel_df is None or kernel_df.empty:
             return pd.DataFrame()
 
-        # Filter out invalid MFU values (-1)
+        # -1 表示当前 kernel 未计算出有效 MFU，不写入明细。
         valid_kernel_df = kernel_df[kernel_df.get('mfu', -1) != -1.0].copy()
         if valid_kernel_df.empty:
             logger.warning(f"No valid MFU data for rank {rank_id}")
             return pd.DataFrame()
 
-        # Select and rename columns for kernel MFU
+        # 生成导出所需的 kernel 级字段。
         kernel_mfu_list = []
         for _, row in valid_kernel_df.iterrows():
             chip_peak_tflops = round(row.get('chip_peak', 0) / 1e12, 2) if row.get('chip_peak', 0) > 0 else 0
             mfu = round(row.get('mfu', 0), 4)
-            # actual_tflops is calculated from flops and duration in MFUCalculator
+            # 优先使用 MFUCalculator 计算的实际 TFLOPS，缺失时按 MFU 和峰值补算。
             actual_tflops = row.get('actual_tflops', round(mfu * chip_peak_tflops, 2))
             kernel_mfu_list.append({
                 'rank_id': rank_id,
@@ -219,7 +227,7 @@ class OperatorMfu(BaseRecipeAnalysis):
                 'kernel_name': row.get('kernel_name', ''),
                 'kernel_ts': row.get('kernel_ts', 0),
                 'kernel_end': row.get('kernel_end', 0),
-                'kernel_duration_ns': row.get('kernel_duration', row.get('kernel_end', 0) - row.get('kernel_ts', 0)),
+                'kernel_duration': row.get('kernel_duration', row.get('kernel_end', 0) - row.get('kernel_ts', 0)),
                 'mfu': mfu,
                 'actual_tflops': actual_tflops,
                 'chip_peak_tflops': chip_peak_tflops,
@@ -235,11 +243,11 @@ class OperatorMfu(BaseRecipeAnalysis):
         return pd.DataFrame(kernel_mfu_list)
 
     def _generate_module_mfu_stats(self, root_node, rank_id):
-        """Generate module-level MFU statistics."""
+        """生成 module 级 MFU 统计。"""
         results = []
 
         def process_module_op_pair(module_node, op_node, module_node_deque):
-            """Process module-op pair"""
+            """将 module 与直属 op 转换为一条待聚合记录。"""
             if not isinstance(module_node, ModuleNode):
                 return
 
@@ -249,13 +257,13 @@ class OperatorMfu(BaseRecipeAnalysis):
             if not module and not module_parent:
                 return
 
-            # Check if backward: check if current node or parent chain has backward
+            # 当前节点或父节点链包含 backward 时，将当前 module 标记为反向传播。
             is_backward = module_node.is_backward or any(
                 isinstance(parent, ModuleNode) and parent.is_backward
                 for parent in module_node_deque
             )
 
-            # Collect all kernel info under this op
+            # 收集当前 op 下的所有 kernel 信息。
             kernel_names = []
             total_device_time = 0.0
             mfu_list = []
@@ -280,36 +288,37 @@ class OperatorMfu(BaseRecipeAnalysis):
                 'mfu_list': mfu_list
             })
 
-        # Use generic tree traversal method
+        # 使用通用树遍历方法生成待聚合记录。
         TreeBuilder.traverse_module_tree(root_node, process_module_op_pair)
 
         if not results:
             return pd.DataFrame()
 
-        # Convert to DataFrame and sort
+        # 转换为 DataFrame，并按 module 和 op 的开始时间排序。
         df = pd.DataFrame(results)
         df = df.sort_values(by=['module_start', 'op_start'], ascending=[True, True])
 
-        # Aggregate module statistics
+        # 聚合 module 级统计数据。
         return self._aggregate_module_mfu_stats(df)
 
     def _aggregate_module_mfu_stats(self, df):
-        """Aggregate module-level MFU statistics."""
+        """聚合 module 级 MFU 统计。"""
         if df is None or df.empty:
             logger.warning("Empty dataframe received for aggregation")
             return pd.DataFrame()
 
-        # Add op order position under module
+        # 为每个算子添加在 module 下的顺序位置。
         distinct_module_columns = ['rank_id', 'module_parent', 'module', 'module_start', 'module_end']
         df['op_order'] = df.groupby(distinct_module_columns).cumcount()
 
-        # Create seq_key for uniqueness and assign ID
+        # 创建 seq_key 保证唯一性，并分配 ID。
         op_seq = df.groupby(distinct_module_columns)['op_name'].transform(lambda x: '/'.join(x))
         df['seq_key'] = df['rank_id'].astype(str) + "|" + df['module_parent'] + "|" + df['module'] + "|" + op_seq
         df['seq_id'] = pd.factorize(op_seq)[0]
         df.drop(columns=['seq_key'], inplace=True)
 
         def compute_mfu_avg(series_of_lists):
+            """按 kernel 位置计算多次调用的平均 MFU。"""
             arr = np.array(series_of_lists.tolist())
             result_list = []
             for pos in range(arr.shape[1]):
@@ -320,7 +329,7 @@ class OperatorMfu(BaseRecipeAnalysis):
                     result_list.append(str(avg_val) + '%')
             return ','.join(result_list)
 
-        # Aggregate statistics
+        # 聚合统计。
         stat_df = (
             df.groupby(['rank_id', 'module_parent', 'module', 'op_name', 'op_order', 'kernel_list', 'seq_id'])
             .agg(
@@ -334,10 +343,10 @@ class OperatorMfu(BaseRecipeAnalysis):
             ).reset_index()
         )
 
-        # Distinguish contiguous modules with same name but different execution
+        # 区分名称相同但实际算子序列不同的连续 module。
         stat_df = self._distinguish_contiguous_module(stat_df)
 
-        # Sort by op execution order, drop unused columns
+        # 根据算子执行顺序排序，删除后续不再使用的列。
         stat_df = (stat_df.sort_values(by=['op_start', 'op_order'])
                    .drop(columns=['module_start', 'module_end', 'seq_id', 'op_order', 'op_start'])
                    .reset_index(drop=True))
@@ -345,7 +354,7 @@ class OperatorMfu(BaseRecipeAnalysis):
         return stat_df
 
     def _distinguish_contiguous_module(self, stat_df):
-        """Distinguish contiguous modules with same name but different execution patterns."""
+        """区分名称相同但算子序列不同的连续 module。"""
         stat_df = stat_df.sort_values('op_start').reset_index(drop=True)
         stat_df['index'] = stat_df.index
         result_dfs = []
@@ -367,7 +376,7 @@ class OperatorMfu(BaseRecipeAnalysis):
         return pd.concat(result_dfs, ignore_index=True).drop(columns=['index', 'continuous_group'])
 
     def reducer_func(self, mapper_res):
-        """Reducer function to combine results from all ranks."""
+        """合并所有 rank 的 kernel 级和 module 级结果。"""
         kernel_mfu_dfs = []
         module_mfu_dfs = []
 
@@ -383,7 +392,7 @@ class OperatorMfu(BaseRecipeAnalysis):
         return kernel_mfu_result, module_mfu_result
 
     def save_db(self, kernel_mfu_df, module_mfu_df):
-        """Save results to database."""
+        """将分析结果写入数据库。"""
         if kernel_mfu_df is not None and not kernel_mfu_df.empty:
             kernel_mfu_df = self._format_kernel_mfu_columns(kernel_mfu_df, Constant.DB)
             self.dump_data(kernel_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
@@ -395,11 +404,11 @@ class OperatorMfu(BaseRecipeAnalysis):
                            self.TABLE_MODULE_MFU, index=False)
 
     def save_excel(self, mapper_res):
-        """Save results to Excel files."""
+        """将各 rank 的分析结果写入 Excel 文件。"""
         excel_utils = ExcelUtils()
 
         for rank_id, kernel_df, module_df in mapper_res:
-            # Save kernel-level MFU
+            # 保存 kernel 级 MFU。
             if kernel_df is not None and not kernel_df.empty:
                 kernel_df = self._format_kernel_mfu_columns(kernel_df, Constant.TEXT)
                 file_name = f"operator_mfu_kernel_{rank_id}.xlsx"
@@ -416,7 +425,7 @@ class OperatorMfu(BaseRecipeAnalysis):
                 except Exception as e:
                     logger.error(f"Save kernel MFU excel failed, err: {e}")
 
-            # Save module-level MFU
+            # 保存 module 级 MFU。
             if module_df is not None and not module_df.empty:
                 module_df = self._format_module_mfu_columns(module_df, Constant.TEXT)
                 file_name = f"operator_mfu_module_{rank_id}.xlsx"
@@ -442,7 +451,7 @@ class OperatorMfu(BaseRecipeAnalysis):
                     logger.error(f"Save module MFU excel failed, err: {e}")
 
     def _format_kernel_mfu_columns(self, df, export_type):
-        """Format kernel MFU DataFrame columns."""
+        """按导出类型格式化 kernel 级 MFU 列名。"""
         try:
             if export_type == Constant.DB:
                 column_mapping = {
@@ -473,9 +482,9 @@ class OperatorMfu(BaseRecipeAnalysis):
             return pd.DataFrame()
 
     def _format_module_mfu_columns(self, df, export_type):
-        """Format module MFU DataFrame columns."""
+        """按导出类型格式化 module 级 MFU 列名。"""
         try:
-            # If no MFU info, drop the column
+            # 没有任何 MFU 信息时，不输出 avg_mfu 列。
             if 'avg_mfu' in df.columns:
                 empty_mfu = df['avg_mfu'].isna().all() or df['avg_mfu'].eq('').all()
                 if empty_mfu:
