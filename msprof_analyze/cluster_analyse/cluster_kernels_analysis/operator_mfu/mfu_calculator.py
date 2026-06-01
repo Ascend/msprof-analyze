@@ -16,11 +16,8 @@
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.chip_peak_flops import ChipPeakFLOPSCalculator
-from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import (OperatorType,
-                                                                                                 FLOPsStrategyFactory,
-                                                                                                 OP_TYPE_MAP,
-                                                                                                 OperatorFLOPs)
-from msprof_analyze.prof_exports.mfu_export import OperatorArgsExport, KernelShapeExport, MfuFlopsExport
+from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import OperatorFLOPs
+from msprof_analyze.prof_exports.mfu_export import KernelShapeExport, MfuFlopsExport
 from msprof_analyze.prof_exports.module_statistic_export import FrameworkOpToKernelExport
 from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_columns
 from msprof_analyze.cluster_analyse.common_func.table_constant import TableConstant
@@ -33,7 +30,6 @@ logger = get_logger()
 
 
 class MFUCalculator:
-    UNIT_MS_TO_NS = 1000000
     MFU_FLOPS_DOMAIN = "mfu_flops"
 
     def __init__(self, data_map, op_kernel_df=None):
@@ -58,15 +54,12 @@ class MFUCalculator:
 
         mfu_flops_df = self._query_mfu_flops()
         if mfu_flops_df is not None and not mfu_flops_df.empty:
-            logger.info(f"[MFU] Using new MFU data (mfu_flops domain from mstx ranges). "
+            logger.info(f"[MFU] Using MFU data (mfu_flops domain from mstx ranges). "
                         f"Found {len(mfu_flops_df)} FLOPs records")
             mfu = self._calculate_mfu_from_recorded_flops(mfu_flops_df)
         else:
-            logger.info("[MFU] No mfu_flops ranges found, falling back to legacy FLOPs calculation.")
-            matmul_mfu = self._process_common_operator_legacy(OperatorType.MATMUL)
-            fa_mfu = self._process_operator_with_additional_args_mark_legacy(
-                OperatorType.FLASH_ATTENTION, 'flash_attn_args')
-            mfu = pd.concat([matmul_mfu, fa_mfu], ignore_index=True)
+            logger.warning("[MFU] No mfu_flops ranges found. Skip MFU calculation.")
+            mfu = pd.DataFrame()
 
         logger.info(f"[MFU] MFU calculation finished, result rows: {len(mfu)}")
         return mfu
@@ -78,10 +71,11 @@ class MFUCalculator:
             return pd.DataFrame()
 
         mfu_flops_df = ensure_numeric_columns(mfu_flops_df, ['startNs', 'endNs'])
-        # mfu_flops_df['flops'] = pd.to_numeric(mfu_flops_df['flops'], errors='coerce')
-        split_result = mfu_flops_df['flops'].astype(str).str.split('-', expand=True)
-        mfu_flops_df['flops'] = pd.to_numeric(split_result[0], errors='coerce').fillna(-1)
-        mfu_flops_df['name'] = split_result[1].fillna('')
+        split_result = mfu_flops_df['flops'].astype(str).str.extract(
+            r'^(?P<flops>\d+)-(?P<name>.+)$'
+        )
+        mfu_flops_df['flops'] = pd.to_numeric(split_result['flops'], errors='coerce')
+        mfu_flops_df['name'] = split_result['name']
 
         mfu_flops_df = mfu_flops_df.dropna(subset=['flops'])
         mfu_flops_df = mfu_flops_df[mfu_flops_df['flops'] > 0]
@@ -139,6 +133,8 @@ class MFUCalculator:
                 if kernel_duration <= 0:
                     continue
                 kernel_mfu = flops / (kernel_duration * 1e-9) / chip_peak
+                # Calculate actual TFLOPS from flops and duration
+                actual_tflops = round(flops / (kernel_duration * 1e-9) / 1e12, 2)
                 result_rows.append({
                     'kernel_name': kernel_row['kernel_name'],
                     'kernel_ts': kernel_row['kernel_ts'],
@@ -148,6 +144,9 @@ class MFUCalculator:
                     'flops': flops,
                     'kernel_duration': kernel_duration,
                     'chip_peak': chip_peak,
+                    'actual_tflops': actual_tflops,
+                    'input_shapes': kernel_row.get('input_shapes', ''),
+                    'output_shapes': kernel_row.get('output_shapes', ''),
                 })
 
         if not result_rows:
@@ -165,42 +164,6 @@ class MFUCalculator:
             return OperatorFLOPs.format_data_type(type_list[0])
         from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.operator_flops import DataType
         return DataType.FLOAT16
-
-    def _process_common_operator_legacy(self, op_type: OperatorType):
-        kernel_types = OP_TYPE_MAP.get(op_type)
-        filter_df = self.shapes_df[self.shapes_df['type'].isin(kernel_types)]
-        mfu_df = self._calculate_mfu_legacy(filter_df, op_type)
-        return mfu_df.filter(['kernel_name', 'kernel_ts', 'kernel_end', 'mfu'])
-
-    def _process_operator_with_additional_args_mark_legacy(self, op_type: OperatorType, args_domain: str):
-        if self.op_kernel_df is None and not self._query_op_kernel_correlation():
-            logger.warning(f"Can not get cpu-op to device-kernel correlation. Skip {op_type.name} mfu calculation.")
-            return pd.DataFrame()
-
-        kernel_types = OP_TYPE_MAP.get(op_type)
-        filter_df = self.shapes_df[self.shapes_df['type'].isin(kernel_types)]
-        if filter_df.empty:
-            return pd.DataFrame()
-        df = pd.merge(self.op_kernel_df, filter_df, on=['kernel_name', 'kernel_ts', 'kernel_end'], how='inner')
-
-        op_args_df = self._query_operator_args(args_domain=args_domain)
-        if op_args_df.empty:
-            logger.warning(f"Can not get {args_domain} mstx mark. Skip {op_type.name} mfu calculation.")
-            return pd.DataFrame()
-
-        matched_df = pd.merge_asof(
-            left=op_args_df,
-            right=df,
-            left_on='startNs',
-            right_on='op_ts',
-            direction='forward',
-            tolerance=3 * self.UNIT_MS_TO_NS
-        )
-        matched_df = matched_df.sort_values('startNs')
-        matched_df = matched_df[matched_df['kernel_name'].notna()].copy()
-        matched_df = matched_df.drop_duplicates(subset=['kernel_ts', 'kernel_end'], keep='last')
-        mfu_df = self._calculate_mfu_legacy(matched_df, op_type)
-        return mfu_df.filter(['kernel_name', 'kernel_ts', 'kernel_end', 'mfu'])
 
     def _query_kernel_shapes(self):
         export = KernelShapeExport(self.profiler_db_path, "")
@@ -223,16 +186,6 @@ class MFUCalculator:
         self.op_kernel_df = op_kernel_df
         return True
 
-    def _query_operator_args(self, args_domain):
-        if not DBManager.check_tables_in_db(self.profiler_db_path, TableConstant.TABLE_MSTX_EVENTS):
-            return pd.DataFrame()
-        args_export = OperatorArgsExport(self.profiler_db_path, "", {"op_args_domain": args_domain})
-        op_args_df = args_export.read_export_db()
-        if op_args_df is None or op_args_df.empty:
-            return pd.DataFrame()
-        op_args_df = ensure_numeric_columns(op_args_df, ['startNs'])
-        return op_args_df
-
     def _query_mfu_flops(self):
         logger.info("[MFU] _query_mfu_flops: querying MFU FLOPs data from DB")
         if not DBManager.check_tables_in_db(self.profiler_db_path, TableConstant.TABLE_MSTX_EVENTS):
@@ -248,31 +201,3 @@ class MFUCalculator:
 
     def _get_peak_performance(self, dtype) -> float:
         return self.chip_peak_manager.get_peak_performance(dtype)
-
-    def _calculate_mfu_legacy(self, kernel_df, operator_type):
-        mfu_df = kernel_df.copy()
-        mfu_df['mfu'] = -1.0
-        strategy_class = FLOPsStrategyFactory.get_strategy(operator_type)
-        related_columns = strategy_class.RELATED_COLUMNS
-        for group_key, group in mfu_df.groupby(related_columns):
-            input_kwargs = {key: val for key, val in zip(related_columns, group_key)}
-            try:
-                strategy = FLOPsStrategyFactory.create_strategy(operator_type, **input_kwargs)
-                workload = strategy.calculate_flops()
-                dtype = strategy.determine_data_type()
-
-                chip_peak = self._get_peak_performance(dtype)
-                if chip_peak == Constant.INVALID_RETURN or workload == Constant.INVALID_RETURN:
-                    continue
-
-                mask = mfu_df.loc[group.index, 'task_duration'] > 0
-                valid_indices = group.index[mask]
-                if len(valid_indices) > 0:
-                    task_durations = mfu_df.loc[valid_indices, 'task_duration'].values
-                    mfu_values = workload / (task_durations * 1e-9) / chip_peak
-                    mfu_df.loc[valid_indices, 'mfu'] = mfu_values
-            except Exception as err:
-                logger.error(f"Calculate MFU for {operator_type} failed, err: {err}")
-                continue
-
-        return mfu_df

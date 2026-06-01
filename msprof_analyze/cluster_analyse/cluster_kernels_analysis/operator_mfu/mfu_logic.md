@@ -1,5 +1,7 @@
 # MFU（Model FLOPs Utilization）采集与计算逻辑
 
+> **归档说明（2026-06-01）**：本文描述迁移前解析侧方案。当前实现以 `torch_npu.profiler` 的 `record_flops=True` 采集和 `mfu_flops` domain 解析为准，详见 `docs/zh/design/MFU采集与计算重构设计文档.md`。
+
 ## 一、概述
 
 MFU（Model FLOPs Utilization，模型算力利用率）衡量的是算子实际执行的计算量占芯片理论峰值算力的比例。当前支持对 **MatMul** 和 **FlashAttention** 两类核心算子进行 MFU 计算。

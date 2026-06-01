@@ -21,7 +21,7 @@
 
 旧方案把 FLOPs 计算放在解析侧：先从 DB 读取 kernel shape、dtype、耗时，再按算子公式反推 FLOPs。
 
-重构后把 FLOPs 计算前移到采集侧：训练或推理进程里通过 hook 拦截目标算子，直接用真实入参计算 FLOPs，并用 `mstx` 写入 `mfu_flops` domain。解析侧优先读取这份已记录的 FLOPs；如果没有采到，则回退到旧方案。
+重构后把 FLOPs 计算前移到 `torch_npu.profiler` 采集侧：训练或推理进程里通过 hook 拦截目标算子，直接用真实入参计算 FLOPs，并用 `mstx` 写入 `mfu_flops` domain。解析侧只读取这份已记录的 FLOPs；如果没有采到，则返回空结果。
 
 ```mermaid
 flowchart LR
@@ -49,7 +49,7 @@ MFU = FLOPs / (duration_ns * 1e-9) / chip_peak_FLOPS
 
 | 字段 | 含义 | 来源 |
 |---|---|---|
-| `FLOPs` | 本次算子实际工作量 | 旧方案由解析侧公式计算；新方案由采集侧 hook 写入 |
+| `FLOPs` | 本次算子实际工作量 | 采集侧 hook 写入 |
 | `duration_ns` | kernel 执行耗时，单位 ns | `TASK.endNs - TASK.startNs` |
 | `chip_peak_FLOPS` | 芯片理论峰值算力，单位 FLOPS/s | `device_*/info.json.*` |
 
@@ -73,14 +73,12 @@ MFU 不是从单个文件直接读出来的，而是由 Profiler 数据、mstx �
 
 | 数据 | 表或文件 | 用途 |
 |---|---|---|
-| kernel 名称、类型、shape、dtype | `COMPUTE_TASK_INFO` + `STRING_IDS` | 判断算子类型、旧方案计算 FLOPs、新方案确定 dtype |
+| kernel 名称、类型、shape、dtype | `COMPUTE_TASK_INFO` + `STRING_IDS` | 判断算子类型并确定 dtype |
 | kernel 起止时间 | `TASK` | 计算 `duration_ns`，和框架层 API 做关联 |
 | 框架层 API 与 device kernel 关联 | `PYTORCH_API` + `CONNECTION_IDS` | 找到某个 Python op 对应的 kernel |
-| 旧方案 FlashAttention 额外参数 | `MSTX_EVENTS`，`domain='flash_attn_args'` | 补齐 layout、causal、稀疏模式、TND 序列长度 |
-| 新方案已记录 FLOPs | `MSTX_EVENTS`，`domain='mfu_flops'` | 解析侧直接读取 FLOPs |
+| 已记录 FLOPs | `MSTX_EVENTS`，`domain='mfu_flops'` | 解析侧直接读取 FLOPs |
 | module 层级范围 | `MSTX_EVENTS`，`domain='Module'` | `module_statistic` 构建 module/op/kernel 树 |
 | 芯片信息 | `device_*/info.json.*` | 读取 `ai_core_num` 和 `aic_frequency` |
-| 调试兜底文件 | `mfu_flops_data_pid{pid}.json` | hook 侧落盘排查用；当前主解析链路不直接消费 |
 
 采集前置条件：
 
@@ -88,7 +86,7 @@ MFU 不是从单个文件直接读出来的，而是由 Profiler 数据、mstx �
 |---|---|
 | `export_type=Db` | 解析侧依赖 SQLite DB 表 |
 | `profiler_level >= level1` | 需要采集 shape 和 dtype |
-| `mstx=True` | 新方案 `mfu_flops` 和旧方案 `flash_attn_args` 都依赖 mstx label/domain |
+| `_ExperimentalConfig(record_flops=True)` | 启用 FLOPs hook，并自动启用 `mfu_flops` 所需的 mstx 数据采集 |
 | vLLM 服务启动时设置 `--profiler-config` | 否则 `/start_profile`、`/stop_profile` 不注册 |
 
 ## 5. 当前入口链路
@@ -213,8 +211,8 @@ FLOPs = 2 * N * (D_q + D_kv) * dot(q_lens, kv_lens)
 
 ```mermaid
 flowchart TD
-    N1["npu_flop_formulas.py<br/>注册 FLOPs 公式"] --> N2["npu_flop_registry.py<br/>公式与 hook target 注册表"]
-    N2 --> N3["MFUHookManager.install()"]
+    N1["torch_npu.profiler._flops_formulas.py<br/>注册 FLOPs 公式"] --> N2["torch_npu.profiler._flops_registry.py<br/>公式与 hook target 注册表"]
+    N2 --> N3["FlopsHookManager.install()"]
     N3 --> N4["monkey-patch 目标算子"]
     N4 --> N5["用户调用 torch / torch_npu 算子"]
     N5 --> N6["wrapper 计算 FLOPs"]
@@ -228,10 +226,10 @@ flowchart TD
 当前实现中，`label` 格式为：
 
 ```text
-<flops>:<op_name>
+<flops>-<op_name>
 ```
 
-解析侧读取 `MSTX_EVENTS` 后会按 `:` 切分，第一段作为 FLOPs 数值。
+解析侧读取 `MSTX_EVENTS` 后按 `^(?P<flops>\d+)-(?P<name>.+)$` 严格解析，保留包含 `-` 的算子名称。
 
 ### 7.2 hook 的关键逻辑
 
@@ -245,10 +243,9 @@ flowchart TD
     H6 -->|否| H7["记录 warning<br/>继续执行原始函数"]
     H6 -->|是| H8["用真实 args/kwargs 计算 FLOPs"]
     H8 --> H9["开启 mfu_flops mstx range"]
-    H9 --> H10["记录 JSON 调试数据"]
-    H10 --> H11["执行原始算子"]
-    H11 --> H12["关闭 mstx range"]
-    H12 --> H13["in_hook=False"]
+    H9 --> H10["执行原始算子"]
+    H10 --> H11["关闭 mstx range"]
+    H11 --> H12["in_hook=False"]
 ```
 
 为什么要有 `in_hook`：
@@ -265,9 +262,9 @@ flowchart TD
     P2 --> P3["查询 domain='mfu_flops' 的 mstx range"]
     P3 --> P4{"存在有效 FLOPs?"}
     P4 -->|是| P5["_calculate_mfu_from_recorded_flops"]
-    P4 -->|否| P6["fallback 到旧方案"]
+    P4 -->|否| P6["返回空结果"]
 
-    P5 --> P7["flops = message.split(':')[0]"]
+    P5 --> P7["正则解析 <flops>-<op_name>"]
     P7 --> P8["过滤 flops <= 0"]
     P8 --> P9["查询 op-kernel 关联"]
     P9 --> P10["选取 range 内的相关 kernel"]
@@ -294,12 +291,12 @@ flowchart TD
 | 维度 | 旧方案 | 新方案 |
 |---|---|---|
 | FLOPs 来源 | 解析侧从 shape/dtype/args 反推 | 采集侧用真实入参直接计算 |
-| 用户负担 | FlashAttention 需要手动 `flash_attn_args` marker | 理想状态下只开 `record_mfu` 或自动 bootstrap |
+| 用户负担 | FlashAttention 需要手动 `flash_attn_args` marker | 统一设置 `_ExperimentalConfig(record_flops=True)` |
 | 解析复杂度 | 需要维护 DB shape parser、额外 args、时间匹配 | 主要读取 `mfu_flops` 并计算 MFU |
 | 新增算子成本 | parser、策略类、marker、DB 对齐都可能要改 | 注册公式和 hook target，必要时补 kernel type 映射 |
 | 准确性风险 | marker 与 op 时间错配；参数缺失 | mstx label/domain 未采集；range 内多 kernel 归因 |
-| 兼容性 | 已支持 MatMulV2/MatMulV3/FlashAttentionScore | 已保留 fallback，不破坏旧数据 |
-| 当前状态 | 稳定兜底路径 | 代码已落地，仍依赖真实 profiler 配置验证 |
+| 兼容性 | 已支持 MatMulV2/MatMulV3/FlashAttentionScore | 不迁入历史数据，不保留 legacy fallback |
+| 当前状态 | 已移除 | 代码已迁移到 `torch_npu.profiler`，仍需真实 profiler 环境验证 |
 
 ## 9. 部分算子 FLOPs 逻辑
 
@@ -352,24 +349,23 @@ full_attention = 2 * B * N * S_q * S_kv * (D_q + D_kv)
 推理场景可能是 GQA/MQA，Q 头数和 KV 头数不一致：
 
 ```text
-gqa_ratio = num_heads / num_key_value_heads
-FLOPs = 2 * B * num_heads * S_q * S_kv * (D_q + D_kv / gqa_ratio)
+FLOPs = 2 * B * num_heads * attention_scores * (D_q + D_kv)
 ```
 
 TND layout 下使用真实序列长度：
 
 ```text
-FLOPs = 2 * num_heads * (D_q + D_kv / gqa_ratio) * dot(q_lens, kv_lens)
+FLOPs = 2 * num_heads * (D_q + D_kv) * dot(q_lens, kv_lens)
 ```
 
 ## 10. 后续如何扩展
 
 ### 10.1 新增采集侧算子公式
 
-优先走新方案。新增一个算子时，先确认 Python 调用入口，然后在 `npu_flop_formulas.py` 注册公式：
+新增一个算子时，先确认 Python 调用入口，然后在 `torch_npu/profiler/_flops_formulas.py` 注册公式：
 
 ```python
-from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.npu_flop_registry import register_npu_flop
+from torch_npu.profiler._flops_registry import register_npu_flop
 
 
 @register_npu_flop(target="torch_npu:some_op")
@@ -386,13 +382,7 @@ def some_op_flops(input_tensor, weight, *, some_arg=0, **kwargs):
 
 ### 10.2 扩展解析侧支持
 
-如果新增算子只使用新方案，通常不需要新增 `OperatorFLOPs` 策略。但如果要兼容没有 `mfu_flops` 的历史数据，需要补旧方案：
-
-1. 在 `operator_flops.py` 增加 `OperatorType`。
-2. 在 `OP_TYPE_MAP` 中增加对应 kernel `opType`。
-3. 新增 `OperatorFLOPs` 子类，声明 `RELATED_COLUMNS` 和 `INPUT_TENSOR_INDEX`。
-4. 在 `FLOPsStrategyFactory.strategies` 注册策略类。
-5. 如果需要额外运行时参数，增加 mstx domain 和查询/匹配逻辑。
+解析侧不再保留 legacy FLOPs 反推路径。新增算子只需要确认落库后的 kernel `opType` 能被现有映射识别；没有 `mfu_flops` 的历史数据不迁入新链路。
 
 ### 10.3 推荐测试清单
 
@@ -401,29 +391,26 @@ def some_op_flops(input_tensor, weight, *, some_arg=0, **kwargs):
 | 公式单测 | 给定 tensor shape 和 kwargs，FLOPs 数值与手算一致 |
 | hook 单测 | install/uninstall 后原函数可恢复，嵌套调用不重复记录 |
 | DB 查询单测 | `MfuFlopsExport` 能读到 `startNs/endNs/flops` |
-| 解析单测 | 有 `mfu_flops` 时走新路径；无数据时 fallback 旧路径 |
+| 解析单测 | 有 `mfu_flops` 时解析严格格式；无数据时返回空结果 |
 | 端到端 | vLLM profiling 后 DB 中存在 `domain='mfu_flops'` 且 `module_statistic` 输出 `avgMFU` |
 
 ## 11. 当前风险和待处理项
 
 | 风险 | 说明 | 建议 |
 |---|---|---|
-| mstx label/domain 未采集 | 交接文档中已定位到 `_ExperimentalConfig(mstx=False)` 默认关闭会导致 label 丢失 | vLLM/torch_npu profiler 创建时显式设置 `mstx=True`，必要时配置 domain include |
-| `record_mfu` 尚未正式接入 torch_npu | 当前主要靠 `MFU_RECORD`、bootstrap 或手动 install | 后续在 `torch_npu.profiler._ExperimentalConfig(record_mfu=True)` 中统一开关 |
+| mstx label/domain 未采集 | FLOPs 依赖 `mfu_flops` range 落库 | vLLM/torch_npu profiler 创建时显式设置 `_ExperimentalConfig(record_flops=True)`，必要时配置 domain include |
 | 新路径按 range 匹配 kernel | 如果一个 range 内包含多个 kernel，当前实现会对每个 kernel 使用同一个 FLOPs 值 | 明确每个 range 的语义，必要时按 kernel duration 或 op-kernel 关系做分摊 |
 | `OP_TYPE_MAP` 仍是解析侧过滤门槛 | 采集侧支持了更多 Python target，但解析侧只保留映射内 kernel | 新增算子时同步维护 kernel `opType` 映射 |
-| JSON 文件未接入主解析链路 | `mfu_flops_data_pid*.json` 只用于排查 | 若 mstx label 长期不可用，可设计 JSON + timestamp + pid 的兜底解析路径 |
 
 ## 12. 推荐落地路径
 
 ```mermaid
 flowchart TD
-    R1["P0: 确认 profiler mstx=True<br/>DB 中能读到 mfu_flops label"] --> R2["P0: 端到端验证 vLLM<br/>start_profile -> stop_profile -> msprof import"]
+    R1["P0: 确认 profiler record_flops=True<br/>DB 中能读到 mfu_flops label"] --> R2["P0: 端到端验证 vLLM<br/>start_profile -> stop_profile -> msprof import"]
     R2 --> R3["P0: 修正 OP_TYPE_MAP<br/>覆盖 MatMulV2 / FusedInferAttentionScore 等主要 kernel"]
     R3 --> R4["P1: 补齐核心 LLM 算子公式<br/>linear / matmul / attention / norm"]
-    R4 --> R5["P1: 增加新旧路径单测和端到端样例"]
-    R5 --> R6["P2: 将采集侧 hook 迁移到 torch_npu<br/>msprof-analyze 保留解析侧"]
-    R6 --> R7["P2: 新路径稳定后逐步收敛旧 fallback"]
+    R4 --> R5["P1: 增加新路径单测和端到端样例"]
+    R5 --> R6["P1: 持续验证 torch_npu 采集侧与 msprof-analyze 解析侧"]
 ```
 
 优先级判断：
@@ -431,4 +418,3 @@ flowchart TD
 1. 先解决 mstx label/domain 采集，否则新路径没有主数据源。
 2. 再补解析侧 kernel type 映射，否则 hook 采到的 FLOPs 可能被过滤。
 3. 最后扩充算子公式和优化归因策略。
-

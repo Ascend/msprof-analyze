@@ -51,7 +51,7 @@ MFU 特性需要完成以下基础能力：
 | MFU 计算 | 对核心计算算子计算 FLOPs、执行耗时、理论峰值，并输出 MFU |
 | 算子覆盖 | 支持 MatMul、Linear、FlashAttention 等大模型关键算子，并具备持续扩展能力 |
 | 结果集成 | MFU 结果需要进入 module_statistic 分析结果，支撑模型结构维度展示 |
-| 数据兼容 | 对已有 profiling 数据和原有 MFU 计算链路保持兼容 |
+| 数据边界 | 新链路只消费采集侧记录的 FLOPs，不迁入历史 profiling 数据 |
 
 ### 2.2 通用性目标
 
@@ -76,8 +76,8 @@ MFU 能力需要面向不同模型、不同框架接口和不同算子形态保�
 已有 MFU 方案中，部分算子依赖用户手工 mstx 打点补齐参数。重构后应降低用户侧使用成本，并保证已有能力平滑演进：
 
 - 对用户尽量体现为 profiler 开关能力，而不是分散的手工打点逻辑。
-- 新方案有数据时优先使用新路径。
-- 新方案数据缺失时，保留已有解析侧计算能力。
+- 统一通过 `_ExperimentalConfig(record_flops=True)` 启用采集。
+- 新方案数据缺失时返回空结果，不保留 legacy fallback。
 - module_statistic 输出形态保持稳定，避免影响用户已有使用习惯。
 
 ## 3. 现状分析与整体设计方案
@@ -127,9 +127,9 @@ flowchart LR
 1. 在算子真实执行时，通过 hook 获取完整 tensor shape 和运行时参数。
 2. 通过统一 FLOPs registry 查找算子公式，计算本次调用 FLOPs。
 3. 通过 Profiler 可采集的数据通道记录 FLOPs。
-4. msprof-analyze 解析阶段优先读取已记录 FLOPs。
+4. msprof-analyze 解析阶段读取已记录 FLOPs。
 5. 结合 kernel 执行耗时和芯片峰值算力，按统一公式计算 MFU。
-6. 对没有新数据的 profiling 结果，继续兼容已有解析侧计算路径。
+6. 对没有新数据的 profiling 结果返回空结果。
 
 该设计将“算子差异”主要收敛在 FLOPs 公式注册层，将“MFU 计算和展示”保持在解析侧统一处理。
 
@@ -188,19 +188,19 @@ kernel 耗时仍来自 Profiler DB 中的 `TASK` 表；芯片峰值仍由 `devic
 
 第一，FLOPs 公式注册。
 
-通过 `npu_flop_registry` 维护算子名称、Python 调用入口和 FLOPs 公式之间的映射。新增算子时，优先新增一个公式注册，而不是改动主流程。
+通过 `torch_npu.profiler._flops_registry` 维护算子名称、Python 调用入口和 FLOPs 公式之间的映射。新增算子时，优先新增一个公式注册，而不是改动主流程。
 
 第二，算子调用拦截。
 
-通过 `MFUHookManager` 对目标算子进行 hook。算子被调用时，wrapper 获取真实入参，调用对应 FLOPs 公式，并将 FLOPs 写入 profiler 可采集的数据域。hook 逻辑需要保证对原始算子语义透明，即不改变原始计算结果。
+通过 `FlopsHookManager` 对目标算子进行 hook。算子被调用时，wrapper 获取真实入参，调用对应 FLOPs 公式，并将 FLOPs 写入 profiler 可采集的数据域。hook 逻辑需要保证对原始算子语义透明，即不改变原始计算结果。
 
 第三，解析侧统一计算。
 
-`MFUCalculator` 负责读取 profiler 数据中的 FLOPs、kernel duration 和 dtype，结合芯片峰值算力计算 MFU，并将结果返回给 module_statistic。解析侧保留已有计算路径，用于兼容历史数据和未采集到新 FLOPs 数据的场景。
+`MFUCalculator` 负责读取 profiler 数据中的 FLOPs、kernel duration 和 dtype，结合芯片峰值算力计算 MFU，并将结果返回给 module_statistic。没有采集到新 FLOPs 数据时，解析侧返回空结果。
 
 ```mermaid
 flowchart LR
-    A["npu_flop_registry<br/>公式注册"] --> B["MFUHookManager<br/>算子拦截"]
+    A["torch_npu.profiler._flops_registry<br/>公式注册"] --> B["FlopsHookManager<br/>算子拦截"]
     B --> C["Profiler<br/>记录 FLOPs"]
     C --> D["MFUCalculator<br/>统一计算 MFU"]
     D --> E["module_statistic<br/>结果呈现"]
@@ -227,7 +227,7 @@ flowchart LR
 | 用户使用成本 | FlashAttention 等场景需要手工打点 | 目标是通过 profiler 开关和 hook 自动完成 |
 | 算子扩展方式 | 扩展解析侧策略和额外参数匹配 | 扩展 FLOPs registry 和算子映射 |
 | 动态参数支持 | 依赖 DB 和额外 marker，能力有限 | 采集侧直接获取真实入参，表达能力更强 |
-| 历史数据兼容 | 原生支持 | 保留原路径作为兼容能力 |
+| 历史数据兼容 | 原生支持 | 不迁入历史数据 |
 
 重构后的收益主要体现在：
 
@@ -240,15 +240,14 @@ flowchart LR
 
 本方案围绕“做好 MFU 能力”展开，不仅解决单个算子的 FLOPs 计算问题，更关注 MFU 特性的通用化、可扩展和工程可落地。
 
-总体上，方案保持 MFU 指标口径不变，将 FLOPs 获取从解析侧前移到采集侧，通过 registry 和 hook 机制提升运行时参数获取能力；解析侧继续负责统一 MFU 计算、历史兼容和 module_statistic 结果呈现。
+总体上，方案保持 MFU 指标口径不变，将 FLOPs 获取从解析侧前移到采集侧，通过 registry 和 hook 机制提升运行时参数获取能力；解析侧继续负责统一 MFU 计算和 module_statistic 结果呈现。
 
 该设计具备以下特点：
 
 - 指标口径稳定：MFU 公式、kernel 耗时和芯片峰值计算逻辑保持统一。
 - 能力边界清晰：采集侧负责 FLOPs，解析侧负责 MFU，职责明确。
 - 扩展路径清晰：新增算子主要补充 FLOPs 公式和算子映射。
-- 兼容已有能力：已有 MFU 方案作为历史数据和异常场景的兼容路径保留。
+- 数据边界明确：历史数据不迁入新链路，异常场景不回退 legacy 解析路径。
 - 面向大模型场景：覆盖 MatMul、Linear、Attention 等核心计算链路，并支持后续融合算子演进。
 
 通过该方案，MFU 能力可以从“针对少量算子的解析侧计算能力”演进为“面向大模型训练和推理场景的通用算力利用率分析能力”。
-
