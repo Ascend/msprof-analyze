@@ -31,11 +31,11 @@ For details about the complete sample code, see [Sample Code for Profile Data Co
 
 ## Model Structure Breakdown
 
-**Function** 
+**Function**
 
 Analyzes the collected data (with model-level MSTX instrumentation) by using `msprof-analyze`.
 
-**Syntax** 
+**Syntax**
 
 ```bash
 msprof-analyze -m module_statistic -d ./result --export_type text
@@ -52,13 +52,13 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 
 For details about more options, see [Command-line Options and Parameters](./README.md#command-line-options-and-parameters) of `msprof-analyze`.
 
-**Output Description** 
+**Output Description**
 
 * The output results display the model hierarchy, operator call sequence, kernels executed on the NPU, and execution statistics.
-* If `export_type` is set to `text`, a separate `module_statistic_{rank_id}.xlsx` file is generated for each device, as shown in the following figure. 
+* If `export_type` is set to `text`, a separate `module_statistic_{rank_id}.xlsx` file is generated for each device, as shown in the following figure.
 ![vllm_module_statistic](../figures/vllm_module_statistic.png)
 
-* If `export_type` is set to `db`, results are saved to the `ModuleStatistic` table in `cluster_analysis.db`. The following table describes the fields. 
+* If `export_type` is set to `db`, results are saved to the `ModuleStatistic` table in `cluster_analysis.db`. The following table describes the fields.
 
   | Field                   | Description                                                                                     |
   |-------------------------|-----------------------------------------------------------------------------------------|
@@ -112,7 +112,7 @@ def custom_call(self, *args, **kwargs):
     tmp = original_call(self, *args, **kwargs)
     torch_npu.npu.mstx.range_end(mstx_id, domain="Module")
     return tmp
-    
+
 # Replace the default call method
 nn.Module.__call__ = custom_call
 

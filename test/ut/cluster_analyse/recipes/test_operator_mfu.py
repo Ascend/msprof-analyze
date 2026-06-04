@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 # Copyright (c) 2025, Huawei Technologies Co., Ltd.
 # All rights reserved.
 #
@@ -34,7 +35,7 @@ class TestOperatorMfu(unittest.TestCase):
 
     def setUp(self):
         """创建使用临时输出目录的分析任务。"""
-        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_dir = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
         params = {
             Constant.COLLECTION_PATH: self.temp_dir.name,
             Constant.RECIPE_NAME: "operator_mfu",
@@ -63,15 +64,19 @@ class TestOperatorMfu(unittest.TestCase):
 
     def test_generate_kernel_mfu_list_when_format_text_then_rename_duration_column(self):
         """测试 kernel 时长列能够按文本导出格式重命名。"""
-        kernel_df = pd.DataFrame([{
-            'op_name': 'op',
-            'kernel_name': 'kernel',
-            'kernel_ts': 10,
-            'kernel_end': 30,
-            'kernel_duration': 20,
-            'mfu': 0.5,
-            'chip_peak': 100 * 1e12,
-        }])
+        kernel_df = pd.DataFrame(
+            [
+                {
+                    'op_name': 'op',
+                    'kernel_name': 'kernel',
+                    'kernel_ts': 10,
+                    'kernel_end': 30,
+                    'kernel_duration': 20,
+                    'mfu': 0.5,
+                    'chip_peak': 100 * 1e12,
+                }
+            ]
+        )
 
         result = self.analysis._generate_kernel_mfu_list(kernel_df, rank_id=0)
         formatted_result = self.analysis._format_kernel_mfu_columns(result, Constant.TEXT)
@@ -81,17 +86,21 @@ class TestOperatorMfu(unittest.TestCase):
 
     def test_format_module_mfu_columns_when_export_db_then_keep_module_column(self):
         """测试 DB 导出格式显式保留 module 列。"""
-        module_df = pd.DataFrame([{
-            'rank_id': 0,
-            'module_parent': 'parent',
-            'module': 'module',
-            'op_name': 'op',
-            'kernel_list': 'kernel',
-            'op_count': 1,
-            'total_kernel_duration': 8,
-            'avg_kernel_duration': 8,
-            'avg_mfu': '50.0%',
-        }])
+        module_df = pd.DataFrame(
+            [
+                {
+                    'rank_id': 0,
+                    'module_parent': 'parent',
+                    'module': 'module',
+                    'op_name': 'op',
+                    'kernel_list': 'kernel',
+                    'op_count': 1,
+                    'total_kernel_duration': 8,
+                    'avg_kernel_duration': 8,
+                    'avg_mfu': '50.0%',
+                }
+            ]
+        )
 
         result = self.analysis._format_module_mfu_columns(module_df, Constant.DB)
 
@@ -116,23 +125,31 @@ class TestOperatorMfu(unittest.TestCase):
 
     def test_generate_module_mfu_stats_then_add_mfu_to_reused_flatten_result(self):
         """测试复用树展开结果后仍能生成 module 级 MFU。"""
-        verbose_df = pd.DataFrame([{
-            'module_parent': 'parent',
-            'module': 'module',
-            'module_start': 0,
-            'module_end': 100,
-            'op_name': 'op',
-            'op_start': 10,
-            'op_end': 20,
-            'kernel_list': 'kernel',
-            'device_time': 8,
-        }])
-        kernel_df = pd.DataFrame([{
-            'op_name': 'op',
-            'op_ts': 10,
-            'op_end': 20,
-            'mfu': 0.5,
-        }])
+        verbose_df = pd.DataFrame(
+            [
+                {
+                    'module_parent': 'parent',
+                    'module': 'module',
+                    'module_start': 0,
+                    'module_end': 100,
+                    'op_name': 'op',
+                    'op_start': 10,
+                    'op_end': 20,
+                    'kernel_list': 'kernel',
+                    'device_time': 8,
+                }
+            ]
+        )
+        kernel_df = pd.DataFrame(
+            [
+                {
+                    'op_name': 'op',
+                    'op_ts': 10,
+                    'op_end': 20,
+                    'mfu': 0.5,
+                }
+            ]
+        )
         self.analysis._flatten_tree_to_dataframe = Mock(return_value=verbose_df)
 
         result = self.analysis._generate_module_mfu_stats(Mock(), rank_id=1, kernel_df=kernel_df)
@@ -142,32 +159,34 @@ class TestOperatorMfu(unittest.TestCase):
 
     def test_aggregate_module_mfu_stats_when_multiple_ranks_then_keep_rank_groups_separate(self):
         """测试 module 级 MFU 聚合不会合并不同 rank 的数据。"""
-        df = pd.DataFrame([
-            {
-                'rank_id': 0,
-                'module_parent': 'parent',
-                'module': 'module',
-                'module_start': 0,
-                'module_end': 100,
-                'op_name': 'op',
-                'op_start': 10,
-                'kernel_list': 'kernel',
-                'device_time': 8,
-                'mfu_list': [0.5],
-            },
-            {
-                'rank_id': 1,
-                'module_parent': 'parent',
-                'module': 'module',
-                'module_start': 0,
-                'module_end': 100,
-                'op_name': 'op',
-                'op_start': 10,
-                'kernel_list': 'kernel',
-                'device_time': 8,
-                'mfu_list': [0.7],
-            },
-        ])
+        df = pd.DataFrame(
+            [
+                {
+                    'rank_id': 0,
+                    'module_parent': 'parent',
+                    'module': 'module',
+                    'module_start': 0,
+                    'module_end': 100,
+                    'op_name': 'op',
+                    'op_start': 10,
+                    'kernel_list': 'kernel',
+                    'device_time': 8,
+                    'mfu_list': [0.5],
+                },
+                {
+                    'rank_id': 1,
+                    'module_parent': 'parent',
+                    'module': 'module',
+                    'module_start': 0,
+                    'module_end': 100,
+                    'op_name': 'op',
+                    'op_start': 10,
+                    'kernel_list': 'kernel',
+                    'device_time': 8,
+                    'mfu_list': [0.7],
+                },
+            ]
+        )
 
         result = self.analysis._aggregate_module_mfu_stats(df)
 

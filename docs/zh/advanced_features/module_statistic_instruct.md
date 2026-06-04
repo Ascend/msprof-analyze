@@ -31,11 +31,11 @@
 
 ## 模型结构拆解
 
-**功能说明**  
+**功能说明**
 
 将采集到的带有模型结构mstx打点的数据，执行msprof-analyze工具分析操作。
 
-**命令格式**  
+**命令格式**
 
 ```bash
 msprof-analyze -m module_statistic -d ./result --export_type text
@@ -52,13 +52,13 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 
 更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
 
-**输出说明**  
+**输出说明**
 
 * 输出结果体现模型层级，算子调用顺序，NPU上执行的Kernel以及统计时间。
-* `export_type`设置为`text`时，每张卡生成独立的module_statistic_{rank_id}.xlsx文件，如下图所示：  
+* `export_type`设置为`text`时，每张卡生成独立的module_statistic_{rank_id}.xlsx文件，如下图所示：
 ![vllm_module_statistic](../figures/vllm_module_statistic.png)
 
-* `export_type`设置为`db`时，结果统一保存到 cluster_analysis.db 的 ModuleStatistic，字段说明如下：  
+* `export_type`设置为`db`时，结果统一保存到 cluster_analysis.db 的 ModuleStatistic，字段说明如下：
 
   | 字段名称                    | 说明                                                                                      |
   |-------------------------|-----------------------------------------------------------------------------------------|
@@ -112,7 +112,7 @@ def custom_call(self, *args, **kwargs):
     tmp = original_call(self, *args, **kwargs)
     torch_npu.npu.mstx.range_end(mstx_id, domain="Module")
     return tmp
-    
+
 # 替换默认调用方法
 nn.Module.__call__ = custom_call
 

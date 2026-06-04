@@ -18,14 +18,14 @@ from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
 
 QUERY_KERNEL_SHAPES = """
     WITH compute_info AS (
-        SELECT 
+        SELECT
             (SELECT value FROM STRING_IDS WHERE id = t.name) AS kernel_name,
             t.globalTaskId,
             (SELECT value FROM STRING_IDS WHERE id = t.opType) AS type,
             (SELECT value FROM STRING_IDS WHERE id = t.inputShapes) AS input_shapes,
             (SELECT value FROM STRING_IDS WHERE id = t.inputDataTypes) AS input_types,
             (SELECT value FROM STRING_IDS WHERE id = t.outputShapes) AS output_shapes
-        FROM 
+        FROM
             COMPUTE_TASK_INFO t
     )
     SELECT
@@ -33,9 +33,9 @@ QUERY_KERNEL_SHAPES = """
         task.startNs as kernel_ts,
         task.endNs as kernel_end,
         task.endNs - task.startNs as task_duration
-    FROM 
+    FROM
         compute_info
-    JOIN 
+    JOIN
         TASK as task ON compute_info.globalTaskId = task.globalTaskId
     ORDER BY task.startNs;
 """

@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 # Copyright (c) 2025, Huawei Technologies Co., Ltd.
 # All rights reserved.
 #
@@ -30,12 +31,9 @@ logger = get_logger()
 
 class OperatorMfu(ModuleStatistic):
     """生成 kernel 级 MFU 明细和 module 级 MFU 统计结果。"""
+
     TABLE_OPERATOR_MFU = "OperatorMFU"
     TABLE_MODULE_MFU = "ModuleMFU"
-
-    def __init__(self, params):
-        """初始化算子 MFU 分析任务。"""
-        super().__init__(params)
 
     @property
     def base_dir(self):
@@ -44,21 +42,28 @@ class OperatorMfu(ModuleStatistic):
 
     def run(self, context, save=True):
         """执行算子 MFU 分析，并按导出类型保存结果。"""
-        if self._export_type != Constant.DB and self._export_type != Constant.TEXT:
-            logger.error(f"Invalid export type: {self._export_type} for operator mfu analysis, "
-                         f"required to be {Constant.DB} or {Constant.TEXT}")
-            return
+        if self._export_type not in (Constant.DB, Constant.TEXT):
+            logger.error(
+                "Invalid export type: %s for operator mfu analysis, required to be %s or %s",
+                self._export_type,
+                Constant.DB,
+                Constant.TEXT,
+            )
+            return None
         mapper_res = self.mapper_func(context)
         if not save:
-            valid_res = [(rank, kernel_df, module_df) for rank, kernel_df, module_df in mapper_res
-                         if ((kernel_df is not None and not kernel_df.empty)
-                             or (module_df is not None and not module_df.empty))]
+            valid_res = [
+                (rank, kernel_df, module_df)
+                for rank, kernel_df, module_df in mapper_res
+                if ((kernel_df is not None and not kernel_df.empty) or (module_df is not None and not module_df.empty))
+            ]
             return valid_res
         if self._export_type == Constant.DB:
             kernel_mfu_df, module_mfu_df = self.reducer_func(mapper_res)
             self.save_db(kernel_mfu_df, module_mfu_df)
         elif self._export_type == Constant.TEXT:
             self.save_excel(mapper_res)
+        return None
 
     def _mapper_func(self, data_map, analysis_class):
         """生成单个 rank 的 kernel 级和 module 级 MFU 结果。"""
@@ -70,7 +75,7 @@ class OperatorMfu(ModuleStatistic):
 
         # kernel 数据是计算 MFU 的必要输入，缺失时当前 rank 无法继续分析。
         if kernel_df is None or kernel_df.empty:
-            logger.error(f"No kernel data found for rank {rank_id}")
+            logger.error("No kernel data found for rank %s", rank_id)
             return rank_id, pd.DataFrame(), pd.DataFrame()
 
         # 计算 kernel 级 MFU。
@@ -86,9 +91,9 @@ class OperatorMfu(ModuleStatistic):
             if root:
                 module_mfu_df = self._generate_module_mfu_stats(root, rank_id, kernel_df)
             else:
-                logger.warning(f"Failed to build event tree for rank {rank_id}, skipping module MFU stats")
+                logger.warning("Failed to build event tree for rank %s, skipping module MFU stats", rank_id)
         else:
-            logger.debug(f"No module data found for rank {rank_id}, only kernel-level MFU will be generated")
+            logger.debug("No module data found for rank %s, only kernel-level MFU will be generated", rank_id)
 
         return rank_id, kernel_mfu_df, module_mfu_df
 
@@ -98,7 +103,7 @@ class OperatorMfu(ModuleStatistic):
         module_export = ModuleMstxRangeExport(profiler_db_path, self._recipe_name)
         module_df = module_export.read_export_db()
         if module_df is None or module_df.empty:
-            logger.debug(f"No mstx range event (module data) found from rank {rank_id}")
+            logger.debug("No mstx range event (module data) found from rank %s", rank_id)
             module_df = pd.DataFrame()
         else:
             module_df = ensure_numeric_columns(module_df, ['startNs', 'endNs'])
@@ -106,7 +111,7 @@ class OperatorMfu(ModuleStatistic):
         # kernel 数据用于计算 MFU，是必要输入。
         kernel_df = self._query_framework_op_to_kernel(profiler_db_path)
         if kernel_df is None or kernel_df.empty:
-            logger.error(f"Can not export framework op to kernel mapper from rank {rank_id}")
+            logger.error("Can not export framework op to kernel mapper from rank %s", rank_id)
             return None, None
 
         kernel_df = ensure_numeric_columns(kernel_df, ['kernel_ts', 'kernel_end', 'op_ts', 'op_end'])
@@ -134,7 +139,7 @@ class OperatorMfu(ModuleStatistic):
         # -1 表示当前 kernel 未计算出有效 MFU，不写入明细。
         valid_kernel_df = kernel_df[kernel_df.get('mfu', -1) != -1.0].copy()
         if valid_kernel_df.empty:
-            logger.warning(f"No valid MFU data for rank {rank_id}")
+            logger.warning("No valid MFU data for rank %s", rank_id)
             return pd.DataFrame()
 
         # 生成导出所需的 kernel 级字段。
@@ -144,21 +149,23 @@ class OperatorMfu(ModuleStatistic):
             mfu = round(row.get('mfu', 0), 4)
             # 优先使用 MFUCalculator 计算的实际 TFLOPS，缺失时按 MFU 和峰值补算。
             actual_tflops = row.get('actual_tflops', round(mfu * chip_peak_tflops, 2))
-            kernel_mfu_list.append({
-                'rank_id': rank_id,
-                'op_name': row.get('op_name', ''),
-                'kernel_name': row.get('kernel_name', ''),
-                'kernel_ts': row.get('kernel_ts', 0),
-                'kernel_end': row.get('kernel_end', 0),
-                'kernel_duration': row.get('kernel_duration', row.get('kernel_end', 0) - row.get('kernel_ts', 0)),
-                'mfu': mfu,
-                'actual_tflops': actual_tflops,
-                'chip_peak_tflops': chip_peak_tflops,
-                'flops': row.get('flops', 0),
-                'flops_op_name': row.get('flops_op_name', ''),
-                'input_shapes': row.get('input_shapes', ''),
-                'output_shapes': row.get('output_shapes', ''),
-            })
+            kernel_mfu_list.append(
+                {
+                    'rank_id': rank_id,
+                    'op_name': row.get('op_name', ''),
+                    'kernel_name': row.get('kernel_name', ''),
+                    'kernel_ts': row.get('kernel_ts', 0),
+                    'kernel_end': row.get('kernel_end', 0),
+                    'kernel_duration': row.get('kernel_duration', row.get('kernel_end', 0) - row.get('kernel_ts', 0)),
+                    'mfu': mfu,
+                    'actual_tflops': actual_tflops,
+                    'chip_peak_tflops': chip_peak_tflops,
+                    'flops': row.get('flops', 0),
+                    'flops_op_name': row.get('flops_op_name', ''),
+                    'input_shapes': row.get('input_shapes', ''),
+                    'output_shapes': row.get('output_shapes', ''),
+                }
+            )
 
         if not kernel_mfu_list:
             return pd.DataFrame()
@@ -173,9 +180,7 @@ class OperatorMfu(ModuleStatistic):
 
         op_mfu_map = {}
         for (op_name, op_ts, op_end), group in kernel_df.groupby(['op_name', 'op_ts', 'op_end'], sort=False):
-            op_mfu_map[(op_name, op_ts, op_end)] = (
-                group['mfu'].tolist() if 'mfu' in group else [-1.0] * len(group)
-            )
+            op_mfu_map[(op_name, op_ts, op_end)] = group['mfu'].tolist() if 'mfu' in group else [-1.0] * len(group)
         verbose_df['mfu_list'] = verbose_df.apply(
             lambda row: op_mfu_map.get((row['op_name'], row['op_start'], row['op_end']), []),
             axis=1,
@@ -194,7 +199,7 @@ class OperatorMfu(ModuleStatistic):
         df['op_order'] = df.groupby(distinct_module_columns).cumcount()
 
         # 创建 seq_key 保证唯一性，并分配 ID。
-        op_seq = df.groupby(distinct_module_columns)['op_name'].transform(lambda x: '/'.join(x))
+        op_seq = df.groupby(distinct_module_columns)['op_name'].transform('/'.join)
         df['seq_id'] = pd.factorize(op_seq)[0]
 
         def compute_mfu_avg(series_of_lists):
@@ -219,27 +224,27 @@ class OperatorMfu(ModuleStatistic):
                 avg_kernel_duration=('device_time', 'mean'),
                 op_count=('device_time', 'count'),
                 op_start=('op_start', 'min'),
-                avg_mfu=('mfu_list', compute_mfu_avg)
-            ).reset_index()
+                avg_mfu=('mfu_list', compute_mfu_avg),
+            )
+            .reset_index()
         )
 
         # 区分名称相同但实际算子序列不同的连续 module。
         stat_df = self._distinguish_contiguous_module(stat_df)
 
         # 根据算子执行顺序排序，删除后续不再使用的列。
-        stat_df = (stat_df.sort_values(by=['op_start', 'op_order'])
-                   .drop(columns=['module_start', 'module_end', 'seq_id', 'op_order', 'op_start'])
-                   .reset_index(drop=True))
+        stat_df = (
+            stat_df.sort_values(by=['op_start', 'op_order'])
+            .drop(columns=['module_start', 'module_end', 'seq_id', 'op_order', 'op_start'])
+            .reset_index(drop=True)
+        )
 
         return stat_df
 
     def _distinguish_contiguous_module(self, stat_df):
         """区分名称相同但算子序列不同的连续 module。"""
         distinguish_contiguous_module = super()._distinguish_contiguous_module
-        rank_dfs = [
-            distinguish_contiguous_module(rank_df)
-            for _, rank_df in stat_df.groupby('rank_id')
-        ]
+        rank_dfs = [distinguish_contiguous_module(rank_df) for _, rank_df in stat_df.groupby('rank_id')]
         return pd.concat(rank_dfs, ignore_index=True)
 
     def reducer_func(self, mapper_res):
@@ -258,17 +263,19 @@ class OperatorMfu(ModuleStatistic):
 
         return kernel_mfu_result, module_mfu_result
 
-    def save_db(self, kernel_mfu_df, module_mfu_df):
+    def save_db(self, kernel_mfu_df, module_mfu_df):  # pylint: disable=arguments-differ
         """将分析结果写入数据库。"""
         if kernel_mfu_df is not None and not kernel_mfu_df.empty:
             kernel_mfu_df = self._format_kernel_mfu_columns(kernel_mfu_df, Constant.DB)
-            self.dump_data(kernel_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                           self.TABLE_OPERATOR_MFU, index=False)
+            self.dump_data(
+                kernel_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_OPERATOR_MFU, index=False
+            )
 
         if module_mfu_df is not None and not module_mfu_df.empty:
             module_mfu_df = self._format_module_mfu_columns(module_mfu_df, Constant.DB)
-            self.dump_data(module_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                           self.TABLE_MODULE_MFU, index=False)
+            self.dump_data(
+                module_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_MODULE_MFU, index=False
+            )
 
     def save_excel(self, mapper_res):
         """将各 rank 的分析结果写入 Excel 文件。"""
@@ -281,16 +288,13 @@ class OperatorMfu(ModuleStatistic):
                 file_name = f"operator_mfu_kernel_{rank_id}.xlsx"
                 try:
                     excel_utils.create_excel_writer(self.output_path, file_name, kernel_df)
-                    excel_utils.set_column_width({
-                        "Kernel Name": 50,
-                        "Op Name": 40,
-                        "MFU": 10,
-                        "Kernel Duration(ns)": 15
-                    })
+                    excel_utils.set_column_width(
+                        {"Kernel Name": 50, "Op Name": 40, "MFU": 10, "Kernel Duration(ns)": 15}
+                    )
                     excel_utils.save_and_close()
                     excel_utils.clear()
                 except Exception as e:
-                    logger.error(f"Save kernel MFU excel failed, err: {e}")
+                    logger.error("Save kernel MFU excel failed, err: %s", e)
 
             # 保存 module 级 MFU。
             if module_df is not None and not module_df.empty:
@@ -305,7 +309,7 @@ class OperatorMfu(ModuleStatistic):
                     "Total Kernel Duration(ns)": 10,
                     "Avg Kernel Duration(ns)": 10,
                     "Op Count": 10,
-                    "Avg MFU": 10
+                    "Avg MFU": 10,
                 }
                 try:
                     excel_utils.create_excel_writer(self.output_path, file_name, module_df)
@@ -315,7 +319,7 @@ class OperatorMfu(ModuleStatistic):
                     excel_utils.save_and_close()
                     excel_utils.clear()
                 except Exception as e:
-                    logger.error(f"Save module MFU excel failed, err: {e}")
+                    logger.error("Save module MFU excel failed, err: %s", e)
 
     def _format_kernel_mfu_columns(self, df, export_type):
         """按导出类型格式化 kernel 级 MFU 列名。"""
@@ -328,7 +332,7 @@ class OperatorMfu(ModuleStatistic):
                     'kernel_ts': 'kernelStart(ns)',
                     'kernel_end': 'kernelEnd(ns)',
                     'kernel_duration': 'kernelDuration(ns)',
-                    'mfu': 'mfu'
+                    'mfu': 'mfu',
                 }
             elif export_type == Constant.TEXT:
                 column_mapping = {
@@ -338,14 +342,14 @@ class OperatorMfu(ModuleStatistic):
                     'kernel_ts': 'Kernel Start(ns)',
                     'kernel_end': 'Kernel End(ns)',
                     'kernel_duration': 'Kernel Duration(ns)',
-                    'mfu': 'MFU'
+                    'mfu': 'MFU',
                 }
             else:
                 return df
 
             return df.rename(columns=column_mapping)
         except Exception as e:
-            logger.error(f"Failed to format kernel MFU columns, error: {e}")
+            logger.error("Failed to format kernel MFU columns, error: %s", e)
             return pd.DataFrame()
 
     def _format_module_mfu_columns(self, df, export_type):
@@ -367,7 +371,7 @@ class OperatorMfu(ModuleStatistic):
                     'op_count': 'opCount',
                     'total_kernel_duration': 'totalKernelDuration(ns)',
                     'avg_kernel_duration': 'avgKernelDuration(ns)',
-                    'avg_mfu': 'avgMFU'
+                    'avg_mfu': 'avgMFU',
                 }
             elif export_type == Constant.TEXT:
                 column_mapping = {
@@ -379,12 +383,12 @@ class OperatorMfu(ModuleStatistic):
                     'op_count': 'Op Count',
                     'total_kernel_duration': 'Total Kernel Duration(ns)',
                     'avg_kernel_duration': 'Avg Kernel Duration(ns)',
-                    'avg_mfu': 'Avg MFU'
+                    'avg_mfu': 'Avg MFU',
                 }
             else:
                 return df
 
             return df.rename(columns=column_mapping)
         except Exception as e:
-            logger.error(f"Failed to format module MFU columns, error: {e}")
+            logger.error("Failed to format module MFU columns, error: %s", e)
             return pd.DataFrame()

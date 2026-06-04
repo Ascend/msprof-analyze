@@ -39,52 +39,49 @@ class MFUCalculator:
 
     def run(self):
         logger.info("Start MFU calculation.")
-        logger.debug(f"profiler_db_path={self.profiler_db_path}")
-        logger.debug(f"profiler_path={self.profiler_path}")
+        logger.debug("profiler_db_path=%s", self.profiler_db_path)
+        logger.debug("profiler_path=%s", self.profiler_path)
         if not self.chip_peak_manager.is_valid():
             logger.error("Can not get chip info. Skip MFU calculation.")
             return pd.DataFrame()
         if not self._query_kernel_shapes():
             logger.error("Query Kernel Shapes Failed. Skip MFU calculation.")
             return pd.DataFrame()
-        logger.debug(f"Kernel shapes queried: {len(self.shapes_df)} rows")
+        logger.debug("Kernel shapes queried: %s rows", len(self.shapes_df))
 
         mfu_flops_df = self._query_mfu_flops()
         if mfu_flops_df is not None and not mfu_flops_df.empty:
-            logger.debug(f"Using MFU data from mstx ranges: {len(mfu_flops_df)} FLOPs records")
+            logger.debug("Using MFU data from mstx ranges: %s FLOPs records", len(mfu_flops_df))
             mfu = self._calculate_mfu_from_recorded_flops(mfu_flops_df)
         else:
             logger.warning("No mfu_flops ranges found. Skip MFU calculation.")
             mfu = pd.DataFrame()
 
-        logger.info(f"MFU calculation finished, result rows: {len(mfu)}")
+        logger.info("MFU calculation finished, result rows: %s", len(mfu))
         return mfu
 
     def _calculate_mfu_from_recorded_flops(self, mfu_flops_df):
         """根据 mstx range 中记录的 FLOPs 计算 kernel 级 MFU。"""
-        logger.debug(f"Calculate MFU from {len(mfu_flops_df)} FLOPs records")
+        logger.debug("Calculate MFU from %s FLOPs records", len(mfu_flops_df))
         if self.op_kernel_df is None and not self._query_op_kernel_correlation():
             logger.warning("Can not get cpu-op to device-kernel correlation. Skip MFU calculation.")
             return pd.DataFrame()
 
         # range 消息格式为 "<FLOPs>-<算子名>"，格式不合法或 FLOPs 非正数的数据不参与计算。
         mfu_flops_df = ensure_numeric_columns(mfu_flops_df, ['startNs', 'endNs'])
-        split_result = mfu_flops_df['flops'].astype(str).str.extract(
-            r'^(?P<flops>\d+)-(?P<name>.+)$'
-        )
+        split_result = mfu_flops_df['flops'].astype(str).str.extract(r'^(?P<flops>\d+)-(?P<name>.+)$')
         mfu_flops_df['flops'] = pd.to_numeric(split_result['flops'], errors='coerce')
         mfu_flops_df['name'] = split_result['name']
 
         mfu_flops_df = mfu_flops_df.dropna(subset=['flops'])
         mfu_flops_df = mfu_flops_df[mfu_flops_df['flops'] > 0]
-        logger.debug(f"Valid FLOPs records after filtering: {len(mfu_flops_df)}")
+        logger.debug("Valid FLOPs records after filtering: %s", len(mfu_flops_df))
 
         if mfu_flops_df.empty:
             logger.warning("No valid flops values found in mfu_flops ranges.")
             return pd.DataFrame()
 
-        df = pd.merge(self.op_kernel_df, self.shapes_df,
-                      on=['kernel_name', 'kernel_ts', 'kernel_end'], how='inner')
+        df = pd.merge(self.op_kernel_df, self.shapes_df, on=['kernel_name', 'kernel_ts', 'kernel_end'], how='inner')
 
         result_rows = []
         for _, range_row in mfu_flops_df.iterrows():
@@ -111,8 +108,7 @@ class MFUCalculator:
                 continue
 
             # 同一 range 下的 kernel 属于同一算子，使用首个 kernel 的输入类型获取芯片理论峰值。
-            dtype = self._determine_dtype_from_input_types(
-                range_kernels.iloc[0].get('input_types', ''))
+            dtype = self._determine_dtype_from_input_types(range_kernels.iloc[0].get('input_types', ''))
             chip_peak = self._get_peak_performance(dtype)
             if chip_peak == Constant.INVALID_RETURN:
                 continue
@@ -124,19 +120,21 @@ class MFUCalculator:
                 kernel_mfu = flops / (kernel_duration * 1e-9) / chip_peak
                 # 实际 TFLOPS 与 MFU 均按 kernel 执行时长计算。
                 actual_tflops = round(flops / (kernel_duration * 1e-9) / 1e12, 2)
-                result_rows.append({
-                    'kernel_name': kernel_row['kernel_name'],
-                    'kernel_ts': kernel_row['kernel_ts'],
-                    'kernel_end': kernel_row['kernel_end'],
-                    'mfu': kernel_mfu,
-                    'flops_op_name': name,
-                    'flops': flops,
-                    'kernel_duration': kernel_duration,
-                    'chip_peak': chip_peak,
-                    'actual_tflops': actual_tflops,
-                    'input_shapes': kernel_row.get('input_shapes', ''),
-                    'output_shapes': kernel_row.get('output_shapes', ''),
-                })
+                result_rows.append(
+                    {
+                        'kernel_name': kernel_row['kernel_name'],
+                        'kernel_ts': kernel_row['kernel_ts'],
+                        'kernel_end': kernel_row['kernel_end'],
+                        'mfu': kernel_mfu,
+                        'flops_op_name': name,
+                        'flops': flops,
+                        'kernel_duration': kernel_duration,
+                        'chip_peak': chip_peak,
+                        'actual_tflops': actual_tflops,
+                        'input_shapes': kernel_row.get('input_shapes', ''),
+                        'output_shapes': kernel_row.get('output_shapes', ''),
+                    }
+                )
 
         if not result_rows:
             return pd.DataFrame()
@@ -158,10 +156,11 @@ class MFUCalculator:
         shapes_df = export.read_export_db()
         if shapes_df is None or shapes_df.empty:
             return False
-        shapes_df['input_shapes'] = shapes_df['input_shapes'].str.strip('\"\'')
-        shapes_df['output_shapes'] = shapes_df['output_shapes'].str.strip('\"\'')
-        self.shapes_df = shapes_df[(shapes_df['input_shapes'] != Constant.NA) &
-                                   (shapes_df['output_shapes'] != Constant.NA)]
+        shapes_df['input_shapes'] = shapes_df['input_shapes'].str.strip('"\'')
+        shapes_df['output_shapes'] = shapes_df['output_shapes'].str.strip('"\'')
+        self.shapes_df = shapes_df[
+            (shapes_df['input_shapes'] != Constant.NA) & (shapes_df['output_shapes'] != Constant.NA)
+        ]
         return True
 
     def _query_op_kernel_correlation(self):
@@ -185,7 +184,7 @@ class MFUCalculator:
         if flops_df is None or flops_df.empty:
             logger.debug("No MFU FLOPs data found in DB")
             return None
-        logger.debug(f"MFU FLOPs data queried: {len(flops_df)} rows")
+        logger.debug("MFU FLOPs data queried: %s rows", len(flops_df))
         return ensure_numeric_columns(flops_df, ['startNs', 'endNs'])
 
     def _get_peak_performance(self, dtype) -> float:

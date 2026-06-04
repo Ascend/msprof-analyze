@@ -8,7 +8,6 @@ from msprof_analyze.prof_common.constant import Constant
 
 
 class TestMFUCalculator(unittest.TestCase):
-
     NAMESPACE = "msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mfu.mfu_calculator."
 
     def create_mfu_calculator(self, data_map=None, chip_valid=True):
@@ -39,31 +38,43 @@ class TestMFUCalculator(unittest.TestCase):
     def test_run_when_mfu_flops_missing_then_return_empty_dataframe(self):
         calc, _ = self.create_mfu_calculator()
         calc.shapes_df = pd.DataFrame([{"kernel_name": "kernel_a"}])
-        with (patch.object(calc, "_query_kernel_shapes", return_value=True),
-              patch.object(calc, "_query_mfu_flops", return_value=None)):
+        with (
+            patch.object(calc, "_query_kernel_shapes", return_value=True),
+            patch.object(calc, "_query_mfu_flops", return_value=None),
+        ):
             result = calc.run()
         self.assertTrue(result.empty)
 
     def test_calculate_mfu_from_recorded_flops_when_label_valid_then_parse_name(self):
         calc, _ = self.create_mfu_calculator()
-        calc.op_kernel_df = pd.DataFrame([{
-            "kernel_name": "kernel_a",
-            "kernel_ts": 20,
-            "kernel_end": 30,
-            "op_ts": 15,
-            "op_end": 35,
-        }])
-        calc.shapes_df = pd.DataFrame([{
-            "kernel_name": "kernel_a",
-            "kernel_ts": 20,
-            "kernel_end": 30,
-            "task_duration": 10,
-            "input_types": "FLOAT16",
-        }])
-        mfu_flops_df = pd.DataFrame([
-            {"startNs": 10, "endNs": 40, "flops": "100-demo-op"},
-            {"startNs": 10, "endNs": 40, "flops": "100:legacy"},
-        ])
+        calc.op_kernel_df = pd.DataFrame(
+            [
+                {
+                    "kernel_name": "kernel_a",
+                    "kernel_ts": 20,
+                    "kernel_end": 30,
+                    "op_ts": 15,
+                    "op_end": 35,
+                }
+            ]
+        )
+        calc.shapes_df = pd.DataFrame(
+            [
+                {
+                    "kernel_name": "kernel_a",
+                    "kernel_ts": 20,
+                    "kernel_end": 30,
+                    "task_duration": 10,
+                    "input_types": "FLOAT16",
+                }
+            ]
+        )
+        mfu_flops_df = pd.DataFrame(
+            [
+                {"startNs": 10, "endNs": 40, "flops": "100-demo-op"},
+                {"startNs": 10, "endNs": 40, "flops": "100:legacy"},
+            ]
+        )
 
         with patch.object(calc, "_get_peak_performance", return_value=100):
             result = calc._calculate_mfu_from_recorded_flops(mfu_flops_df)
@@ -159,8 +170,10 @@ class TestMFUCalculator(unittest.TestCase):
         mock_export = MagicMock()
         mock_export.read_export_db.return_value = df
 
-        with (patch(self.NAMESPACE + "DBManager.check_tables_in_db", return_value=True),
-              patch(self.NAMESPACE + "MfuFlopsExport", return_value=mock_export)):
+        with (
+            patch(self.NAMESPACE + "DBManager.check_tables_in_db", return_value=True),
+            patch(self.NAMESPACE + "MfuFlopsExport", return_value=mock_export),
+        ):
             result = calc._query_mfu_flops()
         self.assertFalse(result.empty)
         self.assertEqual(result.iloc[0]["startNs"], 10)
