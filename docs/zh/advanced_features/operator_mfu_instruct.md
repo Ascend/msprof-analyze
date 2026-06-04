@@ -4,7 +4,7 @@
 
 算子 MFU 分析（`operator_mfu`）用于基于 Profiling 数据计算算子的模型 FLOPs 利用率（Model FLOPs Utilization，MFU），帮助识别核心计算算子是否充分利用芯片理论算力。
 
-该能力从采集侧写入的 `mfu_flops` MSTX range 中读取算子 FLOPs，再结合 Device 侧 kernel 耗时、kernel 输入数据类型和芯片理论峰值，输出：
+该能力从采集侧记录的算子 FLOPs 信息中读取计算量，再结合 Device 侧 kernel 耗时、kernel 输入数据类型和芯片理论峰值，输出：
 
 * kernel 级 MFU 明细：展示每个有效 kernel 的 MFU、实际 TFLOPS、理论峰值和 FLOPs。
 * module 级 MFU 统计：如果采集数据中包含 `Module` domain 的 MSTX range，则按模型层级聚合各算子的平均 MFU。
@@ -19,13 +19,9 @@
 
 **数据准备**
 
-1. 配置并采集带 FLOPs range 的 Profiling 数据。
+1. 配置并采集带算子 FLOPs 信息的 Profiling 数据。
 
-   采集侧在 `torch_npu.profiler.profile` 开启 `with_flops=True` 后，会在 profiler start 阶段安装 FLOPs hook；被支持的算子调用时，hook 会自动计算 FLOPs，并以 `mfu_flops` domain 写入 MSTX range，range message 格式为：
-
-   ```text
-   <FLOPs>-<op_name>
-   ```
+   采集侧需要同时开启 `torch_npu.profiler.profile` 的 `with_flops=True` 和 `_ExperimentalConfig` 中的 MSTX 采集开关。开启后，被支持的算子调用时会自动计算 FLOPs，并将 FLOPs 信息记录到 Profiling 数据中。
 
    示例配置如下：
 
@@ -60,12 +56,12 @@
 
    说明：
 
-   * `with_flops=True` 用于开启采集侧 FLOPs hook。
-   * 当前采集侧实现中，自动 FLOPs hook 的触发条件为 `with_flops=True` 且 `msprof_tx=True`。`mstx=True` 是新的 MSTX 参数，示例中同时保留以兼容当前 hook 触发逻辑和 MSTX 采集。
+   * `with_flops=True` 用于开启采集侧 FLOPs 计算。
+   * `mstx=True` 用于开启 MSTX 事件采集。当前采集侧实现中，自动 FLOPs 记录还依赖旧参数 `msprof_tx=True`，因此示例中同时配置 `mstx=True` 和 `msprof_tx=True`。
    * `export_type` 必须包含 `Db`，解析侧需要读取 DB 中的 `MSTX_EVENTS`、`PYTORCH_API`、`COMPUTE_TASK_INFO` 和 `TASK` 等表。
    * `record_shapes=True` 用于保留 kernel shape 和数据类型信息。
    * `profiler_level` 建议设置为 `Level1` 及以上，以采集 MFU 计算所需的 kernel 信息。
-   * 如果配置了 `mstx_domain_include`，需要包含 `mfu_flops`；如果需要 module 级 MFU 聚合，还需要包含 `Module`。
+   * 如果配置了 `mstx_domain_include`，需要确保 FLOPs 相关 MSTX 事件未被过滤；如果需要 module 级 MFU 聚合，还需要包含 `Module`。
    * 当前 MFU 计算不再使用 `flash_attn_args` domain 的手动 mark；FlashAttention 的 FLOPs 由采集侧公式根据算子入参自动计算。
 
 2. 添加模型层级 MSTX 打点（可选）。
@@ -130,7 +126,7 @@ msprof-analyze -m operator_mfu -d ./result --export_type text
 | actual_tflops | 按当前 kernel 时长计算的实际 TFLOPS。 |
 | chip_peak_tflops | 按 kernel 输入数据类型匹配到的芯片理论峰值，单位 TFLOPS。 |
 | flops | 采集侧记录的算子 FLOPs。 |
-| flops_op_name | `mfu_flops` range 中记录的算子名称。 |
+| flops_op_name | 采集侧记录 FLOPs 时对应的算子名称。 |
 | input_shapes | kernel 输入 shape。 |
 | output_shapes | kernel 输出 shape。 |
 
@@ -150,22 +146,21 @@ msprof-analyze -m operator_mfu -d ./result --export_type text
 
 ## 计算逻辑
 
-### 采集侧 FLOPs range
+### 采集侧 FLOPs 记录
 
-采集侧 `FlopsHookManager` 会在 profiler start 时安装算子 hook，在 profiler stop 时卸载 hook。对于已注册 FLOPs 公式的算子，hook 的执行流程如下：
+采集侧在 `with_flops=True` 且 MSTX 采集开关已开启时，会对已注册 FLOPs 公式的算子记录 FLOPs 信息。整体流程如下：
 
 1. 调用 FLOPs 公式，根据算子入参 shape、layout、group 信息或 attention mask 信息计算 FLOPs。
-2. 如果 FLOPs 为非负数，则调用 `torch_npu.npu.mstx.range_start(f"{flops}-{op_name}", domain="mfu_flops")`。
-3. 执行原始算子。
-4. 调用 `torch_npu.npu.mstx.range_end(range_id, domain="mfu_flops")`。
+2. 执行原始算子。
+3. 将 FLOPs 信息随 Profiling 数据落盘，供 `operator_mfu` 解析。
 
-未注册 FLOPs 公式的算子不会生成 `mfu_flops` range。
+未注册 FLOPs 公式的算子不会生成可用于 MFU 计算的 FLOPs 信息。
 
 ### 解析侧 MFU
 
 解析侧 `operator_mfu` 使用以下数据计算 MFU：
 
-* 从 `MSTX_EVENTS` 查询 `mfu_flops` domain 的 range，并解析 message 中的 `<FLOPs>-<op_name>`。
+* 从 `MSTX_EVENTS` 查询采集侧记录的算子 FLOPs 信息。
 * 从 `PYTORCH_API`、`COMPUTE_TASK_INFO`、`COMMUNICATION_OP`、`COMMUNICATION_SCHEDULE_TASK_INFO` 和 `TASK` 等表查询框架算子到 Device kernel 的关联关系。
 * 从 kernel shape 数据中读取 kernel 时长、输入 shape、输出 shape 和输入数据类型。
 * 通过 profiler 目录中的芯片信息获取对应数据类型的理论峰值。
@@ -177,9 +172,9 @@ actual_tflops = FLOPs / (kernelDuration(ns) * 1e-9) / 1e12
 mfu = FLOPs / (kernelDuration(ns) * 1e-9) / chipPeakFLOPS
 ```
 
-其中 `chipPeakFLOPS` 为当前芯片、当前数据类型对应的理论峰值。解析侧使用同一 `mfu_flops` range 内首个 kernel 的输入数据类型匹配峰值；如果无法解析输入类型，默认按 FP16 处理。
+其中 `chipPeakFLOPS` 为当前芯片、当前数据类型对应的理论峰值。解析侧使用同一 FLOPs 记录时间范围内首个 kernel 的输入数据类型匹配峰值；如果无法解析输入类型，默认按 FP16 处理。
 
-一个 `mfu_flops` range 会匹配其时间范围内启动的框架算子，再关联这些算子下发的 kernel。解析侧会按 `kernel_ts` 和 `kernel_end` 对重复 kernel 去重，并对每个有效 kernel 分别计算 MFU。
+一条 FLOPs 记录会匹配其时间范围内启动的框架算子，再关联这些算子下发的 kernel。解析侧会按 `kernel_ts` 和 `kernel_end` 对重复 kernel 去重，并对每个有效 kernel 分别计算 MFU。
 
 ## 当前支持的 FLOPs 公式
 

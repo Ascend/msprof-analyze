@@ -4,7 +4,7 @@
 
 The operator MFU analysis (`operator_mfu`) calculates Model FLOPs Utilization (MFU) from profiling data. It helps you determine whether core computation operators make full use of the theoretical peak performance of the chip.
 
-This feature reads operator FLOPs from `mfu_flops` MSTX ranges collected by Ascend PyTorch Profiler, then combines the FLOPs with device-side kernel duration, kernel input data type, and chip peak FLOPS to generate:
+This feature reads operator FLOPs recorded on the collection side, then combines the FLOPs with device-side kernel duration, kernel input data type, and chip peak FLOPS to generate:
 
 * Kernel-level MFU details, including MFU, actual TFLOPS, chip peak TFLOPS, and FLOPs for each valid kernel.
 * Module-level MFU statistics if the profiling data also contains MSTX ranges in the `Module` domain.
@@ -19,13 +19,9 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
 **Data Preparation**
 
-1. Collect profiling data with FLOPs ranges.
+1. Collect profiling data with operator FLOPs information.
 
-   When `with_flops=True` is enabled in `torch_npu.profiler.profile`, the profiler installs FLOPs hooks during profiler start. For supported operators, the hook calculates FLOPs and writes an MSTX range in the `mfu_flops` domain. The range message uses the following format:
-
-   ```text
-   <FLOPs>-<op_name>
-   ```
+   On the collection side, enable both `with_flops=True` in `torch_npu.profiler.profile` and the MSTX collection switch in `_ExperimentalConfig`. After they are enabled, supported operator calls automatically calculate FLOPs and record the FLOPs information in the profiling data.
 
    Example:
 
@@ -60,12 +56,12 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
    Notes:
 
-   * `with_flops=True` enables the FLOPs hooks on the collection side.
-   * In the current collection-side implementation, the automatic FLOPs hook is installed when both `with_flops=True` and `msprof_tx=True` are set. `mstx=True` is the newer MSTX parameter and is kept in the example for compatibility with MSTX collection.
+   * `with_flops=True` enables FLOPs calculation on the collection side.
+   * `mstx=True` enables MSTX event collection. In the current collection-side implementation, automatic FLOPs recording also depends on the legacy `msprof_tx=True` parameter, so the example sets both `mstx=True` and `msprof_tx=True`.
    * `export_type` must include `Db` because the analysis reads tables such as `MSTX_EVENTS`, `PYTORCH_API`, `COMPUTE_TASK_INFO`, and `TASK`.
    * `record_shapes=True` keeps kernel shape and data type information.
    * Set `profiler_level` to `Level1` or higher to collect the kernel information required for MFU calculation.
-   * If `mstx_domain_include` is configured, include `mfu_flops`. If module-level aggregation is required, also include `Module`.
+   * If `mstx_domain_include` is configured, make sure FLOPs-related MSTX events are not filtered out. If module-level aggregation is required, also include `Module`.
    * MFU calculation no longer uses manual marks in the `flash_attn_args` domain. FlashAttention FLOPs are calculated automatically on the collection side from operator arguments.
 
 2. Add model-level MSTX ranges (optional).
@@ -130,7 +126,7 @@ Main fields in `OperatorMFU`:
 | actual_tflops | Actual TFLOPS calculated from the current kernel duration. |
 | chip_peak_tflops | Chip theoretical peak performance for the kernel input data type, in TFLOPS. |
 | flops | Operator FLOPs recorded on the collection side. |
-| flops_op_name | Operator name recorded in the `mfu_flops` range. |
+| flops_op_name | Operator name associated with the FLOPs information recorded on the collection side. |
 | input_shapes | Kernel input shapes. |
 | output_shapes | Kernel output shapes. |
 
@@ -150,22 +146,21 @@ Main fields in `ModuleMFU`:
 
 ## Calculation Logic
 
-### Collection-Side FLOPs Ranges
+### Collection-Side FLOPs Recording
 
-`FlopsHookManager` installs operator hooks when the profiler starts and restores the original operators when the profiler stops. For operators with registered FLOPs formulas, the hook works as follows:
+When `with_flops=True` is set and MSTX collection is enabled, the collection side records FLOPs information for operators with registered FLOPs formulas. The overall flow is as follows:
 
 1. Calculates FLOPs from operator inputs, such as shape, layout, group metadata, or attention mask information.
-2. Calls `torch_npu.npu.mstx.range_start(f"{flops}-{op_name}", domain="mfu_flops")` if the calculated FLOPs is non-negative.
-3. Calls the original operator.
-4. Calls `torch_npu.npu.mstx.range_end(range_id, domain="mfu_flops")`.
+2. Calls the original operator.
+3. Writes the FLOPs information with the profiling data for `operator_mfu` to analyze.
 
-Operators without registered FLOPs formulas do not generate `mfu_flops` ranges.
+Operators without registered FLOPs formulas do not generate FLOPs information that can be used for MFU calculation.
 
 ### Analysis-Side MFU
 
 `operator_mfu` uses the following data to calculate MFU:
 
-* `mfu_flops` ranges from `MSTX_EVENTS`, with `<FLOPs>-<op_name>` parsed from the range message.
+* Operator FLOPs information recorded by the collection side in `MSTX_EVENTS`.
 * Framework-operator-to-device-kernel mappings from tables such as `PYTORCH_API`, `COMPUTE_TASK_INFO`, `COMMUNICATION_OP`, `COMMUNICATION_SCHEDULE_TASK_INFO`, and `TASK`.
 * Kernel duration, input shapes, output shapes, and input data types from kernel shape data.
 * Chip theoretical peak performance from chip information in the profiler directory.
@@ -177,9 +172,9 @@ actual_tflops = FLOPs / (kernelDuration(ns) * 1e-9) / 1e12
 mfu = FLOPs / (kernelDuration(ns) * 1e-9) / chipPeakFLOPS
 ```
 
-`chipPeakFLOPS` is selected based on the chip and data type. The analysis uses the input data type of the first kernel in the same `mfu_flops` range. If the input type cannot be parsed, FP16 is used by default.
+`chipPeakFLOPS` is selected based on the chip and data type. The analysis uses the input data type of the first kernel in the same FLOPs record time range. If the input type cannot be parsed, FP16 is used by default.
 
-Each `mfu_flops` range is matched to framework operators that start within the range, and then to the kernels launched by those operators. Duplicate kernels are removed by `kernel_ts` and `kernel_end`. MFU is then calculated for each valid kernel.
+Each FLOPs record is matched to framework operators that start within its time range, and then to the kernels launched by those operators. Duplicate kernels are removed by `kernel_ts` and `kernel_end`. MFU is then calculated for each valid kernel.
 
 ## Supported FLOPs Formulas
 

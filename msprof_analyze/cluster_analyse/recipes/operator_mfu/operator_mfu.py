@@ -361,6 +361,7 @@ class OperatorMfu(ModuleStatistic):
                 column_mapping = {
                     'rank_id': 'rankID',
                     'module_parent': 'parentModule',
+                    'module': 'module',
                     'op_name': 'opName',
                     'kernel_list': 'kernelList',
                     'op_count': 'opCount',

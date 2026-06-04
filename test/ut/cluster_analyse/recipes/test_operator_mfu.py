@@ -79,6 +79,25 @@ class TestOperatorMfu(unittest.TestCase):
         self.assertEqual(20, formatted_result.iloc[0]['Kernel Duration(ns)'])
         self.assertNotIn('kernel_duration', formatted_result.columns)
 
+    def test_format_module_mfu_columns_when_export_db_then_keep_module_column(self):
+        """测试 DB 导出格式显式保留 module 列。"""
+        module_df = pd.DataFrame([{
+            'rank_id': 0,
+            'module_parent': 'parent',
+            'module': 'module',
+            'op_name': 'op',
+            'kernel_list': 'kernel',
+            'op_count': 1,
+            'total_kernel_duration': 8,
+            'avg_kernel_duration': 8,
+            'avg_mfu': '50.0%',
+        }])
+
+        result = self.analysis._format_module_mfu_columns(module_df, Constant.DB)
+
+        self.assertIn('module', result.columns)
+        self.assertEqual('module', result.iloc[0]['module'])
+
     def test_tree_builder_when_import_from_operator_mfu_then_reuse_module_statistic_builder(self):
         """测试 operator_mfu 复用 module_statistic 的树构建器。"""
         self.assertIs(OperatorMfuTreeBuilder, ModuleStatisticTreeBuilder)
