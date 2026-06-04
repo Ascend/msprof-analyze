@@ -70,6 +70,7 @@ msprof-analyze -m free_analysis -d ./cluster_data -o ./output
 | freq_analysis             | 识别aicore是否存在空闲（频率为800MHz）、异常（频率不为1800MHz或800MHz）的情况并给出分析结果。 | - |
 | ep_load_balance           | moe负载信息汇总分析。 | - |
 | computational_op_masking  | 提供集群训练过程中不同算子耗时的掩盖计算，帮助用户找到性能瓶颈。 | [集群算子掩盖线性度分析](./computational_op_masking_instruct.md) |
+| operator_mfu              | 基于采集侧记录的算子 FLOPs 和 Device 侧 kernel 耗时，计算 kernel 级和 module 级算力利用率。 | [算子 MFU 分析](./operator_mfu_instruct.md) |
 
 ### 通信类特性
 

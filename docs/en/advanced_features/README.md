@@ -70,6 +70,7 @@ For more information, see [Command-line Options and Parameters](#command-line-op
 | freq_analysis             | Identifies whether the AI Core is idle (frequency at 800 MHz) or abnormal (frequency not at 1800 MHz or 800 MHz) and provides the analysis results.| - |
 | ep_load_balance           | Summarizes and analyzes Mixture of Experts (MoE) load information.| - |
 | computational_op_masking  | Calculates the overlap between operator execution durations during cluster training to help you identify performance bottlenecks.| [computational_op_masking](./computational_op_masking_instruct.md)|
+| operator_mfu              | Calculates kernel-level and module-level MFU from operator FLOPs recorded on the collection side and device-side kernel durations.| [operator_mfu](./operator_mfu_instruct.md)|
 
 ### Communication
 
