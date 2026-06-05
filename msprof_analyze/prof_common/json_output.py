@@ -60,6 +60,8 @@ def write_json(data: Dict[str, Any]) -> None:
 def cli_json_output(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        if not kwargs.get('agent'):
+            return func(*args, **kwargs)
         try:
             result = func(*args, **kwargs)
             if result is not None and isinstance(result, dict):
@@ -70,4 +72,5 @@ def cli_json_output(func):
             set_json_error(msg_dict={"err": str(e)})
             write_json(get_json_output())
             sys.exit(1)
+
     return wrapper
