@@ -99,8 +99,8 @@ class PathManager:
         if len(path) > cls.MAX_PATH_LENGTH:
             raise RuntimeError("Length of input path exceeds the limit.")
         path_split_list = path.split("/")
-        for path in path_split_list:
-            path_list = path.split("\\")
+        for path_segment in path_split_list:
+            path_list = path_segment.split("\\")
             for name in path_list:
                 if len(name) > cls.MAX_FILE_NAME_LENGTH:
                     raise RuntimeError("Length of input path exceeds the limit.")
@@ -110,22 +110,15 @@ class PathManager:
         cls.check_path_length(path)
 
         if os.path.islink(path):
-            msg = f"Invalid input path which is a soft link."
+            msg = "Invalid input path which is a soft link."
             raise RuntimeError(msg)
 
-        pattern = r'(\.|:|\\|/|_|-|\s|[~0-9a-zA-Z\u4e00-\u9fa5])+'
+        pattern = r'(\.|:|\\|/|_|-|\s|[~0-9a-zA-Z\u4e00-\u9fa5\u3010\u3011])+'
         if not re.fullmatch(pattern, path):
-            illegal_pattern = r'([^\.\:\\\/\_\-\s~0-9a-zA-Z\u4e00-\u9fa5])+'
+            illegal_pattern = r'([^\.\:\\\/\_\-\s~0-9a-zA-Z\u4e00-\u9fa5\u3010\u3011])+'
             invalid_obj = re.search(illegal_pattern, path).group()
-            msg = f"Invalid path which has illagal characters \"{invalid_obj}\"."
+            msg = f"Invalid path which has illegal characters \"{invalid_obj}\"."
             raise RuntimeError(msg)
-
-        path_split_list = path.split("/")
-        for path in path_split_list:
-            path_list = path.split("\\")
-            for name in path_list:
-                if len(name) > cls.MAX_FILE_NAME_LENGTH:
-                    raise RuntimeError("Length of input path exceeds the limit.")
 
     @classmethod
     def check_path_owner_consistent(cls, path_list: list):
@@ -143,7 +136,7 @@ class PathManager:
             if not os.path.exists(path):
                 continue
             if os.stat(path).st_uid != os.getuid():
-                logger.warning(f"The path does not belong to you: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
+                logger.warning("The path does not belong to you: %s. %s", path, Constant.FORCE_BYPASSES_SECURITY)
 
     @classmethod
     def check_path_writeable(cls, path):
@@ -156,7 +149,7 @@ class PathManager:
             when invalid data throw exception
         """
         if os.path.islink(path):
-            msg = f"Invalid path which is a soft link."
+            msg = "Invalid path which is a soft link."
             raise RuntimeError(msg)
         if AdditionalArgsManager().force or is_root():
             return
@@ -178,7 +171,7 @@ class PathManager:
             msg = f"The path does not exist: {path}"
             raise FileNotFoundError(msg)
         if os.path.islink(path):
-            msg = f"Invalid path which is a soft link."
+            msg = "Invalid path which is a soft link."
             raise RuntimeError(msg)
         if AdditionalArgsManager().force or is_root():
             return
@@ -199,7 +192,7 @@ class PathManager:
             return
         st = os.stat(path)
         if st.st_mode & 0o022:
-            logger.warning(f"The path is writable by others: {path}. {Constant.FORCE_BYPASSES_SECURITY}")
+            logger.warning("The path is writable by others: %s. %s", path, Constant.FORCE_BYPASSES_SECURITY)
 
     @classmethod
     def remove_path_safety(cls, path: str):
@@ -246,7 +239,7 @@ class PathManager:
         if not path:
             raise RuntimeError("The path is empty. Please enter a valid path.")
         if os.path.islink(path):
-            msg = f"Invalid input path which is a soft link."
+            msg = "Invalid input path which is a soft link."
             raise RuntimeError(msg)
         return os.path.abspath(path)
 
@@ -258,8 +251,10 @@ class PathManager:
             return
         file_size = os.path.getsize(file_path)
         if file_size > Constant.MAX_FILE_SIZE_5_GB:
-            raise RuntimeError(f"The file({file_path}) size is {file_size} Byte, exceeds the preset max value. "
-                               f"{Constant.FORCE_BYPASSES_SECURITY}")
+            raise RuntimeError(
+                f"The file({file_path}) size is {file_size} Byte, exceeds the preset max value. "
+                f"{Constant.FORCE_BYPASSES_SECURITY}"
+            )
 
     @classmethod
     def expanduser_for_cli(cls, ctx, parm, str_name: str):
@@ -271,7 +266,7 @@ class PathManager:
         return str_name if str_name is None else os.path.expanduser(str_name.lstrip('='))
 
     @classmethod
-    def limited_depth_walk(cls, path, max_depth=10, *args, **kwargs):
+    def limited_depth_walk(cls, path, *args, max_depth=10, **kwargs):
         base_depth = path.count(os.sep)
         for root, dirs, files in os.walk(path, *args, **kwargs):
             if root.count(os.sep) - base_depth > max_depth:
