@@ -83,6 +83,74 @@ class TestMFUCalculator(unittest.TestCase):
         self.assertEqual("demo-op", result.iloc[0]["flops_op_name"])
         self.assertEqual(100, result.iloc[0]["flops"])
 
+    def test_calculate_mfu_from_recorded_flops_when_ops_unsorted_then_match_by_range(self):
+        calc, _ = self.create_mfu_calculator()
+        calc.op_kernel_df = pd.DataFrame(
+            [
+                {
+                    "kernel_name": "kernel_b",
+                    "kernel_ts": 65,
+                    "kernel_end": 75,
+                    "op_ts": 60,
+                    "op_end": 80,
+                },
+                {
+                    "kernel_name": "kernel_a",
+                    "kernel_ts": 20,
+                    "kernel_end": 30,
+                    "op_ts": 10,
+                    "op_end": 35,
+                },
+                {
+                    "kernel_name": "kernel_c",
+                    "kernel_ts": 90,
+                    "kernel_end": 100,
+                    "op_ts": 85,
+                    "op_end": 105,
+                },
+            ]
+        )
+        calc.shapes_df = pd.DataFrame(
+            [
+                {
+                    "kernel_name": "kernel_a",
+                    "kernel_ts": 20,
+                    "kernel_end": 30,
+                    "task_duration": 10,
+                    "input_types": "FLOAT16",
+                },
+                {
+                    "kernel_name": "kernel_b",
+                    "kernel_ts": 65,
+                    "kernel_end": 75,
+                    "task_duration": 10,
+                    "input_types": "FLOAT16",
+                },
+                {
+                    "kernel_name": "kernel_c",
+                    "kernel_ts": 90,
+                    "kernel_end": 100,
+                    "task_duration": 10,
+                    "input_types": "FLOAT16",
+                },
+            ]
+        )
+        mfu_flops_df = pd.DataFrame(
+            [
+                {"startNs": 10, "endNs": 20, "flops": "100-op-a"},
+                {"startNs": 50, "endNs": 60, "flops": "200-op-b"},
+            ]
+        )
+
+        with patch.object(calc, "_get_peak_performance", return_value=100):
+            result = calc._calculate_mfu_from_recorded_flops(mfu_flops_df)
+
+        self.assertEqual(2, len(result))
+        self.assertEqual(
+            {"kernel_a": "op-a", "kernel_b": "op-b"},
+            result.set_index("kernel_name")["flops_op_name"].to_dict(),
+        )
+
     def test__query_kernel_shapes_when_no_shapes_then_return_false(self):
         calc, _ = self.create_mfu_calculator()
         mock_export = MagicMock()

@@ -105,7 +105,36 @@ class TestOperatorMfu(unittest.TestCase):
         result = self.analysis._format_module_mfu_columns(module_df, Constant.DB)
 
         self.assertIn('module', result.columns)
+        self.assertIn('parent_module', result.columns)
+        self.assertIn('op_name', result.columns)
+        self.assertNotIn('parentModule', result.columns)
+        self.assertNotIn('opName', result.columns)
         self.assertEqual('module', result.iloc[0]['module'])
+
+    def test_format_kernel_mfu_columns_when_export_db_then_use_snake_case_columns(self):
+        """测试 DB 导出格式使用统一的 snake_case 列名。"""
+        kernel_df = pd.DataFrame(
+            [
+                {
+                    'rank_id': 0,
+                    'op_name': 'op',
+                    'kernel_name': 'kernel',
+                    'kernel_ts': 10,
+                    'kernel_end': 30,
+                    'kernel_duration': 20,
+                    'mfu': 0.5,
+                }
+            ]
+        )
+
+        result = self.analysis._format_kernel_mfu_columns(kernel_df, Constant.DB)
+
+        self.assertIn('rank_id', result.columns)
+        self.assertIn('op_name', result.columns)
+        self.assertIn('kernel_start(ns)', result.columns)
+        self.assertIn('kernel_duration(ns)', result.columns)
+        self.assertNotIn('rankID', result.columns)
+        self.assertNotIn('opName', result.columns)
 
     def test_tree_builder_when_import_from_operator_mfu_then_reuse_module_statistic_builder(self):
         """测试 operator_mfu 复用 module_statistic 的树构建器。"""

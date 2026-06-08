@@ -31,7 +31,7 @@
        aic_metrics=torch_npu.profiler.AiCMetrics.PipeUtilization,
        msprof_tx=True,
        mstx=True,
-       data_simplification=False,
+       data_simplification=True,
        export_type=[
            torch_npu.profiler.ExportType.Text,
            torch_npu.profiler.ExportType.Db,
@@ -116,12 +116,12 @@ msprof-analyze -m operator_mfu -d ./result --export_type text
 
 | 字段名称 | 说明 |
 | -------- | ---- |
-| rankID | Rank ID。 |
-| opName | 框架侧算子名称。 |
-| kernelName | Device 侧 kernel 名称。 |
-| kernelStart(ns) | kernel 开始时间，单位纳秒。 |
-| kernelEnd(ns) | kernel 结束时间，单位纳秒。 |
-| kernelDuration(ns) | kernel 执行时长，单位纳秒。 |
+| rank_id | Rank ID。 |
+| op_name | 框架侧算子名称。 |
+| kernel_name | Device 侧 kernel 名称。 |
+| kernel_start(ns) | kernel 开始时间，单位纳秒。 |
+| kernel_end(ns) | kernel 结束时间，单位纳秒。 |
+| kernel_duration(ns) | kernel 执行时长，单位纳秒。 |
 | mfu | MFU 比值，未乘以 100%。 |
 | actual_tflops | 按当前 kernel 时长计算的实际 TFLOPS。 |
 | chip_peak_tflops | 按 kernel 输入数据类型匹配到的芯片理论峰值，单位 TFLOPS。 |
@@ -134,15 +134,15 @@ msprof-analyze -m operator_mfu -d ./result --export_type text
 
 | 字段名称 | 说明 |
 | -------- | ---- |
-| rankID | Rank ID。 |
-| parentModule | 上层 Module 名称。 |
+| rank_id | Rank ID。 |
+| parent_module | 上层 Module 名称。 |
 | module | 最底层 Module 名称。 |
-| opName | 框架侧算子名称。 |
-| kernelList | 框架侧算子下发到 Device 侧执行的 kernel 序列。 |
-| totalKernelDuration(ns) | 框架侧算子对应 Device 侧 kernel 运行总时间，单位纳秒。 |
-| avgKernelDuration(ns) | 框架侧算子对应 Device 侧 kernel 平均运行时间，单位纳秒。 |
-| opCount | 框架侧算子在采集周期内运行的次数。 |
-| avgMFU | 按同一 kernel 位置聚合得到的平均 MFU，百分比格式。 |
+| op_name | 框架侧算子名称。 |
+| kernel_list | 框架侧算子下发到 Device 侧执行的 kernel 序列。 |
+| total_kernel_duration(ns) | 框架侧算子对应 Device 侧 kernel 运行总时间，单位纳秒。 |
+| avg_kernel_duration(ns) | 框架侧算子对应 Device 侧 kernel 平均运行时间，单位纳秒。 |
+| op_count | 框架侧算子在采集周期内运行的次数。 |
+| avg_mfu | 按同一 kernel 位置聚合得到的平均 MFU，百分比格式。 |
 
 ## 计算逻辑
 

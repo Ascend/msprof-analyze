@@ -31,7 +31,7 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
        aic_metrics=torch_npu.profiler.AiCMetrics.PipeUtilization,
        msprof_tx=True,
        mstx=True,
-       data_simplification=False,
+       data_simplification=True,
        export_type=[
            torch_npu.profiler.ExportType.Text,
            torch_npu.profiler.ExportType.Db,
@@ -116,12 +116,12 @@ Main fields in `OperatorMFU`:
 
 | Field | Description |
 | ----- | ----------- |
-| rankID | Rank ID. |
-| opName | Framework-side operator name. |
-| kernelName | Device-side kernel name. |
-| kernelStart(ns) | Kernel start time in ns. |
-| kernelEnd(ns) | Kernel end time in ns. |
-| kernelDuration(ns) | Kernel duration in ns. |
+| rank_id | Rank ID. |
+| op_name | Framework-side operator name. |
+| kernel_name | Device-side kernel name. |
+| kernel_start(ns) | Kernel start time in ns. |
+| kernel_end(ns) | Kernel end time in ns. |
+| kernel_duration(ns) | Kernel duration in ns. |
 | mfu | MFU ratio, not multiplied by 100%. |
 | actual_tflops | Actual TFLOPS calculated from the current kernel duration. |
 | chip_peak_tflops | Chip theoretical peak performance for the kernel input data type, in TFLOPS. |
@@ -134,15 +134,15 @@ Main fields in `ModuleMFU`:
 
 | Field | Description |
 | ----- | ----------- |
-| rankID | Rank ID. |
-| parentModule | Upper-layer module name. |
+| rank_id | Rank ID. |
+| parent_module | Upper-layer module name. |
 | module | Bottom-layer module name. |
-| opName | Framework-side operator name. |
-| kernelList | Sequence of kernels launched by the framework-side operator. |
-| totalKernelDuration(ns) | Total duration of device-side kernels corresponding to the framework-side operator, in ns. |
-| avgKernelDuration(ns) | Average duration of device-side kernels corresponding to the framework-side operator, in ns. |
-| opCount | Number of executions of the framework-side operator during the collection period. |
-| avgMFU | Average MFU aggregated by kernel position, in percentage format. |
+| op_name | Framework-side operator name. |
+| kernel_list | Sequence of kernels launched by the framework-side operator. |
+| total_kernel_duration(ns) | Total duration of device-side kernels corresponding to the framework-side operator, in ns. |
+| avg_kernel_duration(ns) | Average duration of device-side kernels corresponding to the framework-side operator, in ns. |
+| op_count | Number of executions of the framework-side operator during the collection period. |
+| avg_mfu | Average MFU aggregated by kernel position, in percentage format. |
 
 ## Calculation Logic
 

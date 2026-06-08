@@ -120,7 +120,7 @@ class OperatorMfu(ModuleStatistic):
 
     def _calculate_kernel_mfu(self, data_map, op_kernel_df):
         """计算 kernel MFU，并合并回 op 与 kernel 的关联数据。"""
-        mfu_worker = MFUCalculator(data_map, op_kernel_df)
+        mfu_worker = MFUCalculator(data_map)
         mfu_df = mfu_worker.run()
         if mfu_df.empty or 'mfu' not in mfu_df.columns:
             logger.warning("No MFU calculated for kernels.")
@@ -142,35 +142,45 @@ class OperatorMfu(ModuleStatistic):
             logger.warning("No valid MFU data for rank %s", rank_id)
             return pd.DataFrame()
 
-        # 生成导出所需的 kernel 级字段。
-        kernel_mfu_list = []
-        for _, row in valid_kernel_df.iterrows():
-            chip_peak_tflops = round(row.get('chip_peak', 0) / 1e12, 2) if row.get('chip_peak', 0) > 0 else 0
-            mfu = round(row.get('mfu', 0), 4)
-            # 优先使用 MFUCalculator 计算的实际 TFLOPS，缺失时按 MFU 和峰值补算。
-            actual_tflops = row.get('actual_tflops', round(mfu * chip_peak_tflops, 2))
-            kernel_mfu_list.append(
-                {
-                    'rank_id': rank_id,
-                    'op_name': row.get('op_name', ''),
-                    'kernel_name': row.get('kernel_name', ''),
-                    'kernel_ts': row.get('kernel_ts', 0),
-                    'kernel_end': row.get('kernel_end', 0),
-                    'kernel_duration': row.get('kernel_duration', row.get('kernel_end', 0) - row.get('kernel_ts', 0)),
-                    'mfu': mfu,
-                    'actual_tflops': actual_tflops,
-                    'chip_peak_tflops': chip_peak_tflops,
-                    'flops': row.get('flops', 0),
-                    'flops_op_name': row.get('flops_op_name', ''),
-                    'input_shapes': row.get('input_shapes', ''),
-                    'output_shapes': row.get('output_shapes', ''),
-                }
-            )
+        valid_kernel_df = valid_kernel_df.reset_index(drop=True)
+        row_count = len(valid_kernel_df)
 
-        if not kernel_mfu_list:
-            return pd.DataFrame()
+        def get_column(column_name, default_value):
+            if column_name in valid_kernel_df.columns:
+                return valid_kernel_df[column_name]
+            return pd.Series([default_value] * row_count)
 
-        return pd.DataFrame(kernel_mfu_list)
+        kernel_ts = pd.to_numeric(get_column('kernel_ts', 0), errors='coerce').fillna(0)
+        kernel_end = pd.to_numeric(get_column('kernel_end', 0), errors='coerce').fillna(0)
+        fallback_duration = kernel_end - kernel_ts
+        kernel_duration = pd.to_numeric(get_column('kernel_duration', pd.NA), errors='coerce').fillna(
+            fallback_duration
+        )
+
+        chip_peak = pd.to_numeric(get_column('chip_peak', 0), errors='coerce').fillna(0)
+        chip_peak_tflops = (chip_peak.where(chip_peak > 0, 0) / 1e12).round(2)
+        mfu = pd.to_numeric(get_column('mfu', 0), errors='coerce').fillna(0).round(4)
+
+        actual_tflops = pd.to_numeric(get_column('actual_tflops', pd.NA), errors='coerce')
+        actual_tflops = actual_tflops.fillna((mfu * chip_peak_tflops).round(2))
+
+        return pd.DataFrame(
+            {
+                'rank_id': rank_id,
+                'op_name': get_column('op_name', ''),
+                'kernel_name': get_column('kernel_name', ''),
+                'kernel_ts': kernel_ts,
+                'kernel_end': kernel_end,
+                'kernel_duration': kernel_duration,
+                'mfu': mfu,
+                'actual_tflops': actual_tflops,
+                'chip_peak_tflops': chip_peak_tflops,
+                'flops': get_column('flops', 0),
+                'flops_op_name': get_column('flops_op_name', ''),
+                'input_shapes': get_column('input_shapes', ''),
+                'output_shapes': get_column('output_shapes', ''),
+            }
+        )
 
     def _generate_module_mfu_stats(self, root_node, rank_id, kernel_df):
         """生成 module 级 MFU 统计。"""
@@ -326,12 +336,12 @@ class OperatorMfu(ModuleStatistic):
         try:
             if export_type == Constant.DB:
                 column_mapping = {
-                    'rank_id': 'rankID',
-                    'op_name': 'opName',
-                    'kernel_name': 'kernelName',
-                    'kernel_ts': 'kernelStart(ns)',
-                    'kernel_end': 'kernelEnd(ns)',
-                    'kernel_duration': 'kernelDuration(ns)',
+                    'rank_id': 'rank_id',
+                    'op_name': 'op_name',
+                    'kernel_name': 'kernel_name',
+                    'kernel_ts': 'kernel_start(ns)',
+                    'kernel_end': 'kernel_end(ns)',
+                    'kernel_duration': 'kernel_duration(ns)',
                     'mfu': 'mfu',
                 }
             elif export_type == Constant.TEXT:
@@ -363,15 +373,15 @@ class OperatorMfu(ModuleStatistic):
 
             if export_type == Constant.DB:
                 column_mapping = {
-                    'rank_id': 'rankID',
-                    'module_parent': 'parentModule',
+                    'rank_id': 'rank_id',
+                    'module_parent': 'parent_module',
                     'module': 'module',
-                    'op_name': 'opName',
-                    'kernel_list': 'kernelList',
-                    'op_count': 'opCount',
-                    'total_kernel_duration': 'totalKernelDuration(ns)',
-                    'avg_kernel_duration': 'avgKernelDuration(ns)',
-                    'avg_mfu': 'avgMFU',
+                    'op_name': 'op_name',
+                    'kernel_list': 'kernel_list',
+                    'op_count': 'op_count',
+                    'total_kernel_duration': 'total_kernel_duration(ns)',
+                    'avg_kernel_duration': 'avg_kernel_duration(ns)',
+                    'avg_mfu': 'avg_mfu',
                 }
             elif export_type == Constant.TEXT:
                 column_mapping = {

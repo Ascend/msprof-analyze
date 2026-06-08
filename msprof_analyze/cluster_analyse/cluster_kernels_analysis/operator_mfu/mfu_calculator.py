@@ -30,11 +30,11 @@ logger = get_logger()
 
 
 class MFUCalculator:
-    def __init__(self, data_map, op_kernel_df=None):
+    def __init__(self, data_map):
         self.profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         self.profiler_path = data_map.get(Constant.PROFILING_PATH)
         self.chip_peak_manager = ChipPeakFLOPSCalculator(self.profiler_path)
-        self.op_kernel_df = op_kernel_df  # cpu-op与下发的device-kernel的关联关系
+        self.op_kernel_df = None  # cpu-op与下发的device-kernel的关联关系
         self.shapes_df = None
 
     def run(self):
@@ -82,21 +82,31 @@ class MFUCalculator:
             return pd.DataFrame()
 
         df = pd.merge(self.op_kernel_df, self.shapes_df, on=['kernel_name', 'kernel_ts', 'kernel_end'], how='inner')
+        if df.empty:
+            return pd.DataFrame()
+        for column_name in ['input_shapes', 'output_shapes']:
+            if column_name not in df.columns:
+                df[column_name] = ''
+        df = ensure_numeric_columns(df, ['op_ts', 'task_duration'])
+        df = df.dropna(subset=['op_ts']).sort_values(['op_ts', 'kernel_ts', 'kernel_end']).reset_index(drop=True)
+        if df.empty:
+            return pd.DataFrame()
+        op_ts_values = df['op_ts'].to_numpy()
 
-        result_rows = []
-        for _, range_row in mfu_flops_df.iterrows():
-            range_start = range_row['startNs']
-            range_end = range_row['endNs']
-            flops = range_row['flops']
-            name = range_row['name']
+        result_frames = []
+        for range_row in mfu_flops_df.itertuples(index=False):
+            range_start = range_row.startNs
+            range_end = range_row.endNs
+            flops = range_row.flops
+            name = range_row.name
 
             if pd.isna(range_start) or pd.isna(range_end) or range_end <= range_start:
                 continue
 
-            # 一个 FLOPs range 对应一个算子，使用 range 内启动的 kernel 作为该算子的计算任务。
-            mask = (df['op_ts'] >= range_start) & (df['op_ts'] <= range_end)
-            range_kernels = df[mask]
-
+            # 通过已排序的 op_ts 查找边界，避免每个 FLOPs range 全量扫描 kernel 关联数据。
+            start_index = op_ts_values.searchsorted(range_start, side='left')
+            end_index = op_ts_values.searchsorted(range_end, side='right')
+            range_kernels = df.iloc[start_index:end_index]
             if range_kernels.empty:
                 continue
 
@@ -113,33 +123,40 @@ class MFUCalculator:
             if chip_peak == Constant.INVALID_RETURN:
                 continue
 
-            for _, kernel_row in range_kernels.iterrows():
-                kernel_duration = kernel_row['task_duration']
-                if kernel_duration <= 0:
-                    continue
-                kernel_mfu = flops / (kernel_duration * 1e-9) / chip_peak
-                # 实际 TFLOPS 与 MFU 均按 kernel 执行时长计算。
-                actual_tflops = round(flops / (kernel_duration * 1e-9) / 1e12, 2)
-                result_rows.append(
-                    {
-                        'kernel_name': kernel_row['kernel_name'],
-                        'kernel_ts': kernel_row['kernel_ts'],
-                        'kernel_end': kernel_row['kernel_end'],
-                        'mfu': kernel_mfu,
-                        'flops_op_name': name,
-                        'flops': flops,
-                        'kernel_duration': kernel_duration,
-                        'chip_peak': chip_peak,
-                        'actual_tflops': actual_tflops,
-                        'input_shapes': kernel_row.get('input_shapes', ''),
-                        'output_shapes': kernel_row.get('output_shapes', ''),
-                    }
-                )
+            range_kernels = range_kernels[range_kernels['task_duration'] > 0].copy()
+            if range_kernels.empty:
+                continue
 
-        if not result_rows:
+            kernel_duration = range_kernels['task_duration']
+            range_kernels['mfu'] = flops / (kernel_duration * 1e-9) / chip_peak
+            range_kernels['flops_op_name'] = name
+            range_kernels['flops'] = flops
+            range_kernels['kernel_duration'] = kernel_duration
+            range_kernels['chip_peak'] = chip_peak
+            # 实际 TFLOPS 与 MFU 均按 kernel 执行时长计算。
+            range_kernels['actual_tflops'] = (flops / (kernel_duration * 1e-9) / 1e12).round(2)
+            result_frames.append(
+                range_kernels[
+                    [
+                        'kernel_name',
+                        'kernel_ts',
+                        'kernel_end',
+                        'mfu',
+                        'flops_op_name',
+                        'flops',
+                        'kernel_duration',
+                        'chip_peak',
+                        'actual_tflops',
+                        'input_shapes',
+                        'output_shapes',
+                    ]
+                ]
+            )
+
+        if not result_frames:
             return pd.DataFrame()
 
-        return pd.DataFrame(result_rows)
+        return pd.concat(result_frames, ignore_index=True)
 
     def _determine_dtype_from_input_types(self, input_types_str: str):
         """从 kernel 输入类型中提取用于计算芯片峰值的数据类型。"""
