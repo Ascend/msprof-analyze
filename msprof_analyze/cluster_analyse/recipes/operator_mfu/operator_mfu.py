@@ -153,9 +153,7 @@ class OperatorMfu(ModuleStatistic):
         kernel_ts = pd.to_numeric(get_column('kernel_ts', 0), errors='coerce').fillna(0)
         kernel_end = pd.to_numeric(get_column('kernel_end', 0), errors='coerce').fillna(0)
         fallback_duration = kernel_end - kernel_ts
-        kernel_duration = pd.to_numeric(get_column('kernel_duration', pd.NA), errors='coerce').fillna(
-            fallback_duration
-        )
+        kernel_duration = pd.to_numeric(get_column('kernel_duration', pd.NA), errors='coerce').fillna(fallback_duration)
 
         chip_peak = pd.to_numeric(get_column('chip_peak', 0), errors='coerce').fillna(0)
         chip_peak_tflops = (chip_peak.where(chip_peak > 0, 0) / 1e12).round(2)
