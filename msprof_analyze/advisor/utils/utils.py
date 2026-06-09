@@ -43,14 +43,14 @@ def ignore_warning(exception: Exception = None):
 
 
 def debug_option(f):
-    return click.option('--debug',
-                        is_flag=True,
-                        expose_value=False,
-                        is_eager=True,
-                        callback=set_debug_mode,
-                        help="Debug Mode. Shows full stack trace when error occurs.")(f)
-
-
+    return click.option(
+        '--debug',
+        is_flag=True,
+        expose_value=False,
+        is_eager=True,
+        callback=set_debug_mode,
+        help="Debug Mode. Shows full stack trace when error occurs.",
+    )(f)
 
 
 def lazy_property(func):
@@ -82,7 +82,7 @@ class CheckPathAccess:
 
     def __call__(self, *args, **kwargs):
         path = args[0]
-        if not os.access(path, os.R_OK) and path not in self.warned:
+        if path and not os.access(path, os.R_OK) and path not in self.warned:
             logger.warning("%s can not read, check the permissions", path)
             self.warned.add(path)
         return self.__wrapped__(*args, **kwargs)
@@ -124,7 +124,7 @@ class Timer:
 
 def get_analyze_processes():
     # n_processes not exposed to user through att-advisor command arguments now
-    return min(int(os.getenv(Constant.ADVISOR_ANALYZE_PROCESSES, 1)), Constant.ADVISOR_MAX_PROCESSES)
+    return min(int(os.getenv(Constant.ADVISOR_ANALYZE_PROCESSES, "1")), Constant.ADVISOR_MAX_PROCESSES)
 
 
 def format_timeline_result(result: dict, dump_html=False):
@@ -143,31 +143,41 @@ def format_timeline_result(result: dict, dump_html=False):
 
 
 class ParallelJob:
-
     def __init__(self, src_func, job_params, job_name=None):
         if not callable(src_func):
-            raise TypeError(f"src_func should be callable")
+            raise TypeError("src_func should be callable")
 
         if not isinstance(job_params, (list, tuple)):
-            raise TypeError(f"job_params should be list or tuple")
+            raise TypeError("job_params should be list or tuple")
 
         self.src_func = src_func
         self.job_params = job_params
         self.job_name = job_name
 
     def start(self, n_proccesses):
-
         job_queue = mp.Queue(len(self.job_params))
         completed_queue = mp.Queue()
         for i in range(len(self.job_params)):
             job_queue.put(i)
 
         processes = []
-        listen = mp.Process(target=self.listener, args=(completed_queue, len(self.job_params),))
+        listen = mp.Process(
+            target=self.listener,
+            args=(
+                completed_queue,
+                len(self.job_params),
+            ),
+        )
         listen.start()
 
         for _ in range(n_proccesses):
-            p = mp.Process(target=self.parallel_queue, args=(job_queue, completed_queue,))
+            p = mp.Process(
+                target=self.parallel_queue,
+                args=(
+                    job_queue,
+                    completed_queue,
+                ),
+            )
             processes.append(p)
             p.start()
 
@@ -225,53 +235,12 @@ def safe_write(content, save_path, encoding=None):
     if os.path.dirname(save_path) != "":
         PathManager.make_dir_safety(os.path.dirname(save_path))
 
-    with os.fdopen(os.open(save_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-                           stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP), "w", encoding=encoding) as f:
+    with os.fdopen(
+        os.open(save_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP),
+        "w",
+        encoding=encoding,
+    ) as f:
         f.write(content)
-
-
-class CheckPathAccess:
-    """
-    check path access permissions
-    """
-
-    # pylint: disable=no-member
-    def __init__(self, func):
-        wraps(func)(self)
-        self.warned = permission_warned
-
-    def __call__(self, *args, **kwargs):
-        path = args[0]
-        if path and not os.access(path, os.R_OK) and path not in self.warned:
-            logger.warning("%s can not read, check the permissions", path)
-            self.warned.add(path)
-        return self.__wrapped__(*args, **kwargs)
-
-    def __get__(self, instance, cls):
-        if instance is None:
-            return self
-        return types.MethodType(self, instance)
-
-
-@CheckPathAccess
-def get_file_path_from_directory(path, check_func):
-    """
-    get file from directory
-    """
-    file_list = []
-
-    if not path:
-        return file_list
-
-    if not os.path.isdir(path):
-        logger.warning("Expected existed directory, but got %s", path)
-
-    for root, _, files in PathManager.limited_depth_walk(path):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            if check_func(filename):
-                file_list.append(filepath)
-    return file_list
 
 
 def is_regex_pattern(string: str):
@@ -290,8 +259,9 @@ def join_prof_path(root_dir: str, sub_dir: str) -> str:
         for root, _, _ in PathManager.limited_depth_walk(root_dir, onerror=walk_error_handler):
             if re.match(sub_dir, os.path.basename(root)):
                 return root
-        logger.debug("Fail to get profiling path %s from local path %s by regular expression matching", sub_dir,
-                     root_dir)
+        logger.debug(
+            "Fail to get profiling path %s from local path %s by regular expression matching", sub_dir, root_dir
+        )
     else:
         sub_dir = os.path.join(root_dir, sub_dir)
         if os.path.exists(sub_dir):
@@ -317,7 +287,7 @@ def format_excel_title(title: str) -> str:
         "accelerator_core": "task_type",
         "start_time": "task_start_time",
         "duration": "task_duration",
-        "wait_time": "task_wait_time"
+        "wait_time": "task_wait_time",
     }
     return kernel_details_col_name_map.get(title, title)
 
@@ -335,7 +305,7 @@ class SafeOpen:
             return
 
         if os.access(name, os.R_OK):
-            self.file = open(name, mode, encoding=encoding, errors="ignore")
+            self.file = open(name, mode, encoding=encoding, errors="ignore")  # noqa: SIM115
         else:
             logger.warning("%s can not read, check the permissions", name)
 
@@ -349,10 +319,10 @@ class SafeOpen:
 
 def get_file_path_by_walk(root, filename):
     file_path = ""
-    for root, _, files in PathManager.limited_depth_walk(root):
+    for dir_path, _, files in PathManager.limited_depth_walk(root):
         for name in files:
             if name == filename:
-                file_path = os.path.join(root, name)
+                file_path = os.path.join(dir_path, name)
                 return file_path
     return file_path
 
@@ -373,17 +343,18 @@ def check_path_valid(path: str, is_file: bool = True, max_size: int = Constant.M
         if not os.path.isfile(path):
             raise FileNotFoundError(f"The path \"{path}\" is not a file. Please check the path.")
         if os.path.islink(path):
-            raise FileNotFoundError(f"The path \"{path}\" is link. Please check the path.")
+            logger.warning("The path %s is link. Please check the path.", path)
         if os.path.getsize(path) > max_size:
             raise OSError(f"The path \"{path}\" is too large to read. Please check the path.")
     else:
         if not os.path.isdir(path):
             raise FileNotFoundError(f"The path \"{path}\" is not a directory. Please check the path.")
         if os.path.islink(path):
-            raise FileNotFoundError(f"The path \"{path}\" is link. Please check the path.")
+            logger.warning("The path %s is link. Please check the path.", path)
     if not os.access(path, os.R_OK):
-        raise PermissionError(f"The path \"{path}\" does not have permission to read. "
-                              f"Please check that the path is readable.")
+        raise PermissionError(
+            f"The path \"{path}\" does not have permission to read. Please check that the path is readable."
+        )
     return True
 
 
@@ -392,7 +363,7 @@ def parse_json_with_generator(timeline_data_path, func):
     if not check_path_valid(timeline_data_path):
         return result
     try:
-        with open(timeline_data_path, "r") as f:
+        with open(timeline_data_path, "r", encoding="utf-8") as f:
             if os.getenv(Constant.DISABLE_STREAMING_READER) == "1":
                 logger.debug("Disable streaming reader.")
                 file_parser = json.loads(f.read())
@@ -400,15 +371,17 @@ def parse_json_with_generator(timeline_data_path, func):
                 logger.debug("Enable streaming reader.")
                 file_parser = ijson.items(f, "item")
 
-            for i, event in tqdm(enumerate(file_parser),
-                                 leave=False, ncols=100, desc="Building dataset for timeline analysis"):
+            for i, event in tqdm(
+                enumerate(file_parser), leave=False, ncols=100, desc="Building dataset for timeline analysis"
+            ):
                 func_res = func(index=i, event=event)
                 if func_res is not None:
                     result.append(func_res)
 
     except Exception:
-        logger.warning("Error %s while parsing file %s, continue to timeline analysis", traceback.format_exc(),
-                       timeline_data_path)
+        logger.warning(
+            "Error %s while parsing file %s, continue to timeline analysis", traceback.format_exc(), timeline_data_path
+        )
     return result
 
 
@@ -416,7 +389,7 @@ def convert_to_float(num):
     try:
         return float(num)
     except (ValueError, FloatingPointError):
-        logger.error(f"Can not convert %s to float", num)
+        logger.error("Can not convert %s to float", num)
     return 0
 
 
@@ -424,7 +397,7 @@ def convert_to_float_with_warning(num):
     try:
         return float(num)
     except (ValueError, FloatingPointError):
-        logger.warning(f"Can not convert %s to float", num)
+        logger.warning("Can not convert %s to float", num)
     return 0
 
 
@@ -445,7 +418,7 @@ def convert_to_int(data: any) -> int:
     try:
         int_value = int(convert_to_float(data))
     except ValueError:
-        logger.warning(f"Can not convert %s to int.", data)
+        logger.warning("Can not convert %s to int.", data)
         return 0
     return int_value
 
