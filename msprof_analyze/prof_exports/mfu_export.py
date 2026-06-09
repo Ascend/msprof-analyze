@@ -18,14 +18,14 @@ from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
 
 QUERY_KERNEL_SHAPES = """
     WITH compute_info AS (
-        SELECT 
+        SELECT
             (SELECT value FROM STRING_IDS WHERE id = t.name) AS kernel_name,
             t.globalTaskId,
             (SELECT value FROM STRING_IDS WHERE id = t.opType) AS type,
             (SELECT value FROM STRING_IDS WHERE id = t.inputShapes) AS input_shapes,
             (SELECT value FROM STRING_IDS WHERE id = t.inputDataTypes) AS input_types,
             (SELECT value FROM STRING_IDS WHERE id = t.outputShapes) AS output_shapes
-        FROM 
+        FROM
             COMPUTE_TASK_INFO t
     )
     SELECT
@@ -33,27 +33,27 @@ QUERY_KERNEL_SHAPES = """
         task.startNs as kernel_ts,
         task.endNs as kernel_end,
         task.endNs - task.startNs as task_duration
-    FROM 
+    FROM
         compute_info
-    JOIN 
+    JOIN
         TASK as task ON compute_info.globalTaskId = task.globalTaskId
     ORDER BY task.startNs;
 """
 
-QUERY_OPERATOR_ARGS = """
+QUERY_MFU_FLOPS = """
+    -- 查询 mfu_flops domain 下记录的算子 FLOPs range。
     SELECT
         mstx.startNs,
-        str_msg.value AS operator_args
+        mstx.endNs,
+        str_msg.value as flops
     FROM
         MSTX_EVENTS mstx
     LEFT JOIN
         STRING_IDS str_msg ON mstx.message = str_msg.id
     LEFT JOIN
         STRING_IDS str_domain ON mstx.domainId = str_domain.id
-    LEFT JOIN
-        ENUM_MSTX_EVENT_TYPE mstx_type ON mstx_type.id = mstx.eventType
     WHERE
-        mstx_type.name = 'marker' AND str_domain.value = ?
+        str_domain.value = 'mfu_flops'
     ORDER BY mstx.startNs
 """
 
@@ -67,10 +67,12 @@ class KernelShapeExport(BaseStatsExport):
         return []
 
 
-class OperatorArgsExport(BaseStatsExport):
-    def __init__(self, db_path, recipe_name, param_dict):
-        super().__init__(db_path, recipe_name, param_dict)
-        self._query = QUERY_OPERATOR_ARGS
+class MfuFlopsExport(BaseStatsExport):
+    def __init__(self, db_path, recipe_name):
+        """初始化 MFU FLOPs 查询。"""
+        super().__init__(db_path, recipe_name, param_dict=None)
+        self._query = QUERY_MFU_FLOPS
 
     def get_param_order(self):
-        return ["op_args_domain"]
+        """返回 SQL 查询参数顺序。"""
+        return []

@@ -28,7 +28,6 @@ class NodeType(Enum):
 
 
 class TreeNode:
-
     def __init__(self, start, end, node_type, name):
         self.start = start
         self.end = end
@@ -40,10 +39,7 @@ class TreeNode:
     def create_from_df(cls, df, node_type, start_col, end_col, name_col):
         if df is None or df.empty:
             return []
-        return [
-            cls(row[start_col], row[end_col], node_type, row[name_col])
-            for _, row in df.iterrows()
-        ]
+        return [cls(row[start_col], row[end_col], node_type, row[name_col]) for _, row in df.iterrows()]
 
     def add_child(self, node):
         self.children.append(node)
@@ -63,7 +59,7 @@ class ModuleNode(TreeNode):
         return self.module_type == self.BACKWARD
 
     @classmethod
-    def create_from_df(cls, df, start_col, end_col, name_col):
+    def create_from_df(cls, df, node_type, start_col, end_col, name_col):
         if df is None or df.empty:
             return []
         nodes = []
@@ -76,19 +72,17 @@ class ModuleNode(TreeNode):
 
 
 class KernelNode(TreeNode):
-    def __init__(self, start, end, name, mfu):
+    def __init__(self, start, end, name):  # module 统计不再保存 MFU。
         super().__init__(start, end, NodeType.KERNEL_EVENT, name)
-        self.mfu = mfu
 
 
 class TreeBuilder:
-
     @staticmethod
     def create_tree_nodes_from_df(df, node_type, start_col, end_col, name_col):
         if df is None or df.empty:
             return []
         if node_type == NodeType.MODULE_EVENT_NODE:
-            return ModuleNode.create_from_df(df, start_col, end_col, name_col)
+            return ModuleNode.create_from_df(df, node_type, start_col, end_col, name_col)
         else:
             return TreeNode.create_from_df(df, node_type, start_col, end_col, name_col)
 
@@ -113,9 +107,11 @@ class TreeBuilder:
             # 对于CPU_OP_EVENT节点，只能添加到MODULE_EVENT_NODE类型的父节点下
             if event.node_type == NodeType.CPU_OP_EVENT:
                 # 找到最近的MODULE_EVENT_NODE类型的父节点
-                while (stack[-1].node_type != NodeType.MODULE_EVENT_NODE or
-                       stack[-1].start > event.start or
-                       stack[-1].end < event.end):
+                while (
+                    stack[-1].node_type != NodeType.MODULE_EVENT_NODE
+                    or stack[-1].start > event.start
+                    or stack[-1].end < event.end
+                ):
                     stack.pop()
             else:
                 while stack[-1].start > event.start or stack[-1].end < event.end:
@@ -133,8 +129,10 @@ class TreeBuilder:
     def traverse_module_tree(root_node, callback, max_traverse_depth=20):
         def _traverse(node, module_node_deque, depth=0):
             if depth > max_traverse_depth:
-                logger.warning(f"Max traversal depth {max_traverse_depth} reached, traversal stopped. "
-                               f"Some information may be lost")
+                logger.warning(
+                    "Max traversal depth %s reached, traversal stopped. Some information may be lost",
+                    max_traverse_depth,
+                )
                 return
             if node.node_type != NodeType.MODULE_EVENT_NODE:
                 return
