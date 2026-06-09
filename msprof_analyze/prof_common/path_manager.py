@@ -97,13 +97,13 @@ class PathManager:
     @classmethod
     def check_path_length(cls, path: str):
         if len(path) > cls.MAX_PATH_LENGTH:
-            raise RuntimeError("Length of input path exceeds the limit.")
+            logger.warning("Length of input path exceeds the limit.")
         path_split_list = path.split("/")
         for path_segment in path_split_list:
             path_list = path_segment.split("\\")
             for name in path_list:
                 if len(name) > cls.MAX_FILE_NAME_LENGTH:
-                    raise RuntimeError("Length of input path exceeds the limit.")
+                    logger.warning("Length of input path exceeds the limit.")
 
     @classmethod
     def input_path_common_check(cls, path: str):
@@ -111,14 +111,14 @@ class PathManager:
 
         if os.path.islink(path):
             msg = "Invalid input path which is a soft link."
-            raise RuntimeError(msg)
+            logger.warning(msg)
 
         pattern = r'(\.|:|\\|/|_|-|\s|[~0-9a-zA-Z\u4e00-\u9fa5\u3010\u3011])+'
         if not re.fullmatch(pattern, path):
             illegal_pattern = r'([^\.\:\\\/\_\-\s~0-9a-zA-Z\u4e00-\u9fa5\u3010\u3011])+'
             invalid_obj = re.search(illegal_pattern, path).group()
             msg = f"Invalid path which has illegal characters \"{invalid_obj}\"."
-            raise RuntimeError(msg)
+            logger.warning(msg)
 
     @classmethod
     def check_path_owner_consistent(cls, path_list: list):
@@ -150,7 +150,7 @@ class PathManager:
         """
         if os.path.islink(path):
             msg = "Invalid path which is a soft link."
-            raise RuntimeError(msg)
+            logger.warning(msg)
         if AdditionalArgsManager().force or is_root():
             return
         if not os.access(path, os.W_OK):
@@ -172,7 +172,7 @@ class PathManager:
             raise FileNotFoundError(msg)
         if os.path.islink(path):
             msg = "Invalid path which is a soft link."
-            raise RuntimeError(msg)
+            logger.warning(msg)
         if AdditionalArgsManager().force or is_root():
             return
         if not os.access(path, os.R_OK):
@@ -202,7 +202,7 @@ class PathManager:
         msg = f"Failed to remove path: {base_name}"
         cls.check_path_writeable(path)
         if os.path.islink(path):
-            raise RuntimeError(msg)
+            logger.warning(msg)
         if os.path.exists(path):
             try:
                 shutil.rmtree(path)
@@ -226,7 +226,7 @@ class PathManager:
         base_name = os.path.basename(path)
         msg = f"Failed to create file: {base_name}"
         if os.path.islink(path):
-            raise RuntimeError(msg)
+            logger.warning(msg)
         if os.path.exists(path):
             return
         try:
@@ -240,7 +240,7 @@ class PathManager:
             raise RuntimeError("The path is empty. Please enter a valid path.")
         if os.path.islink(path):
             msg = "Invalid input path which is a soft link."
-            raise RuntimeError(msg)
+            logger.warning(msg)
         return os.path.abspath(path)
 
     @classmethod

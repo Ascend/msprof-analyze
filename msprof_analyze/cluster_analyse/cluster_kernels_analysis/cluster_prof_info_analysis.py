@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import argparse
 import re
 import os
@@ -73,22 +72,29 @@ class FormDataProcessor:
             try:
                 df = df[columns_to_keep]
             except KeyError:
-                logger.info("%s文件没有所需的列，请确认profiling数据的正确性:\n,"
-                             "以下列可能不存在%s\n", f, columns_to_keep)
+                logger.info(
+                    "%s文件没有所需的列，请确认profiling数据的正确性:\n,以下列可能不存在%s\n", f, columns_to_keep
+                )
                 continue
             # 从文件名提取设备ID
             try:
                 df['device_id'] = self.get_device_id(f)
             except Exception:
-                logger.info("文件 \"%s\" 的路径或者是文件夹名没有按照要求，请确保存在[device_]这一级文件夹,"
-                             "具体操作指导见readme\n", f)
+                logger.info(
+                    "文件 \"%s\" 的路径或者是文件夹名没有按照要求，请确保存在[device_]这一级文件夹,"
+                    "具体操作指导见readme\n",
+                    f,
+                )
                 continue
             # 添加新列 "device_id"
             try:
                 df['node_id'] = self.get_node_id(f)
             except Exception:
-                logger.info("文件 \"%s\" 的路径或者是文件夹名没有按照要求，请确保存在[node*]这一级文件夹,"
-                             "具体操作指导见readme\n", f)
+                logger.info(
+                    "文件 \"%s\" 的路径或者是文件夹名没有按照要求，请确保存在[node*]这一级文件夹,"
+                    "具体操作指导见readme\n",
+                    f,
+                )
                 continue
             # 将数据添加到最终的数据框中
             all_data = pd.concat([all_data, df])
@@ -118,36 +124,53 @@ class ViewInfoManager:
         # 有些数据除了用表格的列进行分组之外，还添加了其他属性对数据进行分类，这部分数据放在extend_attr_to_group里面
         self.op_summary_columns_dict = {
             'ASCEND_NEW': {
-                'TimeToCsvAnalyzer':
-                    {'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
-                     'extend_attr_to_group': ["device_id", "node_id"],
-                     'columns_to_view': ["Task Duration(us)"],
-                     'calculate_fun': ['mean', 'var', 'max', 'min']
-                     },
-                'StatisticalInfoToHtmlAnalyzer':
-                    {'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
-                     "columns_to_view": ["Task Duration(us)", "aiv_time(us)", "aiv_vec_ratio",
-                                         "aiv_scalar_ratio", "aiv_mte2_ratio", "aiv_mte3_ratio",
-                                         "aicore_time(us)", "aic_mac_ratio", "aic_scalar_ratio",
-                                         "aic_mte1_ratio", "aic_mte2_ratio", "aic_fixpipe_ratio"
-                                         ],
-                     'calculate_fun': ['mean', 'var', 'max', 'min']
-                     }
+                'TimeToCsvAnalyzer': {
+                    'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
+                    'extend_attr_to_group': ["device_id", "node_id"],
+                    'columns_to_view': ["Task Duration(us)"],
+                    'calculate_fun': ['mean', 'var', 'max', 'min'],
+                },
+                'StatisticalInfoToHtmlAnalyzer': {
+                    'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
+                    "columns_to_view": [
+                        "Task Duration(us)",
+                        "aiv_time(us)",
+                        "aiv_vec_ratio",
+                        "aiv_scalar_ratio",
+                        "aiv_mte2_ratio",
+                        "aiv_mte3_ratio",
+                        "aicore_time(us)",
+                        "aic_mac_ratio",
+                        "aic_scalar_ratio",
+                        "aic_mte1_ratio",
+                        "aic_mte2_ratio",
+                        "aic_fixpipe_ratio",
+                    ],
+                    'calculate_fun': ['mean', 'var', 'max', 'min'],
+                },
             },
             'ASCEND_OTHER': {
-                'TimeToCsvAnalyzer':
-                    {'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
-                     'extend_attr_to_group': ["device_id", "node_id"],
-                     "columns_to_view": ["Task Duration(us)"],
-                     'calculate_fun': ['mean', 'var', 'max', 'min']
-                     },
-                'StatisticalInfoToHtmlAnalyzer':
-                    {'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
-                     "columns_to_view": ["aicore_time(us)", "Task Duration(us)", "mac_ratio", "vec_ratio",
-                                         "scalar_ratio", "mte1_ratio", "mte2_ratio", "mte3_ratio"],
-                     'calculate_fun': ['mean', 'var', 'max', 'min']
-                     }
-            }
+                'TimeToCsvAnalyzer': {
+                    'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
+                    'extend_attr_to_group': ["device_id", "node_id"],
+                    "columns_to_view": ["Task Duration(us)"],
+                    'calculate_fun': ['mean', 'var', 'max', 'min'],
+                },
+                'StatisticalInfoToHtmlAnalyzer': {
+                    'columns_to_group': ["Op Name", "Input Shapes", "Input Data Types", "Output Shapes"],
+                    "columns_to_view": [
+                        "aicore_time(us)",
+                        "Task Duration(us)",
+                        "mac_ratio",
+                        "vec_ratio",
+                        "scalar_ratio",
+                        "mte1_ratio",
+                        "mte2_ratio",
+                        "mte3_ratio",
+                    ],
+                    'calculate_fun': ['mean', 'var', 'max', 'min'],
+                },
+            },
         }
 
     def get_columns_info(self, analyzer_type):
@@ -238,9 +261,11 @@ class StatisticalInfoToHtmlAnalyzer(OpSummaryAnalyzerBase):
         row_num = self.top_n // col_num if self.top_n % col_num == 0 else (self.top_n + 1) // col_num
         fig = make_subplots(rows=row_num, cols=col_num, vertical_spacing=0.03)
         for i, (_, operation) in enumerate(top_n_data.iterrows()):
-            op_data = summary_data[(summary_data["Op Name"] == operation["Op Name"]) &
-                                   (summary_data["Input Shapes"] == operation["Input Shapes"]) &
-                                   (summary_data["Input Data Types"] == operation["Input Data Types"])]
+            op_data = summary_data[
+                (summary_data["Op Name"] == operation["Op Name"])
+                & (summary_data["Input Shapes"] == operation["Input Shapes"])
+                & (summary_data["Input Data Types"] == operation["Input Data Types"])
+            ]
             op_data = op_data.sort_values(by=["node_id", "device_id"])
             node_ids = op_data['node_id'].unique()
             device_ids = op_data['device_id'].unique()
@@ -248,16 +273,25 @@ class StatisticalInfoToHtmlAnalyzer(OpSummaryAnalyzerBase):
             for node_id in node_ids:
                 for device_id in device_ids:
                     draw_data = op_data[(op_data['node_id'] == node_id) & (op_data['device_id'] == device_id)]
-                    fig.add_trace(go.Box(y=draw_data[column],
-                                         name=f'{node_id}_{device_id}',
-                                         marker_color='green', showlegend=False), (i // col_num) + 1, (i % col_num) + 1)
+                    fig.add_trace(
+                        go.Box(
+                            y=draw_data[column], name=f'{node_id}_{device_id}', marker_color='green', showlegend=False
+                        ),
+                        (i // col_num) + 1,
+                        (i % col_num) + 1,
+                    )
 
-            fig.update_xaxes(title_text=f'{operation["Op Name"]}-{operation["Input Shapes"]}', row=(i // col_num) + 1,
-                             col=(i % col_num) + 1)
-        fig.update_layout(margin=dict(l=20, r=20, t=20, b=20),
-                          height=int(500 * row_num),
-                          width=int(rank_num * 100 * col_num),
-                          title_text="Op Performance Comparison")
+            fig.update_xaxes(
+                title_text=f'{operation["Op Name"]}-{operation["Input Shapes"]}',
+                row=(i // col_num) + 1,
+                col=(i % col_num) + 1,
+            )
+        fig.update_layout(
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=int(500 * row_num),
+            width=int(rank_num * 100 * col_num),
+            title_text="Op Performance Comparison",
+        )
         save_plot_path = os.path.join(self.result_dir, column + "_Info.html")
         PathManager.check_path_length(save_plot_path)
         plot(fig, filename=save_plot_path)
@@ -295,20 +329,20 @@ class DeliverableGenerator:
         chip_type = self.form_process.get_chip_type()
         # 判断该路径是不是软链接，并修改为绝对路径
         if os.path.islink(params.get('dir')):
-            logger.info("The file: \"%s\" is link. Please check the path.", params.get('dir'))
-            return
+            logger.warning("The file: \"%s\" is link. Please check the path.", params.get('dir'))
         prof_path = os.path.abspath(params.get('dir'))
         PathManager.input_path_common_check(prof_path)
         if params.get('type') == "all":
-            self.analyzers = [TimeToCsvAnalyzer(chip_type, prof_path),
-                              StatisticalInfoToHtmlAnalyzer(chip_type, params.get("top_n"), prof_path)]
+            self.analyzers = [
+                TimeToCsvAnalyzer(chip_type, prof_path),
+                StatisticalInfoToHtmlAnalyzer(chip_type, params.get("top_n"), prof_path),
+            ]
         elif params.get('type') == "html":
             self.analyzers = [StatisticalInfoToHtmlAnalyzer(chip_type, params.get("top_n"), prof_path)]
         elif params.get('type') == "csv":
             self.analyzers = [TimeToCsvAnalyzer(chip_type, prof_path)]
         else:
             warnings.warn("参数错误，请输入 all html csv 这三种类型")  # 发出一个警告信息
-
 
     def set_columns_to_keep(self):
         columns_to_keep = []
@@ -324,18 +358,17 @@ def main():
     parser.add_argument("--dir", "-d", default=None, help="root dir of PROF_* data")
     parser.add_argument("--top_n", "-n", default=10, help="how many operators to show", type=int)
     parser.add_argument("--type", "-t", default='html', help="compare ratio or aicore-time", type=str)
-    parser.add_argument("--force", action='store_true',
-                        help="Indicates whether to skip verification of the owner, size, and permissions.")
+    parser.add_argument(
+        "--force",
+        action='store_true',
+        help="Indicates whether to skip verification of the owner, size, and permissions.",
+    )
     args = parser.parse_args()
-    params = {
-        "dir": args.dir,
-        "top_n": args.top_n,
-        "type": args.type,
-        "force": args.force
-    }
+    params = {"dir": args.dir, "top_n": args.top_n, "type": args.type, "force": args.force}
     AdditionalArgsManager().init(params)
     deviverable_gen = DeliverableGenerator(params)
     deviverable_gen.run()
+
 
 if __name__ == "__main__":
     main()
