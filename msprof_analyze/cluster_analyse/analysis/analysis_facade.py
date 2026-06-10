@@ -12,8 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-import sys
 import time
 from multiprocessing import Process, Value, Lock
 from tqdm import tqdm
@@ -28,10 +26,9 @@ from msprof_analyze.cluster_analyse.common_func.context import init_subprocess
 from msprof_analyze.cluster_analyse.common_func.analysis_loader import get_class_from_name
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
-from msprof_analyze.prof_common.logger import get_logger, is_agent_mode
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.cluster_analyse.recipes.communication_group_map.communication_group_map import CommunicationGroupMap
-from msprof_analyze.cluster_analyse.recipes.communication_time_sum.communication_time_sum import \
-    CommunicationTimeSum
+from msprof_analyze.cluster_analyse.recipes.communication_time_sum.communication_time_sum import CommunicationTimeSum
 from msprof_analyze.cluster_analyse.recipes.communication_matrix_sum.communication_matrix_sum import CommMatrixSum
 
 logger = get_logger()
@@ -44,8 +41,13 @@ def run_task(analysis_cls, params, completed_processes, lock, config):
 
 
 class AnalysisFacade:
-    text_module = {CommunicationAnalysis, StepTraceTimeAnalysis, CommMatrixAnalysis, HostInfoAnalysis,
-                   ClusterBaseInfoAnalysis}
+    text_module = {
+        CommunicationAnalysis,
+        StepTraceTimeAnalysis,
+        CommMatrixAnalysis,
+        HostInfoAnalysis,
+        ClusterBaseInfoAnalysis,
+    }
     db_module = {StepTraceTimeAnalysis, ClusterBaseInfoAnalysis, HostInfoAnalysis}
 
     def __init__(self, params: dict):
@@ -69,39 +71,38 @@ class AnalysisFacade:
         config = {
             "force": AdditionalArgsManager().force,
         }
-        with (open(os.devnull, 'w') if is_agent_mode() else sys.stdout) as tqdm_output:
-            with tqdm(total=num_processes, desc="Cluster analyzing", bar_format=bar_format, file=tqdm_output) as pbar:
-                for analysis in analysis_module:
-                    process = Process(target=run_task, args=(analysis, self.params, completed_processes, lock, config))
-                    process.start()
-                    process_list.append(process)
-                last_progress = 0
-                while any(p.is_alive() for p in process_list):
-                    with lock:
-                        current_progress = completed_processes.value
-                    if current_progress > last_progress:
-                        pbar.update(current_progress - last_progress)
-                        last_progress = current_progress
-                    time.sleep(0.1)
-                for process in process_list:
-                    process.join()
-                final_progress = completed_processes.value
-                if final_progress > last_progress:
-                    pbar.update(final_progress - last_progress)
+        with tqdm(total=num_processes, desc="Cluster analyzing", bar_format=bar_format) as pbar:
+            for analysis in analysis_module:
+                process = Process(target=run_task, args=(analysis, self.params, completed_processes, lock, config))
+                process.start()
+                process_list.append(process)
+            last_progress = 0
+            while any(p.is_alive() for p in process_list):
+                with lock:
+                    current_progress = completed_processes.value
+                if current_progress > last_progress:
+                    pbar.update(current_progress - last_progress)
+                    last_progress = current_progress
+                time.sleep(0.1)
+            for process in process_list:
+                process.join()
+            final_progress = completed_processes.value
+            if final_progress > last_progress:
+                pbar.update(final_progress - last_progress)
 
     def do_recipe(self, recipe_class):
         if not recipe_class or len(recipe_class) != 2:
-            logger.error(f"Invalid input recipe_class, should be two elements, e.g. (class_name, class)")
+            logger.error("Invalid input recipe_class, should be two elements, e.g. (class_name, class)")
             return
         try:
-            logger.info(f"Recipe {recipe_class[0]} analysis is starting to launch.")
+            logger.info("Recipe %s analysis is starting to launch.", recipe_class[0])
             with Context.create_context(self.params.get(Constant.PARALLEL_MODE)) as context:
                 self.params[Constant.RECIPE_NAME] = recipe_class[0]
                 with recipe_class[1](self.params) as recipe:
                     recipe.run(context)
-            logger.info(f"Recipe {recipe_class[0]} analysis finished.")
+            logger.info("Recipe %s analysis finished.", recipe_class[0])
         except Exception as e:
-            logger.error(f"Recipe {recipe_class[0]} analysis launched failed, {e}.")
+            logger.error("Recipe %s analysis launched failed, %s.", recipe_class[0], e)
 
     def recipe_analyze(self):
         recipe_class = get_class_from_name(self.params.get(Constant.ANALYSIS_MODE))

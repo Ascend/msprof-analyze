@@ -15,8 +15,11 @@ from msprof_analyze.prof_common.logger import get_logger
 import os
 from functools import reduce
 
-from msprof_analyze.advisor.utils.utils import safe_division, convert_to_int_with_exception, \
-    convert_to_float_with_warning
+from msprof_analyze.advisor.utils.utils import (
+    safe_division,
+    convert_to_int_with_exception,
+    convert_to_float_with_warning,
+)
 from msprof_analyze.advisor.dataset.profiling.profiling_dataset import ProfilingDataset
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.advisor.result.result import OptimizeResult
@@ -28,8 +31,9 @@ logger = get_logger()
 
 class AICorePerformanceChecker:
     """
-        operator performance checker
+    operator performance checker
     """
+
     _CHECKER = "AICorePerformanceChecker"
     CUBE_OPERATOR_MEMORY_SIZE_MB = 100
     INNER_AXIS_256 = 256
@@ -58,11 +62,13 @@ class AICorePerformanceChecker:
     @staticmethod
     def get_vector_list(profiling_dataset, vector_dict):
         vector_list = []
-        for op_name in vector_dict:
-            for shape in vector_dict[op_name]:
+        for op_name, shapes in vector_dict.items():
+            for shape in shapes:
                 for operator in profiling_dataset.op_summary.op_list:
-                    if operator.op_name == op_name and operator.input_shapes[1:-1] + "-" + operator.output_shapes[
-                                                                                           1:-1] == shape:
+                    if (
+                        operator.op_name == op_name
+                        and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape
+                    ):
                         vector_list.append(operator)
         return vector_list
 
@@ -77,21 +83,24 @@ class AICorePerformanceChecker:
     def memory_size(operator):
         memory = 0
         input_shapes = operator.input_shapes[1:-1].split(";")
-        output_shapes = operator.output_shapes[1:-1]
+        output_shapes = operator.output_shapes[1:-1].split(";")
         for shapes in input_shapes:
             if "," not in shapes and shapes != "":
                 # 多的一维是 bias ，预先乘2
                 memory += convert_to_int_with_exception(shapes) * 2
                 continue
-            memory += reduce(lambda x, y: x * y, map(int, shapes.split(",")))
-        memory += reduce(lambda x, y: x * y, map(int, output_shapes.split(",")))
+            memory += reduce(lambda x, y: x * y, map(convert_to_int_with_exception, shapes.split(",")))
+        for shapes in output_shapes:
+            memory += reduce(lambda x, y: x * y, map(convert_to_int_with_exception, shapes.split(",")))
         return memory * 2 / 1024 / 1024
 
     def load_aicore_perf_rules(self):
         language = AdditionalArgsManager().language
         rule_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
-            "rules", language, "aicore_performance.yaml"
+            "rules",
+            language,
+            "aicore_performance.yaml",
         )
 
         if not os.path.exists(rule_path):
@@ -114,9 +123,11 @@ class AICorePerformanceChecker:
         self._affinity_suggestion = self.aicore_rules.get("affinity_suggestion")
         self._bound_suggestion = self.aicore_rules.get("bound_suggestion")
         self._opti_suggestion = self.aicore_rules.get("optimization_suggestion")
-        self._operator_rules = {"cube_operators": self.aicore_rules.get("cube_operators"),
-                                "fa_operators": self.aicore_rules.get("fa_operators"),
-                                "vector_operators": self.aicore_rules.get("vector_operators")}
+        self._operator_rules = {
+            "cube_operators": self.aicore_rules.get("cube_operators"),
+            "fa_operators": self.aicore_rules.get("fa_operators"),
+            "vector_operators": self.aicore_rules.get("vector_operators"),
+        }
 
     def data_filter(self, profiling_dataset: ProfilingDataset):
         if not self.check_task_list(profiling_dataset):
@@ -124,7 +135,7 @@ class AICorePerformanceChecker:
 
         operator_list = profiling_dataset.op_summary.op_list
         total_duration = sum(convert_to_float_with_warning(operator.task_duration) for operator in operator_list)
-        if (total_duration == 0):
+        if total_duration == 0:
             return
         cube_memory_dict, vector_type_dict = {}, {}
 
@@ -151,17 +162,16 @@ class AICorePerformanceChecker:
                 vector_type_dict.setdefault(op.op_type, set()).add(op)
 
         # filter cube operator
-        for op_name in cube_memory_dict:
-            for shapes in cube_memory_dict[op_name]:
-                if cube_memory_dict[op_name][shapes] >= self.CUBE_OPERATOR_MEMORY_SIZE_MB:
+        for op_name, shapes_dict in cube_memory_dict.items():
+            for shapes, memory_size in shapes_dict.items():
+                if memory_size >= self.CUBE_OPERATOR_MEMORY_SIZE_MB:
                     self.cube_dict.setdefault(op_name, set()).add(shapes)
 
         # filter vector operator
-        for op_type in vector_type_dict:
-            duration_group_by_time = sum(convert_to_float_with_warning(op.task_duration)
-                                         for op in vector_type_dict[op_type])
+        for op_type, ops in vector_type_dict.items():
+            duration_group_by_time = sum(convert_to_float_with_warning(op.task_duration) for op in ops)
             if (duration_group_by_time / total_duration) >= 0.01 or duration_group_by_time >= 1000000:
-                for op in vector_type_dict[op_type]:
+                for op in ops:
                     shapes = op.input_shapes[1:-1] + "-" + op.output_shapes[1:-1]
                     self.vector_dict.setdefault(op.op_name, set()).add(shapes)
 
@@ -173,7 +183,7 @@ class AICorePerformanceChecker:
             try:
                 self.result[operator_type] = getattr(self, f"check_{operator_type}_operator")(promoting_dataset)
             except (IndexError, ValueError, AttributeError) as e:
-                logger.warning(f"Failed to check ai core performance {operator_type} operator, {e}.")
+                logger.warning("Failed to check ai core performance %s operator, %s.", operator_type, e)
                 self.result[operator_type] = []
 
         if not any([self.result["cube"], self.result["fa"], self.result["vector"]]):
@@ -184,50 +194,69 @@ class AICorePerformanceChecker:
         suggestion = self._cube_affinity_desc
         optimization_queue, bound_queue, affinity_queue = [], [], []
         operator_list = self.get_operator_list(cube_dict, profiling_dataset)
-        for op in cube_dict:
-            for shape in cube_dict[op]:
+        for op, shapes in cube_dict.items():
+            for shape in shapes:
                 affinity_flag = self._check_cube_inner_axis(shape)
                 if not affinity_flag:
-                    dtype, shape_duration = None, 0.
+                    dtype, shape_duration = None, 0.0
                     for operator in operator_list:
-                        if (operator.op_name == op and
-                                operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape):
+                        if (
+                            operator.op_name == op
+                            and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape
+                        ):
                             dtype = operator.input_data_types
                             shape_duration += convert_to_float_with_warning(operator.task_duration)
-                    affinity_queue.append({"op_name": op,
-                                           "shape": shape.split("-")[0],
-                                           "dtype": dtype,
-                                           "duration": shape_duration,
-                                           "suggestion": suggestion})
+                    affinity_queue.append(
+                        {
+                            "op_name": op,
+                            "shape": shape.split("-")[0],
+                            "dtype": dtype,
+                            "duration": shape_duration,
+                            "suggestion": suggestion,
+                        }
+                    )
                 else:
                     shape_list = []
                     for operator in operator_list:
-                        if (operator.op_name == op and operator.input_shapes[1:-1] + "-" +
-                                operator.output_shapes[1:-1] == shape):
+                        if (
+                            operator.op_name == op
+                            and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape
+                        ):
                             shape_list.append(operator)
-                    shape_duration = sum(convert_to_float_with_warning(operator.task_duration)
-                                         for operator in shape_list)
+                    shape_duration = sum(
+                        convert_to_float_with_warning(operator.task_duration) for operator in shape_list
+                    )
                     dtype = shape_list[0].input_data_types if shape_list else None
                     bound, optimization = self.del_cube_operator_bound(shape_list)
                     if bound is None and optimization is None:
                         continue
                     if bound:
-                        bound_queue.append({"op_name": op,
-                                            "shape": shape.split("-")[0],
-                                            "dtype": dtype,
-                                            "bound": bound,
-                                            "duration": shape_duration})
+                        bound_queue.append(
+                            {
+                                "op_name": op,
+                                "shape": shape.split("-")[0],
+                                "dtype": dtype,
+                                "bound": bound,
+                                "duration": shape_duration,
+                            }
+                        )
                     else:
-                        optimization_queue.append({"op_name": op,
-                                                   "shape": shape.split("-")[0],
-                                                   "dtype": dtype,
-                                                   "optimization": round(optimization * 100, 2)})
-        return [sorted(optimization_queue, key=lambda x: x["optimization"], reverse=True)[:5],
-                sorted(bound_queue, key=lambda x: x["duration"], reverse=True)[:5],
-                sorted(affinity_queue, key=lambda x: x["duration"], reverse=True)[:5]]
+                        optimization_queue.append(
+                            {
+                                "op_name": op,
+                                "shape": shape.split("-")[0],
+                                "dtype": dtype,
+                                "optimization": round(optimization * 100, 2),
+                            }
+                        )
+        return [
+            sorted(optimization_queue, key=lambda x: x["optimization"], reverse=True)[:5],
+            sorted(bound_queue, key=lambda x: x["duration"], reverse=True)[:5],
+            sorted(affinity_queue, key=lambda x: x["duration"], reverse=True)[:5],
+        ]
 
     def del_cube_operator_bound(self, shape_list):
-        bound, optimization, aic_mac_ratio, aic_mte2_ratio, length = "", 0., 0., 0., 0
+        bound, optimization, aic_mac_ratio, aic_mte2_ratio, length = "", 0.0, 0.0, 0.0, 0
         for operator in shape_list:
             try:
                 aic_mac_ratio += convert_to_float_with_warning(operator.aic_mac_ratio)
@@ -245,32 +274,36 @@ class AICorePerformanceChecker:
                 aic_mac_ratio_rule = operator_rule
             elif operator_rule["target"] == "aic_mte2_ratio":
                 aic_mte2_ratio_rule = operator_rule
-        if (aic_mac_ratio >= aic_mac_ratio_rule["threshold"]
-                and aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]):
+        if aic_mac_ratio >= aic_mac_ratio_rule["threshold"] and aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]:
             bound = aic_mac_ratio_rule["bound"] + "_and_" + aic_mte2_ratio_rule["bound"] + "_bound"
         elif aic_mac_ratio >= aic_mte2_ratio_rule["threshold"]:
             bound = aic_mac_ratio_rule["bound"]
         elif aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]:
             bound = aic_mte2_ratio_rule["bound"]
         else:
-            optimization = max(aic_mac_ratio_rule["threshold"] - aic_mac_ratio,
-                               aic_mte2_ratio_rule["threshold"] - aic_mte2_ratio)
+            optimization = max(
+                aic_mac_ratio_rule["threshold"] - aic_mac_ratio, aic_mte2_ratio_rule["threshold"] - aic_mte2_ratio
+            )
         return bound, optimization
 
     def check_fa_operator(self, profiling_dataset: ProfilingDataset):
         fa_list, fa_dict = self.fa_list, self.fa_dict
         optimization_queue, bound_queue, affinity_queue = [], [], []
         # 不亲和算子筛选
-        for op in fa_dict:
-            for shape in fa_dict[op]:
+        for op, shapes in fa_dict.items():
+            for shape in shapes:
                 affinity_flag, dtype, shape_duration, suggestion = self._check_fa_inner_axis(fa_list, op, shape)
                 if affinity_flag:
                     # 不亲和算子 计算耗时，加入affinity_queue
-                    affinity_queue.append({"op_name": op,
-                                           "shape": shape.split("-")[0],
-                                           "dtype": dtype,
-                                           "suggestion": suggestion,
-                                           "duration": shape_duration})
+                    affinity_queue.append(
+                        {
+                            "op_name": op,
+                            "shape": shape.split("-")[0],
+                            "dtype": dtype,
+                            "suggestion": suggestion,
+                            "duration": shape_duration,
+                        }
+                    )
                 else:
                     # 处理bound算子和优化算子
                     if len(shape.split("-")) > 2:
@@ -280,28 +313,39 @@ class AICorePerformanceChecker:
                     if bound is None and optimization is None:
                         continue
                     if bound:
-                        bound_queue.append({"op_name": op,
-                                            "shape": shape.split("-")[0],
-                                            "dtype": dtype,
-                                            "bound": bound,
-                                            "duration": shape_duration})
+                        bound_queue.append(
+                            {
+                                "op_name": op,
+                                "shape": shape.split("-")[0],
+                                "dtype": dtype,
+                                "bound": bound,
+                                "duration": shape_duration,
+                            }
+                        )
                     else:
-                        optimization_queue.append({"op_name": op,
-                                                   "shape": shape.split("-")[0],
-                                                   "dtype": dtype,
-                                                   "optimization": round(optimization * 100, 2)})
+                        optimization_queue.append(
+                            {
+                                "op_name": op,
+                                "shape": shape.split("-")[0],
+                                "dtype": dtype,
+                                "optimization": round(optimization * 100, 2),
+                            }
+                        )
 
-        return [sorted(optimization_queue, key=lambda x: x["optimization"], reverse=True)[:5],
-                sorted(bound_queue, key=lambda x: x["duration"], reverse=True)[:5],
-                sorted(affinity_queue, key=lambda x: x["duration"], reverse=True)[:5]]
+        return [
+            sorted(optimization_queue, key=lambda x: x["optimization"], reverse=True)[:5],
+            sorted(bound_queue, key=lambda x: x["duration"], reverse=True)[:5],
+            sorted(affinity_queue, key=lambda x: x["duration"], reverse=True)[:5],
+        ]
 
     def del_fa_operator_bound_grad(self, op, shape, fa_list):
-        aic_fixpipe_ratio, aic_mte2_ratio, shape_duration, optimization, length = 0., 0., 0., 0., 0
+        aic_fixpipe_ratio, aic_mte2_ratio, shape_duration, optimization, length = 0.0, 0.0, 0.0, 0.0, 0
         bound, dtype = "", None
         for operator in fa_list:
-            if (operator.op_name == op and
-                    operator.input_shapes[1:-1] + "-" +
-                    operator.output_shapes[1:-1] + "-grad" == shape):
+            if (
+                operator.op_name == op
+                and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] + "-grad" == shape
+            ):
                 try:
                     aic_fixpipe_ratio += convert_to_float_with_warning(operator.aic_fixpipe_ratio)
                     aic_mte2_ratio += convert_to_float_with_warning(operator.aic_mte2_ratio)
@@ -320,24 +364,27 @@ class AICorePerformanceChecker:
                 aic_fixpipe_ratio_rule = rule
             elif rule["target"] == "aic_mte2_ratio":
                 aic_mte2_ratio_rule = rule
-        if (aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"] and
-                aic_fixpipe_ratio >= aic_fixpipe_ratio_rule["threshold"]):
+        if (
+            aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]
+            and aic_fixpipe_ratio >= aic_fixpipe_ratio_rule["threshold"]
+        ):
             bound = aic_fixpipe_ratio_rule["bound"] + "_and_" + aic_mte2_ratio_rule["bound"] + "_bound"
         elif aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]:
             bound = aic_mte2_ratio_rule["bound"]
         elif aic_fixpipe_ratio >= aic_fixpipe_ratio_rule["threshold"]:
             bound = aic_fixpipe_ratio_rule["bound"]
         else:
-            optimization = max(aic_fixpipe_ratio_rule["threshold"] - aic_fixpipe_ratio,
-                               aic_mte2_ratio_rule["threshold"] - aic_mte2_ratio)
+            optimization = max(
+                aic_fixpipe_ratio_rule["threshold"] - aic_fixpipe_ratio,
+                aic_mte2_ratio_rule["threshold"] - aic_mte2_ratio,
+            )
         return bound, optimization, dtype, shape_duration
 
     def del_fa_operator_bound(self, op, shape, fa_list):
-        aiv_vec_ratio, aic_mte2_ratio, shape_duration, optimization, length = 0., 0., 0., 0., 0
+        aiv_vec_ratio, aic_mte2_ratio, shape_duration, optimization, length = 0.0, 0.0, 0.0, 0.0, 0
         bound, dtype = "", None
         for operator in fa_list:
-            if (operator.op_name == op and
-                    operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape):
+            if operator.op_name == op and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape:
                 try:
                     aiv_vec_ratio += convert_to_float_with_warning(operator.aiv_vec_ratio)
                     aic_mte2_ratio += convert_to_float_with_warning(operator.aic_mte2_ratio)
@@ -355,29 +402,31 @@ class AICorePerformanceChecker:
                 aiv_vec_ratio_rule = rule
             elif rule["target"] == "aic_mte2_ratio":
                 aic_mte2_ratio_rule = rule
-        if (aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]
-                and aiv_vec_ratio >= aiv_vec_ratio_rule["threshold"]):
+        if aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"] and aiv_vec_ratio >= aiv_vec_ratio_rule["threshold"]:
             bound = aic_mte2_ratio_rule["bound"] + "_and_" + aiv_vec_ratio_rule["bound"] + "_bound"
         elif aic_mte2_ratio >= aic_mte2_ratio_rule["threshold"]:
             bound = aic_mte2_ratio_rule["bound"]
         elif aiv_vec_ratio >= aiv_vec_ratio_rule["threshold"]:
             bound = aiv_vec_ratio_rule["bound"]
         else:
-            optimization = max(aiv_vec_ratio_rule["threshold"] - aiv_vec_ratio,
-                               aic_mte2_ratio_rule["threshold"] - aic_mte2_ratio)
+            optimization = max(
+                aiv_vec_ratio_rule["threshold"] - aiv_vec_ratio, aic_mte2_ratio_rule["threshold"] - aic_mte2_ratio
+            )
         return bound, optimization, dtype, shape_duration
 
     def check_vector_operator(self, profiling_dataset: ProfilingDataset):
         vector_dict = self.vector_dict
         optimization_queue, bound_queue = [], []
         vector_list = self.get_vector_list(profiling_dataset, vector_dict)
-        for op_name in vector_dict:
-            for shape in vector_dict[op_name]:
-                aiv_vec_ratio, aiv_mte2_ratio, aiv_mte3_ratio, shape_duration = 0., 0., 0., 0.
+        for op_name, shapes in vector_dict.items():
+            for shape in shapes:
+                aiv_vec_ratio, aiv_mte2_ratio, aiv_mte3_ratio, shape_duration = 0.0, 0.0, 0.0, 0.0
                 length, dtype = 0, ""
                 for operator in vector_list:
-                    if (operator.op_name == op_name and
-                            operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape):
+                    if (
+                        operator.op_name == op_name
+                        and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape
+                    ):
                         try:
                             aiv_vec_ratio += convert_to_float_with_warning(operator.aiv_vec_ratio)
                             aiv_mte2_ratio += convert_to_float_with_warning(operator.aiv_mte2_ratio)
@@ -394,18 +443,28 @@ class AICorePerformanceChecker:
                     continue
                 bound, optimization = self.del_vector_operator_bound(aiv_mte2_ratio, aiv_mte3_ratio, aiv_vec_ratio)
                 if bound:
-                    bound_queue.append({"op_name": op_name,
-                                        "shape": shape.split("-")[0],
-                                        "bound": bound,
-                                        "dtype": dtype,
-                                        "duration": shape_duration})
+                    bound_queue.append(
+                        {
+                            "op_name": op_name,
+                            "shape": shape.split("-")[0],
+                            "bound": bound,
+                            "dtype": dtype,
+                            "duration": shape_duration,
+                        }
+                    )
                 else:
-                    optimization_queue.append({"op_name": op_name,
-                                               "shape": shape.split("-")[0],
-                                               "dtype": dtype,
-                                               "optimization": round(optimization * 100, 2)})
-        return [sorted(optimization_queue, key=lambda x: x["optimization"], reverse=True)[:5],
-                sorted(bound_queue, key=lambda x: x["duration"], reverse=True)[:5]]
+                    optimization_queue.append(
+                        {
+                            "op_name": op_name,
+                            "shape": shape.split("-")[0],
+                            "dtype": dtype,
+                            "optimization": round(optimization * 100, 2),
+                        }
+                    )
+        return [
+            sorted(optimization_queue, key=lambda x: x["optimization"], reverse=True)[:5],
+            sorted(bound_queue, key=lambda x: x["duration"], reverse=True)[:5],
+        ]
 
     def del_vector_operator_bound(self, aiv_mte2_ratio, aiv_mte3_ratio, aiv_vec_ratio):
         bound, optimization = "", 0
@@ -428,19 +487,17 @@ class AICorePerformanceChecker:
         elif aiv_vec_ratio >= aiv_vec_ratio_rule["threshold"]:
             bound = aiv_vec_ratio_rule["bound"]
         else:
-            optimization = max(aiv_vec_ratio_rule["threshold"] - aiv_vec_ratio,
-                               aiv_mte2_ratio_rule["threshold"] - aiv_mte2_ratio,
-                               aiv_mte3_ratio_rule["threshold"] - aiv_mte3_ratio)
+            optimization = max(
+                aiv_vec_ratio_rule["threshold"] - aiv_vec_ratio,
+                aiv_mte2_ratio_rule["threshold"] - aiv_mte2_ratio,
+                aiv_mte3_ratio_rule["threshold"] - aiv_mte3_ratio,
+            )
         return bound, optimization
 
     def draw_record(self, op_type: str, result: OptimizeResult):
         suggestion_keys = ['opti', 'bound', 'affinity']
         desc = dict.fromkeys(suggestion_keys, "")
-        problem_map = {
-            'cube': self._cube_problem,
-            'fa': self._fa_problem,
-            'vector': self._vector_problem
-        }
+        problem_map = {'cube': self._cube_problem, 'fa': self._fa_problem, 'vector': self._vector_problem}
         if op_type not in problem_map:
             return
         optimization_item = OptimizeItem(problem_map[op_type], self._desc, [self._suggestion])
@@ -488,14 +545,16 @@ class AICorePerformanceChecker:
             return self.ai_core_performance_issues
 
         priority = kwargs.get("priority")
-        return html_render.render_template(key="computation",
-                                           template_dir="templates",
-                                           template_name="ai_core_performance.html",
-                                           format_result=self.result,
-                                           language=self.language,
-                                           add_render_list=add_render_list,
-                                           priority_background_color=priority,
-                                           rank=kwargs.get("rank"))
+        return html_render.render_template(
+            key="computation",
+            template_dir="templates",
+            template_name="ai_core_performance.html",
+            format_result=self.result,
+            language=self.language,
+            add_render_list=add_render_list,
+            priority_background_color=priority,
+            rank=kwargs.get("rank"),
+        )
 
     def check_task_list(self, profiling_dataset: ProfilingDataset) -> bool:
         if not hasattr(profiling_dataset, "op_summary"):
@@ -504,35 +563,42 @@ class AICorePerformanceChecker:
         if not hasattr(profiling_dataset.op_summary, "op_list"):
             logger.warning("Skip %s checker because of not containing %s", self._CHECKER, "op_list")
             return False
-        if (not hasattr(profiling_dataset.op_summary.op_list[0], "input_shapes") or
-                not hasattr(profiling_dataset.op_summary.op_list[0], "input_data_types")):
-            logger.warning("Skip %s checker because of not containing input datas", self._CHECKER)
+        if not hasattr(profiling_dataset.op_summary.op_list[0], "input_shapes") or not hasattr(
+            profiling_dataset.op_summary.op_list[0], "input_data_types"
+        ):
+            logger.warning("Skip %s checker because of not containing input data", self._CHECKER)
             return False
         return True
 
     def _check_cube_inner_axis(self, shape):
         shapes = shape.split("-")[0].split(";")
         if len(shapes) < 2:
-            logger.error(f"Error: Incorrect input shape, shape is {shape}.")
+            logger.error("Error: Incorrect input shape, shape is %s.", shape)
             return False
         # 判断输入shape内轴是否为256的倍数
         if len(shapes[0].split(",")) == 4 and len(shapes[1].split(",")) == 4:
             # NZ格式
-            b_axis, c_axis = (convert_to_int_with_exception(shapes[0].split(",")[1]),
-                              convert_to_int_with_exception(shapes[0].split(",")[2]))
-            f_axis, g_axis = (convert_to_int_with_exception(shapes[1].split(",")[1]),
-                              convert_to_int_with_exception(shapes[1].split(",")[2]))
+            b_axis, c_axis = (
+                convert_to_int_with_exception(shapes[0].split(",")[1]),
+                convert_to_int_with_exception(shapes[0].split(",")[2]),
+            )
+            f_axis, g_axis = (
+                convert_to_int_with_exception(shapes[1].split(",")[1]),
+                convert_to_int_with_exception(shapes[1].split(",")[2]),
+            )
             return (b_axis * c_axis % self.INNER_AXIS_256 == 0) and (f_axis * g_axis % self.INNER_AXIS_256 == 0)
         elif (len(shape.split("-")[0].split(";")[0].split(","))) == 2:
             # ND格式
-            l_axis, k_axis = (convert_to_int_with_exception(shapes[0].split(",")[-1]),
-                              convert_to_int_with_exception(shapes[1].split(",")[-1]))
+            l_axis, k_axis = (
+                convert_to_int_with_exception(shapes[0].split(",")[-1]),
+                convert_to_int_with_exception(shapes[1].split(",")[-1]),
+            )
             return (l_axis % self.INNER_AXIS_256 == 0) and (k_axis % self.INNER_AXIS_256 == 0)
         else:
             return False
 
     def _check_fa_inner_axis(self, fa_list, op, shape):
-        shape_duration = 0.
+        shape_duration = 0.0
         affinity_flag = False
         dtype = None
         suggestion = ""
@@ -545,8 +611,10 @@ class AICorePerformanceChecker:
                 affinity_flag = True
                 suggestion = self._fa_affinity_desc_head_dim_128
                 for operator in fa_list:
-                    if (operator.op_name == op and
-                            operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape):
+                    if (
+                        operator.op_name == op
+                        and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape
+                    ):
                         shape_duration += convert_to_float_with_warning(operator.task_duration)
                         dtype = operator.input_data_types
         else:
@@ -557,8 +625,10 @@ class AICorePerformanceChecker:
                 seq_len = convert_to_int_with_exception(shape.split("-")[1].split(";")[0].split(",")[2])
             input_first_tensor = shape.split("-")[0].split(";")[0].split(",")
             if len(input_first_tensor) == 3:
-                head_dim = safe_division(convert_to_int_with_exception(input_first_tensor[2]),
-                                         convert_to_int_with_exception(shape.split("-")[1].split(";")[0].split(",")[1]))
+                head_dim = safe_division(
+                    convert_to_int_with_exception(input_first_tensor[2]),
+                    convert_to_int_with_exception(shape.split("-")[1].split(";")[0].split(",")[1]),
+                )
             else:
                 head_dim = convert_to_int_with_exception(input_first_tensor[3])
             if head_dim % self.INNER_AXIS_128 != 0 and seq_len % self.INNER_AXIS_128 != 0:
@@ -572,9 +642,10 @@ class AICorePerformanceChecker:
                 suggestion = self._fa_affinity_desc_seq_len_128
             if affinity_flag:
                 for operator in fa_list:
-                    if (operator.op_name == op and
-                            operator.input_shapes[1:-1] + "-" +
-                            operator.output_shapes[1:-1] == shape):
+                    if (
+                        operator.op_name == op
+                        and operator.input_shapes[1:-1] + "-" + operator.output_shapes[1:-1] == shape
+                    ):
                         shape_duration += convert_to_float_with_warning(operator.task_duration)
                         dtype = operator.input_data_types
         return affinity_flag, dtype, shape_duration, suggestion

@@ -29,7 +29,6 @@ logger = get_logger()
 
 
 class EPLoadBalance(BaseRecipeAnalysis):
-
     EP_TOKENS_SUMMARY = "EPTokensSummary"
     TOP_EP_TOKENS_INFO = "TopEPTokensInfo"
     META_DATA = "META_DATA"
@@ -65,7 +64,7 @@ class EPLoadBalance(BaseRecipeAnalysis):
                 part = part.strip()
                 try:
                     first_dim = int(part.split(",")[0])
-                except (IndexError, ValueError) as e:
+                except (IndexError, ValueError):
                     return None
                 seqlength += first_dim
             return seqlength
@@ -103,16 +102,18 @@ class EPLoadBalance(BaseRecipeAnalysis):
             logger.error("ep_load_balance is only supported for db export type.")
 
     def save_db(self):
-        self.dump_data(self.ep_tokens_summary, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.EP_TOKENS_SUMMARY,
-                       index=False)
-        self.dump_data(self.top_ep_tokens_map, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TOP_EP_TOKENS_INFO,
-                       index=False)
+        self.dump_data(
+            self.ep_tokens_summary, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.EP_TOKENS_SUMMARY, index=False
+        )
+        self.dump_data(
+            self.top_ep_tokens_map, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TOP_EP_TOKENS_INFO, index=False
+        )
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": [self.EP_TOKENS_SUMMARY, self.TOP_EP_TOKENS_INFO]
+                "tables": [self.EP_TOKENS_SUMMARY, self.TOP_EP_TOKENS_INFO],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def _mapper_func(self, data_map, analysis_class):
@@ -125,18 +126,19 @@ class EPLoadBalance(BaseRecipeAnalysis):
         parallel_group_info = meta_map.loc[meta_map['name'] == 'parallel_group_info', 'value'].iloc[0]
         try:
             data_dict = json.loads(parallel_group_info)
-        except json.JSONDecodeError as e:
-            logger.error(f"{profiler_db_path}'s parallel_group_info is illegal")
+        except json.JSONDecodeError:
+            logger.error("%s's parallel_group_info is illegal", profiler_db_path)
             return None
         if not isinstance(data_dict, dict):
-            raise TypeError('{} must be dict, not {}.'.format(data_dict, type(data_dict).__name__))     
+            raise TypeError('{} must be dict, not {}.'.format(data_dict, type(data_dict).__name__))
+        global_ranks = []
         for _, value in data_dict.items():
             if value["group_name"] == self.GROUPEP:
                 global_ranks = value["global_ranks"]
                 break
         df = InputShapeExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
         df["Rank"] = rank_id
         df["epRanks"] = [global_ranks] * len(df)

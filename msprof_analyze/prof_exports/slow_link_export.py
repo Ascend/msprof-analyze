@@ -23,19 +23,19 @@ QUERY = """
         op.value AS opType,
         et.name AS dataType,
         CASE
-    WHEN et.name = 'INT8' THEN 1 * co.count 
+    WHEN et.name = 'INT8' THEN 1 * co.count
         WHEN et.name = 'INT16' THEN 2 * co.count
         WHEN et.name = 'INT32' THEN 4 * co.count
         WHEN et.name = 'INT64' THEN 8 * co.count
-        WHEN et.name = 'UINT64' THEN 8 * co.count 
+        WHEN et.name = 'UINT64' THEN 8 * co.count
         WHEN et.name = 'UINT8' THEN 1 * co.count
         WHEN et.name = 'UINT16' THEN 2 * co.count
         WHEN et.name = 'UINT32' THEN 4 * co.count
         WHEN et.name = 'FP16' THEN 2 * co.count
         WHEN et.name = 'FP32' THEN 4 * co.count
-        WHEN et.name = 'FP64' THEN 8 * co.count 
+        WHEN et.name = 'FP64' THEN 8 * co.count
         WHEN et.name = 'BFP16' THEN 2 * co.count
-        WHEN et.name = 'INT128' THEN 16 * co.count 
+        WHEN et.name = 'INT128' THEN 16 * co.count
         END AS dataSize
     FROM
         COMMUNICATION_OP co
@@ -43,12 +43,14 @@ QUERY = """
         JOIN STRING_IDS si ON co.groupName = si.id
         JOIN STRING_IDS sii ON co.opName = sii.id
         JOIN ENUM_HCCL_DATA_TYPE et ON co.dataType = et.id
-        JOIN STRING_IDS op ON co.opType = op.id 
+        JOIN STRING_IDS op ON co.opType = op.id
 """
 
 
 class SlowLinkExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name):
         super().__init__(db_path, recipe_name, {})
         self._query = QUERY
+
+    def get_param_order(self):
+        return []

@@ -111,8 +111,7 @@ class CommMatrixSum(BaseRecipeAnalysis):
             top1 = sorted_group.iloc[0]
             middle = sorted_group.iloc[len(group) // 2]
             return pd.DataFrame(
-                [top1, bottom1, bottom2, bottom3, middle],
-                index=['top1', 'bottom1', 'bottom2', 'bottom3', 'middle']
+                [top1, bottom1, bottom2, bottom3, middle], index=['top1', 'bottom1', 'bottom2', 'bottom3', 'middle']
             ).reset_index()
 
         example_df = grouped_df.apply(get_specific_rows).reset_index(drop=True)
@@ -121,12 +120,14 @@ class CommMatrixSum(BaseRecipeAnalysis):
         example_df = example_df.drop(columns="index")
 
         total_df = matrix_data.groupby(['type', 'step', 'group_name', 'hccl_op_name', 'src_rank', 'dst_rank']).agg(
-            {'transport_type': 'first', "transit_size": "sum", "transit_time": "sum"})
+            {'transport_type': 'first', "transit_size": "sum", "transit_time": "sum"}
+        )
         total_df = total_df.reset_index()
         total_df["op_name"] = None
         total_df["hccl_op_name"] = total_df["hccl_op_name"].astype(str) + "-total"
         total_df['bandwidth'] = total_df['transit_size'] / total_df['transit_time'].where(
-            total_df['transit_time'] != 0, other=0)
+            total_df['transit_time'] != 0, other=0
+        )
 
         result_df = pd.concat([example_df, total_df], ignore_index=True)
         return result_df
@@ -153,7 +154,7 @@ class CommMatrixSum(BaseRecipeAnalysis):
         concat_df = pd.concat(matrix_frames, ignore_index=True) if matrix_frames else pd.DataFrame()
 
         if concat_df.empty:
-            logger.error("Communication matrix data is None.")
+            logger.warning("Communication matrix data is None.")
             return
 
         rank_set_map = self._build_rank_set_map(rank_map)
@@ -162,8 +163,8 @@ class CommMatrixSum(BaseRecipeAnalysis):
         concat_df.loc[p2p_mask, self.RANK_SET] = Constant.P2P
 
         grouped_df = concat_df.groupby(
-            [self.RANK_SET, 'step', "hccl_op_name", "group_name", "src_rank", "dst_rank"], sort=False).agg(
-            {'transport_type': 'first', 'op_name': 'first', "transit_size": "sum", "transit_time": "sum"})
+            [self.RANK_SET, 'step', "hccl_op_name", "group_name", "src_rank", "dst_rank"], sort=False
+        ).agg({'transport_type': 'first', 'op_name': 'first', "transit_size": "sum", "transit_time": "sum"})
         grouped_df = grouped_df.reset_index()
         grouped_df["bandwidth"] = None
 
@@ -173,22 +174,30 @@ class CommMatrixSum(BaseRecipeAnalysis):
         else:
             grouped_df = grouped_df.merge(
                 rank_mapping_df.rename(columns={"local_rank": "src_rank", "global_rank": "src_global_rank"}),
-                on=["group_name", "src_rank"], how="left"
+                on=["group_name", "src_rank"],
+                how="left",
             )
             grouped_df = grouped_df.merge(
                 rank_mapping_df.rename(columns={"local_rank": "dst_rank", "global_rank": "dst_global_rank"}),
-                on=["group_name", "dst_rank"], how="left"
+                on=["group_name", "dst_rank"],
+                how="left",
             )
 
             src_invalid_mask = grouped_df["src_global_rank"].isna()
             self._log_invalid_rank_mapping(
-                grouped_df, "src_rank", "group_name", src_invalid_mask,
-                "The src local rank {rank} of the group_name {group_name} cannot be mapped to the global rank."
+                grouped_df,
+                "src_rank",
+                "group_name",
+                src_invalid_mask,
+                "The src local rank {rank} of the group_name {group_name} cannot be mapped to the global rank.",
             )
             dst_invalid_mask = grouped_df["dst_global_rank"].isna()
             self._log_invalid_rank_mapping(
-                grouped_df, "dst_rank", "group_name", dst_invalid_mask,
-                "The dst local rank {rank} of the group_name {group_name} cannot be mapped to the global rank."
+                grouped_df,
+                "dst_rank",
+                "group_name",
+                dst_invalid_mask,
+                "The dst local rank {rank} of the group_name {group_name} cannot be mapped to the global rank.",
             )
 
             valid_mask = ~src_invalid_mask & ~dst_invalid_mask
@@ -198,20 +207,21 @@ class CommMatrixSum(BaseRecipeAnalysis):
             non_zero_transit_mask = filtered_df["transit_time"] != 0
             filtered_df.loc[:, "bandwidth"] = 0.0
             filtered_df.loc[non_zero_transit_mask, "bandwidth"] = (
-                filtered_df.loc[non_zero_transit_mask, "transit_size"] /
-                filtered_df.loc[non_zero_transit_mask, "transit_time"]
+                filtered_df.loc[non_zero_transit_mask, "transit_size"]
+                / filtered_df.loc[non_zero_transit_mask, "transit_time"]
             )
             filtered_df = filtered_df.drop(columns=["src_global_rank", "dst_global_rank"])
 
-        total_op_info = filtered_df[filtered_df['hccl_op_name'].str.contains('total', na=False)].groupby(
-            [TableConstant.GROUP_NAME, 'step', "src_rank", "dst_rank"], sort=False).agg(
-            {'transport_type': 'first', 'op_name': 'first', "transit_size": "sum",
-             "transit_time": "sum"}
+        total_op_info = (
+            filtered_df[filtered_df['hccl_op_name'].str.contains('total', na=False)]
+            .groupby([TableConstant.GROUP_NAME, 'step', "src_rank", "dst_rank"], sort=False)
+            .agg({'transport_type': 'first', 'op_name': 'first', "transit_size": "sum", "transit_time": "sum"})
         )
         total_op_info = total_op_info.reset_index()
         total_op_info["hccl_op_name"] = Constant.TOTAL_OP_INFO
         total_op_info['bandwidth'] = total_op_info['transit_size'] / total_op_info['transit_time'].where(
-            total_op_info['transit_time'] != 0, other=0)
+            total_op_info['transit_time'] != 0, other=0
+        )
         filtered_df["bandwidth"] = filtered_df["bandwidth"].astype("object")
         total_op_info["bandwidth"] = total_op_info["bandwidth"].astype("object")
         self.cluster_matrix_df = pd.concat([filtered_df, total_op_info], ignore_index=True).drop(columns=self.RANK_SET)
@@ -223,23 +233,20 @@ class CommMatrixSum(BaseRecipeAnalysis):
         for column in ["src_rank", "dst_rank"]:
             if column in db_df.columns:
                 db_df[column] = db_df[column].astype("float64")
-        self.dump_data(db_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.TABLE_CLUSTER_COMM_MATRIX, index=False)
+        self.dump_data(db_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_CLUSTER_COMM_MATRIX, index=False)
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": [self.TABLE_CLUSTER_COMM_MATRIX]
+                "tables": [self.TABLE_CLUSTER_COMM_MATRIX],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def save_csv(self):
         self.dump_data(self.cluster_matrix_df, "cluster_communication_matrix.csv", index=False)
         set_json_success(
-            msg_dict={
-                "csv_path": os.path.join(self.output_path, "cluster_communication_matrix.csv")
-            },
-            suggestion=self.SUGGESTION
+            msg_dict={"csv_path": os.path.join(self.output_path, "cluster_communication_matrix.csv")},
+            suggestion=self.SUGGESTION,
         )
 
     def _generate_rank_map(self, mapper_res):
@@ -257,8 +264,11 @@ class CommMatrixSum(BaseRecipeAnalysis):
                 continue
             grouped_matrix_df[Constant.RANK_ID] = rank_data.get(Constant.RANK_ID)
             rank_map_frames.append(grouped_matrix_df)
-        rank_map_df = (pd.concat(rank_map_frames, ignore_index=True).drop_duplicates()
-                       if rank_map_frames else pd.DataFrame(columns=["group_name", "src_rank", Constant.RANK_ID]))
+        rank_map_df = (
+            pd.concat(rank_map_frames, ignore_index=True).drop_duplicates()
+            if rank_map_frames
+            else pd.DataFrame(columns=["group_name", "src_rank", Constant.RANK_ID])
+        )
 
         for group_name, local_rank, global_rank in rank_map_df.itertuples(index=False, name=None):
             if group_name not in rank_map:
@@ -268,8 +278,13 @@ class CommMatrixSum(BaseRecipeAnalysis):
                 rank_map[group_name][local_rank] = global_rank
                 continue
             if rank_map[group_name][local_rank] != global_rank:
-                logger.warning(f"In the same communication group {group_name}, global rank {global_rank} "
-                               f"and {rank_map[group_name][local_rank]} get the same local rank {local_rank}!")
+                logger.warning(
+                    "In the same communication group %s, global rank %s and %s get the same local rank %s!",
+                    group_name,
+                    global_rank,
+                    rank_map[group_name][local_rank],
+                    local_rank,
+                )
         return rank_map
 
     def _mapper_func(self, data_map, analysis_class):
