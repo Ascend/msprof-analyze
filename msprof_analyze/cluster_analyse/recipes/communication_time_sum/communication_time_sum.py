@@ -26,6 +26,7 @@ from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.database_service import DatabaseService
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.db_manager import DBManager
+from msprof_analyze.prof_common.file_manager import FileManager
 
 logger = get_logger()
 
@@ -35,7 +36,35 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
     TABLE_CLUSTER_COMM_BANDWIDTH = "ClusterCommunicationBandwidth"
 
     TABLE_COMMUNICATION_GROUP_MAPPING = "CommunicationGroupMapping"
-    SUGGESTION = f"""
+    TIME_COLUMNS = [
+        TableConstant.STEP,
+        TableConstant.RANK_ID,
+        TableConstant.HCCL_OP_NAME,
+        TableConstant.GROUP_NAME,
+        TableConstant.START_TIMESTAMP,
+        "elapsed_time",
+        TableConstant.TRANSIT_TIME,
+        TableConstant.WAIT_TIME,
+        TableConstant.SYNCHRONIZATION_TIME,
+        TableConstant.IDLE_TIME,
+        TableConstant.SYNCHRONIZATION_TIME_RATIO,
+        TableConstant.WAIT_TIME_RATIO,
+    ]
+    BANDWIDTH_COLUMNS = [
+        TableConstant.STEP,
+        TableConstant.RANK_ID,
+        TableConstant.HCCL_OP_NAME,
+        TableConstant.GROUP_NAME,
+        TableConstant.BAND_TYPE,
+        TableConstant.TRANSIT_SIZE,
+        TableConstant.TRANSIT_TIME,
+        TableConstant.BANDWIDTH,
+        TableConstant.LARGE_PACKET_RATIO,
+        TableConstant.PACKAGE_SIZE,
+        TableConstant.COUNT,
+        TableConstant.TOTAL_DURATION,
+    ]
+    SUGGESTION = """
     ClusterCommunicationTime / cluster_communication_time.csv：按 step、rank、通信算子名记录通信总耗时、传输耗时、等待耗时、同步耗时及对应占比，识别具体通信算子的瓶颈类型。
     ClusterCommunicationBandwidth / cluster_communication_bandwidth.csv：按 step、rank、通信算子名记录通信算子的传输类型、数据量、耗时、带宽、大包占比与通信次数。用它快速识别低带宽通信算子。"
     """
@@ -44,8 +73,8 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         super().__init__(params)
         self.params = params
         logger.info("CommunicationTimeSum init.")
-        self.communication_time = None
-        self.communication_bandwidth = None
+        self.communication_time = pd.DataFrame(columns=self.TIME_COLUMNS)
+        self.communication_bandwidth = pd.DataFrame(columns=self.BANDWIDTH_COLUMNS)
 
     @property
     def base_dir(self):
@@ -73,48 +102,71 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         mapper_res_time = list(item[0] for item in mapper_res if item[0] is not None)
         mapper_res_bw = list(item[1] for item in mapper_res if item[1] is not None)
         if not mapper_res_time and not mapper_res_bw:
-            logger.error("Mapper data is None.")
+            logger.warning("Mapper data is None, generating empty tables.")
             return
         cluster_db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
         data_service = DatabaseService(cluster_db_path, None)
-        data_service.add_table_for_query(self.TABLE_COMMUNICATION_GROUP_MAPPING,
-                                         [TableConstant.RANK_SET, TableConstant.GROUP_NAME])
+        data_service.add_table_for_query(
+            self.TABLE_COMMUNICATION_GROUP_MAPPING, [TableConstant.RANK_SET, TableConstant.GROUP_NAME]
+        )
         df_dict = data_service.query_data()
         rank_set_df = df_dict.get(self.TABLE_COMMUNICATION_GROUP_MAPPING, None)
         if rank_set_df is None or rank_set_df.empty:
-            logger.error(f"There is no {self.TABLE_COMMUNICATION_GROUP_MAPPING} data in {cluster_db_path}.")
+            logger.warning(
+                "There is no %s data in %s, generating empty tables.",
+                self.TABLE_COMMUNICATION_GROUP_MAPPING,
+                cluster_db_path,
+            )
             return
         rank_set_df = rank_set_df.drop_duplicates()
-        communication_time = pd.concat(mapper_res_time)
-        communication_bandwidth = pd.concat(mapper_res_bw)
-        self._compute_time_info(communication_time, rank_set_df)
-        self._compute_bandwidth_info(communication_bandwidth, rank_set_df)
+        communication_time = pd.concat(mapper_res_time) if mapper_res_time else pd.DataFrame()
+        communication_bandwidth = pd.concat(mapper_res_bw) if mapper_res_bw else pd.DataFrame()
+        if not communication_time.empty:
+            self._compute_time_info(communication_time, rank_set_df)
+        if not communication_bandwidth.empty:
+            self._compute_bandwidth_info(communication_bandwidth, rank_set_df)
 
     def save_db(self):
-        self.dump_data(self.communication_time, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.TABLE_CLUSTER_COMM_TIME, index=False)
-        self.dump_data(self.communication_bandwidth, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.TABLE_CLUSTER_COMM_BANDWIDTH, index=False)
+        self._dump_data_to_db(self.communication_time, self.TABLE_CLUSTER_COMM_TIME)
+        self._dump_data_to_db(self.communication_bandwidth, self.TABLE_CLUSTER_COMM_BANDWIDTH)
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": [self.TABLE_CLUSTER_COMM_TIME, self.TABLE_CLUSTER_COMM_BANDWIDTH]
+                "tables": [self.TABLE_CLUSTER_COMM_TIME, self.TABLE_CLUSTER_COMM_BANDWIDTH],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
+    def _dump_data_to_db(self, data, table_name):
+        if data is None:
+            data = pd.DataFrame(
+                columns=self.TIME_COLUMNS if table_name == self.TABLE_CLUSTER_COMM_TIME else self.BANDWIDTH_COLUMNS
+            )
+        result_db = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
+        logger.info("Exporting data to database: %s, table: %s", result_db, table_name)
+        conn, cursor = DBManager.create_connect_db(result_db)
+        data.to_sql(table_name, conn, if_exists='replace', index=False)
+        DBManager.destroy_db_connect(conn, cursor)
+
     def save_csv(self):
-        self.dump_data(self.communication_time, "cluster_communication_time.csv", index=False)
-        self.dump_data(self.communication_bandwidth, "cluster_communication_bandwidth.csv", index=False)
+        self._dump_data_to_csv(self.communication_time, "cluster_communication_time.csv")
+        self._dump_data_to_csv(self.communication_bandwidth, "cluster_communication_bandwidth.csv")
         set_json_success(
             msg_dict={
                 "csv_path": [
                     os.path.join(self.output_path, "cluster_communication_time.csv"),
-                    os.path.join(self.output_path, "cluster_communication_bandwidth.csv")
+                    os.path.join(self.output_path, "cluster_communication_bandwidth.csv"),
                 ]
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
+
+    def _dump_data_to_csv(self, data, file_name):
+        if data is None:
+            data = pd.DataFrame(columns=self.TIME_COLUMNS if "time" in file_name else self.BANDWIDTH_COLUMNS)
+        result_csv = os.path.join(self.output_path, file_name)
+        logger.info("Exporting data to CSV file: %s", result_csv)
+        FileManager.create_csv_from_dataframe(result_csv, data, index=False)
 
     def check_table_exist(self, table):
         db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
@@ -127,7 +179,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         """
         Run Recipe to create CommunicationGroupMapping table
         """
-        logger.info(f"Run CommunicationGroupMap recipe first to get {self.TABLE_COMMUNICATION_GROUP_MAPPING} table")
+        logger.info("Run CommunicationGroupMap recipe first to get %s table", self.TABLE_COMMUNICATION_GROUP_MAPPING)
         recipe_class = get_class_from_name("communication_group_map")
         if not recipe_class or len(recipe_class) != 2:  # 2: (class_name, class)
             return False
@@ -135,7 +187,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
             group_map_recipe = recipe_class[1](self.params)
             group_map_recipe.run(context)
         except Exception as e:
-            logger.error(f"Run CommunicationGroupMap recipe failed: {e}!")
+            logger.error("Run CommunicationGroupMap recipe failed: %s!", e)
             return False
         return self.check_table_exist(self.TABLE_COMMUNICATION_GROUP_MAPPING)
 
@@ -152,33 +204,57 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         "synchronization_time", "idle_time"等时间数据，新增汇总行插入communication_time
         """
         merged_df = pd.merge(communication_time, rank_set_df, on=TableConstant.GROUP_NAME, how='left')
-        summed_df = merged_df.groupby([TableConstant.STEP, TableConstant.RANK_ID, TableConstant.GROUP_NAME]).agg({
-            TableConstant.ELAPSED_TIME: "sum",
-            TableConstant.TRANSIT_TIME: "sum",
-            TableConstant.WAIT_TIME: "sum",
-            TableConstant.SYNCHRONIZATION_TIME: "sum",
-            TableConstant.IDLE_TIME: "sum"
-        }).reset_index()
+        summed_df = (
+            merged_df.groupby([TableConstant.STEP, TableConstant.RANK_ID, TableConstant.GROUP_NAME])
+            .agg(
+                {
+                    TableConstant.ELAPSED_TIME: "sum",
+                    TableConstant.TRANSIT_TIME: "sum",
+                    TableConstant.WAIT_TIME: "sum",
+                    TableConstant.SYNCHRONIZATION_TIME: "sum",
+                    TableConstant.IDLE_TIME: "sum",
+                }
+            )
+            .reset_index()
+        )
         summed_df[TableConstant.HCCL_OP_NAME] = Constant.TOTAL_OP_INFO
         summed_df[TableConstant.START_TIMESTAMP] = 0
         # 计算 synchronization_time_ratio，wait_time_ratio
         summed_df[TableConstant.SYNCHRONIZATION_TIME_RATIO] = (
-                summed_df[TableConstant.SYNCHRONIZATION_TIME] /
-                (summed_df[TableConstant.TRANSIT_TIME] + summed_df[TableConstant.SYNCHRONIZATION_TIME]).replace(0,
-                                                                                                                np.nan)
-        ).fillna(0).round(4)
+            (
+                summed_df[TableConstant.SYNCHRONIZATION_TIME]
+                / (summed_df[TableConstant.TRANSIT_TIME] + summed_df[TableConstant.SYNCHRONIZATION_TIME]).replace(
+                    0, np.nan
+                )
+            )
+            .fillna(0)
+            .round(4)
+        )
         summed_df[TableConstant.WAIT_TIME_RATIO] = (
-                summed_df[TableConstant.WAIT_TIME] /
-                (summed_df[TableConstant.TRANSIT_TIME] + summed_df[TableConstant.WAIT_TIME]).replace(0, np.nan)
-        ).fillna(0).round(4)
+            (
+                summed_df[TableConstant.WAIT_TIME]
+                / (summed_df[TableConstant.TRANSIT_TIME] + summed_df[TableConstant.WAIT_TIME]).replace(0, np.nan)
+            )
+            .fillna(0)
+            .round(4)
+        )
 
         communication_time[TableConstant.SYNCHRONIZATION_TIME_RATIO] = 0
         communication_time[TableConstant.WAIT_TIME_RATIO] = 0
-        desired_order = [TableConstant.STEP, TableConstant.RANK_ID, TableConstant.HCCL_OP_NAME,
-                         TableConstant.GROUP_NAME, TableConstant.START_TIMESTAMP, TableConstant.ELAPSED_TIME,
-                         TableConstant.TRANSIT_TIME, TableConstant.WAIT_TIME, TableConstant.SYNCHRONIZATION_TIME,
-                         TableConstant.IDLE_TIME, TableConstant.SYNCHRONIZATION_TIME_RATIO,
-                         TableConstant.WAIT_TIME_RATIO]
+        desired_order = [
+            TableConstant.STEP,
+            TableConstant.RANK_ID,
+            TableConstant.HCCL_OP_NAME,
+            TableConstant.GROUP_NAME,
+            TableConstant.START_TIMESTAMP,
+            TableConstant.ELAPSED_TIME,
+            TableConstant.TRANSIT_TIME,
+            TableConstant.WAIT_TIME,
+            TableConstant.SYNCHRONIZATION_TIME,
+            TableConstant.IDLE_TIME,
+            TableConstant.SYNCHRONIZATION_TIME_RATIO,
+            TableConstant.WAIT_TIME_RATIO,
+        ]
         # 合并汇总数据DataFrame
         final_df = pd.concat([communication_time, summed_df], axis=0).reindex(columns=desired_order)
         final_df.rename(columns={'elapse_time': 'elapsed_time'}, inplace=True)
@@ -200,47 +276,74 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         # 计算每个rank_set/step/rank_id/transport_type分组下去重后的transit_size和transit_time总和
         sum_transit_size = 'sum_transit_size'
         sum_transit_time = 'sum_transit_time'
-        sum_transit = merged_df.groupby(
-            [TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID, TableConstant.TRANSPORT_TYPE]).apply(
-            self._get_sum_distinct_op).reset_index().rename(columns={
-                TableConstant.TRANSIT_SIZE: sum_transit_size,
-                TableConstant.TRANSIT_TIME: sum_transit_time
-            })
-        joined_df = pd.merge(merged_df, sum_transit,
-                             on=[TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID,
-                                 TableConstant.TRANSPORT_TYPE])
+        sum_transit = (
+            merged_df.groupby(
+                [TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID, TableConstant.TRANSPORT_TYPE]
+            )
+            .apply(self._get_sum_distinct_op)
+            .reset_index()
+            .rename(
+                columns={TableConstant.TRANSIT_SIZE: sum_transit_size, TableConstant.TRANSIT_TIME: sum_transit_time}
+            )
+        )
+        joined_df = pd.merge(
+            merged_df,
+            sum_transit,
+            on=[TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID, TableConstant.TRANSPORT_TYPE],
+        )
         # 按'rank_set', 'step', 'rank_id', 'transport_type', 'package_size'进行聚合
-        agg_result = joined_df.groupby(
-            [TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID, TableConstant.TRANSPORT_TYPE,
-             TableConstant.PACKAGE_SIZE]
-        ).agg({
-            TableConstant.COUNT: 'sum',
-            TableConstant.TOTAL_DURATION: 'sum',
-            TableConstant.HCCL_OP_NAME: 'first',
-            sum_transit_size: 'first',
-            sum_transit_time: 'first'
-        }).reset_index()
+        agg_result = (
+            joined_df.groupby(
+                [
+                    TableConstant.GROUP_NAME,
+                    TableConstant.STEP,
+                    TableConstant.RANK_ID,
+                    TableConstant.TRANSPORT_TYPE,
+                    TableConstant.PACKAGE_SIZE,
+                ]
+            )
+            .agg(
+                {
+                    TableConstant.COUNT: 'sum',
+                    TableConstant.TOTAL_DURATION: 'sum',
+                    TableConstant.HCCL_OP_NAME: 'first',
+                    sum_transit_size: 'first',
+                    sum_transit_time: 'first',
+                }
+            )
+            .reset_index()
+        )
         agg_result[TableConstant.LARGE_PACKET_RATIO] = 0
         agg_result[TableConstant.HCCL_OP_NAME] = Constant.TOTAL_OP_INFO
         # 计算聚合数据带宽
         agg_result[TableConstant.BANDWIDTH] = (
-                agg_result[sum_transit_size] / agg_result[sum_transit_time].replace(0, np.nan)
-        ).fillna(0).round(4)
-        agg_result = agg_result.rename(columns={
-            sum_transit_size: TableConstant.TRANSIT_SIZE,
-            sum_transit_time: TableConstant.TRANSIT_TIME
-        })
-        desired_order = [TableConstant.STEP, TableConstant.RANK_ID, TableConstant.HCCL_OP_NAME,
-                         TableConstant.GROUP_NAME, TableConstant.TRANSPORT_TYPE, TableConstant.TRANSIT_SIZE,
-                         TableConstant.TRANSIT_TIME, TableConstant.BANDWIDTH, TableConstant.LARGE_PACKET_RATIO,
-                         TableConstant.PACKAGE_SIZE, TableConstant.COUNT, TableConstant.TOTAL_DURATION]
+            (agg_result[sum_transit_size] / agg_result[sum_transit_time].replace(0, np.nan)).fillna(0).round(4)
+        )
+        agg_result = agg_result.rename(
+            columns={sum_transit_size: TableConstant.TRANSIT_SIZE, sum_transit_time: TableConstant.TRANSIT_TIME}
+        )
+        desired_order = [
+            TableConstant.STEP,
+            TableConstant.RANK_ID,
+            TableConstant.HCCL_OP_NAME,
+            TableConstant.GROUP_NAME,
+            TableConstant.TRANSPORT_TYPE,
+            TableConstant.TRANSIT_SIZE,
+            TableConstant.TRANSIT_TIME,
+            TableConstant.BANDWIDTH,
+            TableConstant.LARGE_PACKET_RATIO,
+            TableConstant.PACKAGE_SIZE,
+            TableConstant.COUNT,
+            TableConstant.TOTAL_DURATION,
+        ]
         final_df = pd.concat([communication_bandwidth, agg_result], axis=0).reindex(columns=desired_order)
         final_df.rename(columns={TableConstant.TRANSPORT_TYPE: TableConstant.BAND_TYPE}, inplace=True)
         self.communication_bandwidth = final_df
 
     def _get_sum_distinct_op(self, op_df):
         return op_df.drop_duplicates(subset=[TableConstant.HCCL_OP_NAME, TableConstant.GROUP_NAME])[
-            [TableConstant.TRANSIT_SIZE, TableConstant.TRANSIT_TIME]].sum()
+            [TableConstant.TRANSIT_SIZE, TableConstant.TRANSIT_TIME]
+        ].sum()
 
     def _mapper_func(self, data_map, analysis_class):
         analysis_db_path = data_map.get(Constant.ANALYSIS_DB_PATH)
@@ -256,7 +359,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         is_time_df_empty = time_df is None or time_df.empty
         is_bandwidth_df_empty = bandwidth_df is None or bandwidth_df.empty
         if is_time_df_empty or is_bandwidth_df_empty:
-            logger.warning(f"There is no stats data in {analysis_db_path}.")
+            logger.warning("There is no stats data in %s.", analysis_db_path)
             return None, None
         # 补充step、rank_id字段
         time_df[TableConstant.RANK_ID] = rank_id
