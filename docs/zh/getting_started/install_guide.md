@@ -119,3 +119,16 @@ Successfully uninstalled msprof-analyze-{version}
 ## 4. 升级
 
 msprof-analyze工具不支持直接升级，需要先完成[卸载](#3-卸载)后再重新[安装](#2-安装方式)。
+
+## 5. 安装后验证
+
+安装完成后，执行如下命令确认工具可用：
+
+```bash
+msprof-analyze --help
+pip show msprof-analyze
+```
+
+若 `msprof-analyze --help` 提示命令不存在，请确认当前终端使用的是安装 `msprof-analyze` 的 Python 环境。
+
+完成验证后，可继续阅读《[快速入门](./quick_start.md)》，使用样例 profiling 数据执行一次完整的 advisor 分析。
