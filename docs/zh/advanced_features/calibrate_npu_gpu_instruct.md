@@ -1,21 +1,23 @@
 # NPU 和 GPU 性能数据拆解比对
 
-## 简介
+## 1. 简介
 
-NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyze 提供的用于自动对比 NPU 和 GPU 的性能数据，帮助用户进行跨平台的性能校准和瓶颈分析的功能。该功能能够：
+NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyze 提供的用于自动对比 NPU 和 GPU 的性能数据，帮助用户进行跨平台的性能校准和瓶颈分析的功能。
+
+该功能支持：
 
 * **跨平台分析**：支持 GPU（NVIDIA）Nsys SQLite 格式和 NPU（Ascend）PyTorch Profiler DB 格式的性能数据。
 * **模块匹配**：使用规则匹配和模糊匹配（Levenshtein 距离），自动对齐 GPU 和 NPU 的模块层次结构。
 * **性能差异分析**：精确计算 GPU 与 NPU 在相同模块下的时间比例，识别性能退化点。
 * **可视化报告**：生成 Excel 格式的对比报告。
 
-## 使用前准备
+## 2. 使用前准备
 
-### 环境准备
+**环境准备**
 
 完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
 
-### 数据准备
+**数据准备**
 
 1. GPU 性能数据采集
 
@@ -60,7 +62,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 
    对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
 
-   以下脚本展示如何采集 vLLM 推理的 NPU 性能数据，执行以下脚本前，须先完成[vllm bench latency 脚本修改](#vllm-bench-latency-脚本修改)。
+   以下脚本展示如何采集 vLLM 推理的 NPU 性能数据，执行以下脚本前，须先完成[vllm bench latency 脚本修改](#51-vllm-bench-latency-脚本修改)。
 
    ```bash
    #!/bin/bash
@@ -107,7 +109,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
    * **NPU 文件**：PyTorch Profiler 生成的 DB 文件（通常为 `ascend_pytorch_profiler_0.db`）。
    * **数据完整性**：文件中必须包含完整的模块层次信息（NVTX/mstx 打点）和 Kernel 执行信息。
 
-## 功能介绍
+## 3. 功能介绍
 
 **功能说明**
 
@@ -116,7 +118,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 **命令格式**
 
 ```bash
-msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> --baseline_profiling_path <gpu_profile_path> [--output_path <output_path>] [--export_type <export_type>] [--fuzzy_threshold <fuzzy_threshold>] [--dump_intermediate_results]
+msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> --baseline_profiling_path <gpu_profile_path> [-o <output_path>] [--export_type <export_type>] [--fuzzy_threshold <fuzzy_threshold>] [--dump_intermediate_results]
 ```
 
 **参数说明**
@@ -124,11 +126,11 @@ msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> 
 | 参数                        | 可选/必选 | 说明                                                         |
 | --------------------------- | --------- | ------------------------------------------------------------ |
 | -m                          | 必选      | 设置为`calibrate_npu_gpu`，启动 NPU 和 GPU 性能数据拆解比对。 |
-| --profiling_path            | 必选      | NPU 性能数据路径。                                           |
+| --profiling_path            | 必选      | NPU 性能数据文件路径。                                           |
 | --baseline_profiling_path   | 必选      | GPU 性能数据文件路径。                                       |
-| --output_path               | 可选      | 分析结果输出路径，默认保存在当前路径。                       |
-| --export_type               | 可选      | 导出类型，可选`db`或`text`，默认为 `db`。                    |
-| --fuzzy_threshold           | 可选      | NPU/GPU module name fuzzy 匹配的阈值，默认为 `0.8`。         |
+| -o               | 可选      | 分析结果输出路径，默认输出在 -d 参数指定的目录下。                       |
+| --export_type               | 可选      | 输出文件类型，可选db或text，默认为db。                    |
+| --fuzzy_threshold           | 可选      | NPU&GPU module name fuzzy 匹配的阈值，默认为 `0.8`。         |
 | --dump_intermediate_results | 可选      | 保存中间分析结果（GPU/NPU profile 分析结果），内容保存在 `{platform}_report_{rank_id}.xlsx` 文件中。默认未配置本参数，表示不保存中间分析结果。 |
 
 **使用示例**
@@ -139,14 +141,21 @@ msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> 
 msprof-analyze cluster -m calibrate_npu_gpu \
   --profiling_path /path/to/npu_profile \
   --baseline_profiling_path /path/to/gpu_profile.sqlite \
-  --output_path ./calibration_result \
+  -o ./calibration_result \
   --export_type text \
   --dump_intermediate_results 
 ```
 
 **输出说明**
 
-msprof-analyze 会在--output_path参数指定路径下生成 `compare_profile_report_{rank_id}.xlsx` 文件，包含以下信息：
+- 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`CompareProfileReportRank{rank_id}`表。
+- 当--export_type设置为text时，在-o参数指定路径下生成`cluster_analysis_output/CalibrateNpuGpu/compare_profile_report_{rank_id}.xlsx`文件。
+
+具体文件介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
+
+## 4. 输出结果文件说明
+
+如下字段以`compare_profile_report_{rank_id}.xlsx`文件为例。
 
 | 字段 | 说明                               |
 |------|----------------------------------|
@@ -158,21 +167,21 @@ msprof-analyze 会在--output_path参数指定路径下生成 `compare_profile_r
 | (GPU) Op Name | GPU 侧的算子名称列表                     |
 | (GPU) Op Count | GPU 侧算子出现次数                      |
 | (GPU) Kernel List | GPU 侧的 Kernel 名称列表               |
-| (GPU) Total Kernel Duration(us) | GPU 侧总执行时间（微秒）                   |
-| (GPU) Total Kernel Duration(%) | GPU 侧总执行时间占比（百分比）                |
-| (GPU) Avg Kernel Duration(us) | GPU 侧平均执行时间（微秒）                  |
+| (GPU) Total Kernel Duration(us) | GPU 侧总执行时间，单位us             |
+| (GPU) Total Kernel Duration(%) | GPU 侧总执行时间占比                |
+| (GPU) Avg Kernel Duration(us) | GPU 侧平均执行时间，单位us             |
 | (NPU) Op Name | NPU 侧的算子名称列表                     |
 | (NPU) Op Count | NPU 侧算子出现次数                      |
 | (NPU) Kernel List | NPU 侧的 Kernel 名称列表               |
-| (NPU) Total Kernel Duration(us) | NPU 侧总执行时间（微秒）                   |
-| (NPU) Total Kernel Duration(%) | NPU 侧总执行时间占比（百分比）                |
-| (NPU) Avg Kernel Duration(us) | NPU 侧平均执行时间（微秒）                  |
+| (NPU) Total Kernel Duration(us) | NPU 侧总执行时间，单位us              |
+| (NPU) Total Kernel Duration(%) | NPU 侧总执行时间占比                |
+| (NPU) Avg Kernel Duration(us) | NPU 侧平均执行时间，单位us             |
 | (NPU/GPU) Module Time Ratio | Module 级别的 NPU/GPU 耗时对比          |
-| (NPU-GPU,us) Module Time Diff | Module 级别的 NPU-GPU 耗时对比（微秒）      |
+| (NPU-GPU,us) Module Time Diff | Module 级别的 NPU-GPU 耗时对比，单位us |
 
-## 附录
+## 5. 附录
 
-### vllm bench latency 脚本修改
+### 5.1 vllm bench latency 脚本修改
 
 下列为 GPU 环境中 `vllm/vllm/benchmarks/latency.py` 的部分代码，须将部分代码修改为适配 NPU 环境的代码，修改处高亮显示如下：
 

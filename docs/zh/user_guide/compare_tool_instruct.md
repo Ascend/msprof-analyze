@@ -1,6 +1,6 @@
 # 性能比对
 
-## 1 简介
+## 1. 简介
 
 compare（性能比对）功能支持比较GPU与NPU之间、NPU与NPU之间的性能差异，通过对训练耗时和内存占用的比对分析，定位到具体劣化的算子，帮助用户提升性能调优的效率。工具将训练耗时拆分为计算、通信、调度三大维度，并针对计算和通信分别进行算子级别的比对；将训练占用的总内存，拆分成算子级别的内存占用进行比对。
 
@@ -12,9 +12,7 @@ compare（性能比对）功能支持比较GPU与NPU之间、NPU与NPU之间的�
 
 - 场景三：PyTorch训练工程从GPU迁移至MindSpore NPU后出现性能劣化，通过工具分析出劣化点。
 
-## 2 快速上手
-
-使用前请先完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
+## 2. 快速上手
 
 ### 2.1 最简命令
 
@@ -103,15 +101,21 @@ msprof-analyze compare \
 
 `Diff Ratio`表示待比对算子占用的总内存 / 基准算子占用的总内存，红色代表劣化。`Size(KB)`表示该算子占用的device内存大小，单位KB。
 
-## 3 数据准备
+## 3. 使用前准备
 
-### 3.1 PyTorch框架性能数据采集
+### 3.1 环境准备
+
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
+
+### 3.2 数据准备
+
+#### 3.2.1 PyTorch框架性能数据采集
 
 使用本工具之前需要采集GPU或者NPU的性能数据，建议只采集一个step的性能数据，然后进行性能比对分析。
 
 若采集了多个step，工具默认会比对所有可用性能数据，统计结果可能同时包含预热、稳定训练和偶发抖动阶段，影响E2E耗时、通信等待和算子耗时的判断。需要固定分析某个step时，请同时配置`--base_step`和`--comparison_step`，并确保两个step分别存在于基准数据和待比对数据中。
 
-#### 3.1.1 GPU性能数据采集
+##### 3.2.1.1 GPU性能数据采集
 
 通过PyTorch Profiler工具采集GPU的性能数据，参考链接：[torch.profiler](https://pytorch.org/docs/stable/profiler.html)。
 
@@ -151,11 +155,12 @@ PyTorch Profiler采集结果数据目录结构如下：
     |- *.pt.trace.json
 ```
 
-#### 3.1.2 NPU性能数据采集
+##### 3.2.1.2 NPU性能数据采集
 
 通过Ascend PyTorch Profiler工具采集NPU的性能数据，采集参数配置与GPU基本一致，只需将GPU的性能数据采集代码中torch.profiler替换成torch_npu.profiler，参考链接：《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
 
-**采集结果目录结构**  
+**采集结果目录结构**
+
 根据`export_type`参数设置的不同，工具会输出两种格式的结果目录：
 
 export_type = Text
@@ -189,7 +194,7 @@ export_type = Db
 > 
 > 格式选择说明：两种格式可选择任意一种进行性能比对。若同一目录中同时包含以上两类文件，则优先使用Db格式（export_type = Db）的结果进行比对。
 
-### 3.2 MindSpore框架性能数据采集
+#### 3.2.2 MindSpore框架性能数据采集
 
 当前MindSpore场景仅支持以下两种性能数据比对：  
 
@@ -228,41 +233,35 @@ export_type = Db
 - `profiler/{rank-*}_{timestamps}_ascend_ms`
 - `profiler/{rank-*}_{timestamps}_ascend_ms/ASCEND_PROFILER_OUTPUT`
 
-## 4 使能方式
+## 4. 功能介绍
+
+### 4.1 功能说明
 
 性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，打印输出总体指标，帮助用户定界劣化的方向。
 
 性能比对工具支持使用**命令行**和**脚本**两种方式执行性能数据比对操作，这两种方式均支持**通用参数**和**算子性能比对特有参数**。
 
-### 4.1 命令行方式
+### 4.2 命令格式
+
+**命令行运行方式**
 
 ```bash
-msprof-analyze compare -d <profiling_path> -bp <benchmark_profiling_path> --output_path=<output_path>
+msprof-analyze compare -d <profiling_path> -bp <benchmark_profiling_path> --output_path=<output_path> [option]
 ```
 
-最小示例：
+**脚本运行方式**
 
 ```bash
-msprof-analyze compare \
-  -d ./ascend_pt \
-  -bp ./gpu_trace.json \
-  -o ./compare_output
-```
-
-### 4.2 脚本方式
-
-```bash
-# 将msprof-analyze代码仓下载到本地，进入msprof-analyze代码仓目录下的compare_tools目录
-cd msprof_analyze/compare_tools
-# 执行最简比对命令
-python performance_compare.py <benchmark_profiling_path> <profiling_path> --output_path=<output_path>
+python performance_compare.py <benchmark_profiling_path> <profiling_path> --output_path=<output_path> [option]
 ```
 
 脚本方式中，第一个位置参数`<benchmark_profiling_path>`表示基准性能数据路径，第二个位置参数`<profiling_path>`表示待比对性能数据路径，与命令行方式中的`-bp`和`-d`含义一致。
 
-## 5 参数说明
+`option`表示其他可选参数，详细介绍请参见[参数说明](#43-参数说明)。
 
-### 5.1 输入输出参数
+### 4.3 参数说明
+
+#### 4.3.1 输入输出参数
 
 | 参数 | 可选/必选 | 说明 | 典型取值 |
 | --- | --- | --- | --- |
@@ -270,7 +269,7 @@ python performance_compare.py <benchmark_profiling_path> <profiling_path> --outp
 | `-d`或`--profiling_path` | 必选 | 待比对性能数据路径，通常是NPU数据、优化后数据或新版本数据。 | `./ascend_pt`、`./new_ascend_pt` |
 | `-o`或`--output_path` | 必选 | 比对结果输出目录。 | `./compare_output` |
 
-### 5.2 比对范围控制
+#### 4.3.2 比对范围控制
 
 | 参数 | 可选/必选 | 说明 | torch_npu支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
@@ -278,9 +277,10 @@ python performance_compare.py <benchmark_profiling_path> <profiling_path> --outp
 | `--base_step` | 可选 | 基准性能数据step ID，配置后使用基准性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--comparison_step`同时配置。配置示例：`--base_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
 | `--comparison_step` | 可选 | 比对性能数据step ID，配置后使用比对性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--base_step`同时配置。配置示例：`--comparison_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
 
-### 5.3 比对能力开关
+#### 4.3.3 比对能力开关
 
-若所有比对开关**均不设置**，工具默认**开启全部**支持的性能比对能力。  
+若所有比对开关**均不设置**，工具默认**开启全部**支持的性能比对能力。
+
 若只关注某类问题，可按需打开以下开关；只要设置了任意比对开关，工具就按照已设置的开关执行，示例如下：
 
 ```bash
@@ -297,7 +297,7 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 | `--enable_kernel_compare` | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见**5.5 kernel比对高级参数**。 | 是 | 是 |
 | `--enable_api_compare` | 可选 | 开启API性能比对。需要使用性能数据中的trace_view.json文件。 | 是 | 否 |
 
-### 5.4 算子比对高级参数
+#### 4.3.4 算子比对高级参数
 
 `--enable_operator_compare`时支持。
 
@@ -309,7 +309,7 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 | `--op_name_map` | 可选 | 设置GPU与NPU等价的算子名称的映射关系，以字典形式存入。使用示例：`--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`。 |
 | `--disable_module` | 可选 | 算子性能比对。当前配置该参数时，无论是否采集module信息，均进行算子级别的比对。 |
 
-### 5.5 kernel比对高级参数
+#### 4.3.5 kernel比对高级参数
 
 `--enable_kernel_compare`时支持。
 
@@ -317,7 +317,7 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 | --- | --- | --- |
 | `--use_kernel_type` | 可选 | kernel比对模式。配置该开关时，使用op_statistic.csv进行比对，输出简化结果并减少比对时间；不配置该开关时，默认使用kernel_details.csv进行比对，输出完整结果。使用示例：`--use_kernel_type`。 |
 
-### 5.6 执行辅助参数
+#### 4.3.6 执行辅助参数
 
 | 参数 | 可选/必选 | 说明 | torch_npu支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
@@ -325,7 +325,33 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 | `--debug` | 可选 | 工具执行报错时可打开此开关，日志将输出DEBUG级别信息，便于定位问题。配置该参数表示开启Debug，默认未配置表示关闭。 | 是 | 是 |
 | `-h`、`-H`、`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
 
-## 6 自定义比对算子
+### 4.4 使用示例
+
+**命令行方式**
+
+```bash
+msprof-analyze compare \
+  -d ./ascend_pt \
+  -bp ./gpu_trace.json \
+  -o ./compare_output
+```
+
+**脚本方式**
+
+```bash
+# 将msprof-analyze代码仓下载到本地，进入msprof-analyze代码仓目录下的compare_tools目录
+cd msprof_analyze/compare_tools
+# 执行最简比对命令
+python performance_compare.py ./benchmark_profiling_path ./profiling_path --output_path=./output_path
+```
+
+### 4.5 输出说明
+
+输出总体比对结果到执行终端中，详细的比对结果在`performance_comparison_result_*.xlsx`。`performance_comparison_result_*.xlsx`中可能包含的Sheet取决于比对开关、数据类型以及是否开启明细输出。具体结果文件介绍请参见[输出结果文件说明](#6-输出结果文件说明)。
+
+## 5. 扩展功能
+
+### 5.1 自定义比对算子
 
 一般情况下compare功能按照默认配置的算子进行比对，若用户需要对特定算子的性能进行比对和分析，可以通过在[compare_config.ini](../../../msprof_analyze/compare_tools/compare_backend/compare_config/compare_config.ini)文件中配置需要比对的算子名的识别关键词，之后再执行比对操作（msprof-analyze compare），比对结果在结果文件performance_comparison_result_{timestamp}.xlsx中呈现。
 
@@ -341,11 +367,9 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 
 比对结果分为打印输出和performance_comparison_result_{timestamp}.xlsx两种形式输出，其中打印输出为概要信息，xlsx文件保存详细结果。
 
-## 7 输出结果文件详解
+## 6. 输出结果文件说明
 
-输出总体比对结果到执行终端中，详细的比对结果在`performance_comparison_result_*.xlsx`。`performance_comparison_result_*.xlsx`中可能包含的Sheet取决于比对开关、数据类型以及是否开启明细输出。
-
-### 7.1 Sheet速查表
+### 6.1 Sheet速查表
 
 | Sheet | 对应能力 | 功能 |
 | --- | --- | --- |
@@ -361,7 +385,7 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 | KernelTypeCompare | kernel性能比对 | 配置`--use_kernel_type`时输出，按Kernel Type和Core Type分组统计Kernel耗时差异。 |
 | ApiCompare | API性能比对 | 按API名称统计Host侧调用耗时、自身耗时和调用次数差异。 |
 
-### 7.2 OverallMetrics
+### 6.2 OverallMetrics
 
 总体性能用于回答“性能差异主要来自哪里”，建议优先查看计算、通信、空闲时间和E2E时间等指标。内存使用`Mem Usage`不在`OverallMetrics` Sheet中输出，可能出现在终端总体性能打印中。
 
@@ -459,9 +483,9 @@ activities配置仅采集NPU数据，不配置experimental_config参数以及其
 | E2E Time(Not minimal profiling) | E2E总耗时，计算流端到端耗时。当存在Not minimal profiling时，表示该时间存在性能膨胀，会影响通信和调度耗时。 |
 | Other Time | AICPU、DSA、TensorMove等其他算子耗时。 |
 
-### 7.3 算子性能
+### 6.3 算子性能
 
-#### 7.3.1 比对数据无Python Function
+#### 6.3.1 比对数据无Python Function
 
 算子性能比对结果在performance_comparison_result_{timestamp}.xlsx中OperatorCompare和OperatorCompareStatistic的sheet页呈现。
 
@@ -475,7 +499,7 @@ activities配置仅采集NPU数据，不配置experimental_config参数以及其
 1. 查看OperatorCompareStatistic页，找出耗时差距TOP的算子。
 2. 查看OperatorCompare页，搜索耗时差距TOP的算子，查看具体执行的kernel耗时，寻找可优化点。
 
-#### 7.3.2 比对数据有Python Function
+#### 6.3.2 比对数据有Python Function
 
 算子性能比对结果在performance_comparison_result_*.xlsx中ModuleCompareStatistic、ModuleCompare的sheet页呈现。
 
@@ -522,11 +546,11 @@ ModuleCompare字段说明：
 2. 查看ModuleCompare页，查找耗时差距TOP模块下的劣化算子。
 3. 通过调用栈找到对应的代码行。
 
-### 7.4 模块性能
+### 6.4 模块性能
 
 模块性能属于算子性能比对的一部分，当比对双方数据都存在python function事件时输出`ModuleCompareStatistic`和`ModuleCompare`。建议先通过`ModuleCompareStatistic`定位劣化模块，再到`ModuleCompare`查看该模块下的算子明细和调用栈。
 
-### 7.5 通信性能
+### 6.5 通信性能
 
 通信性能比对结果在performance_comparison_result_*.xlsx中CommunicationCompare的sheet页呈现。
 
@@ -534,7 +558,7 @@ ModuleCompare字段说明：
 - 无背景色的记录行：通信算子的detail信息，仅支持NPU，包含了该通信算子下的所有Task信息，包括Task名称、Task调用次数、Task总耗时（单位：us）、Task平均耗时（单位：us）、Task最大耗时（单位：us）、Task最小耗时（单位：us）。
 - Diff Ratio：待比对通信算子的总耗时 / 基准通信算子的总耗时，红色代表劣化。
 
-### 7.6 内存
+### 6.6 内存
 
 算子内存比对结果在performance_comparison_result_*.xlsx中MemoryCompare和MemoryCompareStatistic的sheet页呈现。
 
@@ -548,7 +572,7 @@ ModuleCompare字段说明：
 1. 查看MemoryCompareStatistic页，找出内存占用差距TOP的算子。
 2. 查看MemoryCompare页，搜索内存占用差距TOP的算子，查看具体占用的子算子。
 
-### 7.7 kernel性能
+### 6.7 kernel性能
 
 仅针对NPU与NPU比对的场景。
 
@@ -572,7 +596,7 @@ ModuleCompare字段说明：
 - Min Duration(us)：最小耗时，单位us。
 - Calls：调用次数。
 
-### 7.8 API性能
+### 6.8 API性能
 
 API比对结果在performance_comparison_result_*.xlsx中ApiCompare页呈现。
 
@@ -583,7 +607,7 @@ API比对结果在performance_comparison_result_*.xlsx中ApiCompare页呈现。
 - Avg Duration(ms)：平均耗时，单位ms。
 - Calls：调用次数。
 
-## 8 常见问题
+## 7. 常见问题FAQ
 
 **Q：只想快速知道性能差异来自哪里，应该看哪个结果？**  
 A：先看终端总体性能打印和`OverallMetrics`。`OverallMetrics`会把差异拆成计算、通信、调度和E2E等耗时方向；内存使用`Mem Usage`可能出现在终端总体性能打印中，算子级内存差异看`MemoryCompareStatistic`和`MemoryCompare`。

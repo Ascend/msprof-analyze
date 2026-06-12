@@ -1,6 +1,6 @@
 # 空闲时间原因分析
 
-## 简介
+## 1. 简介
 
 空闲时间原因分析（free_analysis）提供了对Device侧大块空闲时间的自动分析功能，能够识别空闲时间产生的原因，帮助用户定位性能问题。该功能可以识别以下情况：
 
@@ -8,7 +8,7 @@
 * PyTorch层长时间未下发任务（host/框架侧idle）
 * CANN层存在异常的下发/launch间隔或node@launch耗时偏大
 
-## 使用前准备
+## 2. 使用前准备
 
 **环境准备**
 
@@ -16,9 +16,9 @@
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[使用前准备](./README.md#2-使用前准备)章节。
 
-## 空闲时间原因分析
+## 3. 功能介绍
 
 **功能说明**
 
@@ -34,13 +34,13 @@ msprof-analyze -m free_analysis -d <cluster_data> [-o <output_path>] [--export_t
 
 | 参数 | 可选/必选 | 说明                                     |
 | ---- | --------- |----------------------------------------|
-| -m   | 必选      | 设置为free_analysis，使能空闲时间原因分析功能。         |
-| -d   | 必选      | 集群性能数据文件夹路径。                           |
-| -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。                 |
-| --export_type | 可选 | 指定输出文件类型，可选db或text，默认为db。              |
+| -m   | 必选      | 设置为free_analysis，启动空闲时间原因分析。       |
+| -d   | 必选      | 集群性能数据文件父目录路径。                           |
+| -o   | 可选      | 分析结果输出路径，默认输出在-d参数指定的目录下。                 |
+| --export_type | 可选 | 输出文件类型，可选db或text，默认为db。              |
 | --top_num | 可选 | 每个rank输出的Top空闲时间数量（按duration排序），默认为10。 |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **使用示例**
 
@@ -52,18 +52,18 @@ msprof-analyze -m free_analysis -d ./xxx/cluster_data -o ./xxx/output_path --top
 
 **输出说明**
 
-* 当--export_type设置为db时，在-o参数指定的输出文件路径下生成cluster_analysis.db文件，本功能的分析结果为在该db文件中生成FreeAnalysis表。
-* 当--export_type设置为text时，在-o参数指定的输出文件路径下生成cluster_analysis_output/FreeAnalysis/free_analysis.csv文件。
-具体介绍请参见[输出结果文件说明](#输出结果文件说明)。
+* 当--export_type设置为db时，在输出文件路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`FreeAnalysis`表。
+* 当--export_type设置为text时，在输出文件路径下生成`cluster_analysis_output/FreeAnalysis/free_analysis.csv`文件。
 
-## 输出结果文件说明
+具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
-本工具分析结果如下图示例：
+## 4. 输出结果文件说明
+
+### 4.1 FreeAnalysis表
+
 ![输出结果展示](../figures/free_analysis.png)
 
-**FreeAnalysis表**  
-
-表字段如下：
+字段说明：
 
 | 字段 | 说明                                         |
 | ---- |--------------------------------------------|
@@ -75,7 +75,7 @@ msprof-analyze -m free_analysis -d ./xxx/cluster_data -o ./xxx/output_path --top
 | cannIdleTime(us) | CANN层idle时间，REAL类型，单位为us。无数据时可能为0或NULL。  |
 | reason | 空闲原因描述，TEXT类型。                       |
 
-**free_analysis.csv**  
+### 4.2 free_analysis.csv
 
 CSV文件列名如下：
 

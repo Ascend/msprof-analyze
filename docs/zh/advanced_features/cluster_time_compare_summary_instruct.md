@@ -1,12 +1,12 @@
 # 集群性能数据细粒度比对
 
-## 简介
+## 1. 简介
 
 大集群场景涉及多个计算节点，数据量大，原有的单卡性能数据对比不能评估整体集群运行情况。
 
-集群性能数据细粒度比对（cluster_time_compare_summary）提供了AI运行过程中集群维度的性能数据对比能力，包括计算、通信和内存拷贝等各部分的时间消耗，帮助用户找到性能瓶颈。
+集群性能数据细粒度比对（cluster_time_compare_summary）提供了AI运行过程中集群维度的性能数据对比功能，包括计算、通信和内存拷贝等各部分的时间消耗，帮助用户找到性能瓶颈。
 
-## 使用前准备
+## 2. 使用前准备
 
 **环境准备**
 
@@ -14,9 +14,9 @@
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](.//README.md#使用前准备)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[使用前准备](./README.md#2-使用前准备)章节。
 
-## 集群性能数据细粒度比对
+## 3. 功能介绍
 
 **功能说明**
 
@@ -32,12 +32,12 @@ msprof-analyze -m cluster_time_compare_summary -d <cluster_data> --bp <base_clus
 
 | 参数 | 可选/必选 | 说明                                                         |
 | ---- | --------- | ------------------------------------------------------------ |
-| -m   | 必选      | 设置为cluster_time_compare_summary，使能集群耗时细粒度比对能力。 |
-| -d   | 必选      | 集群性能数据文件夹路径。                                     |
-| --bp | 必选      | 基础集群性能数据文件夹路径。                                 |
-| -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。                   |
+| -m   | 必选      | 设置为cluster_time_compare_summary，启动集群耗时细粒度比对。 |
+| -d   | 必选      | 集群性能数据文件父目录路径。                                     |
+| --bp | 必选      | 基础集群性能数据文件父目录路径。                                 |
+| -o   | 可选      | 分析结果输出路径，默认输出在 -d 参数指定的目录下。                   |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **使用示例**
 
@@ -58,10 +58,9 @@ msprof-analyze -m cluster_time_compare_summary -d <cluster_data> --bp <base_clus
 
 **输出说明**
 
-* 存储位置：输出路径下的cluster_analysis_output/cluster_analysis.db
-* 数据表名：ClusterTimeCompareSummary
+在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成ClusterTimeCompareSummary表，具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
-## 输出结果文件说明
+## 4. 输出结果文件说明
 
 ClusterTimeCompareSummary表字段如下：
 

@@ -1,6 +1,6 @@
 # pp流水图数据分析
 
-## 简介
+## 1. 简介
 
 本节介绍如何采集pp流水图数据、使用msprof-analyze工具分析pp流水图，以及使用MindStudio Insight工具呈现pp流水图进行数据分析。
 
@@ -11,26 +11,19 @@
 ![1F1B](../figures/1F1B.png)
 ![DualPipeV](../figures/DualPipeV.png)
 
-## 使用前准备
+## 2. 使用前准备
 
-**环境准备**
+### 2.1 环境准备
 
 完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
 
-**数据准备**
+### 2.2 数据准备
 
 通过Ascend PyTorch Profiler接口工具的mstx接口采集前向反向数据，需要先找到代码里前向反向相关函数的位置。最终在性能数据timeline上的Ascend HardWare层呈现。
 
 若用户只关注pp流水图，可以设置采集参数profiler_level为Level_none；若还关注前向反向、通信以及send和recv的关联关系，设置采集参数profiler_level为Level1或更高级别。
 
-**约束**
-
-* 采集数据时，需要将Profiling数据导出格式export_type设置为db并开启mstx。
-* 以下两个场景的代码仅为打点示例，需要根据用户实际代码，准确找到前向反向函数的位置，参考下面用装饰器的方式实现打点。
-
-* 若项目使用Megatron框架，可直接按照场景一的方法进行打点操作；若项目使用Mindspeed框架，需先确认是否开启DualPipeV功能，若已开启，则按照**场景二**的方法进行打点操作；若无法明确区分，如果能找到对应项目中与打点相关的两个核心文件，在这两个文件的打点代码位置处，添加对应的打点逻辑，确保覆盖所有可能场景。
-
-**场景一：传统pipeline，关闭DualPipeV**
+### 2.3 场景一：传统pipeline，关闭DualPipeV
 
 1. 在```megatron/core/pipeline_parallel/schedules.py```里添加如下代码（添加在```backward_step```函数定义的后面）。如下所示：
 
@@ -53,7 +46,7 @@
 
 2. 保存上述脚本文件后，执行训练。训练完成后，在设置的输出路径下生成性能数据文件，用于后续msprof-analyze工具分析。
 
-**场景二：DualPipeV，找到前向反向代码**
+### 2.4 场景二：DualPipeV，找到前向反向代码
 
 1. 在```mindspeed/core/pipeline_parallel/dualpipev/dualpipev_schedules.py```里添加如下代码（添加在```forward_backward_pipelining_with_cutinhalf```函数定义的前面）。如下所示：
 
@@ -84,7 +77,7 @@
    WeightGradStore.pop = step_wrapper(WeightGradStore.pop, "WeightGradStore.pop")
    ```
 
-   若DualPipeV未开启dw分离，添加以下代码后，可完整呈现模型运行前向反向的各个阶段（[理论效果图](#简介)）；若未添加，则仅呈现当前阶段是否为前向或反向。
+   若DualPipeV未开启dw分离，添加以下代码后，可完整呈现模型运行前向反向的各个阶段（[理论效果图](#1-简介)）；若未添加，则仅呈现当前阶段是否为前向或反向。
 
    采集Profiling数据时，如果使用的是MindSpeed，未使用MindSpeed-LLM，可以在prof定义（```prof = torch_npu.profiler.profile(...)```）的后面添加metadata代码。如下所示：
 
@@ -111,7 +104,14 @@
 
 2. 保存上述脚本文件后，执行训练。训练完成后，在设置的输出路径下生成性能数据文件，用于后续msprof-analyze工具分析。
 
-## pp流水图数据分析
+### 2.5 约束
+
+* 采集数据时，需要将Profiling数据导出格式export_type设置为db并开启mstx。
+* 以下两个场景的代码仅为打点示例，需要根据用户实际代码，准确找到前向反向函数的位置，参考下面用装饰器的方式实现打点。
+
+* 若项目使用Megatron框架，可直接按照场景一的方法进行打点操作；若项目使用Mindspeed框架，需先确认是否开启DualPipeV功能，若已开启，则按照**场景二**的方法进行打点操作；若无法明确区分，如果能找到对应项目中与打点相关的两个核心文件，在这两个文件的打点代码位置处，添加对应的打点逻辑，确保覆盖所有可能场景。
+
+## 3. 功能介绍
 
 **功能说明**
 
@@ -131,23 +131,27 @@ msprof-analyze cluster -m pp_chart -d <cluster_data_path>
 
 | 参数 | 可选/必选 | 说明                                              |
 | ---- | --------- | ------------------------------------------------- |
-| -d   | 必选      | 指定[数据准备](#使用前准备)中采集到的集群数据路径。 |
+| -d   | 必选      | 指定[数据准备](#22-数据准备)中采集到的集群数据路径。 |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **使用示例**
 
-执行数据分析，命令示例如下：
+执行数据分析：
 
 ```bash
 msprof-analyze cluster -m pp_chart -d ./cluster_data
 ```
 
-**输出结果文件说明**
+**输出说明**
 
-完成数据分析后，在每个Rank的数据的ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db文件中新增StepTaskInfo表。
+完成数据分析后，在每个Rank的数据的ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db文件中生成StepTaskInfo表。
 
-StepTaskInfo表字段如下：
+具体文件介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
+
+## 4. 输出结果文件说明
+
+**StepTaskInfo表**
 
 | 字段 | 说明 |
 | ------ | ---- |

@@ -1,12 +1,12 @@
 # 通信瓶颈分析
 
-## 简介
+## 1. 简介
 
 在分布式训练场景中，通信操作是影响整体性能的关键因素之一。当集群中存在通信慢卡时，会导致其他卡等待，从而影响整体训练效率。
 
-通信瓶颈分析（communication_bottleneck）功能能够自动识别通信操作中的慢卡问题，并通过对比快卡和慢卡的任务执行情况，定位通信瓶颈的根本原因。该功能可以判断瓶颈是出现在Host侧还是Device侧，并进一步定位具体的操作和延迟。
+通信瓶颈分析（communication_bottleneck）提供自动识别通信操作中的慢卡问题功能，并通过对比快卡和慢卡的任务执行情况，定位通信瓶颈的根本原因。该功能可以判断瓶颈是出现在Host侧还是Device侧，并进一步定位具体的操作和延迟。
 
-## 使用前准备
+## 2. 使用前准备
 
 **环境准备**
 
@@ -14,9 +14,9 @@
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](./README.md#使用前准备)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[使用前准备](./README.md#2-使用前准备)章节。
 
-## 通信瓶颈分析
+## 3. 功能介绍
 
 **功能说明**
 
@@ -38,32 +38,28 @@ msprof-analyze -m communication_bottleneck -d <cluster_data> [-o <output_path>] 
 
 | 参数 | 可选/必选 | 说明 |
 | ---- | --------- | -------------------------------------------------------- |
-| -m   | 必选      | 设置为communication_bottleneck，通信瓶颈分析功能。 |
-| -d   | 必选      | 集群性能数据文件夹路径。 |
-| -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。 |
-| --rank_id | 可选 | 指定要分析的目标rank ID，默认为0。分析该rank的通信操作，并对比所有rank的执行情况。 |
-| --top_num | 可选 | 指定要分析的TopN个通信操作，默认为10。只分析耗时最长的N个通信操作。 |
-| --export_type | 可选 | 指定输出文件类型，可选db或text，默认为db。              |
+| -m   | 必选      | 设置为communication_bottleneck，启动通信瓶颈分析。 |
+| -d   | 必选      | 集群性能数据文件父目录路径。 |
+| -o   | 可选      | 分析结果输出路径，默认输出在-d参数指定的目录下。 |
+| --rank_id | 可选 | 要分析的目标rank ID，默认为0。分析该rank的通信操作，并对比所有rank的执行情况。 |
+| --top_num | 可选 | 要分析的TopN个通信操作，默认为10。只分析耗时最长的N个通信操作。 |
+| --export_type | 可选 | 输出文件类型，可选db或text，默认为db。              |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **使用示例**
 
 1. （可选）修改配置文件。
-用户可根据实际情况自行修改配置文件中的分析阈值，配置文件详细介绍请参见[配置说明](#配置说明)。
+
+    用户可根据实际情况自行修改配置文件中的分析阈值，配置文件详细介绍请参见[配置说明](#config_json)。
 
 2. 执行通信瓶颈分析，分析rank 0中耗时最长的10个通信操作。
 
-```bash
-msprof-analyze -m communication_bottleneck -d ./xxx/cluster_data -o ./xxx/output_path --rank_id 0 --top_num 10
-```
+   ```bash
+   msprof-analyze -m communication_bottleneck -d ./xxx/cluster_data -o ./xxx/output_path --rank_id 0 --top_num 10
+   ```
 
-**输出说明**
-
- * 当`export_type`设置为`db`时，结果统一保存到cluster_analysis.db的CommunicationBottleneck表。
- * 当`export_type`设置为`text`时，结果保存为CSV文件：communication_bottleneck.csv。
-
-## 配置说明
+**配置说明**<a name="config_json"></a>
 
 通信瓶颈分析功能支持通过配置文件自定义分析阈值。配置文件位于：
 
@@ -93,9 +89,16 @@ msprof_analyze/cluster_analyse/recipes/communication_bottleneck/config.json
 | start_ns_shifted | 可选 | 起始时间偏移阈值，偏移小于此值时认为对齐，约为1ms。int类型，默认值1000000，单位ns。 |
 | device_bound_proportion | 可选 | 设置Device侧瓶颈阈值，当Device Bound问题占比超过此比例时，判定为Device侧瓶颈。float类型，默认值0.5，此值为百分比。 |
 
-## 输出结果文件说明
+**输出说明**
 
-**CommunicationBottleneck表**
+ * 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`CommunicationBottleneck`表。
+ * 当--export_type设置为text时，在-o参数指定路径下生成`cluster_analysis_output/CommunicationBottleneckAanlysis/communication_bottleneck.csv`文件。
+
+具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
+
+## 4. 输出结果文件说明
+
+### 4.1 CommunicationBottleneck
 
 表字段如下：
 
@@ -109,7 +112,7 @@ msprof_analyze/cluster_analyse/recipes/communication_bottleneck/config.json
 | fastRankId     | 快卡卡号，INTEGER类型，当存在快慢卡时有效。        |
 | reason         | 分析结果，TEXT类型。                     |
 
-**communication_bottleneck.csv**
+### 4.2 communication_bottleneck.csv
 
 CSV文件列名如下：
 
