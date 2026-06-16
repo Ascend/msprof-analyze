@@ -73,7 +73,7 @@ Successfully installed msprof-analyze-{version}
 
 3. Build the WHL package.
 
-   > [!NOTE]NOTE
+   > [!NOTE]
    >
    > When installing the following dependencies, use a newer software package version that meets the requirements. Monitor and patch existing vulnerabilities, especially disclosed high-risk vulnerabilities with a CVSS score greater than 7.
 

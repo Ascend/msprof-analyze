@@ -4,7 +4,7 @@
 
 The expert suggestion (`advisor`) feature analyzes profile data collected by using Ascend PyTorch Profiler or MindSpore Profiler and provides performance tuning suggestions.
 
-For details about how to collect profile data by using Ascend PyTorch Profiler, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md). For details about how to collect profile data using MindSpore Profiler, see [Performance Profiling](https://www.mindspore.cn/mindinsight/docs/en/r2.3/performance_profiling_ascend.html).
+For details about how to collect profile data by using Ascend PyTorch Profiler, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md). For details about how to collect profile data using MindSpore Profiler, see [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/mindspore_profiler_user_guide.md).
 
 ## Preparations
 
@@ -15,19 +15,19 @@ For details about how to collect profile data by using Ascend PyTorch Profiler, 
 
   1. Install Jupyter Notebook. For details about how to install and use Jupyter Notebook, visit the Jupyter Notebook official website.
 
-  ```bash
-  pip install jupyter notebook
-  ```
+      ```bash
+      pip install jupyter notebook
+      ```
 
   2. Download the `msprof-analyze` source code.
 
-   ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze
-   ```
+      ```bash
+      git clone https://gitcode.com/Ascend/msprof-analyze
+      ```
 
 **Data preparation**
 
-`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Data Preparation](../getting_started/profiling_data_guide.md).
+`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md) or [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/mindspore_profiler_user_guide.md).
 
 **Constraints**
 
@@ -204,7 +204,7 @@ The **overall** module displays the identified issues but does not provide optim
 
   ![env_var.png](../figures/env_var.png)
 
-  For a detailed introduction to the environment variables shown in the preceding figure, see [ACL_NN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/apiref/envvar/envref_07_0031.html) and [HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html).
+  For a detailed introduction to the environment variables shown in the preceding figure, see [ACL_NN_CACHE_LIMIT](https://www.hiascend.com/document/detail/en/canncommercial/850/maintenref/envvar/envref_07_0031.html) and [HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/en/canncommercial/800/appdevg/aclpythondevg/aclpythondevg_0045.html).
 
 - In single-rank scenarios without a benchmark, the **overall summary** section of the **overall** module provides an analysis including the performance breakdown of the slow rank in the current training task. It displays duration statistics across three dimensions: computation, communication, and scheduling. This analysis helps identify whether the training performance bottleneck is a computation, communication, or scheduling issue. It does not provide optimization suggestions.
 
@@ -286,7 +286,7 @@ The **computation** module analyzes the compute performance of the device. It id
 
 ![AI_Core_Performance_Analysis](../figures/AI_Core_Performance_analysis.png)
 
-For details about the `torch_npu.npu.set_compile_mode` API, see [torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md). For details, see [AICPU Operator Replacement Examples](../aicpu_operator_replacement_example.md).
+For details about the `torch_npu.npu.set_compile_mode` API, see [torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md). For details, see [AICPU Operator Replacement Examples](../aicpu_operator_replacement_example.md).
 
 When pipeline parallel (PP) stage issues exist, the **computation** module analyzes the issues by stage. Each stage represents a pipeline partition. For example, ranks 0–7 belong to **stage-0** and ranks 8–15 belong to **stage-1**.
 
@@ -296,7 +296,7 @@ The **dataloader** module detects **Slow DataLoader Issues**, primarily includin
 
 ![dataloader](../figures/dataloader.png)
 
-In the preceding figure, the `pin_memory` (memory locking) and `num_workers` (number of data loading subprocesses) parameters are used for [data loading optimization](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html).
+In the preceding figure, the `pin_memory` (memory locking) and `num_workers` (number of data loading subprocesses) parameters are used for [data loading optimization](https://gitcode.com/Ascend/docs/blob/master/FrameworkPTAdapter/26.0.0/zh/pytorch_model_migration_fine_tuning/data_loading_optimization.md).
 
 The **schedule** module presents analysis results for **GC Analysis**, **Affinity API Issues**, operator compile (aclOpCompile) issues, **SyncBatchNorm Issues**, **Synchronize Stream Issues**, and **Fusible Operator Analysis**.
 
@@ -334,7 +334,7 @@ As shown in the following figure, the **Synchronize Stream Issues** section iden
 
 ![schedule_2](../figures/schedule_2.png)
 
-For details regarding the `ASCEND_LAUNCH_BLOCKING` environment variable, see [ASCEND_LAUNCH_BLOCKING](https://www.hiascend.com/document/detail/zh/Pytorch/710/comref/Envvariables/Envir_006.html).
+For details regarding the `ASCEND_LAUNCH_BLOCKING` environment variable, see [ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/environment_variable_reference/ASCEND_LAUNCH_BLOCKING.md).
 
 As shown in the following figure, the **Operator Dispatch Issues** section indicates that the following code must be added at the beginning of the execution script to eliminate `aclOpCompile` issues.
 
@@ -343,11 +343,11 @@ torch_npu.npu.set_compile_mode(jit_compile=False);
 torch_npu.npu.config.allow_internal_format = False
 ```
 
-For details regarding these APIs, see [torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md) and [torch_npu.npu.config.allow_internal_format](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md).
+For details regarding these APIs, see [torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md) and [torch_npu.npu.config.allow_internal_format](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md).
 
 ![Input Image Description](../figures/schedule_1.png)
 
-For details regarding the `aclopCompileAndExecute` API, see [aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0251.html).
+For details regarding the `aclopCompileAndExecute` API, see [aclopCompileAndExecute](https://www.hiascend.com/document/detail/en/canncommercial/850/API/appdevgapi/aclcppdevg_03_0251.html).
 
 ### Report Analysis (With Benchmark)
 

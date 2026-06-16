@@ -10,10 +10,10 @@ Currently, `cluster_analyse` supports the following four types of profile data.
 
 | Collection Tool| Supported Result Type| Collection Guide                                                                                                                                         |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
-| msProf | db | [MindStudio Profiler](https://gitcode.com/Ascend/msprof)                                                                                                |
-| Ascend PyTorch Profiler | text, db| [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)|
-| MindSpore Profiler | text, db|                 |
-| msMonitor | db | [msMonitor](https://gitcode.com/Ascend/msmonitor)                                                                             |
+| msProf | db | [MindStudio Profiler](https://gitcode.com/Ascend/msprof/blob/26.0.0/docs/en/getting_started/quick_start.md)                                                                                                |
+| Ascend PyTorch Profiler | text, db| [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)|
+| MindSpore Profiler | text, db| [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/mindspore_profiler_user_guide.md) |
+| msMonitor | db | [msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.0.0/docs/zh/quick_start.md)                                                                             |
 
 ## Data Requirements
 
@@ -97,9 +97,9 @@ If data from different tasks is introduced or data of any rank is missing, the `
    | -------------------- | ------------------------------------------------------------ | -------- |
    | communication_matrix | Parses the communication matrix data.                                          | No      |
    | communication_time   | Parses the communication duration data.                                          | No      |
-   | all                  | Parses both the communication matrix (`communication_matrix`) and communication duration (`communication_matrix`) data. The default value of `--mode` is `all`.| No      |
+   | all                  | Parses both the `communication_matrix` and `communication_time` data. The default value of `--mode` is `all`. | No      |
 
-3. You are advised to use MindStudio Insight to import the generated `cluster_analysis_output` folder for visualized display, as shown in the following figure. For details, see [MindStudio Insight User Guide](https://www.hiascend.com/document/detail/zh/mindstudio/830/GUI_baseddevelopmenttool/msascendinsightug/Insight_userguide_0002.html).
+3. You are advised to use MindStudio Insight to import the generated `cluster_analysis_output` folder for visualized display, as shown in the following figure. For details, see [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight/blob/26.0.0/docs/en/user_guide/overview.md).
 
     ![img](../figures/cluster_summary.png)
         <div style="text-align: center;">

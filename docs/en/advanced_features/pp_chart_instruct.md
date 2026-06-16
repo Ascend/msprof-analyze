@@ -63,7 +63,7 @@ If you require only the PP chart, set the `profiler_level` parameter to `Level_n
        def wrapper(*args, **kwargs):
            new_msg = {"name": msg}
            if msg == "forward_step_with_model_graph" and kwargs.get("extra_block_kwargs") is not None:
-               new_msg["name"] = "forward_backward_overlaping"
+               new_msg["name"] = "forward_backward_overlapping"
            if "current_microbatch" in kwargs:
                new_msg["current_microbatch"] = kwargs["current_microbatch"]
            if msg == "WeightGradStore_pop" and len(WeightGradStore.cache) == 0:
