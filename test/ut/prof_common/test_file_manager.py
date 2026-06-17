@@ -14,7 +14,6 @@
 import csv
 import json
 import os
-import tempfile
 import unittest
 from unittest import mock
 from unittest.mock import patch, mock_open
@@ -39,21 +38,21 @@ class TestFileManager(unittest.TestCase):
         self.temp_common_path = os.path.join(self.temp_dir, "test.txt")
 
         # 创建测试用JSON文件
-        with open(self.temp_json_path, "w") as f:
+        with open(self.temp_json_path, "w", encoding='utf-8') as f:
             json.dump({"key": "value"}, f)
 
         # 创建测试用CSV文件
-        with open(self.temp_csv_path, "w", newline="") as f:
+        with open(self.temp_csv_path, "w", newline="", encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(["id", "name"])
             writer.writerow([1, "test"])
 
         # 创建测试用YAML文件
-        with open(self.temp_yaml_path, "w") as f:
+        with open(self.temp_yaml_path, "w", encoding='utf-8') as f:
             f.write("key: value\n")
 
         # 创建测试用普通文件
-        with open(self.temp_common_path, "w") as f:
+        with open(self.temp_common_path, "w", encoding='utf-8') as f:
             f.write("test content")
 
     def tearDown(self):
@@ -208,8 +207,7 @@ class TestFileManager(unittest.TestCase):
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch('os.chmod')
-    def test_create_common_file(self, mock_chmod, mock_fdopen, mock_open_os, mock_check_output_directory_path):
+    def test_create_common_file(self, mock_fdopen, mock_open_os, mock_check_output_directory_path):
         # 测试创建普通文件
         mock_file = mock.MagicMock()
         mock_fdopen.return_value.__enter__.return_value = mock_file
@@ -218,9 +216,7 @@ class TestFileManager(unittest.TestCase):
         FileManager.create_common_file(file_path, content)
 
         mock_check_output_directory_path.assert_called_once_with(os.path.dirname(file_path))
-        mock_open_os.assert_called_once_with(
-            file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, Constant.FILE_AUTHORITY
-        )
+        mock_open_os.assert_called_once_with(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, Constant.FILE_AUTHORITY)
         mock_file.write.assert_called_once_with(content)
 
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path')
@@ -246,8 +242,7 @@ class TestFileManager(unittest.TestCase):
     @patch('os.open')
     @patch('os.fdopen')
     @patch('csv.writer')
-    @patch('os.chmod')
-    def test_create_csv_file(self, mock_chmod, mock_writer, mock_fdopen, mock_open_os, mock_check_output):
+    def test_create_csv_file(self, mock_writer, mock_fdopen, mock_open_os, mock_check_output):
         # 测试创建CSV文件
         mock_file = mock.MagicMock()
         mock_fdopen.return_value.__enter__.return_value = mock_file
@@ -264,8 +259,9 @@ class TestFileManager(unittest.TestCase):
 
     def test_create_csv_file_empty_data(self):
         # 测试空数据
-        with (patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path')
-            as mock_check_output_directory_path):
+        with patch(
+            'msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path'
+        ) as mock_check_output_directory_path:
             FileManager.create_csv_file(self.temp_dir, [], "test_output.csv")
             mock_check_output_directory_path.assert_not_called()
 
@@ -273,8 +269,7 @@ class TestFileManager(unittest.TestCase):
     @patch('os.open')
     @patch('os.fdopen')
     @patch('json.dumps')
-    @patch('os.chmod')
-    def test_create_json_file(self, mock_chmod, mock_dumps, mock_fdopen, mock_open_os, mock_check_output):
+    def test_create_json_file(self, mock_dumps, mock_fdopen, mock_open_os, mock_check_output):
         # 测试创建JSON文件
         mock_file = mock.MagicMock()
         mock_fdopen.return_value.__enter__.return_value = mock_file
@@ -289,9 +284,9 @@ class TestFileManager(unittest.TestCase):
     @patch('os.open')
     @patch('os.fdopen')
     @patch('json.dumps')
-    @patch('os.chmod')
-    def test_create_json_file_common_flag(self, mock_chmod, mock_dumps, mock_fdopen, mock_open_os,
-                                          mock_check_output_directory_path):
+    def test_create_json_file_common_flag(
+        self, mock_dumps, mock_fdopen, mock_open_os, mock_check_output_directory_path
+    ):
         # 测试使用common_flag创建JSON文件
         mock_file = mock.MagicMock()
         mock_fdopen.return_value.__enter__.return_value = mock_file

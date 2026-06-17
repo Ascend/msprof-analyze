@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import sqlite3
 from typing import List
 
@@ -31,6 +30,7 @@ class DBManager:
     """
     class to manage DB operation
     """
+
     FETCH_SIZE = 10000
     INSERT_SIZE = 10000
     MAX_ROW_COUNT = 100000000
@@ -42,19 +42,11 @@ class DBManager:
         """
         if not check_db_path_valid(db_path):
             return EmptyClass("empty conn"), EmptyClass("empty curs")
-        db_file_exist = os.path.exists(db_path)
         try:
             conn = sqlite3.connect(db_path)
         except sqlite3.Error as err:
-            logger.error(f"Connect db failed: {err}")
+            logger.error("Connect db failed: %s", err)
             return EmptyClass("empty conn"), EmptyClass("empty curs")
-        if not db_file_exist:
-            try:
-                os.chmod(db_path, Constant.FILE_AUTHORITY)
-            except PermissionError:
-                logger.error(f"Cannot chmod db file (ignore): {db_path}")
-            except Exception as err:
-                logger.error(f"Chmod db failed: {err}")
         try:
             # 注册自定义聚合函数
             if mode == Constant.ANALYSIS:
@@ -63,7 +55,7 @@ class DBManager:
             curs = conn.cursor()
             return conn, curs
         except sqlite3.Error as err:
-            logger.error(f"Init cursor failed: {err}")
+            logger.error("Init cursor failed: %s", err)
             conn.close()
             return EmptyClass("empty conn"), EmptyClass("empty curs")
 
@@ -250,10 +242,11 @@ class DBManager:
         index = 0
         if not data:
             return
-        sql = "insert into {table_name} values ({value_form})".format(
-            table_name=table_name, value_form="?, " * (len(data[0]) - 1) + "?")
+        sql = "insert into {table_name} values ({value_form})".format(  # nosec B608
+            table_name=table_name, value_form="?, " * (len(data[0]) - 1) + "?"
+        )
         while index < len(data):
-            if not cls.executemany_sql(conn, sql, data[index:index + cls.INSERT_SIZE]):
+            if not cls.executemany_sql(conn, sql, data[index : index + cls.INSERT_SIZE]):
                 raise RuntimeError("Failed to insert data into profiler db file.")
             index += cls.INSERT_SIZE
 
@@ -261,7 +254,7 @@ class DBManager:
     def insert_data_into_db(cls, db_path: str, table_name: str, data: list):
         conn, curs = cls.create_connect_db(db_path)
         if not (conn and curs):
-            logger.warning(f"Failed to connect to db file: {db_path}")
+            logger.warning("Failed to connect to db file: %s", db_path)
             return
         cls.insert_data_into_table(conn, table_name, data)
         cls.destroy_db_connect(conn, curs)

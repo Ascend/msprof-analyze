@@ -16,8 +16,6 @@ import argparse
 import json
 import os
 import shutil
-import sys
-import traceback
 from abc import abstractmethod, ABC
 
 import pandas as pd
@@ -46,7 +44,7 @@ class BaseRecipeAnalysis(ABC):
     DEFAULT_STEP_RANGE = {Constant.START_NS: 0, Constant.END_NS: Constant.MAX_INTEGER}
     DB_DISPLAY_NAMES = {
         Constant.PROFILER_DB_PATH: "profiler DB file (e.g. ascend_pytorch_profiler_xxx.db)",
-        Constant.ANALYSIS_DB_PATH: "analysis DB file (analysis.db)"
+        Constant.ANALYSIS_DB_PATH: "analysis DB file (analysis.db)",
     }
 
     def __init__(self, params):
@@ -57,12 +55,19 @@ class BaseRecipeAnalysis(ABC):
         self._export_type = params.get(Constant.EXPORT_TYPE, "")
         self._prof_type = params.get(Constant.PROFILING_TYPE)
         self._cluster_analysis_output_path = os.path.join(
-            params.get(Constant.CLUSTER_ANALYSIS_OUTPUT_PATH, self._collection_dir), Constant.CLUSTER_ANALYSIS_OUTPUT)
-        self._output_path = self._cluster_analysis_output_path if self._export_type == "db" else os.path.join(
-            self._cluster_analysis_output_path, self._recipe_name)
+            params.get(Constant.CLUSTER_ANALYSIS_OUTPUT_PATH, self._collection_dir), Constant.CLUSTER_ANALYSIS_OUTPUT
+        )
+        self._output_path = (
+            self._cluster_analysis_output_path
+            if self._export_type == "db"
+            else os.path.join(self._cluster_analysis_output_path, self._recipe_name)
+        )
         rank_list = params.get(Constant.RANK_LIST, 'all')
-        self._rank_list = rank_list if rank_list == "all" else [convert_to_int(rank) for rank in rank_list.split(",") if
-                                                                rank.isdigit()]
+        self._rank_list = (
+            rank_list
+            if rank_list == "all"
+            else [convert_to_int(rank) for rank in rank_list.split(",") if rank.isdigit()]
+        )
         self._step_id = params.get(Constant.STEP_ID, Constant.VOID_STEP)
         self._extra_args = self.get_extra_argument(params.get(Constant.EXTRA_ARGS, []))
         PathManager.make_dir_safety(self._output_path)
@@ -72,8 +77,7 @@ class BaseRecipeAnalysis(ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
-            logger.error(f"Failed to exit analysis: {exc_val}")
-            traceback.print_exc(file=sys.stdout)
+            logger.error("Failed to exit analysis", exc_info=True)
 
     @property
     def output_path(self):
@@ -107,7 +111,7 @@ class BaseRecipeAnalysis(ABC):
         args, unknown_args = parser.parse_known_args(args_list)
         if unknown_args:
             unknown_args = " ".join(unknown_args)
-            logger.warning(f"Invalid parameters: {unknown_args}. It will not have any effect.")
+            logger.warning("Invalid parameters: %s. It will not have any effect.", unknown_args)
         return vars(args)
 
     @abstractmethod
@@ -118,33 +122,27 @@ class BaseRecipeAnalysis(ABC):
         db_paths = self._get_rank_db()
         if not db_paths:
             return []
-        return context.wait(
-            context.map(
-                self._mapper_func,
-                db_paths,
-                analysis_class=self._recipe_name
-            )
-        )
+        return context.wait(context.map(self._mapper_func, db_paths, analysis_class=self._recipe_name))
 
     def dump_data(self, data, file_name, table_name=None, index=True, custom_db_path=None):
         if data is None:
-            logger.warning(f"No data to dump, skipping.")
+            logger.warning("No data to dump, skipping.")
             return
         if not isinstance(data, pd.DataFrame):
-            logger.error(f"Unknown dump data type: {type(data)}, expected pandas DataFrame")
+            logger.error("Unknown dump data type: %s, expected pandas DataFrame", type(data))
             return
         if data.empty:
-            logger.warning(f"Empty DataFrame. Skip data dump!")
+            logger.warning("Empty DataFrame. Skip data dump!")
             return
         if table_name:
             result_db = custom_db_path if custom_db_path else os.path.join(self.output_path, file_name)
-            logger.info(f"Exporting data to database: {result_db}, table: {table_name}")
+            logger.info("Exporting data to database: %s, table: %s", result_db, table_name)
             conn, cursor = DBManager.create_connect_db(result_db)
             data.to_sql(table_name, conn, if_exists='replace', index=index)
             DBManager.destroy_db_connect(conn, cursor)
         else:
             result_csv = os.path.join(self.output_path, file_name)
-            logger.info(f"Exporting data to CSV file: {result_csv}")
+            logger.info("Exporting data to CSV file: %s", result_csv)
             data = convert_unit(data, self.DB_UNIT, self.UNIT, self.FACTOR)
             FileManager.create_csv_from_dataframe(result_csv, data, index=index)
 
@@ -157,13 +155,12 @@ class BaseRecipeAnalysis(ABC):
         template_file = os.path.join(template_path, self.base_dir, filename)
         if replace_dict is None:
             shutil.copy(template_file, output_file_path)
-            os.chmod(output_file_path, Constant.FILE_AUTHORITY)
         else:
             template_content = FileManager.read_common_file(template_file)
             for key, value in replace_dict.items():
                 template_content = template_content.replace(str(key), str(value))
             FileManager.create_common_file(output_file_path, template_content)
-        logger.info(f"Notebook export path is: {output_file_path}")
+        logger.info("Notebook export path is: %s", output_file_path)
 
     def add_helper_file(self, helper_file):
         helper_output_path = os.path.join(self.output_path, helper_file)
@@ -171,7 +168,6 @@ class BaseRecipeAnalysis(ABC):
 
         if helper_file_path is not None:
             shutil.copy(helper_file_path, helper_output_path)
-            os.chmod(helper_output_path, Constant.FILE_AUTHORITY)
 
     def map_rank_pp_stage(self, distributed_args):
         tp_size = distributed_args.get(self.TP_SIZE, 1)
@@ -231,7 +227,7 @@ class BaseRecipeAnalysis(ABC):
                     self.PP_SIZE: pp_size,
                     self.DP_SIZE: dp_size,
                 }
-            logger.error(f"Db_file: {db_path} not exist.")
+            logger.error("Db_file: %s not exist.", db_path)
             return None
 
     def _get_rank_db(self):
@@ -249,8 +245,13 @@ class BaseRecipeAnalysis(ABC):
         missing_required_db_rank_ids = {db_key: [] for db_key in self.required_db_keys}
         for rank_id in rank_ids:
             rank_path = self._data_map[rank_id]
-            db_path_dict = {Constant.RANK_ID: rank_id, Constant.PROFILER_DB_PATH: "", Constant.ANALYSIS_DB_PATH: "",
-                            Constant.STEP_RANGE: self.DEFAULT_STEP_RANGE, Constant.PROFILING_PATH: rank_path}
+            db_path_dict = {
+                Constant.RANK_ID: rank_id,
+                Constant.PROFILER_DB_PATH: "",
+                Constant.ANALYSIS_DB_PATH: "",
+                Constant.STEP_RANGE: self.DEFAULT_STEP_RANGE,
+                Constant.PROFILING_PATH: rank_path,
+            }
             profiler_db_path = self._get_profiler_db_path(rank_id, rank_path)
             analysis_db_path = self._get_analysis_db_path(rank_path)
             if os.path.exists(profiler_db_path):
@@ -267,15 +268,18 @@ class BaseRecipeAnalysis(ABC):
             db_paths.append(db_path_dict)
 
         if invalid_rank_id:
-            logger.warning(f"Invalid Rank id: [{','.join(invalid_rank_id)}].")
+            logger.warning("Invalid Rank id: [%s].", ",".join(invalid_rank_id))
         for db_key, missing_rank_ids in missing_required_db_rank_ids.items():
             if not missing_rank_ids:
                 continue
             db_name = self.DB_DISPLAY_NAMES.get(db_key, db_key)
             rank_summary = self._format_rank_summary(missing_rank_ids)
             logger.warning(
-                f"{self._recipe_name}: missing {db_name} for {len(missing_rank_ids)} rank(s) "
-                f"[{rank_summary}]; these ranks will be skipped."
+                "%s: missing %s for %d rank(s) [%s]; these ranks will be skipped.",
+                self._recipe_name,
+                db_name,
+                len(missing_rank_ids),
+                rank_summary,
             )
         return db_paths
 
@@ -314,13 +318,15 @@ class BaseRecipeAnalysis(ABC):
             return self.DEFAULT_STEP_RANGE
         conn, cursor = DBManager.create_connect_db(db_path)
         if not DBManager.judge_table_exists(cursor, "STEP_TIME"):
-            logger.error(f"The STEP_TIME table does not exist in the database: {db_path}, "
-                         f"the parameter step_id will not take effect.")
+            logger.error(
+                "The STEP_TIME table does not exist in the database: %s, the parameter step_id will not take effect.",
+                db_path,
+            )
             DBManager.destroy_db_connect(conn, cursor)
             return self.DEFAULT_STEP_RANGE
 
         step_time = []
-        sql = f"select id, startNs, endNs from STEP_TIME"
+        sql = "select id, startNs, endNs from STEP_TIME"
         try:
             step_time = DBManager.fetch_all_data(cursor, sql)
         except Exception as err:
@@ -335,9 +341,14 @@ class BaseRecipeAnalysis(ABC):
                 break
         if not step_range:
             step_list = ", ".join([str(step.get("id", "")) for step in step_time])
-            logger.error(f"Invalid step_id {self._step_id} in the database: {db_path}, "
-                         f"step_id must be an element of the set ({step_list}), "
-                         f"the parameter step_id will not take effect.")
+            logger.error(
+                "Invalid step_id %s in the database: %s, "
+                "step_id must be an element of the set (%s), "
+                "the parameter step_id will not take effect.",
+                self._step_id,
+                db_path,
+                step_list,
+            )
             return self.DEFAULT_STEP_RANGE
         return step_range
 

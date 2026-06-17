@@ -17,7 +17,6 @@ import importlib
 import os
 import pandas as pd
 import sys
-import torch
 import torch_npu
 from datetime import datetime, timezone
 from xlsxwriter import Workbook
@@ -45,22 +44,77 @@ class ComparisonGenerator:
     COL_ORIGINAL_TOTAL_DURATION = "Original Op Total Duration(us)"
     COL_DURATION_DIFF_RATIO = "Duration Diff Ratio"
     EXCLUDE_OPS = ["aclnnIsClose_IsCloseAiCore_IsClose", "aclnnAll_ReduceAll_ReduceAll"]
-    DEFAULT = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-               'num_format': '#,##0'}
-    DEFAULT_FLOAT = {'text_wrap': True, "font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-                     'num_format': '#,##0.00'}
-    DEFAULT_RATIO = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter',
-                     'border': True, 'num_format': '0.00%'}
-    RED_RATIO = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter',
-                 'border': True, 'num_format': '0.00%', "fg_color": Constant.RED_COLOR}
-    BOLD_STR = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-                'bold': True}
-    BLUE_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.BLUE_COLOR, 'align': 'left',
-                 'valign': 'vcenter', 'bold': True, 'border': True}
-    GREEN_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.GREEN_COLOR, 'align': 'left',
-                  'valign': 'vcenter', 'bold': True, 'border': True}
-    YELLOW_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.YELLOW_COLOR, 'align': 'left',
-                   'valign': 'vcenter', 'bold': True, 'border': True}
+    # pylint: disable=R0801
+    DEFAULT = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '#,##0',
+    }
+    DEFAULT_FLOAT = {
+        'text_wrap': True,
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '#,##0.00',
+    }
+    DEFAULT_RATIO = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '0.00%',
+    }
+    RED_RATIO = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '0.00%',
+        "fg_color": Constant.RED_COLOR,
+    }
+    BOLD_STR = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'bold': True,
+    }
+    BLUE_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.BLUE_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }
+    GREEN_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.GREEN_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }
+    YELLOW_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.YELLOW_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }
+    # pylint: enable=R0801
 
     def __init__(self, params):
         self.fx_graph_path = params.fx_graph_path
@@ -73,22 +127,25 @@ class ComparisonGenerator:
         triton_op_rows = group[triton_op_mask].copy()
         original_op_rows = group[~triton_op_mask].copy().sort_values(by=self.COL_DURATION, ascending=False)
         if triton_op_rows.empty:
-            logger.warning(f"{group.name}: No triton operator found")
+            logger.warning("%s: No triton operator found", group.name)
             return None
         if original_op_rows.empty:
-            logger.warning(f"{group.name}: No original operators found")
+            logger.warning("%s: No original operators found", group.name)
             return None
         triton_op_name = triton_op_rows[self.COL_NAME].iloc[0]
         triton_op_duration = triton_op_rows[self.COL_DURATION].sum()
         original_op_total_duration = original_op_rows[self.COL_DURATION].sum()
-        original_op_duration = '\n'.join([
-            f"{row[self.COL_NAME]}:{row[self.COL_DURATION]:.2f}"
-            for _, row in original_op_rows.iterrows()
-        ])
+        original_op_duration = '\n'.join(
+            [f"{row[self.COL_NAME]}:{row[self.COL_DURATION]:.2f}" for _, row in original_op_rows.iterrows()]
+        )
         return pd.Series(
             [triton_op_name, triton_op_duration, original_op_duration, original_op_total_duration],
-            index=[self.COL_TRITON_OP, self.COL_TRITON_DURATION,self.COL_ORIGINAL_DURATION,
-                   self.COL_ORIGINAL_TOTAL_DURATION]
+            index=[
+                self.COL_TRITON_OP,
+                self.COL_TRITON_DURATION,
+                self.COL_ORIGINAL_DURATION,
+                self.COL_ORIGINAL_TOTAL_DURATION,
+            ],
         )
 
     def get_all_fx_graph(self):
@@ -106,63 +163,66 @@ class ComparisonGenerator:
                 fx_module = importlib.import_module(module_name)
                 fx_graph_modules.append(fx_module)
             except ImportError as err:
-                logger.error(f"Import error for '{module_name}': {err}")
+                logger.error("Import error for '%s': %s", module_name, err)
             except Exception as err:
-                logger.error(f"Unexpected error for '{module_name}': {err}", exc_info=True)
+                logger.error("Unexpected error for '%s': %s", module_name, err, exc_info=True)
         return fx_graph_modules
 
     def get_prof_config(self):
         experimental_config = torch_npu.profiler._ExperimentalConfig(
-            export_type=[
-                torch_npu.profiler.ExportType.Db
-            ],
+            export_type=[torch_npu.profiler.ExportType.Db],
             profiler_level=torch_npu.profiler.ProfilerLevel.Level0,
             mstx=True,
         )
         prof = torch_npu.profiler.profile(
-            activities=[
-                torch_npu.profiler.ProfilerActivity.NPU
-            ],
+            activities=[torch_npu.profiler.ProfilerActivity.NPU],
             on_trace_ready=torch_npu.profiler.tensorboard_trace_handler(self.profiling_data_path),
-            experimental_config=experimental_config)
+            experimental_config=experimental_config,
+        )
         return prof
 
     def generate_compare_result(self):
         res = glob.glob(os.path.join(self.profiling_data_path, self.DB_PATTERN))
         if not res:
-            logger.error(f"Invalid profiling data: {self.output_path}, "
-                         f"please check if the ascend_pytorch_profiler.db file exists.")
+            logger.error(
+                "Invalid profiling data: %s, please check if the ascend_pytorch_profiler.db file exists.",
+                self.output_path,
+            )
             return
         db_path = res[0]
         FileManager.check_file_size(db_path)
         PathManager.check_input_file_path(db_path)
         df = InductorTritonExport(db_path).read_export_db()
         if df is None or df.empty:
-            logger.error(f"Invalid profiling data, the db path is {db_path}")
+            logger.error("Invalid profiling data, the db path is %s", db_path)
             return
         filtered_df = df[~df[self.COL_NAME].isin(self.EXCLUDE_OPS)]
         grouped_df = filtered_df.groupby(self.COL_MESSAGE).apply(self.process_group).reset_index(drop=True)
         grouped_df.dropna(inplace=True)
-        grouped_df[self.COL_DURATION_DIFF_RATIO] = (grouped_df[self.COL_TRITON_DURATION] /
-                                                    grouped_df[self.COL_ORIGINAL_TOTAL_DURATION])
+        grouped_df[self.COL_DURATION_DIFF_RATIO] = (
+            grouped_df[self.COL_TRITON_DURATION] / grouped_df[self.COL_ORIGINAL_TOTAL_DURATION]
+        )
         self._result_data = grouped_df
 
+    # pylint: disable=R0801
     def generate_view(self):
         if self._result_data is None or self._result_data.empty:
             logger.error("Invalid comparison result, please check if the comparison result exists.")
             return
-        file_path = os.path.join(self.output_path,
-            f"inductor_triton_performance_comparison_result_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.xlsx")
+        file_path = os.path.join(
+            self.output_path,
+            f"inductor_triton_performance_comparison_result_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.xlsx",
+        )
         num_metrics = 2
         data_cols = [
             self.COL_TRITON_OP,
             self.COL_TRITON_DURATION,
             self.COL_ORIGINAL_DURATION,
             self.COL_ORIGINAL_TOTAL_DURATION,
-            self.COL_DURATION_DIFF_RATIO
+            self.COL_DURATION_DIFF_RATIO,
         ]
         last_col_idx = len(data_cols) - 1
-        str_col_indices  = [0, 2]
+        str_col_indices = [0, 2]
         with Workbook(file_path) as workbook:
             worksheet = workbook.add_worksheet()
             str_format = workbook.add_format(self.BOLD_STR)
@@ -193,8 +253,8 @@ class ComparisonGenerator:
                         cell_data = "INF" if cell_data == float('inf') else cell_data
                     worksheet.write(r_idx, c_idx, cell_data, cell_format)
                 r_idx += 1
-        os.chmod(file_path, Constant.FILE_AUTHORITY)
-        logger.info(f"Generate comparison result successfully: {file_path}")
+        logger.info("Generate comparison result successfully: %s", file_path)
+        # pylint: enable=R0801
 
     def run(self):
         PathManager.remove_path_safety(self.profiling_data_path)
@@ -207,11 +267,13 @@ class ComparisonGenerator:
             try:
                 fx_module.run()
             except Exception as err:
-                logger.error(f"Unexpected error for '{fx_module}': {err}", exc_info=True)
+                logger.error("Unexpected error for '%s': %s", fx_module, err, exc_info=True)
             torch_npu.npu.mstx.range_end(range_id)
         prof.stop()
+        # pylint: disable=R0801
         try:
             self.generate_compare_result()
             self.generate_view()
         except Exception as err:
-            logger.error(f"Failed to generate comparison result: {err}", exc_info=True)
+            logger.error("Failed to generate comparison result: %s", err, exc_info=True)
+        # pylint: enable=R0801

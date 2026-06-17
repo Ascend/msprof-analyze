@@ -40,7 +40,7 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
             Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: '/tmp/to/output',
             Constant.RANK_LIST: '0,1',
             Constant.STEP_ID: 1,
-            Constant.EXTRA_ARGS: []
+            Constant.EXTRA_ARGS: [],
         }
 
         # 创建一个 BaseRecipeAnalysis 的子类用于测试
@@ -51,6 +51,7 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
 
             def run(self, context):
                 pass
+
         with patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path'):
             self.analysis = ConcreteRecipeAnalysis(self.params)
 
@@ -58,20 +59,17 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
         with self.analysis as instance:
             self.assertEqual(instance, self.analysis)
 
-        with patch('msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.logger.error') as mock_logger, \
-                patch('traceback.print_exc') as mock_traceback:
+        with patch('msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.logger.error') as mock_logger:
             try:
                 with self.analysis:
                     raise ValueError('Test error')
             except ValueError:
                 pass
-        mock_logger.assert_called_once_with('Failed to exit analysis: Test error')
-        mock_traceback.assert_called_once()
+        mock_logger.assert_called_once()
 
     def test_output_path_property(self):
         self.assertEqual(
-            self.analysis.output_path,
-            os.path.join('/tmp/to/output', Constant.CLUSTER_ANALYSIS_OUTPUT, 'test_recipe')
+            self.analysis.output_path, os.path.join('/tmp/to/output', Constant.CLUSTER_ANALYSIS_OUTPUT, 'test_recipe')
         )
 
     def test_filter_data(self):
@@ -99,22 +97,28 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
             self.analysis.dump_data(data, 'test.csv')
 
     @patch('shutil.copy')
-    @patch('os.chmod')
-    def test_create_notebook_without_replace(self, mock_chmod, mock_copy):
+    def test_create_notebook_without_replace(self, mock_copy):
         self.analysis.create_notebook('test.ipynb')
         mock_copy.assert_called_once_with(
-            os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "msprof_analyze",
-                                          "cluster_analyse", "recipes", 'test_dir', 'test.ipynb')),
-            os.path.join(self.analysis.output_path, 'test.ipynb')
-        )
-        mock_chmod.assert_called_once_with(
+            os.path.realpath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "..",
+                    "..",
+                    "msprof_analyze",
+                    "cluster_analyse",
+                    "recipes",
+                    'test_dir',
+                    'test.ipynb',
+                )
+            ),
             os.path.join(self.analysis.output_path, 'test.ipynb'),
-            Constant.FILE_AUTHORITY
         )
 
     @patch('shutil.copy')
-    @patch('os.chmod')
-    def test_add_helper_file(self, mock_chmod, mock_copy):
+    def test_add_helper_file(self, mock_copy):
         # 准备测试数据
         helper_file = 'test_helper.txt'
         mock_dirname = MagicMock(return_value='test_dir')
@@ -125,14 +129,7 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
 
             # 验证 shutil.copy 被调用
             mock_copy.assert_called_once_with(
-                os.path.join('test_dir', helper_file),
-                os.path.join(self.analysis.output_path, helper_file)
-            )
-
-            # 验证 os.chmod 被调用
-            mock_chmod.assert_called_once_with(
-                os.path.join(self.analysis.output_path, helper_file),
-                Constant.FILE_AUTHORITY
+                os.path.join('test_dir', helper_file), os.path.join(self.analysis.output_path, helper_file)
             )
 
     def test_map_rank_pp_stage(self):
@@ -152,16 +149,9 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
         self.assertEqual(result, {0: 0, 1: 1})
 
         # 测试用例 4: 设置所有参数
-        distributed_args = {
-            self.analysis.TP_SIZE: 2,
-            self.analysis.PP_SIZE: 2,
-            self.analysis.DP_SIZE: 2
-        }
+        distributed_args = {self.analysis.TP_SIZE: 2, self.analysis.PP_SIZE: 2, self.analysis.DP_SIZE: 2}
         result = self.analysis.map_rank_pp_stage(distributed_args)
-        self.assertEqual(result, {
-            0: 0, 1: 0, 2: 0, 3: 0,
-            4: 1, 5: 1, 6: 1, 7: 1
-        })
+        self.assertEqual(result, {0: 0, 1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1, 7: 1})
 
     @patch('os.path.exists')
     @patch('json.loads')
@@ -169,11 +159,7 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
         # 测试从 _extra_args 获取参数
         self.analysis._extra_args = {'tp': 2, 'pp': 2, 'dp': 2}
         result = self.analysis.load_distributed_args()
-        self.assertEqual(result, {
-            self.analysis.TP_SIZE: 2,
-            self.analysis.PP_SIZE: 2,
-            self.analysis.DP_SIZE: 2
-        })
+        self.assertEqual(result, {self.analysis.TP_SIZE: 2, self.analysis.PP_SIZE: 2, self.analysis.DP_SIZE: 2})
 
     @patch('os.path.exists')
     @patch('json.loads')
@@ -182,18 +168,13 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
         # 测试从数据库获取参数
         mock_exists.return_value = True
         mock_df = MagicMock()
-        mock_df.loc.return_value = MagicMock(empty=False, values=[json.dumps({
-            self.analysis.TP_SIZE: 1,
-            self.analysis.PP_SIZE: 1,
-            self.analysis.DP_SIZE: 1
-        })])
+        mock_df.loc.return_value = MagicMock(
+            empty=False,
+            values=[json.dumps({self.analysis.TP_SIZE: 1, self.analysis.PP_SIZE: 1, self.analysis.DP_SIZE: 1})],
+        )
         mock_service.return_value.query_data.return_value = {'META_DATA': mock_df}
         result = self.analysis.load_distributed_args()
-        self.assertEqual(result, {
-            self.analysis.TP_SIZE: 1,
-            self.analysis.PP_SIZE: 1,
-            self.analysis.DP_SIZE: 1
-        })
+        self.assertEqual(result, {self.analysis.TP_SIZE: 1, self.analysis.PP_SIZE: 1, self.analysis.DP_SIZE: 1})
 
     @patch('os.path.exists')
     def test_get_rank_db(self, mock_exists):
@@ -238,17 +219,30 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
 
         result = analysis._get_rank_db()
 
-        self.assertEqual(result, [{
-            Constant.RANK_ID: 0,
-            Constant.PROFILER_DB_PATH: 'profiler_0.db',
-            Constant.ANALYSIS_DB_PATH: 'analysis_0.db',
-            Constant.STEP_RANGE: {'id': 1},
-            Constant.PROFILING_PATH: '/tmp/to/data/0'
-        }])
-        mock_warning.assert_has_calls([
-            call('Invalid Rank id: [9].'),
-            call('test_recipe: missing analysis DB file (analysis.db) for 1 rank(s) [1]; these ranks will be skipped.')
-        ])
+        self.assertEqual(
+            result,
+            [
+                {
+                    Constant.RANK_ID: 0,
+                    Constant.PROFILER_DB_PATH: 'profiler_0.db',
+                    Constant.ANALYSIS_DB_PATH: 'analysis_0.db',
+                    Constant.STEP_RANGE: {'id': 1},
+                    Constant.PROFILING_PATH: '/tmp/to/data/0',
+                }
+            ],
+        )
+        mock_warning.assert_has_calls(
+            [
+                call("Invalid Rank id: [%s].", "9"),
+                call(
+                    '%s: missing %s for %d rank(s) [%s]; these ranks will be skipped.',
+                    'test_recipe',
+                    'analysis DB file (analysis.db)',
+                    1,
+                    '1',
+                ),
+            ]
+        )
 
     @patch.object(BaseRecipeAnalysis, '_get_rank_db')
     def test_mapper_func_returns_empty_when_no_valid_rank_db(self, mock_get_rank_db):

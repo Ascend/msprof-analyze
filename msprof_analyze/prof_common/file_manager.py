@@ -140,7 +140,6 @@ class FileManager:
             data.to_csv(file_path, index=index)
         except Exception as e:
             raise RuntimeError(f"Can't create file: {base_name}") from e
-        os.chmod(file_path, Constant.FILE_AUTHORITY)
 
     @classmethod
     def create_csv_file(cls, profiler_path: str, data: list, file_name: str, headers: list = None) -> None:
