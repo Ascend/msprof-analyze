@@ -18,8 +18,12 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.cluster_prof_info_analysis import (
-    FormDataProcessor, ViewInfoManager, OpSummaryAnalyzerBase, TimeToCsvAnalyzer,
-    StatisticalInfoToHtmlAnalyzer, DeliverableGenerator
+    FormDataProcessor,
+    ViewInfoManager,
+    OpSummaryAnalyzerBase,
+    TimeToCsvAnalyzer,
+    StatisticalInfoToHtmlAnalyzer,
+    DeliverableGenerator,
 )
 from msprof_analyze.prof_common.path_manager import PathManager
 
@@ -53,13 +57,15 @@ class TestFormDataProcessor(unittest.TestCase):
     @patch('pathlib.Path.rglob')
     def test_read_summary_data_without_device_id(self, mock_rglob, mock_check_file, mock_check_size, mock_read_csv):
         mock_rglob.return_value = [MagicMock()]
-        mock_read_csv.return_value = pd.DataFrame({
-            'Op Name': ['test_op'],
-            "Input Shapes": "1",
-            "Input Data Types": "Float",
-            "Output Shapes": "2",
-            'Task Duration(us)': [100]
-        })
+        mock_read_csv.return_value = pd.DataFrame(
+            {
+                'Op Name': ['test_op'],
+                "Input Shapes": "1",
+                "Input Data Types": "Float",
+                "Output Shapes": "2",
+                'Task Duration(us)': [100],
+            }
+        )
         processor = FormDataProcessor('test_path', 'test_form')
         result = processor.read_summary_data(['Op Name', 'Task Duration(us)'])
         self.assertEqual(len(result), 0)
@@ -108,15 +114,17 @@ class TestOpSummaryAnalyzerBase(unittest.TestCase):
     @patch.object(PathManager, 'check_output_directory_path')
     @patch.object(PathManager, 'make_dir_safety')
     def test_calculate_view_data(self, mock_make_dir, mock_check_output, mock_remove_path, mock_check_length):
-        summary_data = pd.DataFrame({
-            'Op Name': ['test_op'],
-            "Input Shapes": "1",
-            "Input Data Types": "Float",
-            "Output Shapes": "2",
-            'Task Duration(us)': [100],
-            "device_id": 1,
-            "node_id": 1
-        })
+        summary_data = pd.DataFrame(
+            {
+                'Op Name': ['test_op'],
+                "Input Shapes": "1",
+                "Input Data Types": "Float",
+                "Output Shapes": "2",
+                'Task Duration(us)': [100],
+                "device_id": 1,
+                "node_id": 1,
+            }
+        )
         analyzer = OpSummaryAnalyzerBase('ASCEND_NEW', 'TimeToCsvAnalyzer', 'test_dir')
         analyzer.columns_to_view = ['Task Duration(us)']
         analyzer.calculate_fun = ['mean']
@@ -132,18 +140,19 @@ class TestTimeToCsvAnalyzer(unittest.TestCase):
     @patch.object(PathManager, 'make_dir_safety')
     def test_generate_deliverable(self, mock_make_dir, mock_check_output, mock_remove_path, mock_check_length):
         analyzer = TimeToCsvAnalyzer('ASCEND_NEW', 'test_dir')
-        summary_data = pd.DataFrame({
-            'Op Name': ['test_op'],
-            "Input Shapes": "1",
-            "Input Data Types": "Float",
-            "Output Shapes": "2",
-            'Task Duration(us)': [100],
-            "device_id": 1,
-            "node_id": 1
-        })
-        with patch('pandas.DataFrame.to_csv'), \
-             patch("os.chmod") as mock_to_csv:
-            result = analyzer.generate_deliverable(summary_data, 1)
+        summary_data = pd.DataFrame(
+            {
+                'Op Name': ['test_op'],
+                "Input Shapes": "1",
+                "Input Data Types": "Float",
+                "Output Shapes": "2",
+                'Task Duration(us)': [100],
+                "device_id": 1,
+                "node_id": 1,
+            }
+        )
+        with patch('pandas.DataFrame.to_csv') as mock_to_csv:
+            _ = analyzer.generate_deliverable(summary_data, 1)
             mock_to_csv.assert_called_once()
 
 
@@ -168,11 +177,7 @@ class TestDeliverableGenerator(unittest.TestCase):
     @patch('pandas.read_csv')
     def test_init(self, mock_pand_read, mock_check_output, mock_check_file, mock_file_size, mock_rglob):
         mock_rglob.return_value = [MagicMock()]
-        params = {
-            'dir': 'test_dir',
-            'type': 'all',
-            'top_n': 10
-        }
+        params = {'dir': 'test_dir', 'type': 'all', 'top_n': 10}
         with patch.object(PathManager, 'input_path_common_check'):
             generator = DeliverableGenerator(params)
             self.assertEqual(len(generator.analyzers), 2)
@@ -184,15 +189,13 @@ class TestDeliverableGenerator(unittest.TestCase):
     @patch('pandas.read_csv')
     def test_run(self, mock_pand_read, mock_check_output, mock_check_file, mock_file_size, mock_rglob):
         mock_rglob.return_value = [MagicMock()]
-        params = {
-            'dir': 'test_dir',
-            'type': 'all',
-            'top_n': 10
-        }
-        with patch.object(PathManager, 'input_path_common_check'), \
-             patch.object(FormDataProcessor, 'read_summary_data') as mock_read_summary, \
-                patch.object(TimeToCsvAnalyzer, 'generate_deliverable') as mock_csv_gen, \
-                patch.object(StatisticalInfoToHtmlAnalyzer, 'generate_deliverable') as mock_html_gen:
+        params = {'dir': 'test_dir', 'type': 'all', 'top_n': 10}
+        with (
+            patch.object(PathManager, 'input_path_common_check'),
+            patch.object(FormDataProcessor, 'read_summary_data') as mock_read_summary,
+            patch.object(TimeToCsvAnalyzer, 'generate_deliverable') as mock_csv_gen,
+            patch.object(StatisticalInfoToHtmlAnalyzer, 'generate_deliverable') as mock_html_gen,
+        ):
             mock_read_summary.return_value = pd.DataFrame()
             generator = DeliverableGenerator(params)
             generator.run()

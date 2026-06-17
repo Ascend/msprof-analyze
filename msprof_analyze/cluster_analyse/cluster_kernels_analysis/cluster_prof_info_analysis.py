@@ -16,7 +16,6 @@
 import argparse
 import re
 import os
-import stat
 import warnings
 from pathlib import Path
 
@@ -196,13 +195,6 @@ class OpSummaryAnalyzerBase:
         PathManager.make_dir_safety(self.result_dir)
         PathManager.check_output_directory_path(self.result_dir)
 
-    @staticmethod
-    def on_rm_error(func, path, exc_info):
-        # path contains the path of the file that couldn't be removed
-        # let's just assume that it's read-only and unlink it.
-        os.chmod(path, stat.S_IWRITE)
-        os.unlink(path)
-
     def get_columns_to_group(self):
         return self.columns_to_group
 
@@ -232,8 +224,6 @@ class TimeToCsvAnalyzer(OpSummaryAnalyzerBase):
         save_path = os.path.join(self.result_dir, "cluster_duration_time_analysis.csv")
         PathManager.check_path_length(save_path)
         view_data.to_csv(save_path, index=False)
-        # 该文件权限设置为只读权限，不允许修改
-        os.chmod(save_path, stat.S_IROTH)
         return view_data
 
 
@@ -295,8 +285,6 @@ class StatisticalInfoToHtmlAnalyzer(OpSummaryAnalyzerBase):
         save_plot_path = os.path.join(self.result_dir, column + "_Info.html")
         PathManager.check_path_length(save_plot_path)
         plot(fig, filename=save_plot_path)
-        # 该文件权限设置为只读权限，不允许修改
-        os.chmod(save_plot_path, stat.S_IROTH)
 
     def get_cal_num(self, rank_num):
         # 计算每行应该画多少个子图

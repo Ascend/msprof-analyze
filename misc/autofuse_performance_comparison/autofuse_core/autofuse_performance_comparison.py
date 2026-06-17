@@ -44,22 +44,76 @@ class ComparisonGenerator:
     COL_AIV_MTE2_TIME = "aiv_mte2_time(us)"
     COL_AIV_MTE3_TIME = "aiv_mte3_time(us)"
     COL_DURATION_DIFF_RATIO = "Duration Diff Ratio"
-    DEFAULT = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-               'num_format': '#,##0'}
-    DEFAULT_FLOAT = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-                     'num_format': '#,##0.000'}
-    DEFAULT_RATIO = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter',
-                     'border': True, 'num_format': '0.00%'}
-    RED_RATIO = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter',
-                 'border': True, 'num_format': '0.00%', "fg_color": Constant.RED_COLOR}
-    BOLD_STR = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-                'bold': True}
-    BLUE_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.BLUE_COLOR, 'align': 'left',
-                 'valign': 'vcenter', 'bold': True, 'border': True}
-    GREEN_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.GREEN_COLOR, 'align': 'left',
-                  'valign': 'vcenter', 'bold': True, 'border': True}
-    YELLOW_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.YELLOW_COLOR, 'align': 'left',
-                   'valign': 'vcenter', 'bold': True, 'border': True}
+    # pylint: disable=R0801
+    DEFAULT = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '#,##0',
+    }
+    DEFAULT_FLOAT = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '#,##0.000',
+    }
+    DEFAULT_RATIO = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '0.00%',
+    }
+    RED_RATIO = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '0.00%',
+        "fg_color": Constant.RED_COLOR,
+    }
+    BOLD_STR = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'bold': True,
+    }
+    BLUE_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.BLUE_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }
+    GREEN_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.GREEN_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }
+    YELLOW_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.YELLOW_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }
+    # pylint: enable=R0801
 
     def __init__(self, params):
         self.whole_graph = params.whole_graph
@@ -74,8 +128,7 @@ class ComparisonGenerator:
         res_autofuse_disabled = glob.glob(os.path.join(self.autofuse_disabled_path, self.DB_PATTERN))
         res_autofuse_enabled = glob.glob(os.path.join(self.autofuse_enabled_path, self.DB_PATTERN))
         if not res_autofuse_disabled or not res_autofuse_enabled:
-            logger.error(f"Invalid profiling data: {self.output_path}, "
-                         f"please check if the msprof_*.db file exists.")
+            logger.error("Invalid profiling data: %s, please check if the msprof_*.db file exists.", self.output_path)
             return
         db_autofuse_disabled = res_autofuse_disabled[0]
         db_autofuse_enabled = res_autofuse_enabled[0]
@@ -85,11 +138,11 @@ class ComparisonGenerator:
         PathManager.check_input_file_path(db_autofuse_enabled)
         df_autofuse_disabled = AutofuseExport(db_autofuse_disabled).read_export_db()
         if df_autofuse_disabled is None or df_autofuse_disabled.empty:
-            logger.error(f"Invalid profiling data, the db path is {db_autofuse_disabled}")
+            logger.error("Invalid profiling data, the db path is %s", db_autofuse_disabled)
             return
         df_autofuse_enabled = AutofuseExport(db_autofuse_enabled).read_export_db()
         if df_autofuse_enabled is None or df_autofuse_enabled.empty:
-            logger.error(f"Invalid profiling data, the db path is {db_autofuse_enabled}")
+            logger.error("Invalid profiling data, the db path is %s", db_autofuse_enabled)
             return
         agg_params = {
             self.COL_NAME: 'first',
@@ -99,7 +152,7 @@ class ComparisonGenerator:
             self.COL_AIV_SCALAR_TIME: 'sum',
             self.COL_AIV_VEC_TIME: 'sum',
             self.COL_AIV_MTE2_TIME: 'sum',
-            self.COL_AIV_MTE3_TIME: 'sum'
+            self.COL_AIV_MTE3_TIME: 'sum',
         }
         df_autofuse_disabled = df_autofuse_disabled.groupby(self.COL_MESSAGE, as_index=False).agg(agg_params)
         df_autofuse_enabled = df_autofuse_enabled.groupby(self.COL_MESSAGE, as_index=False).agg(agg_params)
@@ -108,7 +161,7 @@ class ComparisonGenerator:
             df_autofuse_enabled,
             on=self.COL_MESSAGE,
             how='outer',
-            suffixes=('_disabled', '_enabled')
+            suffixes=('_disabled', '_enabled'),
         ).drop(columns=[self.COL_MESSAGE])
         df_merge[self.COL_DURATION_DIFF_RATIO] = df_merge['Duration(us)_enabled'] / df_merge['Duration(us)_disabled']
         cols = df_merge.columns.tolist()
@@ -116,12 +169,15 @@ class ComparisonGenerator:
         df_merge = df_merge[[self.COL_NAME] + cols]
         self._result_data = df_merge
 
+    # pylint: disable=R0801
     def generate_view(self):
         if self._result_data is None or self._result_data.empty:
             logger.error("Invalid comparison result, please check if the comparison result exists.")
             return
-        file_path = os.path.join(self.output_path,
-            f"autofuse_performance_comparison_result_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.xlsx")
+        file_path = os.path.join(
+            self.output_path,
+            f"autofuse_performance_comparison_result_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.xlsx",
+        )
         data_cols = [
             self.COL_DURATION,
             self.COL_AIC_SCALAR_TIME,
@@ -129,7 +185,7 @@ class ComparisonGenerator:
             self.COL_AIV_SCALAR_TIME,
             self.COL_AIV_VEC_TIME,
             self.COL_AIV_MTE2_TIME,
-            self.COL_AIV_MTE3_TIME
+            self.COL_AIV_MTE3_TIME,
         ]
         num_metrics = len(data_cols)
         total_cols_num = num_metrics * 2 + 2
@@ -175,8 +231,8 @@ class ComparisonGenerator:
                         cell_data = "INF" if cell_data == float('inf') else cell_data
                     worksheet.write(r_idx, c_idx, cell_data, cell_format)
                 r_idx += 1
-        os.chmod(file_path, Constant.FILE_AUTHORITY)
-        logger.info(f"Generate comparison result successfully: {file_path}")
+        logger.info("Generate comparison result successfully: %s", file_path)
+        # pylint: enable=R0801
 
     def run(self):
         PathManager.remove_path_safety(self.autofuse_disabled_path)
@@ -192,7 +248,7 @@ class ComparisonGenerator:
             msprof_bin,
             f"--application=python3 {py_path} -f {self.whole_graph} -d {self.subgraph_dir} -p {self.dump_path}",
             "--msproftx=on",
-            f"--output={self.autofuse_disabled_path}"
+            f"--output={self.autofuse_disabled_path}",
         ]
         if subprocess_cmd(cmd):
             logger.info("Collected profiling data with autofuse disabled.")
@@ -204,18 +260,20 @@ class ComparisonGenerator:
             msprof_bin,
             f"--application=python3 {py_path} -f {self.whole_graph} -d {self.subgraph_dir} -p {self.dump_path}",
             "--msproftx=on",
-            f"--output={self.autofuse_enabled_path}"
+            f"--output={self.autofuse_enabled_path}",
         ]
         if subprocess_cmd(cmd):
             logger.info("Collected profiling data with autofuse enabled.")
         else:
             logger.error("Failed to collect profiling data with autofuse enabled.")
             return
+        # pylint: disable=R0801
         try:
             self.generate_compare_result()
             self.generate_view()
         except Exception as err:
-            logger.error(f"Failed to generate comparison result: {err}", exc_info=True)
+            logger.error("Failed to generate comparison result: %s", err, exc_info=True)
+        # pylint: enable=R0801
 
 
 if __name__ == "__main__":
@@ -223,4 +281,4 @@ if __name__ == "__main__":
     args = parse_args()
     ComparisonGenerator(args).run()
     end_time = datetime.now(timezone.utc)
-    logger.info(f'The comparison task has been completed in a total time of {end_time - start_time}')
+    logger.info('The comparison task has been completed in a total time of %s', end_time - start_time)

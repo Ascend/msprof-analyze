@@ -13,12 +13,10 @@
 # limitations under the License.
 import os
 import sqlite3
-import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 
 from msprof_analyze.cluster_analyse.common_func.empty_class import EmptyClass
-from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.db_manager import DBManager, CustomizedDictFactory
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -41,8 +39,7 @@ class TestDBManager(unittest.TestCase):
 
     @patch('msprof_analyze.prof_common.db_manager.check_db_path_valid')
     @patch('sqlite3.connect')
-    @patch('os.chmod')
-    def test_create_connect_db_success(self, mock_chmod, mock_connect, mock_check_path):
+    def test_create_connect_db_success(self, mock_connect, mock_check_path):
         # 测试创建数据库连接成功的情况
         mock_check_path.return_value = True
         mock_conn = MagicMock(spec=sqlite3.Connection)
@@ -54,7 +51,6 @@ class TestDBManager(unittest.TestCase):
         mock_check_path.assert_called_once_with(self.temp_db_path)
         mock_connect.assert_called_once_with(self.temp_db_path)
         mock_conn.cursor.assert_called_once()
-        mock_chmod.assert_called_once_with(self.temp_db_path, Constant.FILE_AUTHORITY)
         self.assertEqual(conn, mock_conn)
         self.assertEqual(curs, mock_cursor)
 
@@ -265,8 +261,7 @@ class TestDBManager(unittest.TestCase):
         mock_conn = MagicMock(spec=sqlite3.Connection)
         mock_cursor = MagicMock(spec=sqlite3.Cursor)
         mock_create.return_value = (mock_conn, mock_cursor)
-        mock_cursor.fetchall.return_value = [(0, "id", "INTEGER", 0, None, 1),
-                                             (1, "name", "TEXT", 0, None, 0)]
+        mock_cursor.fetchall.return_value = [(0, "id", "INTEGER", 0, None, 1), (1, "name", "TEXT", 0, None, 0)]
 
         result = DBManager.get_table_column_count(self.temp_db_path, "table1")
         mock_cursor.execute.assert_called_once_with("PRAGMA table_info(table1)")
@@ -303,7 +298,7 @@ class TestDBManager(unittest.TestCase):
         mock_cursor.fetchmany.side_effect = [
             [(1, "test1"), (2, "test2"), (3, "test3")],
             [(4, "test4"), (5, "test5"), (6, "test6")],
-            [(7, "test7"), (8, "test7")]
+            [(7, "test7"), (8, "test7")],
         ]
 
         result = DBManager.fetch_all_data(mock_cursor, "SELECT * FROM test")
@@ -322,7 +317,7 @@ class TestDBManager(unittest.TestCase):
         mock_cursor.fetchmany.return_value = [(1, "test1")]
         params = (1,)
 
-        result = DBManager.fetch_all_data(mock_cursor, "SELECT * FROM test WHERE id=?", params)
+        _ = DBManager.fetch_all_data(mock_cursor, "SELECT * FROM test WHERE id=?", params)
         mock_cursor.execute.assert_called_once_with("SELECT * FROM test WHERE id=?", params)
 
     def test_fetch_all_data_invalid_cursor(self):
@@ -405,14 +400,16 @@ class TestDBManager(unittest.TestCase):
         data = [(1, "test1")]
 
         DBManager.insert_data_into_db(self.temp_db_path, "table1", data)
-        mock_logger_warning.assert_called_once_with(f"Failed to connect to db file: {self.temp_db_path}")
+        mock_logger_warning.assert_called_once_with("Failed to connect to db file: %s", self.temp_db_path)
 
     def test_check_columns_exist(self):
         # 测试检查列存在
         mock_cursor = MagicMock(spec=sqlite3.Cursor)
-        mock_cursor.fetchall.return_value = [(0, "id", "INTEGER", 0, None, 1),
-                                             (1, "name", "TEXT", 0, None, 0),
-                                             (2, "age", "INTEGER", 0, None, 0)]
+        mock_cursor.fetchall.return_value = [
+            (0, "id", "INTEGER", 0, None, 1),
+            (1, "name", "TEXT", 0, None, 0),
+            (2, "age", "INTEGER", 0, None, 0),
+        ]
 
         result = DBManager.check_columns_exist(mock_cursor, "table1", {"id", "name", "email"})
 
