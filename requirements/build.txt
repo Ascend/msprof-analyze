@@ -8,8 +8,8 @@ prettytable
 ijson
 xlsxwriter>=3.0.6
 sqlalchemy
-numpy<=1.26.4
-pandas<=2.3.2
+numpy
+pandas
 psutil
 pybind11
 plotly

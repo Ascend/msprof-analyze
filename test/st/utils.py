@@ -20,26 +20,25 @@ import sqlite3
 import pandas as pd
 
 COMMAND_SUCCESS = 0
-ST_DATA_PATH = os.getenv("MSTT_PROFILER_ST_DATA_PATH",
-                         "/home/dcs-50/smoke_project_for_msprof_analyze/mstt_profiler/st_data")
+ST_DATA_PATH = os.getenv("MSPROF_ANALYZE_ST_DATA_PATH", "/data/msprof-analyze-st-data")
 
 
 def execute_cmd(cmd):
-    logging.info('Execute command:%s' % " ".join(cmd))
-    completed_process = subprocess.run(cmd, shell=False, stderr=subprocess.PIPE)
+    logging.info('Execute command:%s', " ".join(cmd))
+    completed_process = subprocess.run(cmd, shell=False, stderr=subprocess.PIPE, check=False)
     if completed_process.returncode != COMMAND_SUCCESS:
         logging.error(completed_process.stderr.decode())
     return completed_process.returncode
 
 
 def execute_script(cmd):
-    logging.info('Execute command:%s' % " ".join(cmd))
-    process = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    while process.poll() is None:
-        line = process.stdout.readline().strip()
-        if line:
-            logging.debug(line)
-    return process.returncode
+    logging.info('Execute command:%s', " ".join(cmd))
+    with subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process:
+        while process.poll() is None:
+            line = process.stdout.readline().strip()
+            if line:
+                logging.debug(line)
+        return process.returncode
 
 
 def check_result_file(out_path):

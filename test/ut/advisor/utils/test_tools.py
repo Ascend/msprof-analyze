@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import unittest
-from unittest.mock import MagicMock, patch, call
-import click
+from unittest.mock import MagicMock
 from click.testing import CliRunner
-from msprof_analyze.advisor.utils.tools import ClickAliasedGroup, CONTEXT_SETTINGS
+from msprof_analyze.advisor.utils.tools import ClickAliasedGroup
 
 
 class TestClickAliasedGroup(unittest.TestCase):
@@ -59,7 +57,7 @@ class TestClickAliasedGroup(unittest.TestCase):
         mock_formatter.section.return_value.__enter__ = MagicMock(return_value=None)
         mock_formatter.section.return_value.__exit__ = MagicMock(return_value=None)
         group.format_commands(mock_ctx, mock_formatter)
-        mock_formatter.write_dl.assert_not_called()
+        mock_formatter.write_dl.assert_not_called()  # pylint: disable=no-member
 
     def test_decorator_wrapper(self):
         group = ClickAliasedGroup()
@@ -67,7 +65,7 @@ class TestClickAliasedGroup(unittest.TestCase):
         mock_cmd = MagicMock()
         mock_cmd.name = 'test_cmd'
         mock_decorator.return_value = mock_cmd
-        
+
         mock_func = MagicMock()
         result = group._decorator_warpper(mock_decorator, 'tc', mock_func)
 
@@ -107,7 +105,7 @@ class TestClickAliasedGroup(unittest.TestCase):
     def test_format_commands_without_alias(self):
         group = ClickAliasedGroup()
 
-        @group.command()
+        @group.command(name="test-cmd")
         def test_cmd():
             pass
 
@@ -116,7 +114,7 @@ class TestClickAliasedGroup(unittest.TestCase):
         mock_formatter.width = 80
 
         captured_rows = []
-        
+
         def mock_write_dl(rows):
             nonlocal captured_rows
             captured_rows = rows
