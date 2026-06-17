@@ -28,9 +28,7 @@ from test.st.advisor.utils import get_files, execute_cmd
 
 
 class TestAdvisorCmdSingleAscendPtNoCompare(TestCase):
-    ST_DATA_PATH = os.getenv(
-        "MSTT_PROFILER_ST_DATA_PATH", "/home/dcs-50/smoke_project_for_msprof_analyze/mstt_profiler/st_data"
-    )
+    ST_DATA_PATH = os.getenv("MSPROF_ANALYZE_ST_DATA_PATH", "/data/msprof-analyze-st-data")
     BASE_PROFILING_PATH = os.path.join(ST_DATA_PATH, "cluster_data_3", "n122-122-067_12380_20240912033946038_ascend_pt")
     OUTPUT_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "TestAdvisorCmdSingleAscendPtNoCompare")
     ALL_OUTPUT_PATH = os.path.join(OUTPUT_PATH, "all")

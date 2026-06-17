@@ -105,16 +105,18 @@ class CommMatrixSum(BaseRecipeAnalysis):
 
         def get_specific_rows(group):
             sorted_group = group.sort_values(by='bandwidth')
+            empty_template = pd.Series([None] * len(group.columns), index=group.columns)
             bottom1 = sorted_group.iloc[-1]
-            bottom2 = sorted_group.iloc[-2] if len(group) > 1 else pd.Series()
-            bottom3 = sorted_group.iloc[-3] if len(group) > 2 else pd.Series()
+            bottom2 = sorted_group.iloc[-2] if len(group) > 1 else empty_template
+            bottom3 = sorted_group.iloc[-3] if len(group) > 2 else empty_template
             top1 = sorted_group.iloc[0]
             middle = sorted_group.iloc[len(group) // 2]
-            return pd.DataFrame(
+            res_df = pd.DataFrame(
                 [top1, bottom1, bottom2, bottom3, middle], index=['top1', 'bottom1', 'bottom2', 'bottom3', 'middle']
             ).reset_index()
+            return res_df
 
-        example_df = grouped_df.apply(get_specific_rows).reset_index(drop=True)
+        example_df = grouped_df.apply(get_specific_rows, include_groups=False).reset_index()
         example_df = example_df.dropna().reset_index(drop=True)
         example_df["hccl_op_name"] = example_df["hccl_op_name"].astype(str) + "-" + example_df["index"].astype(str)
         example_df = example_df.drop(columns="index")

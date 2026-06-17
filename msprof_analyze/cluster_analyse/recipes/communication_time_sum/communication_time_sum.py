@@ -341,7 +341,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         self.communication_bandwidth = final_df
 
     def _get_sum_distinct_op(self, op_df):
-        return op_df.drop_duplicates(subset=[TableConstant.HCCL_OP_NAME, TableConstant.GROUP_NAME])[
+        return op_df.drop_duplicates(subset=[TableConstant.HCCL_OP_NAME])[
             [TableConstant.TRANSIT_SIZE, TableConstant.TRANSIT_TIME]
         ].sum()
 
