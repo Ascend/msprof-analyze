@@ -77,7 +77,7 @@ Successfully installed msprof-analyze-{version}
 2. 下载源码。
 
    ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze
+   git clone https://gitcode.com/Ascend/msprof-analyze -b 26.0.0
    ```
 
 3. 编译whl包。
@@ -102,7 +102,19 @@ Successfully installed msprof-analyze-{version}
    pip3 install ./msprof_analyze-{version}-py3-none-any.whl
    ```
 
-## 3. 卸载
+## 3. 验证安装
+
+安装完成后，执行以下命令验证工具是否安装成功：
+
+```bash
+msprof-analyze --help
+```
+
+若输出不报错，且能显示帮助信息，则表明安装成功。
+
+若 `msprof-analyze --help` 提示命令不存在，请确认当前终端使用的是安装 `msprof-analyze` 的 Python 环境。
+
+## 4. 卸载
 
 执行如下命令卸载msprof-analyze工具。
 
@@ -116,6 +128,8 @@ pip uninstall msprof-analyze
 Successfully uninstalled msprof-analyze-{version}
 ```
 
-## 4. 升级
+## 5. 升级
 
-msprof-analyze工具不支持直接升级，需要先完成[卸载](#3-卸载)后再重新[安装](#2-安装方式)。
+msprof-analyze工具不支持直接升级，需要先完成[卸载](#4-卸载)后再重新[安装](#2-安装方式)。
+
+可通过`msprof-analyze --version`命令查看当前环境的版本信息，再选择需要升级的版本。升级版本时需要关注版本配套关系，请参见《[版本说明](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.0.0/release_notes.md)》。
