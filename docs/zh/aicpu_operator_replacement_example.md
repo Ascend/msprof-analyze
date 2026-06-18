@@ -7,7 +7,7 @@
 - PyTorch数据类型转换，将执行在AICPU上的类型算子转换为执行在AICORE单元的算子。
 - 等价的算子替换。
 
-## 类型转换方式
+## 1. 类型转换方式
 
 当前PyTorch支持的dtype类型如下，具体请参见[Tensor Attributes](https://pytorch.org/docs/stable/tensor_attributes.html)。
 
@@ -17,7 +17,7 @@
 
 基于此对常见的算子如MUL、Equal、TensorEqual等做单算子测试，看有哪些类型的算子是执行在AICPU上的，然后尝试转换到支持AICORE单元的类型dtype上计算，实现效率提升的目的。
 
-### MUL
+### 1.1 MUL
 
 **图2** Mul
 
@@ -35,7 +35,7 @@ AICPU类型的dtype。
 int16, complex128
 ```
 
-### Equal
+### 1.2 Equal
 
 **图3** Equal
 
@@ -53,7 +53,7 @@ AICPU类型的dtype。
 int16, complex64, complex128
 ```
 
-### TensorEqual
+### 1.3 TensorEqual
 
 **图4** TensorEqual
 
@@ -71,9 +71,9 @@ AICPU类型的dtype。
 int16, int64
 ```
 
-## 算子等价替换
+## 2. 算子等价替换
 
-### Index算子替换
+### 2.1 Index算子替换
 
 - 情形一：index by index
 
@@ -107,7 +107,7 @@ int16, int64
   
   index by mask或者index_put by mask相对来说对NPU和框架比较友好。关键在保持shape不变，这样就不需要调用contiguous，然后将必要的index抽取操作放在最后。在index比较少的情况下，index操作就比较快了，可能优于替换。
 
-### IndexPut算子替换
+### 2.2 IndexPut算子替换
 
 在tensor类型的赋值和切片操作时，会使用IndexPut算子执行，一般都在AICPU上执行，可以转换为等价的tensor操作转换到CUBE单元上执行。例如：
 
@@ -135,7 +135,7 @@ masked_input *= ~input_mask
 
 ![img](./figures/替换后耗时.png)
 
-### ArgMin算子优化
+### 2.3 ArgMin算子优化
 
 ArgMin在CANN 6.3 RC2版本上算子下发到AICPU执行，在CANN 7.0RC1上下发到AI_CORE上边执行。出现此类情形建议升级CANN包版本。
 
@@ -151,7 +151,7 @@ CANN7.0 RC1上，单算子执行时间223.516 us。
 
 ![img](./figures/single_op_time_CANN70RC1.png)
 
-### nonzero算子优化
+### 2.4 nonzero算子优化
 
 将mask转化为index，对于所有值大于0的tensor在某些计算中可以利用乘法替代。比如要对mask的tensor求和。tensor_a[mask].sum()就相当于(tensor_a * mask).sum()。
 

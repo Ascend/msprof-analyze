@@ -1,10 +1,10 @@
 # 自定义分析规则开发指导
 
-## 简介
+## 1. 简介
 
 自定义分析规则是基于对Profiling的analysis.db和ascend_pytorch_profiler_{rank_id}.db文件进行性能数据分析而开发。与cann_api_sum、compute_op_sum、hccl_sum等参数功能实现类似，可自定义一套性能数据的分析规则。
 
-## 自定义分析规则开发操作步骤
+## 2. 操作步骤
 
 步骤如下：
 

@@ -16,7 +16,7 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
 **Data Preparation**
 
-`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Data Preparation](./README.md#Preparations).
+`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Data Preparation](./README.md#preparations).
 
 ## Idle Time Cause Analysis
 

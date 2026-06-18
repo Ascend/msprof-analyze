@@ -1,14 +1,14 @@
 # 性能数据模型结构拆解
 
-## 简介
+## 1. 简介
 
-性能数据模型结构拆解（module_statistic）是msprof-analyze提供的针对PyTorch模型自动解析模型层级结构的分析能力，帮助精准定位性能瓶颈，为模型优化提供关键洞察。该分析能力提供：
+性能数据模型结构拆解（module_statistic）提供了针对PyTorch模型自动解析模型层级结构的分析功能，帮助精准定位性能瓶颈，为模型优化提供关键洞察。该功能提供：
 
 * 模型结构拆解：自动提取并展示模型的层次化结构，以及模型中的算子调用顺序。
 * 算子与Kernel映射：框架层算子下与NPU上执行Kernel的映射关系。
 * 性能分析：精确统计并输出Device侧Kernel的执行耗时。
 
-## 使用前准备
+## 2. 使用前准备
 
 **环境准备**
 
@@ -16,7 +16,7 @@
 
 **数据准备**
 
-1. 添加模型层级mstx打点
+1. 添加模型层级msTX打点
 
     在模型代码中调用`torch_npu.npu.mstx.range_start/range_end`性能打点接口，需重写PyTorch中的nn.Module调用逻辑。
 
@@ -27,13 +27,13 @@
    * 在`torch_npu.profiler._ExperimentalConfig`设置`export_type`导出类型，需要包含Db。
    * 性能数据落盘在`torch_npu.profiler.tensorboard_trace_handler`接口指定的路径下，将该路径下的数据作为msprof-analyze cluster的输入数据。
 
-完整样例代码，详见[性能数据采集样例代码](#性能数据采集样例代码)。
+完整样例代码，详见[性能数据采集样例代码](#51-性能数据采集样例代码)。
 
-## 模型结构拆解
+## 3. 功能介绍
 
 **功能说明**
 
-将采集到的带有模型结构mstx打点的数据，执行msprof-analyze工具分析操作。
+将采集到的带有模型结构msTX打点的数据，执行msprof-analyze工具分析操作。
 
 **命令格式**
 
@@ -45,35 +45,43 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 
 | 参数 | 可选/必选 | 说明                              |
 | ---- | --------- |---------------------------------|
-| -m   | 必选      | 设置为module_statistic 使能模型结构拆解能力。 |
-| -d   | 必选      | 集群性能数据文件夹路径。                    |
-| -o   | 可选      | 指定输出文件路径。                       |
-| --export_type   | 可选      | 指定输出文件类型，可选db或text。             |
+| -m   | 必选      | 设置为module_statistic，启动模型结构拆解。 |
+| -d   | 必选      | 集群性能数据文件父目录路径。                    |
+| -o   | 可选      | 分析结果输出路径，默认输出在-d参数指定的目录下。                       |
+| --export_type   | 可选      | 输出文件类型，可选db或text，默认为db。             |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **输出说明**
 
-* 输出结果体现模型层级，算子调用顺序，NPU上执行的Kernel以及统计时间。
-* `export_type`设置为`text`时，每张卡生成独立的module_statistic_{rank_id}.xlsx文件，如下图所示：
+* 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`ModuleStatistic`表。
+* 当--export_type设置为text时，每张卡生成独立的module_statistic_{rank_id}.xlsx文件。
+
+具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
+
+## 4. 输出结果文件说明
+
+输出结果体现模型层级，算子调用顺序，NPU上执行的Kernel以及统计时间。
+
+**ModuleStatistic表**
+
+| 字段名称                | 说明                                                         |
+| ----------------------- | ------------------------------------------------------------ |
+| parentModule            | 上层Module名称，TEXT类型                                     |
+| module                  | 最底层Module名称，TEXT类型                                   |
+| opName                  | 框架侧算子名称，同一module下，算子按照调用顺序排列，TEXT类型 |
+| kernelList              | 框架侧算子下发到Device侧执行Kernel的序列，TEXT类型           |
+| totalKernelDuration(ns) | 框架侧算子对应Device侧Kernel运行总时间，单位纳秒（ns），REAL类型 |
+| avgKernelDuration(ns)   | 框架侧算子对应Device侧Kernel平均运行时间，单位纳秒（ns），REAL类型 |
+| opCount                 | 框架侧算子在采集周期内运行的次数，INTEGER类型                |
+| rankID                  | 集群场景的节点识别ID，集群场景下设备的唯一标识，INTEGER类型  |
+
+**module_statistic_{rank_id}.xlsx**
 ![vllm_module_statistic](../figures/vllm_module_statistic.png)
 
-* `export_type`设置为`db`时，结果统一保存到 cluster_analysis.db 的 ModuleStatistic，字段说明如下：
+## 5. 附录
 
-  | 字段名称                    | 说明                                                                                      |
-  |-------------------------|-----------------------------------------------------------------------------------------|
-  | parentModule            | 上层Module名称，TEXT类型                                                                       |
-  | module                  | 最底层Module名称，TEXT类型                                                                      |
-  | opName                  | 框架侧算子名称，同一module下，算子按照调用顺序排列，TEXT类型                                                     |
-  | kernelList              | 框架侧算子下发到Device侧执行Kernel的序列，TEXT类型                                                       |
-  | totalKernelDuration(ns) | 框架侧算子对应Device侧Kernel运行总时间，单位纳秒（ns），REAL类型                                               |
-  | avgKernelDuration(ns)       | 框架侧算子对应Device侧Kernel平均运行时间，单位纳秒（ns），REAL类型                                              |
-  | opCount                 | 框架侧算子在采集周期内运行的次数，INTEGER类型                                                              |
-  | rankID                  | 集群场景的节点识别ID，集群场景下设备的唯一标识，INTEGER类型                                                      |
-
-## 附录
-
-### 性能数据采集样例代码
+### 5.1 性能数据采集样例代码
 
 对于复杂模型结构，建议采用选择性打点策略以降低性能开销，核心性能打点实现代码如下：
 
@@ -106,7 +114,7 @@ import torch.optim as optim
 original_call = nn.Module.__call__
 
 def custom_call(self, *args, **kwargs):
-    """自定义nn.Module调用方法，添加MSTX打点"""
+    """自定义nn.Module调用方法，添加msTX打点"""
     module_name = self.__class__.__name__
     mstx_id = torch_npu.npu.mstx.range_start(module_name, domain="Module")
     tmp = original_call(self, *args, **kwargs)
@@ -161,7 +169,7 @@ def train():
         aic_metrics=torch_npu.profiler.AiCMetrics.PipeUtilization,
         profiler_level=torch_npu.profiler.ProfilerLevel.Level2,
         l2_cache=False,
-        mstx=True,  # 打开mstx采集，原参数名为msprof_tx
+        mstx=True,  # 打开msTX采集，原参数名为msprof_tx
         data_simplification=False,
         export_type=[
             torch_npu.profiler.ExportType.Text,

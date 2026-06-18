@@ -15,15 +15,15 @@ For details about how to collect profile data by using Ascend PyTorch Profiler, 
 
   1. Install Jupyter Notebook. For details about how to install and use Jupyter Notebook, visit the Jupyter Notebook official website.
 
-  ```bash
-  pip install jupyter notebook
-  ```
+      ```bash
+      pip install jupyter notebook
+      ```
 
   2. Download the `msprof-analyze` source code.
 
-   ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze
-   ```
+      ```bash
+      git clone https://gitcode.com/Ascend/msprof-analyze
+      ```
 
 **Data preparation**
 

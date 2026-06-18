@@ -4,11 +4,11 @@
 
 torch_npu API的功能和参数描述见[API列表](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/torch_npu接口列表.md)。
 
-## 优化器替换
+## 1. 优化器替换
 
 替换优化器一般都能有较大的性能收益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0036.html)。下文以AdamW优化器为例，其他优化器的替换方式一致。
 
-### torch_npu.optim.NpuFusedAdamW
+### 1.1 torch_npu.optim.NpuFusedAdamW
 
 torch原生代码示例如下：
 
@@ -36,9 +36,9 @@ optimizer = torch_npu.optim.NpuFusedAdamW(
 )
 ```
 
-## 亲和API替换
+## 2. 亲和API替换
 
-### optimizer.clip_grad_norm_fused_
+### 2.1 optimizer.clip_grad_norm_fused_
 
 在替换为npu亲和梯度裁剪api之前，请确保代码中已使用npu亲和优化器。
 
@@ -61,7 +61,7 @@ optimizer = torch_npu.optim.NpuFusedAdamW(model.parameters(), lr = lr)
 optimizer.clip_grad_norm_fused_(max_norm=10, norm_type=2)
 ```
 
-### torch_npu.npu_confusion_transpose
+### 2.2 torch_npu.npu_confusion_transpose
 
 **示例一**
 
@@ -111,7 +111,7 @@ batch, channel, height, width = data.shape
 result = torch_npu.npu_confusion_transpose(data, (1, 0), (batch, height*channel*width), transpose_first=False)
 ```
 
-### torch_npu.npu_scaled_masked_softmax
+### 2.3 torch_npu.npu_scaled_masked_softmax
 
 注意atten_mask和atten_scores张量最后一维的取值范围为32-8192，且必须为32的整数倍。
 
@@ -142,7 +142,7 @@ output = torch_npu.npu_scaled_masked_softmax(x, mask, scale)
 # shape is (64, 8, 128, 256)
 ```
 
-### torch_npu.fast_gelu
+### 2.4 torch_npu.fast_gelu
 
 **示例一**
 
@@ -197,7 +197,7 @@ fast_gelu_module = FastGelu().cuda()
 result = fast_gelu_module(input_data)
 ```
 
-### torch_npu.npu_rms_norm
+### 2.5 torch_npu.npu_rms_norm
 
 输入数据dtype仅支持float16、bfloat16、float。
 
@@ -245,7 +245,7 @@ npu_rms_norm = NpuRMSNorm((128, 256))
 result = npu_rms_norm(input_data)
 ```
 
-### torch_npu.npu_swiglu
+### 2.6 torch_npu.npu_swiglu
 
 输入数据dtype仅支持float16、bfloat16、float。
 
@@ -292,7 +292,7 @@ npu_swiglu = NpuSwiGlu()
 result = npu_swiglu(input_data)
 ```
 
-### torch_npu.npu_rotary_mul
+### 2.7 torch_npu.npu_rotary_mul
 
 torch原生代码示例如下：
 
@@ -327,7 +327,7 @@ r2 = torch.rand([1, 8192, 1, 128]).cuda()
 result = torch_npu.npu_rotary_mul(x, r1, r2)
 ```
 
-### torch_npu.npu_fusion_attention
+### 2.8 torch_npu.npu_fusion_attention
 
 torch原生代码示例如下：
 

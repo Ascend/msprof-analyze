@@ -1,12 +1,12 @@
 # 集群算子耗时分析
 
-## 简介
+## 1. 简介
 
 集群算子耗时分析功能是在集群场景下，通过cluster_prof_info_analysis.py脚本，基于多卡性能数据的op_summary信息，统计并展示各卡中执行最快、最慢、均值和方差的TopN算子。
 
 多卡间的算子情况，只能通过查看每张卡各自的性能数据来了解，不能直观对比各卡之间算子的性能差异。
 
-## 使用前准备
+## 2. 使用前准备
 
 **环境准备**
 
@@ -34,7 +34,7 @@ pip install plotly
 |   ......             
 ```
 
-## 集群算子耗时分析
+## 3. 功能介绍
 
 **功能说明**
 
@@ -64,13 +64,13 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 python3 cluster_prof_info_analysis.py -d ./cluster_data -t csv -n 5
 ```
 
-## 输出结果文件说明
+## 4. 输出结果文件说明
 
-### cluster_op_time_analysis.csv
+### 4.1 cluster_op_time_analysis.csv
 
 将算子以op_name、input_shape、input_size、output_shape进行分类，统计每一类算子，在不同节点（node）的不同卡（device）上，执行时间的最大、最小、方差、平均时间以及范围。
 
-### xxx_info.html
+### 4.2 xxx_info.html
 
 主要是各个特性（time和ratio）的html文件，以html方式展示top_n算子的箱线图。
 

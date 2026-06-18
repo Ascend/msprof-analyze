@@ -1,6 +1,6 @@
 ﻿# 集群分析工具
 
-## 1 简介
+## 1. 简介
 
 `cluster_analyse` 是面向集群场景的分析工具，基础功能涵盖通信域的迭代内耗时分析、通信时间分析和通信矩阵分析，可用于定位慢卡、慢节点及慢链路问题。 生成的交付件推荐在 `MindStudio Insight` 中可视化查看，典型应用场景有：
 
@@ -8,9 +8,13 @@
 - **判断是否存在慢链路或带宽异常**：查看 rank 间的链路类型（LOCAL/HCCS/PCIE/RDMA）和传输带宽。同一类链路间的带宽应基本持平，差异明显时可定位到具体慢链路。
 - **定位耗时集中的通信算子或通信域**：查看通信算子的耗时分布和通信域内的 rank 范围，快速锁定异常通信操作。
 
-## 2 数据要求
+## 2. 使用前准备
 
-### 2.1 性能数据采集
+### 2.1 环境准备
+
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。建议安装最新版本。
+
+### 2.2 数据准备
 
 当前集群分析能力支持以下 4 类 profiling 数据作为输入：
 
@@ -23,7 +27,7 @@
 
 下面以 Ascend PyTorch Profiler 为例说明输入数据要求。
 
-### 2.2 采集配置
+#### 2.2.1 采集配置
 
 `profiler_level` 建议设置为 `Level1` 或更高。`Level0` 及以下不会采集通信小算子，因此无法获取通信带宽和通信矩阵信息，仅能汇总集群的`step_trace_time`迭代内耗时信息。
 
@@ -33,11 +37,11 @@ experimental_config = torch_npu.profiler._ExperimentalConfig(
 )
 ```
 
-### 2.3 数据格式
+#### 2.2.2 数据格式
 
 Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即可。建议优先使用 db 格式性能数据，处理效率更高。
 
-#### 2.3.1 db 格式性能数据
+##### 2.2.2.1 db 格式性能数据
 
 打开某张卡采集到的 *_ascend_pt 目录，正常可用的 db 类型性能数据通常应包含以下目录和文件：
 
@@ -53,7 +57,7 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 >
 > 对于超大集群性能数据需要汇总分析的场景，由于数据量较大，转存的代价高，支持单独保存 `analysis.db` 和 `profiler_info_*.json` 文件（须保留原有目录结构）进行 `msprof-analyze cluster` 分析，以此节省文件转储耗时，完成基本的性能分析。
 
-#### 2.3.2 text 格式性能数据
+##### 2.2.2.2 text 格式性能数据
 
 已有 text 类型结果时，也可以直接作为输入。打开某张卡采集到的 *_ascend_pt 目录，可用的 text 类型结果必须包含以下目录和文件：
 
@@ -66,7 +70,7 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 └── profiler_info_*.json
 ```
 
-### 2.4 集群输入目录要求
+### 2.3 集群输入目录要求
 
 集群分析时，`-d` 参数应指向集群性能数据根目录，根目录下需包含多张卡、同一次采集得到的 profiling 子目录。为保证分析结果准确，集群路径需满足：
 
@@ -93,30 +97,24 @@ profiling_data/
     └── profiler_info_*.json
 ```
 
-## 3 运行集群分析
+## 3. 功能介绍
 
-### 3.1 安装工具
+### 3.1 功能说明
 
-参见《[安装指南](../getting_started/install_guide.md)》完成工具安装。建议安装最新版本。
+对输入的集群场景性能数据执行分析。
 
-### 3.2 执行集群分析
+### 3.2 命令格式
 
-将所有卡的数据拷贝并汇集到一个目录下，运行以下命令，生成 `cluster_analysis_output` 文件夹。
+**命令行运行方式（推荐）**
 
 ```bash
-# 命令行运行方式（推荐）
-msprof-analyze cluster -d {cluster profiling data path} [-m mode] [-o output_path] [--force]
-# 示例
-msprof-analyze cluster -m all -d ./cluster_data -o ./output
+msprof-analyze cluster -d <profiling_path> [-m <mode>] [-o output_path] [--agent] [--force]
 ```
 
-或
+**脚本运行方式**
 
 ```bash
-# 脚本运行方式
-python3 cluster_analysis.py -d {cluster profiling data path} [-m mode] [-o output_path] [--force]
-# 示例
-python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
+python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--agent] [--force]
 ```
 
 ### 3.3 参数说明
@@ -137,11 +135,53 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 | communication_time   | 可选      | 解析通信耗时数据。                                           |
 | all                  | 可选      | 同时解析通信矩阵communication_matrix和通信耗时数据communication_time，--mode参数默认值为all。 |
 
-### 3.4 可视化查看
+### 3.4 使用示例
+
+将所有卡的数据拷贝并汇集到一个目录下，运行以下命令。
+
+**命令行运行方式（推荐）**
+
+```bash
+msprof-analyze cluster -m all -d ./cluster_data -o ./output
+```
+
+**脚本运行方式**
+
+```bash
+python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
+```
+
+### 3.5 输出说明
+
+输出路径下生成cluster_analysis_output目录，具体结果文件介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
+
+## 4. 输出结果文件说明
+
+### 4.1 交付件介绍
+
+| 交付件                              | 输入格式 | 主要用途 / 说明                                              |
+| :---------------------------------- | :------- | :----------------------------------------------------------- |
+| `cluster_analysis.db`               | db       | 包含导入 MindStudio Insight 进行可视化分析，适合大规模集群数据。 |
+| `cluster_step_trace_time.csv`       | text     | 集群迭代耗时拆解信息，包括 rank/stage 维度耗时，用于辅助判断慢卡、负载不均衡等问题。 |
+| `cluster_communication.json`        | text     | 集群通信算子耗时明细。                                       |
+| `cluster_communication_matrix.json` | text     | 集群通信矩阵，包括 rank 间链路类型、带宽和传输时间。         |
+| `communication_group.json`          | text     | 集群集合通信和点对点通信域信息。                             |
+
+### 4.2 推荐查看方式
+
+**推荐查看路径**
+
+1. 分析完成后，强烈建议将整个 `cluster_analysis_output` 文件夹导入 MindStudio Insight。
+2. 在集群概览页查看 rank/stage 维度的计算、通信、空闲和 Bubble 耗时，优先判断是否存在慢卡或 stage 间负载不均衡。
+3. 在通信矩阵页查看 rank 间链路类型、通信大小、带宽和传输时间，判断是否存在慢链路或异常带宽。
+4. 需要进一步定位通信算子或通信域时，在可视化页面中查看通信耗时明细和通信域信息。
+
+**推荐查看工具**
 
 推荐使用 MindStudio Insight 工具导入生成的 `cluster_analysis_output` 文件夹进行可视化展示，如下图所示。具体使用方法请参见《[MindStudio Insight用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/overview.md)》。
 
 ![img](../figures/cluster_summary.png)
+
     <div style="text-align: center;">
     图1 集群计算/通信概览可视化呈现
     </div>
@@ -150,27 +190,6 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
     <div style="text-align: center;">
     图2 集群通信矩阵可视化呈现
     </div>    
-
-## 4 交付件
-
-### 4.1 推荐查看方式
-
-推荐查看路径如下：
-
-1. 分析完成后，强烈建议将整个 `cluster_analysis_output` 文件夹导入 MindStudio Insight。
-2. 在集群概览页查看 rank/stage 维度的计算、通信、空闲和 Bubble 耗时，优先判断是否存在慢卡或 stage 间负载不均衡。
-3. 在通信矩阵页查看 rank 间链路类型、通信大小、带宽和传输时间，判断是否存在慢链路或异常带宽。
-4. 需要进一步定位通信算子或通信域时，在可视化页面中查看通信耗时明细和通信域信息。
-
-### 4.2 交付件介绍
-
-| 交付件 | 输入格式 | 主要用途 / 说明                                        |
-| :--- | :--- |:-------------------------------------------------|
-| `cluster_analysis.db` | db | 包含导入 MindStudio Insight 进行可视化分析，适合大规模集群数据。       |
-| `cluster_step_trace_time.csv` | text | 集群迭代耗时拆解信息，包括 rank/stage 维度耗时，用于辅助判断慢卡、负载不均衡等问题。 |
-| `cluster_communication.json` | text | 集群通信算子耗时明细。                                      |
-| `cluster_communication_matrix.json` | text | 集群通信矩阵，包括 rank 间链路类型、带宽和传输时间。                    |
-| `communication_group.json` | text | 集群集合通信和点对点通信域信息。                                 |
 
 ### 4.3 交付件字段说明
 
@@ -246,14 +265,14 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 不同采集工具、采集级别、`--mode` 取值和原始 profiling 数据完整度会影响实际生成的表。若某类原始数据缺失，对应表可能不会生成。
 
-#### 4.3.6 `ClusterBaseInfo` 字段说明
+##### 4.3.5.1 `ClusterBaseInfo` 
 
 | 字段 | 说明 |
 | --- | --- |
 | `key` | 基础信息名称，例如分布式参数。 |
 | `value` | 基础信息内容，通常为序列化后的字符串。 |
 
-#### 4.3.7 `ClusterStepTraceTime` 字段说明
+##### 4.3.5.2 `ClusterStepTraceTime` 
 
 | 字段 | 说明 |
 | --- | --- |
@@ -273,7 +292,7 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | `pp_index` | 所属 PP 组索引，未采集则为空或默认值。 |
 | `tp_index` | 所属 TP 组索引，未采集则为空或默认值。 |
 
-#### 4.3.8 `CommunicationGroupMapping` 字段说明
+##### 4.3.5.3 `CommunicationGroupMapping`
 
 | 字段 | 说明 |
 | --- | --- |
@@ -283,7 +302,7 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | `group_id` | 通信域 ID。 |
 | `pg_name` | 并行组名称。 |
 
-#### 4.3.9 `ClusterCommunicationTime` 字段说明
+##### 4.3.5.4 `ClusterCommunicationTime`
 
 | 字段 | 说明 |
 | --- | --- |
@@ -300,7 +319,7 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | `synchronization_time_ratio` | 同步耗时占比，取值为 0 到 1 的小数。 |
 | `wait_time_ratio` | 等待耗时占比，取值为 0 到 1 的小数。 |
 
-#### 4.3.10 `ClusterCommunicationBandwidth` 字段说明
+##### 4.3.5.5 `ClusterCommunicationBandwidth`
 
 | 字段 | 说明 |
 | --- | --- |
@@ -317,7 +336,7 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | `count` | 对应包大小的通信次数。 |
 | `total_duration` | 对应包大小的总耗时，单位 ms。 |
 
-#### 4.3.11 `ClusterCommunicationMatrix` 字段说明
+##### 4.3.5.6 `ClusterCommunicationMatrix`
 
 | 字段 | 说明 |
 | --- | --- |

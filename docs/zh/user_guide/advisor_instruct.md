@@ -1,10 +1,10 @@
 # 专家建议
 
-## 1 简介
+## 1. 简介
 
 advisor（专家建议）功能是将Ascend PyTorch Profiler或者MindSpore Profiler采集的性能数据进行分析，并输出性能调优建议。
 
-## 2 快速上手
+## 2. 快速上手
 
 ### 2.1 最简命令
 
@@ -33,21 +33,21 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 | 输出英文报告 | 需要英文输出 | `msprof-analyze advisor all -d /path/to/profiling_data/ -l en` |
 | 强制执行 | 需要跳过属主检查或大文件限制 | `msprof-analyze advisor all -d /path/to/profiling_data/ --force` |
 
-## 3 使用前准备
+## 3. 使用前准备
 
-**环境准备：**
+**环境准备**
 
-命令行方式使用advisor功能，需要安装msprof-analyze，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
 
-**数据准备：**
+**数据准备**
 
 msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
 
-**约束：**
+**约束**
 
 CANN软件版本8.0RC1之前仅支持对text格式文件分析，8.0RC1及之后支持text、db格式的采集数据分析。
 
-## 4 advisor功能介绍（命令行方式）
+## 4. 功能介绍（advisor命令行方式）
 
 ### 4.1 功能说明
 
@@ -109,25 +109,25 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 
 ### 4.3 参数说明
 
-#### 4.3.1 必选参数
+#### 4.3.1 输入输出配置
 
-| 参数 | 说明 |
-| --- | --- |
-| `-d`<br>`--profiling_path` | 性能数据文件或目录所在路径，Ascend PyTorch Profiler采集场景指定为`*_ascend_pt`性能数据结果目录，MindSpore Profiler采集场景指定为`*_ascend_ms`性能数据结果目录。集群数据需要指定到`*_ascend_pt`或`*_ascend_ms`的父目录。 |
+| 参数 | 可选/必选 | 说明 |
+| --- | --- | --- |
+| `-d`<br>`--profiling_path` | 必选 | 性能数据文件或目录所在路径，Ascend PyTorch Profiler采集场景指定为`*_ascend_pt`性能数据结果目录，MindSpore Profiler采集场景指定为`*_ascend_ms`性能数据结果目录。集群数据需要指定到`*_ascend_pt`或`*_ascend_ms`的父目录。 |
+| `-bp`<br>`--benchmark_profiling_path` | 可选 | 基准性能数据所在目录，用于性能比对。性能数据通过Profiling工具采集获取。<br>**computation和schedule不支持该参数。** |
+| `-o`<br>`--output_path` | 可选 | 分析结果输出路径，完成advisor分析操作后会在该目录下保存分析结果数据。默认未配置，为当前目录。 |
+| `--agent` | 可选 | 分析结果以json格式输出至标准输出，不写入文件。配置该参数表示开启stdout，默认未配置表示关闭。 |
 
-#### 4.3.2 可选参数
+#### 4.3.2 执行行为控制
 
-| 参数 | 说明 |
-| --- | --- |
-| `-bp`<br>`--benchmark_profiling_path` | 基准性能数据所在目录，用于性能比对。性能数据通过Profiling工具采集获取。<br>**computation和schedule不支持该参数。** |
-| `-o`<br>`--output_path` | 分析结果输出路径，完成advisor分析操作后会在该目录下保存分析结果数据。默认未配置，为当前目录。 |
-| `--force` | 强制执行advisor。配置后可强制跳过如下情况：<br>指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br>csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br>配置该参数表示开启强制执行，默认未配置表示关闭。 |
-| `-l`<br>`--language` | 设置分析结果输出的语言，可取值：<br>`cn`：输出中文，默认值。<br>`en`：输出英文。 |
-| `--debug` | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
-| `--agent` | 分析结果以json格式输出至标准输出，不写入文件。配置该参数表示开启stdout，默认未配置表示关闭。 |
-| `-h`，`-H`<br>`--help` | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 |
+| 参数                | 可选/必选 | 说明                                                         |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值： `cn`：输出中文，默认值。 `en`：输出英文。 |
+| `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
+| `-h`，`-H` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
-#### 4.3.3 版本/环境参数
+#### 4.3.2 环境与版本配置
 
 | 参数 | 说明 |
 | --- | --- |
@@ -157,7 +157,7 @@ msprof-analyze advisor schedule -d /path/to/profiling_data/
 
 单卡场景需要指定到性能数据文件`*_ascend_pt`或`*_ascend_ms`目录；多卡或集群场景需要指定到`*_ascend_pt`或`*_ascend_ms`目录的父目录层级。
 
-## 5 输出说明
+### 4.5 输出说明
 
 advisor会输出终端简略建议，并生成HTML报告和XLSX明细文件。若配置了`-o <output_path>`，输出文件会保存在指定目录下；未配置时默认输出到当前目录。
 
@@ -187,7 +187,9 @@ advisor会输出终端简略建议，并生成HTML报告和XLSX明细文件。�
 
 ![schedule](../figures/schedule.png)
 
-## 6 报告解读指南
+详细介绍请参见[报告解读指南](#6-报告解读指南)。
+
+## 6. 报告解读指南
 
 ### 6.1 快速导航
 
@@ -263,7 +265,7 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
 #### performance problem analysis模块
 
-performance problem analysis模块包含memory、communication、computation、dataloader、schedule等子模块。各子模块的作用和示例见[各问题类型详解](#7-各问题类型详解)。
+performance problem analysis模块包含memory、communication、computation、dataloader、schedule等子模块。各子模块的作用和示例见[各问题类型详解](#64-各问题类型详解)。
 
 ### 6.3 场景二：有标杆（有-bp）
 
@@ -304,9 +306,9 @@ performance problem analysis模块包含memory、communication、computation、d
 
 有标杆场景下，performance problem analysis模块与无标杆场景一致。建议按memory、communication、computation、dataloader、schedule的顺序查看，优先处理High优先级问题。
 
-## 7 各问题类型详解
+### 6.4 各问题类型详解
 
-### 7.1 computation模块问题速查
+#### 6.4.1 computation模块问题速查
 
 computation模块从device计算性能维度进行分析，能够识别AICPU、动态Shape、AI Core Performance Analysis、Block Dim、算子瓶颈、融合算子图、AI Core算子降频分析等问题并给出相应建议。按照报告进行调优即可。
 
@@ -336,7 +338,7 @@ computation模块从device计算性能维度进行分析，能够识别AICPU、�
 
 ![computation_2](../figures/computation_2.png)
 
-### 7.2 communication模块问题速查
+#### 6.4.2 communication模块问题速查
 
 communication模块从通信维度进行分析，目前支持通信小包检测、通信计算带宽抢占检测、通信重传检测、通信算子字节对齐检测。
 
@@ -369,7 +371,7 @@ communication模块从通信维度进行分析，目前支持通信小包检测�
 
 ![byte_alignment](../figures/byte_alignment.png)
 
-### 7.3 schedule模块问题速查
+#### 6.4.3 schedule模块问题速查
 
 schedule模块包含GC Analysis、亲和API、aclopCompile、SyncBatchNorm、SynchronizeStream和Fusible Operator Analysis等多项检测。
 
@@ -431,7 +433,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0251.html)。
 
-### 7.4 memory/dataloader模块问题速查
+#### 6.4.4 memory/dataloader模块问题速查
 
 | 模块 | 问题类型 | 识别内容 | 使用建议 |
 | --- | --- | --- | --- |
@@ -448,28 +450,9 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html)使用。
 
-## 8 补充说明
+## 7. 功能介绍（advisor Jupyter Notebook方式）
 
-advisor中涉及的接口链接、参考文档如下。
-
-| 类型 | 名称 | 说明/链接 |
-| --- | --- | --- |
-| 安装指南 | msprof-analyze工具安装指南 | [msprof-analyze工具安装指南](../getting_started/install_guide.md) |
-| 数据采集 | Ascend PyTorch调优工具 | [Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md) |
-| 数据采集 | MindSpore调优工具 | [MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md) |
-| 环境变量 | ACLNN_CACHE_LIMIT | [ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/apiref/envvar/envref_07_0031.html) |
-| 环境变量 | HOST_CACHE_CAPACITY | [HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html) |
-| 环境变量 | ASCEND_LAUNCH_BLOCKING | [ASCEND_LAUNCH_BLOCKING](https://www.hiascend.com/document/detail/zh/Pytorch/710/comref/Envvariables/Envir_006.html) |
-| 接口 | torch_npu.npu.set_compile_mode | [torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md) |
-| 接口 | torch_npu.npu.config.allow_internal_format | [torch_npu.npu.config.allow_internal_format](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md) |
-| 接口 | aclopCompileAndExecute | [aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0251.html) |
-| 样例 | AICPU算子替换样例 | [AICPU 算子替换样例](../aicpu_operator_replacement_example.md) |
-| 样例 | 昇腾迁移融合算子API替换样例 | [昇腾迁移融合算子API替换样例](../fused_operator_api_replacement_example.md) |
-| 数据加载 | 数据加载优化 | [数据加载优化](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html) |
-
-## 9 专家建议（Jupyter Notebook方式）
-
-### 9.1 功能简介
+### 7.1 功能简介
 
 advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能数据分析过程和分析结果。
 
@@ -477,7 +460,7 @@ advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能�
 
 > Jupyter Notebook方式作为命令行方式的补充，不参与命令行主流程。MindSpore场景不支持Jupyter Notebook方式。
 
-### 9.2 使用前准备
+### 7.2 使用前准备
 
 **安装Jupyter Notebook**
 
@@ -501,7 +484,7 @@ advisor需要传入采集的性能数据文件夹，如何采集性能数据请�
 
 MindSpore场景不支持Jupyter Notebook方式。
 
-### 9.3 启动Jupyter Notebook
+### 7.3 启动Jupyter Notebook
 
 进入`msprof_analyze/advisor`目录，执行如下命令启动Jupyter Notebook工具。
 
@@ -515,7 +498,7 @@ jupyter notebook
 
 若在Linux环境下，终端会回显Jupyter Notebook页面的URL地址。复制该URL，并使用浏览器访问。若在远端服务器上运行，需要将URL中的`localhost`替换为远端服务器的IP地址。
 
-### 9.4 运行分析任务
+### 7.4 运行分析任务
 
 每个`.ipynb`文件对应一项性能数据分析任务。选择需要的`.ipynb`文件打开，并在`*_path`参数下填写Ascend PyTorch Profiler采集的性能数据路径。如下示例：
 
@@ -525,7 +508,7 @@ jupyter notebook
 
 分析结果会在`.ipynb`页面中展示。
 
-## 10 常见问题FAQ
+## 8. 常见问题FAQ
 
 **Q1：第一次使用应该选哪个命令？**
 

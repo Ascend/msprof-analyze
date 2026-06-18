@@ -1,14 +1,14 @@
 # 集群性能数据细粒度拆解
 
-## 简介
+## 1. 简介
 
 大集群场景涉及多个计算节点，数据量大，单卡维度的性能数据统计与分析无法评估整体集群运行情况。
 
 原有的cluster_step_trace_time.csv交付件没有单独的执行命令，导致用户使用不便，且不能涵盖内存拷贝等指标项，需要增强。
 
-集群性能数据细粒度拆解（cluster_time_summary）提供了集群训练过程中迭代耗时的拆解，包括计算、通信和内存拷贝等各部分的时间消耗，帮助用户找到性能瓶颈。
+集群性能数据细粒度拆解（cluster_time_summary）提供了集群训练过程中迭代耗时拆解的功能，包括计算、通信和内存拷贝等各部分的时间消耗，帮助用户找到性能瓶颈。
 
-## 使用前准备
+## 2. 使用前准备
 
 **环境准备**
 
@@ -16,9 +16,9 @@
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[数据准备](.//README.md#使用前准备)章节。
+msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数据请参见[使用前准备](./README.md#2-使用前准备)章节。
 
-## 集群性能数据细粒度拆解
+## 3. 功能介绍
 
 **功能说明**
 
@@ -34,11 +34,11 @@ msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 
 | 参数 | 可选/必选 | 说明                                                     |
 | ---- | --------- | -------------------------------------------------------- |
-| -m   | 必选      | 设置为cluster_time_summary，集群性能数据细粒度拆解能力。 |
-| -d   | 必选      | 集群性能数据文件夹路径。                                 |
-| -o   | 可选      | 指定输出文件路径，默认为-d参数指定的路径。               |
+| -m   | 必选      | 设置为cluster_time_summary，启动集群性能数据细粒度拆解。 |
+| -d   | 必选      | 集群性能数据文件父目录路径。                             |
+| -o   | 可选      | 分析结果输出路径，默认输出在-d参数指定的目录下。         |
 
-更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#参数说明)。
+更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **使用示例**
 
@@ -50,15 +50,20 @@ msprof-analyze -m cluster_time_summary -d ./xxx/cluster_data -o ./xxx/output_pat
 
 **输出说明**  
 
-* 存储位置：导出类型设置为db时，在输出路径下生成cluster_analysis_output/cluster_analysis.db；导出类型设置为text时，在输出路径下生成cluster_analysis_output/ClusterTimeSummary/cluster_time_summary_{timestamp}.csv。
+* 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`ClusterTimeSummary`表。
+* 当--export_type设置为text时，在-o参数指定路径下生成`cluster_analysis_output/ClusterTimeSummary/cluster_time_summary_{timestamp}.csv`文件。
 
-* 数据表名：ClusterTimeSummary
+具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
-  ![输出结果展示](../figures/cluster_time_summary.png)
+## 4. 输出结果文件说明
 
-## 输出结果文件说明
+如下字段以`ClusterTimeSummary`表为例。
 
-ClusterTimeSummary表字段如下：
+**ClusterTimeSummary表**
+
+![输出结果展示](../figures/cluster_time_summary.png)
+
+**字段说明**
 
 | 字段名称                                 | 类型    | 说明                                           |
 | ---------------------------------------- | ------- | ---------------------------------------------- |
@@ -79,7 +84,7 @@ ClusterTimeSummary表字段如下：
 
 cluster_time_summary_{timestamp}.csv除了表头格式有所调整，数据和db保持一致。
 
-**输出结果分析：**
+**输出结果分析**
 
 * 通过分析计算、通信、内存拷贝、空闲时间占比，找到性能瓶颈。
 * 通过比较集群内各卡耗时指标差异，定位性能问题。例如，computing计算耗时波动显著，通常表明存在卡间不同步、计算卡性能不均的情况，而通信传输耗时差异过大时，则需优先排查参数面网络是否存在拥塞或配置异常。
