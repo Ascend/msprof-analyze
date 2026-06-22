@@ -28,6 +28,7 @@ from msprof_analyze.prof_common.json_output import cli_json_output
 
 logger = get_logger()
 
+
 def _handle_agent_mode(kwargs):
     if kwargs.get('agent'):
         os.environ["AGENT_MODE"] = "agent"
@@ -40,42 +41,75 @@ def analyze_cli(**kwargs):
     pass
 
 
-@analyze_cli.command(context_settings=CONTEXT_SETTINGS,
-                     name="all",
-                     short_help='Analyze timeline fusion operators, operators and graph, '
-                                'operators dispatching and cluster.')
-@click.option('--profiling_path', '-d', 'profiling_path',
-              type=click.Path(exists=True, file_okay=False, resolve_path=True), required=True,
-              callback=PathManager.expanduser_for_cli, help='Directory of profiling data')
-@click.option('--benchmark_profiling_path', '-bp', 'benchmark_profiling_path',
-              type=click.Path(exists=True, file_okay=False, resolve_path=True),
-              callback=PathManager.expanduser_for_cli,
-              help='Directory of benchmark profiling data, used for compare performance')
-@click.option('--output_path', '-o', 'output_path',
-              type=click.Path(file_okay=False, writable=True, executable=True),
-              callback=PathManager.expanduser_for_cli,
-              help='Path of analysis output')
-@click.option('--cann_version', '-cv', 'cann_version',
-              type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),
-              default=EnumParamsParser().get_default(Constant.CANN_VERSION),
-              help='The CANN software version, which can be viewed by executing the following command: '
-                   '"cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info"')
-@click.option("-pt",
-              "--profiling_type",
-              metavar="",
-              required=False,
-              type=click.Choice(EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)),
-              help="enter the profiling type, selectable range pytorch, mindspore, mslite ,msprof")
-@click.option("--force",
-              is_flag=True,
-              help="Indicates whether to skip verification of the owner, size, and permissions.")
-@click.option("-l",
-              "--language",
-              type=click.Choice(["cn", "en"]),
-              required=False,
-              default="cn",
-              help="Language of the profiling advisor.")
-@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
+@analyze_cli.command(
+    context_settings=CONTEXT_SETTINGS,
+    name="all",
+    short_help='Analyze timeline fusion operators, operators and graph, operators dispatching and cluster.',
+)
+@click.option(
+    '--profiling_path',
+    '-d',
+    'profiling_path',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    required=True,
+    callback=PathManager.expanduser_for_cli,
+    help='Directory of profiling data',
+)
+@click.option(
+    '--benchmark_profiling_path',
+    '-bp',
+    'benchmark_profiling_path',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    callback=PathManager.expanduser_for_cli,
+    help='Directory of benchmark profiling data, used for compare performance',
+)
+@click.option(
+    '--output_path',
+    '-o',
+    'output_path',
+    type=click.Path(file_okay=False, writable=True, executable=True),
+    callback=PathManager.expanduser_for_cli,
+    help='Path of analysis output',
+)
+@click.option(
+    '--cann_version',
+    '-cv',
+    'cann_version',
+    type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),
+    default=EnumParamsParser().get_default(Constant.CANN_VERSION),
+    help='The CANN software version, which can be viewed by executing the following command: '
+    '"cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info"',
+)
+@click.option(
+    '--torch_version',
+    '-tv',
+    'torch_version',
+    type=click.Choice(EnumParamsParser().get_options(Constant.TORCH_VERSION), case_sensitive=False),
+    default=EnumParamsParser().get_default(Constant.TORCH_VERSION),
+    help='The runtime torch version, which can be detected by exec command "pip show torch"',
+)
+@click.option(
+    "-pt",
+    "--profiling_type",
+    metavar="",
+    required=False,
+    type=click.Choice(EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)),
+    help="Enter the profiling type, selectable range pytorch, mindspore, mslite ,msprof",
+)
+@click.option(
+    "--force", is_flag=True, help="Indicates whether to skip verification of the owner, size, and permissions."
+)
+@click.option(
+    "-l",
+    "--language",
+    type=click.Choice(["cn", "en"]),
+    required=False,
+    default="cn",
+    help="Language of the profiling advisor.",
+)
+@click.option(
+    '--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal'
+)
 @debug_option
 @cli_json_output
 def analyze_all(**kwargs) -> None:
@@ -86,38 +120,67 @@ def analyze_all(**kwargs) -> None:
         logger.error(e)
 
 
-@analyze_cli.command(context_settings=CONTEXT_SETTINGS,
-                     name="schedule",
-                     short_help='Analyze operators dispatching and timeline fusion operators.')
-@click.option('--profiling_path', '-d', 'profiling_path', type=click.Path(), required=True,
-              callback=PathManager.expanduser_for_cli, help='Directory of profiling data')
-@click.option('--output_path', '-o', 'output_path', type=click.Path(), callback=PathManager.expanduser_for_cli,
-              help='Path of analysis output')
-@click.option('--cann_version', '-cv', 'cann_version',
-              type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),
-              default=EnumParamsParser().get_default(Constant.CANN_VERSION),
-              help='The CANN software version, which can be viewed by executing the following command: '
-                   '"cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info"')
-@click.option('--torch_version', '-tv', 'torch_version',
-              type=click.Choice(EnumParamsParser().get_options(Constant.TORCH_VERSION), case_sensitive=False),
-              default=EnumParamsParser().get_default(Constant.TORCH_VERSION),
-              help='The runtime torch version, which can be detected by exec command "pip show torch"')
-@click.option("-pt",
-              "--profiling_type",
-              metavar="",
-              required=False,
-              type=click.Choice(EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)),
-              help="enter the profiling type, selectable range ascend_pytorch_profiler, mslite ,msprof")
-@click.option("--force",
-              is_flag=True,
-              help="Indicates whether to skip verification of the owner, size, and permissions.")
-@click.option("-l",
-              "--language",
-              type=click.Choice(["cn", "en"]),
-              required=False,
-              default="cn",
-              help="Language of the profiling advisor.")
-@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
+@analyze_cli.command(
+    context_settings=CONTEXT_SETTINGS,
+    name="schedule",
+    short_help='Analyze operators dispatching and timeline fusion operators.',
+)
+@click.option(
+    '--profiling_path',
+    '-d',
+    'profiling_path',
+    type=click.Path(),
+    required=True,
+    callback=PathManager.expanduser_for_cli,
+    help='Directory of profiling data',
+)
+@click.option(
+    '--output_path',
+    '-o',
+    'output_path',
+    type=click.Path(),
+    callback=PathManager.expanduser_for_cli,
+    help='Path of analysis output',
+)
+@click.option(
+    '--cann_version',
+    '-cv',
+    'cann_version',
+    type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),
+    default=EnumParamsParser().get_default(Constant.CANN_VERSION),
+    help='The CANN software version, which can be viewed by executing the following command: '
+    '"cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info"',
+)
+@click.option(
+    '--torch_version',
+    '-tv',
+    'torch_version',
+    type=click.Choice(EnumParamsParser().get_options(Constant.TORCH_VERSION), case_sensitive=False),
+    default=EnumParamsParser().get_default(Constant.TORCH_VERSION),
+    help='The runtime torch version, which can be detected by exec command "pip show torch"',
+)
+@click.option(
+    "-pt",
+    "--profiling_type",
+    metavar="",
+    required=False,
+    type=click.Choice(EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)),
+    help="Enter the profiling type, selectable range ascend_pytorch_profiler, mslite ,msprof",
+)
+@click.option(
+    "--force", is_flag=True, help="Indicates whether to skip verification of the owner, size, and permissions."
+)
+@click.option(
+    "-l",
+    "--language",
+    type=click.Choice(["cn", "en"]),
+    required=False,
+    default="cn",
+    help="Language of the profiling advisor.",
+)
+@click.option(
+    '--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal'
+)
 @debug_option
 @cli_json_output
 def analyze_schedule(**kwargs) -> None:
@@ -128,38 +191,63 @@ def analyze_schedule(**kwargs) -> None:
         logger.error(e)
 
 
-@analyze_cli.command(context_settings=CONTEXT_SETTINGS,
-                     name="computation",
-                     short_help='Analyze operators and graph.')
-@click.option('--profiling_path', '-d', 'profiling_path', type=click.Path(), required=True,
-              callback=PathManager.expanduser_for_cli, help='Directory of profiling data')
-@click.option('--output_path', '-o', 'output_path', type=click.Path(), callback=PathManager.expanduser_for_cli,
-              help='Path of analysis output')
-@click.option('--cann_version', '-cv', 'cann_version',
-              type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),
-              default=EnumParamsParser().get_default(Constant.CANN_VERSION),
-              help='The CANN software version, which can be viewed by executing the following command: '
-                   '"cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info"')
-@click.option('--torch_version', '-tv', 'torch_version',
-              type=click.Choice(EnumParamsParser().get_options(Constant.TORCH_VERSION), case_sensitive=False),
-              default=EnumParamsParser().get_default(Constant.TORCH_VERSION),
-              help='The runtime torch version, which can be detected by exec command "pip show torch"')
-@click.option("-pt",
-              "--profiling_type",
-              metavar="",
-              required=False,
-              type=click.Choice(EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)),
-              help="enter the profiling type, selectable range ascend_pytorch_profiler, mslite ,msprof")
-@click.option("--force",
-              is_flag=True,
-              help="Indicates whether to skip verification of the owner, size, and permissions.")
-@click.option("-l",
-              "--language",
-              type=click.Choice(["cn", "en"]),
-              required=False,
-              default="cn",
-              help="Language of the profiling advisor.")
-@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
+@analyze_cli.command(context_settings=CONTEXT_SETTINGS, name="computation", short_help='Analyze operators and graph.')
+@click.option(
+    '--profiling_path',
+    '-d',
+    'profiling_path',
+    type=click.Path(),
+    required=True,
+    callback=PathManager.expanduser_for_cli,
+    help='Directory of profiling data',
+)
+@click.option(
+    '--output_path',
+    '-o',
+    'output_path',
+    type=click.Path(),
+    callback=PathManager.expanduser_for_cli,
+    help='Path of analysis output',
+)
+@click.option(
+    '--cann_version',
+    '-cv',
+    'cann_version',
+    type=click.Choice(EnumParamsParser().get_options(Constant.CANN_VERSION), case_sensitive=False),
+    default=EnumParamsParser().get_default(Constant.CANN_VERSION),
+    help='The CANN software version, which can be viewed by executing the following command: '
+    '"cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info"',
+)
+@click.option(
+    '--torch_version',
+    '-tv',
+    'torch_version',
+    type=click.Choice(EnumParamsParser().get_options(Constant.TORCH_VERSION), case_sensitive=False),
+    default=EnumParamsParser().get_default(Constant.TORCH_VERSION),
+    help='The runtime torch version, which can be detected by exec command "pip show torch"',
+)
+@click.option(
+    "-pt",
+    "--profiling_type",
+    metavar="",
+    required=False,
+    type=click.Choice(EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)),
+    help="Enter the profiling type, selectable range ascend_pytorch_profiler, mslite ,msprof",
+)
+@click.option(
+    "--force", is_flag=True, help="Indicates whether to skip verification of the owner, size, and permissions."
+)
+@click.option(
+    "-l",
+    "--language",
+    type=click.Choice(["cn", "en"]),
+    required=False,
+    default="cn",
+    help="Language of the profiling advisor.",
+)
+@click.option(
+    '--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal'
+)
 @debug_option
 @cli_json_output
 def analyze_computation(**kwargs) -> None:
