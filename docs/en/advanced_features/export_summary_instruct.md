@@ -20,7 +20,7 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
 **Function**
 
-The `export_summary` feature of the `msprof-analyze` tool exports operator information from collected cluster profile data. This process generates `apistatistic.csv` and `kerneldetails.csv` files for each rank.
+The `export_summary` feature of the `msprof-analyze` tool exports operator information from collected cluster profile data. This process generates `api_statistic.csv` and `kernel_details.csv` files for each rank.
 
 **Syntax**
 
@@ -32,7 +32,7 @@ msprof-analyze cluster -m export_summary -d <cluster_data>
 
 | Option| Mandatory (Yes/No)| Description                                                    |
 | ---- | --------- | -------------------------------------------------------- |
-| -m   | Yes     | Specifies the analysis mode to execute. Set this it to `export_summary` to export cluster operator information.|
+| -m   | Yes     | Specifies the analysis mode to execute. Set it to `export_summary` to export cluster operator information. |
 | -d   | Yes     | Specifies the cluster profile data directory.                                |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#command-line-options-and-parameters) of `msprof-analyze`.

@@ -6,7 +6,7 @@ Profile data model structure breakdown (`module_statistic`) is an analysis featu
 
 * Model structure breakdown: automatically extracts and displays the hierarchical structure of a model and the operator call sequence.
 * Operator-to-kernel mapping: establishes the mapping between operators at the framework layer and the execution kernels on the NPU.
-* Operator MFU calculation: automatically calculates the model Flops utilization (MFU) of core operators such as `MatMul` and `FlashAttention`.
+* Operator MFU calculation: automatically calculates the model FLOPS utilization (MFU) of core operators such as `MatMul` and `FlashAttention`.
 * Performance analysis: accurately collects statistics and outputs the execution duration of kernels on the device.
 
 ## Preparations
