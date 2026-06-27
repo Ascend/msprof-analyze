@@ -264,14 +264,14 @@ msprof-analyze --help
 
 | 改动类型 | 需同步更新的文档 |
 | --- | --- |
-| 安装、编译、升级方式 | `docs/zh/getting_started/install_guide.md` |
-| 快速体验流程 | `docs/zh/getting_started/quick_start.md` |
+| 安装、编译、升级方式 | `docs/zh/install_guide/msprof-analyze_install_guide.md` |
+| 快速体验流程 | `docs/zh/quick_start/msprof-analyze_quick_start.md` |
 | Advisor 功能 | `docs/zh/user_guide/advisor_instruct.md` |
 | Compare 功能 | `docs/zh/user_guide/compare_tool_instruct.md` |
 | Cluster 功能 | `docs/zh/user_guide/cluster_analyse_instruct.md` |
 | Recipe 扩展能力 | `docs/zh/advanced_features/README.md` |
 | 自定义 Recipe 开发方式 | `docs/zh/advanced_features/custom_analysis_guide.md` |
-| 版本发布信息 | `docs/zh/release_notes.md` |
+| 版本发布信息 | `https://gitcode.com/Ascend/msprof-analyze/releases` |
 
 ## 6. 提交流程建议
 

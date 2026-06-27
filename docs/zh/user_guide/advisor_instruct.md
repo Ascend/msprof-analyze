@@ -37,7 +37,7 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **环境准备**
 
-完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../install_guide/msprof-analyze_install_guide.md)》。
 
 **数据准备**
 
@@ -45,7 +45,8 @@ msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为
 
 **约束**
 
-CANN软件版本8.0RC1之前仅支持对text格式文件分析，8.0RC1及之后支持text、db格式的采集数据分析。
+- CANN软件版本8.0RC1之前仅支持对text格式文件分析，8.0RC1及之后支持text、db格式的采集数据分析。
+- Ascend 950 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
 
 ## 4. 功能介绍（advisor命令行方式）
 
@@ -170,7 +171,7 @@ advisor会输出终端简略建议，并生成HTML报告和XLSX明细文件。�
 | 输出 | 用途 | 查看建议 |
 | --- | --- | --- |
 | 终端输出 | 展示分析结果相关简略建议 | 适合快速确认是否存在明显问题 |
-| `mstt_advisor_{timestamp}.html` | 查看总体结论、问题优先级、原因说明和优化建议 | 建议优先打开，按[报告解读指南](#6-报告解读指南)阅读 |
+| `mstt_advisor_{timestamp}.html` | 查看总体结论、问题优先级、原因说明和优化建议 | 建议优先打开，按[报告解读指南](#5-报告解读指南)阅读 |
 | `mstt_advisor_{timestamp}.xlsx` | 内容与执行终端输出一致，并包含明细数据 | 用于定位具体算子、API或通信项；comparison详细数据需要查看该文件 |
 
 执行终端输出示例如下：
@@ -187,15 +188,15 @@ advisor会输出终端简略建议，并生成HTML报告和XLSX明细文件。�
 
 ![schedule](../figures/schedule.png)
 
-详细介绍请参见[报告解读指南](#6-报告解读指南)。
+详细介绍请参见[报告解读指南](#5-报告解读指南)。
 
-## 6. 报告解读指南
+## 5. 报告解读指南
 
-### 6.1 快速导航
+### 5.1 快速导航
 
 阅读HTML报告时，建议先看整体结论和High优先级问题，再查看对应模块的原因说明和优化建议。
 
-| 阅读顺序 | 模块 | 这个模块告诉我什么 | 怎么用 |
+| 阅读顺序 | 模块 | 这个模块提供什么能力 | 怎么用 |
 | --- | --- | --- | --- |
 | 1 | overall | 性能拆解、环境变量建议、快慢卡/快慢链路 | 先判断瓶颈大方向是计算、通信还是下发问题，并确认是否存在慢卡或慢链路 |
 | 2 | comparison | Kernel/API对比差异 | 查看差异最大的Kernel或API，HTML仅展示Top 10，详细数据看XLSX |
@@ -205,7 +206,7 @@ advisor会输出终端简略建议，并生成HTML报告和XLSX明细文件。�
 
 ![输入图片说明](../figures/cluster.png)
 
-### 6.2 场景一：无标杆（无-bp）
+### 5.2 场景一：无标杆（无-bp）
 
 无标杆是指执行msprof-analyze advisor时，未配置`-bp`参数，会根据是否为集群性能数据，且集群中各卡的computing time和free time耗时差异判断是否进行kernel和API性能数据的对比，以慢卡数据为标杆数据，快卡数据为待比对数据。
 
@@ -265,9 +266,9 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
 #### performance problem analysis模块
 
-performance problem analysis模块包含memory、communication、computation、dataloader、schedule等子模块。各子模块的作用和示例见[各问题类型详解](#64-各问题类型详解)。
+performance problem analysis模块包含memory、communication、computation、dataloader、schedule等子模块。各子模块的作用和示例见[各问题类型详解](#54-各问题类型详解)。
 
-### 6.3 场景二：有标杆（有-bp）
+### 5.3 场景二：有标杆（有-bp）
 
 有标杆是指执行msprof-analyze advisor时，配置`-bp`参数，指定基准性能数据进行比对。
 
@@ -277,8 +278,8 @@ performance problem analysis模块包含memory、communication、computation、d
 
 有标杆集群场景：
 
-- overall模块进行快慢卡和快慢链路分析，与无标杆集群场景一致，请参见[场景一：无标杆（无-bp）](#62-场景一无标杆无-bp)中的overall模块。
-- 提供Environment Variable Issues，与无标杆单卡场景一致，请参见[场景一：无标杆（无-bp）](#62-场景一无标杆无-bp)中的overall模块。
+- overall模块进行快慢卡和快慢链路分析，与无标杆集群场景一致，请参见[场景一：无标杆（无-bp）](#52-场景一无标杆无-bp)中的overall模块。
+- 提供Environment Variable Issues，与无标杆单卡场景一致，请参见[场景一：无标杆（无-bp）](#52-场景一无标杆无-bp)中的overall模块。
 
 #### comparison模块
 
@@ -306,9 +307,9 @@ performance problem analysis模块包含memory、communication、computation、d
 
 有标杆场景下，performance problem analysis模块与无标杆场景一致。建议按memory、communication、computation、dataloader、schedule的顺序查看，优先处理High优先级问题。
 
-### 6.4 各问题类型详解
+### 5.4 各问题类型详解
 
-#### 6.4.1 computation模块问题速查
+#### 5.4.1 computation模块问题速查
 
 computation模块从device计算性能维度进行分析，能够识别AICPU、动态Shape、AI Core Performance Analysis、Block Dim、算子瓶颈、融合算子图、AI Core算子降频分析等问题并给出相应建议。按照报告进行调优即可。
 
@@ -338,7 +339,7 @@ computation模块从device计算性能维度进行分析，能够识别AICPU、�
 
 ![computation_2](../figures/computation_2.png)
 
-#### 6.4.2 communication模块问题速查
+#### 5.4.2 communication模块问题速查
 
 communication模块从通信维度进行分析，目前支持通信小包检测、通信计算带宽抢占检测、通信重传检测、通信算子字节对齐检测。
 
@@ -371,7 +372,7 @@ communication模块从通信维度进行分析，目前支持通信小包检测�
 
 ![byte_alignment](../figures/byte_alignment.png)
 
-#### 6.4.3 schedule模块问题速查
+#### 5.4.3 schedule模块问题速查
 
 schedule模块包含GC Analysis、亲和API、aclopCompile、SyncBatchNorm、SynchronizeStream和Fusible Operator Analysis等多项检测。
 
@@ -433,7 +434,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0251.html)。
 
-#### 6.4.4 memory/dataloader模块问题速查
+#### 5.4.4 memory/dataloader模块问题速查
 
 | 模块 | 问题类型 | 识别内容 | 使用建议 |
 | --- | --- | --- | --- |
@@ -450,9 +451,9 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html)使用。
 
-## 7. 功能介绍（advisor Jupyter Notebook方式）
+## 6. 功能介绍（advisor Jupyter Notebook方式）
 
-### 7.1 功能简介
+### 6.1 功能简介
 
 advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能数据分析过程和分析结果。
 
@@ -460,7 +461,7 @@ advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能�
 
 > Jupyter Notebook方式作为命令行方式的补充，不参与命令行主流程。MindSpore场景不支持Jupyter Notebook方式。
 
-### 7.2 使用前准备
+### 6.2 使用前准备
 
 **安装Jupyter Notebook**
 
@@ -484,7 +485,7 @@ advisor需要传入采集的性能数据文件夹，如何采集性能数据请�
 
 MindSpore场景不支持Jupyter Notebook方式。
 
-### 7.3 启动Jupyter Notebook
+### 6.3 启动Jupyter Notebook
 
 进入`msprof_analyze/advisor`目录，执行如下命令启动Jupyter Notebook工具。
 
@@ -498,7 +499,7 @@ jupyter notebook
 
 若在Linux环境下，终端会回显Jupyter Notebook页面的URL地址。复制该URL，并使用浏览器访问。若在远端服务器上运行，需要将URL中的`localhost`替换为远端服务器的IP地址。
 
-### 7.4 运行分析任务
+### 6.4 运行分析任务
 
 每个`.ipynb`文件对应一项性能数据分析任务。选择需要的`.ipynb`文件打开，并在`*_path`参数下填写Ascend PyTorch Profiler采集的性能数据路径。如下示例：
 
@@ -508,7 +509,7 @@ jupyter notebook
 
 分析结果会在`.ipynb`页面中展示。
 
-## 8. 常见问题FAQ
+## 7. 常见问题FAQ
 
 **Q1：第一次使用应该选哪个命令？**
 

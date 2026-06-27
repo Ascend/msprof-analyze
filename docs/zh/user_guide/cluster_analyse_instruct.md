@@ -12,7 +12,7 @@
 
 ### 2.1 环境准备
 
-完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。建议安装最新版本。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../install_guide/msprof-analyze_install_guide.md)》。建议安装最新版本。
 
 ### 2.2 数据准备
 
@@ -20,7 +20,7 @@
 
 | 采集工具 | 支持的结果类型 | 采集指南                                                                                                                                          |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
-| msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/getting_started/quick_start.md)》                                                                                                 |
+| msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start/quick_start.md)》                                                                                                 |
 | Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》 |
 | MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》 |
 | msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor)》                                                                              |
@@ -96,6 +96,10 @@ profiling_data/
     ├── ASCEND_PROFILER_OUTPUT
     └── profiler_info_*.json
 ```
+
+### 2.4 约束
+
+Ascend 950 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
 
 ## 3. 功能介绍
 
@@ -181,7 +185,6 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 推荐使用 MindStudio Insight 工具导入生成的 `cluster_analysis_output` 文件夹进行可视化展示，如下图所示。具体使用方法请参见《[MindStudio Insight用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/overview.md)》。
 
 ![img](../figures/cluster_summary.png)
-
     <div style="text-align: center;">
     图1 集群计算/通信概览可视化呈现
     </div>

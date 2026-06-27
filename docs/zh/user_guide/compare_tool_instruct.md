@@ -105,7 +105,7 @@ msprof-analyze compare \
 
 ### 3.1 环境准备
 
-完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../getting_started/install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../install_guide/msprof-analyze_install_guide.md)》。
 
 ### 3.2 数据准备
 
