@@ -8,7 +8,7 @@
 pip install -U msprof-analyze
 ```
 
-更多安装方式请参见 《[安装指南](./install_guide.md)》。
+更多安装方式请参见 《[安装指南](../install_guide/msprof-analyze_install_guide.md)》。
 
 安装完成后，执行如下命令确认工具已可用：
 
@@ -86,7 +86,7 @@ python train_sample.py
 
 **执行结果**  
 
-脚本运行成功后，会生成一个以 `ascend_pt` 结尾的目录，`ASCEND_PROFILER_OUTPUT` 中存放解析后的数据，例如：
+脚本运行成功后，会生成一个以 `ascend_pt` 结尾的目录，该目录下的`ASCEND_PROFILER_OUTPUT` 文件夹中存放解析后的数据，例如：
 
 ```text
    /
