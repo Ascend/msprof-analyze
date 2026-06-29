@@ -11,9 +11,9 @@ Currently, `cluster_analyse` supports the following four types of profile data.
 | Collection Tool| Supported Result Type| Collection Guide                                                                                                                                         |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
 | msProf | db | [MindStudio Profiler](https://gitcode.com/Ascend/msprof/blob/26.0.0/docs/en/getting_started/quick_start.md)                                                                                                |
-| Ascend PyTorch Profiler | text, db| [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)|
-| MindSpore Profiler | text, db| [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/mindspore_profiler_user_guide.md) |
-| msMonitor | db | [msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.0.0/docs/zh/quick_start.md)                                                                             |
+| Ascend PyTorch Profiler | text, db| [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)|
+| MindSpore Profiler | text, db| [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/menu/mindspore_profiler_user_guide.md) |
+| msMonitor | db | [msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.0.0/docs/en/install_guide.md)                                                                             |
 
 ## Data Requirements
 
