@@ -26,6 +26,7 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 | 性能比对 | 支持 GPU/NPU、NPU/NPU 等多种场景的性能差异分析。                                             | [性能比对](./docs/zh/user_guide/compare_tool_instruct.md) | [compare_tools](./msprof_analyze/compare_tools)        |
 | 集群分析 | 汇总集群通信数据，输出结果支持在 MindStudio Insight 中可视化查看。                                  | [集群分析](./docs/zh/user_guide/cluster_analyse_instruct.md) | [cluster_analyse](./msprof_analyze/cluster_analyse)    |
 | 进阶分析 | 基于 DB 类型性能数据，提供可自定义的 Recipe 分析规则，目前已涵盖拆解对比、Host 下发、计算、通信等 20 余种多维度分析能力，便于灵活扩展。 | [进阶分析](./docs/zh/advanced_features/README.md) | [recipes](./msprof_analyze/cluster_analyse/recipes) |
+| 算子 MBU 分析 | 基于关键算子访存字节与 Device 侧 kernel 耗时，计算 Matmul/FlashAttention/GroupedMatmul 等算子的 kernel 级模型带宽利用率（MBU）。 | [算子 MBU 分析](./docs/zh/advanced_features/operator_mbu_instruct.md) | [operator_mbu](./msprof_analyze/cluster_analyse/recipes/operator_mbu) |
 
 ## 🚀 快速入门
 

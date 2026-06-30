@@ -1,0 +1,231 @@
+# Copyright (c) 2025, Huawei Technologies Co., Ltd.
+# All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0  (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import unittest
+from unittest.mock import MagicMock, patch
+
+import pandas as pd
+
+from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mbu.mbu_calculator import MBUCalculator
+from msprof_analyze.prof_common.constant import Constant
+
+
+class TestMBUCalculator(unittest.TestCase):
+    NAMESPACE = "msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mbu.mbu_calculator."
+
+    @staticmethod
+    def _calc(peak=None):
+        return MBUCalculator({Constant.PROFILER_DB_PATH: "dummy"}, peak)
+
+    def _patch_export(self, df):
+        mock_export = MagicMock()
+        mock_export.read_export_db.return_value = df
+        return patch(self.NAMESPACE + "KernelBytesExport", return_value=mock_export)
+
+    def test_init_non_positive_peak_then_none(self):
+        self.assertIsNone(self._calc(0).peak_bandwidth)
+        self.assertIsNone(self._calc(None).peak_bandwidth)
+        self.assertEqual(self._calc(1000).peak_bandwidth, 1000 * 1e9)
+
+    def test_init_string_peak_then_converted(self):
+        # CLI 等外部输入可能传入字符串形式的峰值带宽，应正常转换而非类型比较异常
+        self.assertEqual(self._calc("1600").peak_bandwidth, 1600 * 1e9)
+        self.assertIsNone(self._calc("not_a_number").peak_bandwidth)
+
+    def test_run_when_no_kernel_data_then_empty(self):
+        calc = self._calc(1000)
+        with self._patch_export(pd.DataFrame()):
+            self.assertTrue(calc.run().empty)
+
+    def test_run_when_no_target_op_then_empty(self):
+        calc = self._calc(1000)
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "Cast",
+                    "kernel_name": "c",
+                    "kernel_ts": 1,
+                    "kernel_end": 2,
+                    "task_duration": 1,
+                    "input_shapes": "2,3",
+                    "input_types": "FLOAT16",
+                    "output_shapes": "2,3",
+                    "output_types": "FLOAT16",
+                }
+            ]
+        )
+        with self._patch_export(df):
+            self.assertTrue(calc.run().empty)
+
+    def test_run_with_peak_then_compute_mbu(self):
+        calc = self._calc(1000)  # 1000 GB/s = 1e12 Byte/s
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "MatMulV2",
+                    "kernel_name": "mm",
+                    "kernel_ts": 10,
+                    "kernel_end": 20,
+                    "task_duration": 10,
+                    "input_shapes": "2,3;3,4",
+                    "input_types": "FLOAT16;FLOAT16",
+                    "output_shapes": "2,4",
+                    "output_types": "FLOAT16",
+                }
+            ]
+        )
+        with self._patch_export(df):
+            res = calc.run()
+        self.assertEqual(1, len(res))
+        row = res.iloc[0]
+        # access_bytes = (2*3 + 3*4)*2 + 2*4*2 = 36 + 16 = 52
+        self.assertEqual(52, row["access_bytes"])
+        self.assertEqual("MatMulV2", row["op_type"])
+        self.assertAlmostEqual(row["achieved_bandwidth"], 52 / (10 * 1e-9))
+        self.assertAlmostEqual(row["mbu"], (52 / (10 * 1e-9)) / 1e12)
+
+    def test_run_without_peak_then_mbu_nan(self):
+        calc = self._calc(None)
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "FlashAttentionScore",
+                    "kernel_name": "fa",
+                    "kernel_ts": 10,
+                    "kernel_end": 30,
+                    "task_duration": 20,
+                    "input_shapes": "1,8,128,64",
+                    "input_types": "FLOAT16",
+                    "output_shapes": "1,8,128,64",
+                    "output_types": "FLOAT16",
+                }
+            ]
+        )
+        with self._patch_export(df):
+            res = calc.run()
+        self.assertEqual(1, len(res))
+        row = res.iloc[0]
+        self.assertTrue(pd.isna(row["mbu"]))
+        self.assertGreater(row["achieved_bandwidth"], 0)
+
+    def test_run_filters_zero_duration_and_zero_bytes(self):
+        calc = self._calc(1000)
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "MatMulV2",
+                    "kernel_name": "a",
+                    "kernel_ts": 1,
+                    "kernel_end": 2,
+                    "task_duration": 0,
+                    "input_shapes": "2,3",
+                    "input_types": "FLOAT16",
+                    "output_shapes": "2,3",
+                    "output_types": "FLOAT16",
+                },
+                {
+                    "type": "MatMulV2",
+                    "kernel_name": "b",
+                    "kernel_ts": 3,
+                    "kernel_end": 4,
+                    "task_duration": 5,
+                    "input_shapes": "",
+                    "input_types": "",
+                    "output_shapes": "",
+                    "output_types": "",
+                },
+            ]
+        )
+        with self._patch_export(df):
+            self.assertTrue(calc.run().empty)
+
+    def test_query_kernel_bytes_strips_quotes(self):
+        calc = self._calc(1000)
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "MatMulV2",
+                    "input_shapes": '"2,3"',
+                    "output_shapes": "'2,3'",
+                    "input_types": '"FLOAT;FLOAT"',
+                    "output_types": "'FLOAT'",
+                }
+            ]
+        )
+        with self._patch_export(df):
+            out = calc._query_kernel_bytes()
+        self.assertEqual(out.iloc[0]["input_shapes"], "2,3")
+        self.assertEqual(out.iloc[0]["output_shapes"], "2,3")
+        # dtype 列同样剥离引号，避免带引号 dtype 查表失败导致按 FP16 回退、字节计算偏差
+        self.assertEqual(out.iloc[0]["input_types"], "FLOAT;FLOAT")
+        self.assertEqual(out.iloc[0]["output_types"], "FLOAT")
+
+    def test_run_with_quoted_fp32_dtype_then_bytes_use_4(self):
+        # 带引号的 FLOAT dtype 应按 4 字节计算而非回退 FP16(2 字节)
+        calc = self._calc(1000)
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "MatMulV2",
+                    "kernel_name": "mm",
+                    "kernel_ts": 10,
+                    "kernel_end": 20,
+                    "task_duration": 10,
+                    "input_shapes": '"2,3"',
+                    "input_types": '"FLOAT"',
+                    "output_shapes": '"2,3"',
+                    "output_types": '"FLOAT"',
+                }
+            ]
+        )
+        with self._patch_export(df):
+            res = calc.run()
+        # (2*3)*4 + (2*3)*4 = 48
+        self.assertEqual(48, res.iloc[0]["access_bytes"])
+
+    def test_run_missing_columns_then_no_keyerror(self):
+        # 查询结果缺少 kernel_name/output_shapes/output_types 等列时，不应抛 KeyError，缺失列补空值
+        calc = self._calc(1000)
+        df = pd.DataFrame(
+            [
+                {
+                    "type": "MatMulV2",
+                    "kernel_ts": 10,
+                    "kernel_end": 20,
+                    "task_duration": 10,
+                    "input_shapes": "2,3",
+                    "input_types": "FLOAT16",
+                }
+            ]
+        )
+        with self._patch_export(df):
+            res = calc.run()
+        self.assertEqual(1, len(res))
+        self.assertEqual(list(res.columns), MBUCalculator.OUTPUT_COLUMNS)
+        self.assertTrue(pd.isna(res.iloc[0]["kernel_name"]))
+        self.assertEqual(12, res.iloc[0]["access_bytes"])
+
+    def test_query_kernel_bytes_passes_analysis_class(self):
+        # analysis_class 应透传给数据导出类
+        calc = MBUCalculator({Constant.PROFILER_DB_PATH: "dummy"}, 1000, "operator_mbu")
+        mock_export = MagicMock()
+        mock_export.read_export_db.return_value = pd.DataFrame()
+        with patch(self.NAMESPACE + "KernelBytesExport", return_value=mock_export) as mock_cls:
+            calc._query_kernel_bytes()
+        mock_cls.assert_called_once_with("dummy", "operator_mbu")
+
+
+if __name__ == "__main__":
+    unittest.main()
