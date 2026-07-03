@@ -21,12 +21,11 @@ from msprof_analyze.compare_tools.compare_backend.compare_config.compare_config 
 
 
 class FrameworkApiBean:
-
     def __init__(self, data):
         self._data = data
         self.is_torch_op = False
         self.x_mode = True
-        self._name = data.get("name", "")
+        self._name = data.get("name") or ""
         self.pid = Constant.INVALID_VALUE
 
     @property
