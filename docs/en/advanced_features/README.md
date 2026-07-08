@@ -11,7 +11,7 @@ The tool supports the following cluster data types:
 
 Details about profile data collection:
 
-* For details about how to collect profile data in PyTorch scenarios, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
+* For details about how to collect profile data in PyTorch scenarios, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
 * For details about how to collect profile data in msMonitor scenarios, see [msMonitor](https://gitcode.com/Ascend/msmonitor).
 
 When you use Ascend PyTorch Profiler, you must collect or parse `db` results offline. Example:
@@ -98,7 +98,6 @@ For more information, see [Command-line Options and Parameters](#command-line-op
 
 | Analysis Feature  | Category| Description                                    | Document Link|
 |---------|----| ------------------------------------|-----|
-| export_summary | Data export| Exports API statistics and kernel details for each rank in the cluster to generate the `api_statistic.csv` and `kernel_details.csv` files.| [export_summary](./export_summary_instruct.md)|
 | mstx2commop | Data processing| Converts communication information from MSTX built-in communication instrumentation into the communication operator table format.| -  |
 | p2p_pairing | Data processing| Generates a global association index for P2P operators and attaches the output index to the `COMMUNICATION_OP` table as a new field `opConnectionId`.| -  |
 

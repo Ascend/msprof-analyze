@@ -2,11 +2,11 @@
 
 Some native `torch` APIs involve multiple small operators during delivery and execution, resulting in long durations. You can replace these APIs with NPU APIs to enable fused operators and improve training performance.
 
-For details about the functions and parameters of torch_npu APIs, see the [torch_npu APIs](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu/torch_npu_list.md).
+For details about the functions and parameters of torch_npu APIs, see the [torch_npu APIs](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/en/custom_APIs/torch_npu/torch_npu_list.md).
 
 ## Optimizer Replacement
 
-Replacing an optimizer generally provides significant performance benefits. Prioritize replacing native torch optimizers with [Ascend affinity optimizers](https://gitcode.com/Ascend/docs/blob/master/FrameworkPTAdapter/26.0.0/zh/pytorch_model_migration_fine_tuning/fusion_opt.md). The following example uses the `AdamW` optimizer. The replacement method also applies to other optimizers.
+Replacing an optimizer generally provides significant performance benefits. Prioritize replacing native torch optimizers with [Ascend affinity optimizers](https://gitcode.com/Ascend/docs/blob/master/FrameworkPTAdapter/26.0.0/en/pytorch_model_migration_fine_tuning/fusion_opt.md). The following example uses the `AdamW` optimizer. The replacement method also applies to other optimizers.
 
 ### torch_npu.optim.NpuFusedAdamW
 

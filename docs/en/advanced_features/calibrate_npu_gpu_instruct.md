@@ -58,7 +58,7 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
 2. NPU Profile Data Collection
 
-   For the NPU (Ascend) platform, use PyTorch Profiler to collect profile data and ensure that `MSTX` instrumentation is enabled. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
+   For the NPU (Ascend) platform, use PyTorch Profiler to collect profile data and ensure that `MSTX` instrumentation is enabled. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
 
    The following script shows how to collect NPU profile data for vLLM inference. Before running it, ensure you have modified the vLLM benchmark latency script by referring to [Modifying the vLLM Benchmark Latency Script](#modifying-the-vllm-benchmark-latency-script).
 

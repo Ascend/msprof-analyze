@@ -66,7 +66,7 @@ Before using this tool, collect profile data from the GPU or NPU. You are advise
 
 - NPU Profile Data Collection
 
-  Use Ascend PyTorch Profiler to collect NPU profile data. The configuration parameters are basically the same as those for GPU. You only need to replace `torch.profiler` in the GPU profile data collection code with `torch_npu.profiler`. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
+  Use Ascend PyTorch Profiler to collect NPU profile data. The configuration parameters are basically the same as those for GPU. You only need to replace `torch.profiler` in the GPU profile data collection code with `torch_npu.profiler`. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
 
   The directory structure of the Ascend PyTorch Profiler collection results is as follows:
 
@@ -103,7 +103,7 @@ Before using this tool, collect profile data from the GPU or NPU. You are advise
 
   Currently, in MindSpore scenarios, comparisons are supported between NPU profile data and PyTorch GPU profile data, as well as between different versions of MindSpore training projects on NPU.
 
-  Use MindSpore Profiler to collect NPU profile data. You are advised to collect or parse profile data for only a single step. For details, see [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/mindspore_profiler_user_guide.md).
+  Use MindSpore Profiler to collect NPU profile data. You are advised to collect or parse profile data for only a single step. For details, see [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.0.0/en/menu/mindspore_profiler_user_guide.md).
 
   The directory structure for MindSpore Profiler results is as follows: 
 
