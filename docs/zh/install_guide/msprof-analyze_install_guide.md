@@ -4,6 +4,10 @@
 
 本工具支持[在线安装](#21-在线安装)、[离线安装](#22-离线安装)、[源码安装](#23-源码安装)三种安装方式，请根据您的实际环境选择最合适的方案。
 
+> [!NOTE]
+>
+> 工具支持 Python 3.7.5 及以上版本，建议使用 Python 3.9 及以上版本。
+
 ## 2. 安装方式
 
 ### 2.1 在线安装
@@ -48,7 +52,7 @@ Successfully installed msprof-analyze-{version}
 
    3. 比对两个文件的sha256校验码是否一致。
 
-      若两个校验码一致，则表示下载了正确的软件包；若不一致，请不要使用该软件包，需要支持与服务请在论坛求助或提交技术工单。
+      若两个校验码一致，则表示下载了正确的软件包；若不一致，请不要使用该软件包，需要支持与服务，请在论坛求助或提交技术工单。
 
 3. whl包安装。
 
@@ -132,4 +136,4 @@ Successfully uninstalled msprof-analyze-{version}
 
 msprof-analyze工具不支持直接升级，需要先完成[卸载](#4-卸载)后再重新[安装](#2-安装方式)。
 
-可通过`msprof-analyze --version`命令查看当前环境的版本信息，再选择需要升级的版本。升级版本时需要关注版本配套关系，请参见《[版本说明](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.0.0/release_notes.md)》。
+可通过`msprof-analyze --version`命令查看当前环境的版本信息，再选择需要升级的版本。升级版本时需要关注版本配套关系，请参见《[版本说明](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.1.0/release_notes.md)》。

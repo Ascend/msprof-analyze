@@ -8,8 +8,8 @@
 
 支持以下两种集群数据：
 
-* Ascend PyTorch Profiler 采集的 DB 格式集群数据，参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》
-* msMonitor 采集的集群轻量化 DB 数据，参见《[msMonitor](https://gitcode.com/Ascend/msmonitor)》
+* Ascend PyTorch Profiler 采集的 DB 格式集群数据，参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》
+* msMonitor 采集的集群轻量化 DB 数据，参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.1.0/docs/zh/quick_start/quick_start.md)》
 
 使用 Ascend PyTorch Profiler 时，需要采集或离线解析出 `db` 类型结果。示例如下：
 
@@ -129,8 +129,8 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | --output_path或-o     | 可选     | 自定义输出路径，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。                                                                                                                                           |
 | --mode或-m            | 可选     | 分析能力选项，取值详见[分析能力参数](#511-分析能力参数)表。                                                                                  |
 | --export_type         | 可选     | 输出文件类型。取值为db（.db格式文件）、notebook（Jupyter Notebook文件）、text（泛指json/csv/excel等文本格式文件），默认值为db。                                                                                                                               |
-| --force               | 可选     | 强制执行，用户对force行为负责，配置后可强制跳过如下情况：<br/>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>&#8226; csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。<br/>&#8226; 指定的目录、文件的读写权限，忽略权限判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 |
-| --parallel_mode       | 可选     | 设置收集多卡、多节点db数据时的并发方式。取值为concurrent（使用concurrent.feature进程池实现并发）。                                                                                                                                       |
+| --force               | 可选     | 强制执行，用户对force行为负责，配置后可强制跳过如下情况：<br/>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>&#8226; csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。<br/>&#8226; 指定的目录、文件的读写权限，忽略权限判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| --parallel_mode       | 可选     | 设置收集多卡、多节点db数据时的并发方式。取值为concurrent（使用concurrent.futures进程池实现并发）。                                                                                                                                       |
 | -v，-V<br/>--version | 可选 | 查看版本号。                                                                                                                                                                                                 |
 | -h，-H<br>--help     | 可选 | 命令行参数帮助信息。                                                                                                                                                                                             |
 | auto-completion     | 可选 | 自动补全，配置后在当前视图下配置msprof-analyze工具所有的子参数时，可以使用Tab将所有子参数自动补全。                                                      |
