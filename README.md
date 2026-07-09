@@ -5,14 +5,14 @@
 
 [![doc](https://badgen.net/badge/doc/readthedocs/green)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/)
 [![License](https://badgen.net/badge/License/MulanPSL-2.0/blue)](https://raw.gitcode.com/Ascend/msinsight/files/master/License)
-[![Version](https://badgen.net/badge/Version/26.0.0-alpha.1/green)](https://gitcode.com/Ascend/msprof-analyze/releases) 
+[![Version](https://badgen.net/badge/Version/26.1.0-alpha.1/green)](https://gitcode.com/Ascend/msprof-analyze/releases) 
 [![Ascend](https://img.shields.io/badge/Hardware-Ascend-orange.svg)](https://www.hiascend.com/)
 
 </div>
 
 ## ✨ 最新消息
 
-🔹 [2025.12.30]：新增 `module_statistic` 分析能力：提供的针对PyTorch模型自动解析模型层级结构的分析能力，帮助精准定位性能瓶颈。
+🔹 [2025.12.30]：新增 `module_statistic` 分析能力：提供针对PyTorch模型自动解析模型层级结构的分析能力，帮助精准定位性能瓶颈。
 
 ## ℹ️ 简介
 

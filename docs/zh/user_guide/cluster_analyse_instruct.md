@@ -20,10 +20,10 @@
 
 | 采集工具 | 支持的结果类型 | 采集指南                                                                                                                                          |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
-| msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start/quick_start.md)》                                                                                                 |
+| msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start/msprof_quick_start.md)》                                                                                                 |
 | Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》 |
 | MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》 |
-| msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor)》                                                                              |
+| msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start/quick_start.md)》                                                                              |
 
 下面以 Ascend PyTorch Profiler 为例说明输入数据要求。
 
@@ -125,11 +125,11 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--ag
 
 | 参数名               | 可选/必选 | 说明                                                         |
 | -------------------- | --------- | ------------------------------------------------------------ |
-| --profiling_path或-d | 必选      | 性能数据汇集目录。未配置-o参数时，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
-| --output_path或-o    | 可选      | 自定义输出路径，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
+| --profiling_path或-d | 必选      | 性能数据汇集目录。未配置-o参数时，运行分析命令之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
+| --output_path或-o    | 可选      | 自定义输出路径，运行分析命令之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
 | --mode或-m           | 可选      | 数据解析模式，取值详见“**--mode参数说明**”表。               |
 | --agent              | 可选      | 分析结果以json格式输出至标准输出，配置该参数表示开启，默认未配置表示关闭。 |
-| --force              | 可选      | 强制执行 cluster。配置后可强制跳过如下情况：<br>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br>&#8226; csv 文件大于 5G、json 文件大于 10G、db 文件大于 8G，忽略文件过大判断直接执行。<br>&#8226; 指定目录、文件的读写权限不满足校验要求，忽略权限判断直接执行。<br>配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| --force              | 可选      | 强制执行 cluster。配置后可强制跳过如下情况：<br>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br>&#8226; csv 文件大于 5GB、json 文件大于 10GB、db 文件大于 8GB，忽略文件过大判断直接执行。<br>&#8226; 指定目录、文件的读写权限不满足校验要求，忽略权限判断直接执行。<br>配置该参数表示开启强制执行，默认未配置表示关闭。 |
 
 --mode 参数说明：
 

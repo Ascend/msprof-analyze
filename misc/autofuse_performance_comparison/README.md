@@ -38,11 +38,11 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
 
-    自动融合开关的更多介绍，请参见《[AutoFuse使能方式](https://www.hiascend.com/document/detail/zh/canncommercial/850/graph/autofuse/autofuse_1_0004.html)》。
+    自动融合开关的更多介绍，请参见《[AutoFuse使能方式](https://www.hiascend.com/document/detail/zh/canncommercial/900/programug/graphdevg/autofuse_1_0004.html)》。
 
 2. TensorFlow模型运行时开启datadump和自动融合，获取datadump数据和Build图。
 
-    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
+    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/canncommercial/900/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
 
     2. 开启graphdump，可设置以下几个环境变量：
 
@@ -53,11 +53,11 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
         export DUMP_GRAPH_PATH=<dump_path>
         ```
 
-        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html)》。
+        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/canncommercial/900/maintenref/envvar/envref_07_0001.html)》。
 
 3. 数据处理。
 
-   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
+   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/canncommercial/900/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
 
       例如AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365转换为npy文件可以得到AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.0.npy、AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.1.npy和AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.output.0.npy。
 
@@ -68,7 +68,7 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
        atc --mode=5 --om=<graph_txt_file_path> --json=<graph_json_file_path>
        ```
 
-## GE自动融合性能对比
+## 功能介绍
 
 **功能说明**
 
@@ -121,7 +121,7 @@ GE自动融合性能对比的输出结果在autofuse_performance_comparison_resu
 | Duration(us) | 融合算子耗时，单位us。|
 | Duration Diff Ratio | 融合算子耗时占融合前算子总耗时的百分比。 |
 
-其他表头详细介绍请参见[op_summary](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/Profiling/atlasprofiling_16_0067.html)中aic_metrics为PipeUtilization时的字段说明。
+其他表头详细介绍请参见[op_summary](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/user_guide/profile_data_file_references.md#op_summary%E7%AE%97%E5%AD%90%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF)中aic_metrics为PipeUtilization时的字段说明。
 
 **输出结果分析：**
 
