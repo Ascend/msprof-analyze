@@ -92,7 +92,7 @@ msprof_analyze/cluster_analyse/recipes/communication_bottleneck/config.json
 **输出说明**
 
  * 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`CommunicationBottleneck`表。
- * 当--export_type设置为text时，在-o参数指定路径下生成`cluster_analysis_output/CommunicationBottleneckAanlysis/communication_bottleneck.csv`文件。
+ * 当--export_type设置为text时，在-o参数指定路径下生成`cluster_analysis_output/CommunicationBottleneckAnalysis/communication_bottleneck.csv`文件。
 
 具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
