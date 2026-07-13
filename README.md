@@ -31,20 +31,20 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 
 ## 🚀 快速入门
 
-`msprof-analyze` 常用分析命令如下：
+**10 分钟实战体验**  
+以 ResNet50 训练为例，覆盖**采集数据、执行 Advisor 分析与查看分析结果**全流程。点击立即开始：[《msprof-analyze 快速入门》](docs/zh/quick_start/msprof-analyze_quick_start.md)。
+
+**极简命令行速查**  
+若已熟悉操作流程，可直接执行采集命令，示例如下：
 
 ```bash
 # 集群通信汇总
 msprof-analyze cluster -m all -d ./cluster_data
-
 # 专家建议
 msprof-analyze advisor all -d ./prof_data -o ./advisor_output
-
 # 性能比对
 msprof-analyze compare -d ./ascend_pt -bp ./gpu_trace.json -o ./compare_output
 ```
-
-以 ResNet50 模型训练任务为例，《[快速入门](./docs/zh/quick_start/msprof-analyze_quick_start.md)》贯穿从采集性能数据、执行 Advisor 分析到查看分析结果的完整流程，帮助您快速体验工具的核心功能。
 
 ## 📦 安装指南
 
