@@ -6,13 +6,13 @@
 
 msprof-analyze 是面向昇腾 AI 处理器性能数据的自动分析工具。本文以一次完整的性能诊断为例，介绍环境准备、性能数据采集、Advisor 分析和报告查看的基本流程。
 
-**体验地图（核心操作约需 15 分钟）**
+**体验地图（核心操作约需 10 分钟）**
 
 | 步骤 | 环节 | 核心工具 | 参考操作耗时 | 建议原理学习耗时 |
-| :---: | :--- | :--- | :---: | :---: |
-| **1** | **环境准备** | CANN 容器环境 | 5 分钟 | 5 分钟 |
-| **2** | **性能数据采集** | Ascend PyTorch Profiler | 5 分钟 | 10 分钟 |
-| **3** | **自动分析与报告查看** | msprof-analyze Advisor | 5 分钟 | 10 分钟 |
+| :---: | :--- | :--- |:------:| :---: |
+| **1** | **环境准备** | CANN 容器环境 |  5 分钟  | 5 分钟 |
+| **2** | **性能数据采集** | Ascend PyTorch Profiler |  2 分钟  | 10 分钟 |
+| **3** | **自动分析与报告查看** | msprof-analyze Advisor |  3 分钟  | 10 分钟 |
 
 ## 2. 操作步骤
 
@@ -46,10 +46,8 @@ source /dev/stdin <<< "$(dev_id=$(lspci -n -D | grep -o '19e5:d[0-9a-f]\{3\}' | 
 
 > [!NOTE]说明
 >
-> **命令原理**
->
-> 通过 `lspci` 获取 NPU 的 PCI ID，自动匹配 CANN 官方镜像，并将镜像地址赋给环境变量 `MY_STUDY_VAR_CANN_IMAGE`，供后续使用。
->
+> **命令原理**  
+> 通过 `lspci` 获取 NPU 的 PCI ID，自动匹配 CANN 官方镜像，并将镜像地址赋给环境变量 `MY_STUDY_VAR_CANN_IMAGE`，供后续使用。  
 > 所有镜像均来自华为云 AscendHub 上发布的 CANN 官方镜像。如需了解镜像详情，请参阅 [CANN 官方镜像仓库](https://www.hiascend.com/developer/ascendhub/detail/17da20d1c2b6493cb38765adeba85884)。
 
 若命令执行后输出 `[PASS]`，则表示执行成功；若输出 `[FAIL]`，可能原因如下：
@@ -107,8 +105,6 @@ pip3 install -U msprof-analyze
 
 若因处于企业内网导致安装失败，请参考 [第 3.3 节](#33-离线安装-python-依赖和-msprof-analyze) 的解决方案。
 
-更多 msprof-analyze 安装方式请参见《[安装指南](../install_guide/msprof-analyze_install_guide.md)》。
-
 #### 2.1.7 容器内：检查环境安装正确性
 
 安装完成后执行环境检查命令：
@@ -123,21 +119,11 @@ python3 -c 'import torch, torch_npu, torchvision; assert torch.npu.is_available(
 
 #### 2.2.1 准备模型训练代码
 
-在容器内执行以下命令，将示例训练代码写入 `~/train_sample.py`。该示例使用随机数据训练 ResNet50 模型 5 个 epoch，并通过 Ascend PyTorch Profiler 采集性能数据。
+在容器内执行以下命令，将示例训练代码写入 `~/train_sample.py`。该示例使用随机数据训练 ResNet50 模型 5 个 epoch，并通过 Ascend PyTorch Profiler 采集性能数据:
 
 ```bash
 cat > ~/train_sample.py << 'EOF'
-import os
-import re
-import subprocess
-import sys
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch_npu
-import torchvision.models as models
-
+import os, re, subprocess, sys, torch, torch_npu; import torch.nn as nn, torch.optim as optim, torchvision.models as models # 为精简篇幅，导入语句合并为单行（非规范写法）
 
 def find_idle_npu():
     result = subprocess.run(["npu-smi", "info"], capture_output=True, text=True)
@@ -148,7 +134,6 @@ def find_idle_npu():
     if not idle:
         sys.exit("[WARNING] No idle NPU, please free resources or retry later.")
     return idle[0]
-
 
 def train():
     device = f"npu:{find_idle_npu()}"
@@ -199,7 +184,6 @@ def train():
                 total_loss += loss.item()
             print(f"[Epoch {epoch + 1}/5] Average Loss: {total_loss / len(data_loader):.4f}")
             profiler.step()
-
 
 if __name__ == "__main__":
     train()
@@ -262,18 +246,12 @@ msprof_{timestamp}_ascend_pt
 └── PROF_XXX
 ```
 
-> [!NOTE]说明
->
-> `ASCEND_PROFILER_OUTPUT` 中包含 Advisor 分析所需的数据库和文本格式性能数据。请向 `-d` 参数传入完整的 `*_ascend_pt` 目录，而不是其中的单个文件或 `ASCEND_PROFILER_OUTPUT` 子目录。
-
 ### 2.3 执行 Advisor 分析
 
 在容器内执行以下命令，对最新生成的 Profiling 数据进行一次完整的专家建议分析：
 
 ```bash
-msprof-analyze advisor all \
-  -d "${PROF_DIR}" \
-  -o "${HOME}/advisor_output"
+msprof-analyze advisor all -d "${PROF_DIR}" -o "${HOME}/advisor_output"
 ```
 
 参数说明如下：
@@ -412,14 +390,17 @@ ls -l ctr_in.py
 
 ### 3.3 离线安装 Python 依赖和 msprof-analyze
 
-优先使用内网 pip 源安装依赖。若没有可用的内网软件源，请在具备公网访问能力、与内网 NPU 服务器 CPU 架构相同且使用 Python 3.11 的中转环境中，下载第 2.1.6 节所需的 Python 软件包及其依赖。
-
-msprof-analyze 的离线软件包可从 [msprof-analyze Release](https://gitcode.com/Ascend/msprof-analyze/releases) 页面获取。下载后请按照《[安装指南](../install_guide/msprof-analyze_install_guide.md)》校验软件包完整性。
-
-将所有软件包传输到内网服务器并复制到容器的 `${HOME}/offline_wheels` 目录，然后在容器内执行：
+优先使用内网 pip 源安装依赖。若没有可用的内网软件源，请在具备公网访问能力、与内网 NPU 服务器 CPU 架构相同且使用 Python 版本的中转环境中，按以下方式下载所需安装包：
 
 ```bash
-pip3 install --no-index --find-links="${HOME}/offline_wheels" "${HOME}"/offline_wheels/*.whl
+mkdir -p offline_wheels
+python3 -m pip download xxx --dest offline_wheels
+```
+
+将 `offline_wheels` 目录传输到内网服务器并复制到容器的用户主目录，然后在容器内执行：
+
+```bash
+pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
 ```
 
 安装完成后，返回 [第 2.1.7 节](#217-容器内检查环境安装正确性) 执行验证命令，无需再次执行联网安装命令。
