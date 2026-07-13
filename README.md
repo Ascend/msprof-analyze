@@ -1,12 +1,14 @@
 
 <h1 align="center">MindStudio Profiler Analyze</h1>
 <div align="center">
-  <p>🚀 <b>昇腾性能分析工具</b></p>
+<p><b><span style="font-size:24px;">昇腾性能分析工具</span></b></p>
 
-[![doc](https://badgen.net/badge/doc/readthedocs/green)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/)
-[![License](https://badgen.net/badge/License/MulanPSL-2.0/blue)](https://raw.gitcode.com/Ascend/msinsight/files/master/License)
-[![Version](https://badgen.net/badge/Version/26.0.0-alpha.1/green)](https://gitcode.com/Ascend/msprof-analyze/releases) 
-[![Ascend](https://img.shields.io/badge/Hardware-Ascend-orange.svg)](https://www.hiascend.com/)
+ [![快速入门](https://badgen.net/badge/快速入门/QuickStart/blue)](docs/zh/quick_start/xxx_quick_start.md)
+ [![AI问答(DeepWiki)](https://badgen.net/badge/AI问答/DeepWiki/blue)](https://deepwiki.com/mindstudio-docs/master) 
+ [![AI问答(ZRead)](https://badgen.net/badge/AI问答/ZRead/blue)](https://zread.ai/mindstudio-docs/master) 
+ [![精确搜索](https://badgen.net/badge/精确搜索/ReadTheDocs/blue)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/) 
+ [![昇腾社区](https://badgen.net/badge/昇腾社区/Community/blue)](https://www.hiascend.com/cn/developer/software/mindstudio) 
+ [![报告问题](https://badgen.net/badge/报告问题/Issues/blue)](https://gitcode.com/Ascend/xxx/issues) 
 
 </div>
 
