@@ -10,9 +10,9 @@ msprof-analyze 是面向昇腾 AI 处理器性能数据的自动分析工具。�
 
 | 步骤 | 环节 | 核心工具 | 参考操作耗时 | 建议原理学习耗时 |
 | :---: | :--- | :--- |:------:| :---: |
-| **1** | **环境准备** | CANN 容器环境 |  5 分钟  | 5 分钟 |
-| **2** | **性能数据采集** | Ascend PyTorch Profiler |  2 分钟  | 10 分钟 |
-| **3** | **自动分析与报告查看** | msprof-analyze Advisor |  3 分钟  | 10 分钟 |
+| **1** | **环境准备** | CANN 容器环境 | 5 分钟 | 5 分钟 |
+| **2** | **性能数据采集** | Ascend PyTorch Profiler | 2 分钟 | 10 分钟 |
+| **3** | **自动分析与报告查看** | msprof-analyze Advisor | 3 分钟 | 10 分钟 |
 
 ## 2. 操作步骤
 
@@ -105,7 +105,7 @@ pip3 install -U msprof-analyze
 
 若因处于企业内网导致安装失败，请参考 [第 3.3 节](#33-离线安装-python-依赖和-msprof-analyze) 的解决方案。
 
-#### 2.1.7 容器内：检查环境安装正确性
+#### 2.1.7 容器内：验证环境是否安装正确
 
 安装完成后执行环境检查命令：
 
@@ -119,7 +119,7 @@ python3 -c 'import torch, torch_npu, torchvision; assert torch.npu.is_available(
 
 #### 2.2.1 准备模型训练代码
 
-在容器内执行以下命令，将示例训练代码写入 `~/train_sample.py`。该示例使用随机数据训练 ResNet50 模型 5 个 epoch，并通过 Ascend PyTorch Profiler 采集性能数据:
+在容器内执行以下命令，将示例训练代码写入 `~/train_sample.py`。该示例使用随机数据训练 ResNet50 模型 5 个 epoch，并通过 Ascend PyTorch Profiler 采集性能数据：
 
 ```bash
 cat > ~/train_sample.py << 'EOF'
@@ -217,7 +217,7 @@ python3 ~/train_sample.py
 [Epoch 5/5] Average Loss: 1.9166
 ```
 
-若脚本提示没有空闲 NPU，请结束其他 NPU 任务或在其完成后重试；若超过 5 分钟无响应，有可能是 NPU 卡异常或被抢占，请重新执行或指定其它空闲 NPU。
+若脚本提示没有空闲 NPU，请结束其他 NPU 任务或在其完成后重试；若超过 5 分钟无响应，有可能是 NPU 卡异常或被抢占，请重新执行或指定其他空闲 NPU。
 
 #### 2.2.3 查看采集结果
 
@@ -279,13 +279,13 @@ advisor_output
 
 | 输出 | 用途 | 查看建议 |
 | --- | --- | --- |
-| 终端输出 | 展示分析结果相关简略建议 | 适合快速确认是否存在明显问题 |
+| 终端输出 | 展示简要分析结果和相关建议 | 适合快速确认是否存在明显问题 |
 | `mstt_advisor_{timestamp}.html` | 展示总体结论、问题优先级、原因和优化建议 | 建议优先打开 |
 | `log/mstt_advisor_{timestamp}.xlsx` | 展示各分析模块的明细数据 | 用于进一步定位具体算子、API 或通信项 |
 
 #### 2.4.2 将报告复制到宿主机
 
-在容器内执行以下命令，获取并复制输出的变量赋值语句：
+在容器内执行以下命令，并复制该命令输出的变量赋值语句：
 
 ```bash
 echo "CONTAINER_ID=${HOSTNAME:-$(cat /etc/hostname)}; ADVISOR_OUTPUT=${HOME}/advisor_output"
@@ -360,7 +360,7 @@ docker load -i cann.tar
 docker images | grep cann
 ```
 
-加载完成后，继续完成 [第 3.2 节](#32-传输容器启动脚本)，再返回 [第 2.1.5 节](#215-宿主机启动容器) 启动容器。如果已切换宿主机 Shell，请重新执行第 2.1.2 节中的命令以恢复镜像环境变量。
+加载完成后，按照 [第 3.2 节](#32-传输容器启动脚本) 传输容器启动脚本，再返回 [第 2.1.5 节](#215-宿主机启动容器) 启动容器。如果已切换宿主机 Shell，请重新执行第 2.1.2 节中的命令以恢复镜像环境变量。
 
 ### 3.2 传输容器启动脚本
 
@@ -382,7 +382,7 @@ ls -l ctr_in.py
 
 ### 3.3 离线安装 Python 依赖和 msprof-analyze
 
-优先使用内网 pip 源安装依赖。若没有可用的内网软件源，请在具备公网访问能力、与内网 NPU 服务器 CPU 架构相同且使用 Python 版本的中转环境中，按以下方式下载所需安装包：
+优先使用内网 pip 源安装依赖。若没有可用的内网软件源，请在具备公网访问能力，且 CPU 架构和 Python 版本均与内网 NPU 服务器相同的中转环境中，按以下方式下载所需安装包：
 
 ```bash
 mkdir -p offline_wheels
@@ -395,7 +395,7 @@ python3 -m pip download xxx --dest offline_wheels
 pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
 ```
 
-安装完成后，返回 [第 2.1.7 节](#217-容器内检查环境安装正确性) 执行验证命令，无需再次执行联网安装命令。
+安装完成后，返回 [第 2.1.7 节](#217-容器内验证环境是否安装正确) 执行验证命令，无需再次执行联网安装命令。
 
 ## 4. 下一步阅读
 
