@@ -254,14 +254,6 @@ msprof_{timestamp}_ascend_pt
 msprof-analyze advisor all -d "${PROF_DIR}" -o "${HOME}/advisor_output"
 ```
 
-参数说明如下：
-
-| 参数 | 是否必选 | 说明 |
-| --- | :---: | --- |
-| `advisor all` | 是 | 同时分析总体性能瓶颈、计算、调度、通信等问题 |
-| `-d` | 是 | 指定 Profiling 数据目录，本教程使用第 2.2.3 节自动获取的 `${PROF_DIR}` |
-| `-o` | 否 | 指定分析结果输出目录；未指定时，默认输出到执行命令所在目录 |
-
 命令执行成功后，终端会输出简要分析结果，并在 `${HOME}/advisor_output` 目录中生成 HTML 报告和 XLSX 明细文件。
 
 若提示 `${PROF_DIR}` 为空或目录不存在，请返回 [第 2.2.3 节](#223-查看采集结果)，重新执行定位结果目录的命令。
