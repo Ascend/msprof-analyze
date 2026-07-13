@@ -121,7 +121,7 @@ msprof-analyze compare \
 
 采集样例代码参考一（推荐）：使用 schedule 控制采集时机
 
-```Python
+```python
 with torch.profiler.profile(
         profile_memory=True,  # 内存数据采集的开关
         record_shapes=True,  # 算子input shape信息采集的开关
@@ -135,7 +135,7 @@ with torch.profiler.profile(
 
 采集样例代码参考二：手动控制 start/stop
 
-```Python
+```python
 prof = torch.profiler.profile(
     profile_memory=True,  # 内存数据采集的开关
     record_shapes=True,  # 算子input shape信息采集的开关
@@ -157,7 +157,7 @@ PyTorch Profiler采集结果数据目录结构如下：
 
 ##### 3.2.1.2 NPU性能数据采集
 
-通过Ascend PyTorch Profiler工具采集NPU的性能数据，采集参数配置与GPU基本一致，只需将GPU的性能数据采集代码中torch.profiler替换成torch_npu.profiler，参考链接：《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+通过Ascend PyTorch Profiler工具采集NPU的性能数据，采集参数配置与GPU基本一致，只需将GPU的性能数据采集代码中torch.profiler替换成torch_npu.profiler，参考链接：《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
 
 **采集结果目录结构**
 
@@ -201,7 +201,7 @@ export_type = Db
 1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对； 
 2. MindSpore训练工程在NPU上、不同版本之间的性能数据比对。
 
-性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.1.0/zh/mindspore_profiler_user_guide.md)》。
 
 采集结果目录结构：根据`export_type`参数设置的不同，工具会输出两种格式的结果目录：
 
@@ -271,7 +271,7 @@ python performance_compare.py <benchmark_profiling_path> <profiling_path> --outp
 
 #### 4.3.2 比对范围控制
 
-| 参数 | 可选/必选 | 说明 | torch_npu支持 | MindSpore支持 |
+| 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
 | `--disable_details` | 可选 | 隐藏明细比对，只进行统计级比对。 | 是 | 是 |
 | `--base_step` | 可选 | 基准性能数据step ID，配置后使用基准性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--comparison_step`同时配置。配置示例：`--base_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
@@ -285,10 +285,10 @@ python performance_compare.py <benchmark_profiling_path> <profiling_path> --outp
 
 ```bash
 # 配置 --enable_profiling_compare 参数，此时仅开启总体性能比对
-msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在路径] --output_path=./result_dir --enable_profiling_compare
+msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --output_path=./result_dir --enable_profiling_compare
 ```
 
-| 参数 | 可选/必选 | 说明 | torch_npu支持 | MindSpore支持 |
+| 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
 | `--enable_profiling_compare` | 可选 | 开启总体性能比对。 | 是 | 是 |
 | `--enable_operator_compare` | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见**5.4 算子比对高级参数**。 | 是 | 否 |
@@ -319,9 +319,9 @@ msprof-analyze compare -d [profiling_path] -bp [基准性能数据文件所在�
 
 #### 4.3.6 执行辅助参数
 
-| 参数 | 可选/必选 | 说明 | torch_npu支持 | MindSpore支持 |
+| 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
-| `--force` | 可选 | 强制执行compare。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行；csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 | 是 | 是 |
+| `--force` | 可选 | 强制执行compare。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行；csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 | 是 | 是 |
 | `--debug` | 可选 | 工具执行报错时可打开此开关，日志将输出DEBUG级别信息，便于定位问题。配置该参数表示开启Debug，默认未配置表示关闭。 | 是 | 是 |
 | `-h`、`-H`、`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
 

@@ -41,7 +41,7 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.1.0/zh/mindspore_profiler_user_guide.md)》。
 
 **约束**
 
@@ -93,7 +93,7 @@ msprof-analyze advisor命令行包含如下三个子命令：
 **总体性能瓶颈**
 
 ```bash
-msprof-analyze advisor all -d <profiling_path> [-bp <benchmark_profiling_path>] [-o <output_path>] [-cv <cann_version>] [-tv <torch_version>] [-pt <profiling_type>] [--force] [-l <language>] [--debug] [-h]
+msprof-analyze advisor all -d <profiling_path> [-bp <benchmark_profiling_path>] [-o <output_path>] [-cv <cann_version>] [-tv <torch_version>] [-pt <profiling_type>] [--force] [-l <language>] [--debug] [--agent] [-h]
 ```
 
 **计算瓶颈**
@@ -123,12 +123,12 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 
 | 参数                | 可选/必选 | 说明                                                         |
 | ------------------- | --------- | ------------------------------------------------------------ |
-| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5G、json文件大于10G、db文件大于8G，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
 | `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值： `cn`：输出中文，默认值。 `en`：输出英文。 |
 | `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
 | `-h`，`-H` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
-#### 4.3.2 环境与版本配置
+#### 4.3.3 环境与版本配置
 
 | 参数 | 说明 |
 | --- | --- |
@@ -210,7 +210,7 @@ advisor会输出终端简略建议，并生成HTML报告和XLSX明细文件。�
 
 无标杆是指执行msprof-analyze advisor时，未配置`-bp`参数，会根据是否为集群性能数据，且集群中各卡的computing time和free time耗时差异判断是否进行kernel和API性能数据的对比，以慢卡数据为标杆数据，快卡数据为待比对数据。
 
-#### overall模块
+#### 5.2.1 overall模块
 
 overall模块仅识别问题，不提供调优建议。
 
@@ -224,7 +224,7 @@ overall模块仅识别问题，不提供调优建议。
 
 ![env_var.png](../figures/env_var.png)
 
-上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/apiref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
+上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/canncommercial/900/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
 
 无标杆单卡场景的overall summary分析示例如下：
 
@@ -242,7 +242,7 @@ overall模块仅识别问题，不提供调优建议。
 
 ![cluster_5](../figures/cluster_5.png)
 
-#### comparison模块
+#### 5.2.2 comparison模块
 
 comparison模块识别标杆和待比对性能数据的Kernel和API数据。无标杆场景的comparison是集群内部快慢卡的性能数据对比。
 
@@ -264,7 +264,7 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
 `mstt_advisor_{timestamp}.html`文件的comparison模块内容仅展示Kernel和API的Top 10条数据，详细数据需要查看`mstt_advisor_{timestamp}.xlsx`文件。
 
-#### performance problem analysis模块
+#### 5.2.3 performance problem analysis模块
 
 performance problem analysis模块包含memory、communication、computation、dataloader、schedule等子模块。各子模块的作用和示例见[各问题类型详解](#54-各问题类型详解)。
 
@@ -272,7 +272,7 @@ performance problem analysis模块包含memory、communication、computation、d
 
 有标杆是指执行msprof-analyze advisor时，配置`-bp`参数，指定基准性能数据进行比对。
 
-#### overall模块
+#### 5.3.1 overall模块
 
 有标杆单卡场景：不进行overall模块的分析，performance problem analysis模块与无标杆场景下的performance problem analysis模块结果一致。
 
@@ -281,7 +281,7 @@ performance problem analysis模块包含memory、communication、computation、d
 - overall模块进行快慢卡和快慢链路分析，与无标杆集群场景一致，请参见[场景一：无标杆（无-bp）](#52-场景一无标杆无-bp)中的overall模块。
 - 提供Environment Variable Issues，与无标杆单卡场景一致，请参见[场景一：无标杆（无-bp）](#52-场景一无标杆无-bp)中的overall模块。
 
-#### comparison模块
+#### 5.3.2 comparison模块
 
 有标杆集群场景同样提供comparison模块。无标杆场景是集群内部快慢卡的性能数据对比；有标杆场景是两个集群之间存在明显耗时差异的相同卡之间的性能数据对比。
 
@@ -303,7 +303,7 @@ performance problem analysis模块包含memory、communication、computation、d
 
 `mstt_advisor_{timestamp}.html`文件的comparison模块内容仅展示Kernel和API的Top 10条数据，详细数据需要查看`mstt_advisor_{timestamp}.xlsx`文件。
 
-#### performance problem analysis模块
+#### 5.3.3 performance problem analysis模块
 
 有标杆场景下，performance problem analysis模块与无标杆场景一致。建议按memory、communication、computation、dataloader、schedule的顺序查看，优先处理High优先级问题。
 
@@ -333,7 +333,7 @@ computation模块从device计算性能维度进行分析，能够识别AICPU、�
 
 ![AI_Core_Performance_Analysis](../figures/AI_Core_Performance_analysis.png)
 
-上图中torch_npu.npu.set_compile_mode接口介绍请参见[torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)；AICPU算子替换样例可参考《[AICPU 算子替换样例](../aicpu_operator_replacement_example.md)》。
+上图中torch_npu.npu.set_compile_mode接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.1.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)；AICPU算子替换样例可参考《[AICPU 算子替换样例](../aicpu_operator_replacement_example.md)》。
 
 当存在pp stage（流水线并行）时，computation会按stage分析，每个stage就是一个流水线切分，比如0\~7卡为stage-0、8\~15卡为stage-1。
 
@@ -419,7 +419,7 @@ Synchronize Stream Issues示例如下，需要根据堆栈来修改对应代码�
 
 ![schedule_2](../figures/schedule_2.png)
 
-上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://www.hiascend.com/document/detail/zh/Pytorch/710/comref/Envvariables/Envir_006.html)。
+上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/environment_variable_reference/ASCEND_LAUNCH_BLOCKING.md)。
 
 Operator Dispatch Issues示例如下，提示需要在运行脚本的最开头添加如下代码用于消除aclopCompile：
 
@@ -428,11 +428,11 @@ torch_npu.npu.set_compile_mode(jit_compile=False);
 torch_npu.npu.config.allow_internal_format = False
 ```
 
-以上接口介绍请参见[torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)和[torch_npu.npu.config.allow_internal_format](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md)。
+以上接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.1.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)和[torch_npu.npu.config.allow_internal_format](https://gitcode.com/Ascend/op-plugin/blob/26.1.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md)。
 
 ![输入图片说明](../figures/schedule_1.png)
 
-上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0251.html)。
+上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/900/API/ascendgraphapi/aclcppdevg_03_0251.html)。
 
 #### 5.4.4 memory/dataloader模块问题速查
 
@@ -457,7 +457,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能数据分析过程和分析结果。
 
-使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
 
 > Jupyter Notebook方式作为命令行方式的补充，不参与命令行主流程。MindSpore场景不支持Jupyter Notebook方式。
 
@@ -479,7 +479,7 @@ git clone https://gitcode.com/Ascend/msprof-analyze
 
 **准备性能数据**
 
-advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
 
 **使用限制**
 

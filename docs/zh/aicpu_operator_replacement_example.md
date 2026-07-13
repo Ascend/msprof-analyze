@@ -123,7 +123,7 @@ masked_input *= ~input_mask
 
 此处masked_input是float类型的tensor数据，input_mask是和masked_input shape 一致的bool类型tensor或者01矩阵。由于是赋0操作，所以先对input_mask取反后再进行乘法操作。
 
-以赋0操作为例，在shape = (512, 32, 64) 类型float32 数据上测试，替换前耗时: 9.639978408813477 ms，替换之后耗时为 0.1747608184814453 ms，如下图，替换前，总体耗时在9.902ms，Host下发到device侧执行5个算子，其中aclnnIndexPutImpl_IndexPut_IndexPut是执行在 AICPU上。
+以赋0操作为例，在shape = (512, 32, 64) 类型float32 数据上测试，替换前耗时: 9.639978408813477 ms，替换之后耗时为 0.1747608184814453 ms，如下图，替换前，总体耗时为9.902ms，Host下发到device侧执行5个算子，其中aclnnIndexPutImpl_IndexPut_IndexPut是执行在 AICPU上。
 
 **图7** 替换前耗时
 
@@ -137,7 +137,7 @@ masked_input *= ~input_mask
 
 ### 2.3 ArgMin算子优化
 
-ArgMin在CANN 6.3 RC2版本上算子下发到AICPU执行，在CANN 7.0RC1上下发到AI_CORE上边执行。出现此类情形建议升级CANN包版本。
+ArgMin在CANN 6.3 RC2版本上算子下发到AICPU执行，在CANN 7.0RC1上下发到AICORE上执行。出现此类情形建议升级CANN包版本。
 
 在shape大小是 (1024, 1024) 的tensor上测试，结果如下：CANN 6.3.RC2上，单算子执行时间 2.603 ms。
 

@@ -52,7 +52,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 
    **关键参数说明：**
 
-   * `--stats=true`：nsys 在完成 profile 采集后会自动生成 sqlite 数据库文件。
+   * `--stats=true`：nsys 在完成 profile 采集后会自动生成 SQLite 数据库文件。
    * `--trace=cuda,nvtx`：启用 CUDA 和 NVTX 跟踪，NVTX 标记用于模块层次解析。
    * `--pytorch=autograd-nvtx`：启用 PyTorch autograd 的 NVTX 标记。
    * `--capture-range=cudaProfilerApi`：捕获 `cudaProfilerStart/Stop` 范围内的性能数据。
@@ -60,7 +60,7 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 
 2. NPU 性能数据采集
 
-   对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+   对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
 
    以下脚本展示如何采集 vLLM 推理的 NPU 性能数据，执行以下脚本前，须先完成[vllm bench latency 脚本修改](#51-vllm-bench-latency-脚本修改)。
 
@@ -128,7 +128,7 @@ msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> 
 | -m                          | 必选      | 设置为`calibrate_npu_gpu`，启动 NPU 和 GPU 性能数据拆解比对。 |
 | --profiling_path            | 必选      | NPU 性能数据文件路径。                                           |
 | --baseline_profiling_path   | 必选      | GPU 性能数据文件路径。                                       |
-| -o               | 可选      | 分析结果输出路径，默认输出在 -d 参数指定的目录下。                       |
+| -o               | 可选      | 分析结果输出路径，默认输出在 --profiling_path 参数指定的目录下。                       |
 | --export_type               | 可选      | 输出文件类型，可选db或text，默认为db。                    |
 | --fuzzy_threshold           | 可选      | NPU&GPU module name fuzzy 匹配的阈值，默认为 `0.8`。         |
 | --dump_intermediate_results | 可选      | 保存中间分析结果（GPU/NPU profile 分析结果），内容保存在 `{platform}_report_{rank_id}.xlsx` 文件中。默认未配置本参数，表示不保存中间分析结果。 |

@@ -8,7 +8,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
 **约束**
 
-仅支持Pytorch框架。
+仅支持PyTorch框架。
 
 **环境准备**
 
@@ -16,7 +16,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
 - 软件环境请参见[CANN快速安装](https://www.hiascend.com/cann/download)安装配套版本的CANN Toolkit开发套件包和ops算子包并配置CANN环境变量。
 
-- torch_npu版本大于等于7.2.0，Pytorch仅支持v2.6.0、v2.7.1，具体安装方式请参见《[Ascend Extension for PyTorch](https://www.hiascend.com/document/detail/zh/Pytorch/720/configandinstg/instg/insg_0001.html)》的“安装Pytorch > [方式一：二进制软件包安装](https://www.hiascend.com/document/detail/zh/Pytorch/720/configandinstg/instg/insg_0004.html)”章节。
+- TorchNPU版本大于等于7.2.0，PyTorch仅支持v2.6.0、v2.7.1，具体安装方式请参见《[TorchNPU软件安装](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/installation_guide/installation_description.md)》的“安装PyTorch > [方式一：离线安装（Whl）](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.1.0/docs/zh/installation_guide/installation_via_binary_package.md)”章节。
 
 - clone代码仓。
 
@@ -57,7 +57,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
     程序运行结束后，fx图保存在INDUCTOR_ASCEND_FX_GRAPH_CACHE设置的路径下。
 
-## inductor+triton融合算子性能对比
+## 功能介绍
 
 **功能说明**
 
@@ -99,17 +99,17 @@ inductor_triton_performance_comparison.py脚本执行完成后，在-o参数指�
 
 ![性能对比结果](../../docs/zh/figures/inductor_triton_performance_comparison.png)
 
-**表头字段说明：**
+**表头字段说明**
 
 | 字段        | 说明                            |
 | --------- |-------------------------------|
 | Triton Op | inductor+triton框架自动生成的融合算子名称。 |
 | Triton Op Duration(us) | 执行耗时，单位us。                    |
-| Original Op Duration(us) | 融合前算子以及耗时，按照耗时从高到低排序。         |
+| Original Op Duration(us) | 融合前算子及其耗时，按照耗时从高到低排序。         |
 | Original Op Total Duration(us)    | 融合前算子总耗时，单位us。                |
 | Duration Diff Ratio | 融合后算子耗时占融合前算子总耗时的百分比。         |
 
-**输出结果分析：**
+**输出结果分析**
 
-- 展示融合前后算子以及耗时。
+- 展示融合前后算子及其耗时。
 - 融合算子耗时占融合前算子总耗时的百分比小于100%，则认为融合算子性能提升，反之则认为融合算子性能下降。

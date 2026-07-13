@@ -56,7 +56,7 @@
        def wrapper(*args, **kwargs):
            new_msg = {"name": msg}
            if msg == "forward_step_with_model_graph" and kwargs.get("extra_block_kwargs") is not None:
-               new_msg["name"] = "forward_backward_overlaping"
+               new_msg["name"] = "forward_backward_overlapping"
            if "current_microbatch" in kwargs:
                new_msg["current_microbatch"] = kwargs["current_microbatch"]
            if msg == "WeightGradStore.pop" and len(WeightGradStore.cache) == 0:
@@ -145,7 +145,7 @@ msprof-analyze cluster -m pp_chart -d ./cluster_data
 
 **输出说明**
 
-完成数据分析后，在每个Rank的数据的ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db文件中生成StepTaskInfo表。
+完成数据分析后，在每个Rank数据的ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db文件中生成StepTaskInfo表。
 
 具体文件介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
@@ -160,7 +160,7 @@ msprof-analyze cluster -m pp_chart -d ./cluster_data
 | endNs   | 前向反向task在device上结束时间，INTEGER类型。 |
 | type    | 类型，不同类型显示不同颜色，INTEGER类型。 |
 
-用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/overview.md)》。
+用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/26.1.0/docs/zh/user_guide/overview.md)》。
 
 在MindStudio Insight工具导入分析后的性能数据，在Summary页面点击Generate后按照如下截图配置。
 
