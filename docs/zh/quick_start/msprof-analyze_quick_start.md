@@ -403,3 +403,23 @@ pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
 - 《[性能比对](../user_guide/compare_tool_instruct.md)》
 - 《[集群分析](../user_guide/cluster_analyse_instruct.md)》
 - 《[高级特性导航](../advanced_features/README.md)》
+
+## 5. 常见问题（FAQ）
+
+### 5.1 退出容器后如何重新进入？
+
+在宿主机执行以下任一命令：
+
+**方法一（推荐）**：执行 `~/ctr_in.py`，交互式选择目标容器（若仅有一个容器则自动进入）。
+
+**方法二（原生命令）**：执行 `docker exec -it alice_YYMMDD_HHMMSS bash`（请替换为实际容器名称）。
+
+### 5.2 执行 Docker 命令遇到 permission denied 类错误提示？
+
+可能当前用户未加入 Docker 用户组。可使用 root 权限在宿主机执行：
+
+```bash
+sudo usermod -aG docker <当前用户名>
+```
+
+执行后需要重新登录当前用户会话，或执行 `newgrp docker` 使用户组变更立即生效。不建议以 root 身份进行日常操作。
