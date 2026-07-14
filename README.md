@@ -1,18 +1,20 @@
 
 <h1 align="center">MindStudio Profiler Analyze</h1>
 <div align="center">
-  <p>🚀 <b>昇腾性能分析工具</b></p>
+<p><b><span style="font-size:24px;">昇腾性能分析工具</span></b></p>
 
-[![doc](https://badgen.net/badge/doc/readthedocs/green)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/)
-[![License](https://badgen.net/badge/License/MulanPSL-2.0/blue)](https://raw.gitcode.com/Ascend/msinsight/files/master/License)
-[![Version](https://badgen.net/badge/Version/26.1.0-alpha.1/green)](https://gitcode.com/Ascend/msprof-analyze/releases) 
-[![Ascend](https://img.shields.io/badge/Hardware-Ascend-orange.svg)](https://www.hiascend.com/)
+ [![快速入门](https://badgen.net/badge/快速入门/QuickStart/blue)](docs/zh/quick_start/msprof-analyze_quick_start.md)
+ [![AI问答(DeepWiki)](https://badgen.net/badge/AI问答/DeepWiki/blue)](https://deepwiki.com/mindstudio-docs/master) 
+ [![AI问答(ZRead)](https://badgen.net/badge/AI问答/ZRead/blue)](https://zread.ai/mindstudio-docs/master) 
+ [![精确搜索](https://badgen.net/badge/精确搜索/ReadTheDocs/blue)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/) 
+ [![昇腾社区](https://badgen.net/badge/昇腾社区/Community/blue)](https://www.hiascend.com/cn/developer/software/mindstudio) 
+ [![报告问题](https://badgen.net/badge/报告问题/Issues/blue)](https://gitcode.com/Ascend/msprof-analyze/issues) 
 
 </div>
 
 ## ✨ 最新消息
 
-🔹 [2025.12.30]：新增 `module_statistic` 分析能力：提供针对PyTorch模型自动解析模型层级结构的分析能力，帮助精准定位性能瓶颈。
+🔹 [2025.12.30]：新增 `module_statistic` 功能：自动解析PyTorch模型层级结构，精准定位性能瓶颈。  
 
 ## ℹ️ 简介
 
@@ -20,29 +22,29 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 
 ## ⚙️ 功能介绍
 
-| 功能名称 | 功能简介                                                                         | 文档 | 源码目录                                                       |
-| --- |------------------------------------------------------------------------------| --- |------------------------------------------------------------|
-| 专家建议 | 基于性能数据自动识别计算、调度、通信等潜在问题，并输出优化建议。                                             | [专家建议](./docs/zh/user_guide/advisor_instruct.md) | [advisor](./msprof_analyze/advisor)                    |
-| 性能比对 | 支持 GPU/NPU、NPU/NPU 等多种场景的性能差异分析。                                             | [性能比对](./docs/zh/user_guide/compare_tool_instruct.md) | [compare_tools](./msprof_analyze/compare_tools)        |
-| 集群分析 | 汇总集群通信数据，输出结果支持在 MindStudio Insight 中可视化查看。                                  | [集群分析](./docs/zh/user_guide/cluster_analyse_instruct.md) | [cluster_analyse](./msprof_analyze/cluster_analyse)    |
-| 进阶分析 | 基于 DB 类型性能数据，提供可自定义的 Recipe 分析规则，目前已涵盖拆解对比、Host 下发、计算、通信等 20 余种多维度分析能力，便于灵活扩展。 | [进阶分析](./docs/zh/advanced_features/README.md) | [recipes](./msprof_analyze/cluster_analyse/recipes) |
+| 功能名称 | 功能简介                                                   | 源码                                           |
+| --- |--------------------------------------------------------|----------------------------------------------|
+| [专家建议](./docs/zh/user_guide/advisor_instruct.md) | 基于性能数据自动识别计算、调度、通信等潜在问题，并输出优化建议。                       | [查看](./msprof_analyze/advisor)               |
+| [性能比对](./docs/zh/user_guide/compare_tool_instruct.md) | 支持 GPU/NPU、NPU/NPU 等多种场景的性能差异分析。                       | [查看](./msprof_analyze/compare_tools)         |
+| [集群分析](./docs/zh/user_guide/cluster_analyse_instruct.md) | 汇总集群通信数据，输出结果支持在 MindStudio Insight 中可视化查看。            | [查看](./msprof_analyze/cluster_analyse)       |
+| [进阶分析](./docs/zh/advanced_features/README.md) | 基于DB性能数据，自定义Recipe规则，涵盖拆解对比、Host下发、计算通信等20+分析能力，可灵活扩展。 | [查看](./msprof_analyze/cluster_analyse/recipes) |
 
 ## 🚀 快速入门
 
-`msprof-analyze` 常用分析命令如下：
+**10 分钟实战体验**  
+以 ResNet50 训练为例，覆盖**采集数据、执行 Advisor 分析与查看分析结果**全流程。点击立即开始：《[msprof-analyze 快速入门](docs/zh/quick_start/msprof-analyze_quick_start.md)》。
+
+**极简命令行速查**  
+若已熟悉操作流程，可直接执行分析命令，示例如下：
 
 ```bash
 # 集群通信汇总
 msprof-analyze cluster -m all -d ./cluster_data
-
 # 专家建议
 msprof-analyze advisor all -d ./prof_data -o ./advisor_output
-
 # 性能比对
 msprof-analyze compare -d ./ascend_pt -bp ./gpu_trace.json -o ./compare_output
 ```
-
-以 ResNet50 模型训练任务为例，《[快速入门](./docs/zh/quick_start/msprof-analyze_quick_start.md)》贯穿从采集性能数据、执行 Advisor 分析到查看分析结果的完整流程，帮助您快速体验工具的核心功能。
 
 ## 📦 安装指南
 
@@ -85,8 +87,7 @@ pip install -U msprof-analyze
 
 ## 🙏 致谢
 
-本工具由华为公司的下列部门联合贡献：
-
+本工具由华为公司的下列部门联合贡献：  
 🔹 昇腾计算MindStudio开发部  
 🔹 昇腾计算生态使能部  
 🔹 华为云昇腾云服务  
