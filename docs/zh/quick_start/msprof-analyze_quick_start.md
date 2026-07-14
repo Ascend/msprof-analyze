@@ -398,7 +398,7 @@ python3 -m pip download xxx --dest offline_wheels # xxx 为需要下载的包名
 将 `offline_wheels` 目录传输到内网服务器并复制到容器的用户主目录，然后在容器内执行：
 
 ```bash
-pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
+pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx # xxx 为需要安装的包名
 ```
 
 安装完成后，返回 [第 2.1.7 节](#217-容器内验证环境是否安装正确) 执行验证命令，无需再次执行联网安装命令。
