@@ -392,7 +392,7 @@ ls -l ctr_in.py
 
 ```bash
 mkdir -p offline_wheels
-python3 -m pip download xxx --dest offline_wheels
+python3 -m pip download xxx --dest offline_wheels # xxx 为需要下载的包名
 ```
 
 将 `offline_wheels` 目录传输到内网服务器并复制到容器的用户主目录，然后在容器内执行：
@@ -411,7 +411,7 @@ pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
 
 **方法一（推荐）**：执行 `~/ctr_in.py`，交互式选择目标容器（若仅有一个容器则自动进入）。
 
-**方法二（原生命令）**：执行 `docker exec -it alice_YYMMDD_HHMMSS bash`（请替换为实际容器名称）。
+**方法二（原生命令）**：执行 `docker exec -it <container_name> bash`（请替换为实际容器名称）。
 
 ### 4.2 执行 Docker 命令遇到 permission denied 类错误提示？
 
