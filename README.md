@@ -3,12 +3,12 @@
 <div align="center">
 <p><b><span style="font-size:24px;">昇腾性能分析工具</span></b></p>
 
- [![快速入门](https://badgen.net/badge/快速入门/QuickStart/blue)](docs/zh/quick_start/xxx_quick_start.md)
+ [![快速入门](https://badgen.net/badge/快速入门/QuickStart/blue)](docs/zh/quick_start/msprof-analyze_quick_start.md)
  [![AI问答(DeepWiki)](https://badgen.net/badge/AI问答/DeepWiki/blue)](https://deepwiki.com/mindstudio-docs/master) 
  [![AI问答(ZRead)](https://badgen.net/badge/AI问答/ZRead/blue)](https://zread.ai/mindstudio-docs/master) 
  [![精确搜索](https://badgen.net/badge/精确搜索/ReadTheDocs/blue)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/) 
  [![昇腾社区](https://badgen.net/badge/昇腾社区/Community/blue)](https://www.hiascend.com/cn/developer/software/mindstudio) 
- [![报告问题](https://badgen.net/badge/报告问题/Issues/blue)](https://gitcode.com/Ascend/xxx/issues) 
+ [![报告问题](https://badgen.net/badge/报告问题/Issues/blue)](https://gitcode.com/Ascend/msprof-analyze/issues) 
 
 </div>
 
@@ -35,7 +35,7 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 以 ResNet50 训练为例，覆盖**采集数据、执行 Advisor 分析与查看分析结果**全流程。点击立即开始：[《msprof-analyze 快速入门》](docs/zh/quick_start/msprof-analyze_quick_start.md)。
 
 **极简命令行速查**  
-若已熟悉操作流程，可直接执行采集命令，示例如下：
+若已熟悉操作流程，可直接执行分析命令，示例如下：
 
 ```bash
 # 集群通信汇总
