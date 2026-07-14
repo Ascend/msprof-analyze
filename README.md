@@ -32,7 +32,7 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 ## 🚀 快速入门
 
 **10 分钟实战体验**  
-以 ResNet50 训练为例，覆盖**采集数据、执行 Advisor 分析与查看分析结果**全流程。点击立即开始：[《msprof-analyze 快速入门》](docs/zh/quick_start/msprof-analyze_quick_start.md)。
+以 ResNet50 训练为例，覆盖**采集数据、执行 Advisor 分析与查看分析结果**全流程。点击立即开始：《[msprof-analyze 快速入门](docs/zh/quick_start/msprof-analyze_quick_start.md)》。
 
 **极简命令行速查**  
 若已熟悉操作流程，可直接执行分析命令，示例如下：
