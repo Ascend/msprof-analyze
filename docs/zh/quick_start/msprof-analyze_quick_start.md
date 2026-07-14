@@ -316,6 +316,13 @@ docker cp "${CONTAINER_ID}:${ADVISOR_OUTPUT}" ./
 
 > **延伸阅读**：如需了解更多分析维度、参数说明及高级解读技巧，请参阅 《[专家建议](../user_guide/advisor_instruct.md)》。
 
+至此，您已掌握 msprof-analyze 性能瓶颈基础分析方法，本次快速入门结束。如需深入了解其功能用法，请参考：
+
+- 《[专家建议](../user_guide/advisor_instruct.md)》
+- 《[性能比对](../user_guide/compare_tool_instruct.md)》
+- 《[集群分析](../user_guide/cluster_analyse_instruct.md)》
+- 《[高级特性导航](../advanced_features/README.md)》
+
 ## 3. 内网环境无公网访问权限的应对方案
 
 ### 3.1 Docker 镜像在隔离内网的获取方法
