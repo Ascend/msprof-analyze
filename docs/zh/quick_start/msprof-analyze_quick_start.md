@@ -312,9 +312,9 @@ docker cp "${CONTAINER_ID}:${ADVISOR_OUTPUT}" ./
 1. **查看总体结论**：确认报告首页是否存在标记为高优先级的性能瓶颈。
 2. **分析问题详情**：仔细阅读问题列表中的问题类型、影响程度以及具体的优化建议。
 3. **定位明细数据**：如需定位算子或 API 层面的具体原因，可打开 `log/mstt_advisor_{timestamp}.xlsx` 结合模块名称深入分析。
-4. **调优与验证**：根据建议修改训练脚本、数据加载逻辑或通信配置后，重新采集 Profiling 数据并运行 Advisor 验证优化效果。
+4. **进行调优验证**：根据建议修改训练脚本、数据加载逻辑或通信配置后，重新采集 Profiling 数据并运行 Advisor 验证优化效果。
 
-> **延伸阅读**：如需了解更多分析维度、参数说明及高级解读技巧，请参阅 [专家建议指南](../user_guide/advisor_instruct.md)。
+> **延伸阅读**：如需了解更多分析维度、参数说明及高级解读技巧，请参阅 《[专家建议](../user_guide/advisor_instruct.md)》。
 
 ## 3. 内网环境无公网访问权限的应对方案
 
@@ -396,16 +396,9 @@ pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
 
 安装完成后，返回 [第 2.1.7 节](#217-容器内验证环境是否安装正确) 执行验证命令，无需再次执行联网安装命令。
 
-## 4. 下一步阅读
+## 4. 常见问题（FAQ）
 
-- 《[专家建议](../user_guide/advisor_instruct.md)》
-- 《[性能比对](../user_guide/compare_tool_instruct.md)》
-- 《[集群分析](../user_guide/cluster_analyse_instruct.md)》
-- 《[高级特性导航](../advanced_features/README.md)》
-
-## 5. 常见问题（FAQ）
-
-### 5.1 退出容器后如何重新进入？
+### 4.1 退出容器后如何重新进入？
 
 在宿主机执行以下任一命令：
 
@@ -413,7 +406,7 @@ pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx
 
 **方法二（原生命令）**：执行 `docker exec -it alice_YYMMDD_HHMMSS bash`（请替换为实际容器名称）。
 
-### 5.2 执行 Docker 命令遇到 permission denied 类错误提示？
+### 4.2 执行 Docker 命令遇到 permission denied 类错误提示？
 
 可能当前用户未加入 Docker 用户组。可使用 root 权限在宿主机执行：
 
