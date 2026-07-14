@@ -22,12 +22,12 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 
 ## ⚙️ 功能介绍
 
-| 功能名称 | 功能简介                                                                         | 源码                                           |
-| --- |------------------------------------------------------------------------------|----------------------------------------------|
-| [专家建议](./docs/zh/user_guide/advisor_instruct.md) | 基于性能数据自动识别计算、调度、通信等潜在问题，并输出优化建议。                                             | [查看](./msprof_analyze/advisor)               |
-| [性能比对](./docs/zh/user_guide/compare_tool_instruct.md) | 支持 GPU/NPU、NPU/NPU 等多种场景的性能差异分析。                                             | [查看](./msprof_analyze/compare_tools)         |
-| [集群分析](./docs/zh/user_guide/cluster_analyse_instruct.md) | 汇总集群通信数据，输出结果支持在 MindStudio Insight 中可视化查看。                                  | [查看](./msprof_analyze/cluster_analyse)       |
-| [进阶分析](./docs/zh/advanced_features/README.md) | 基于 DB 性能数据，提供可自定义 Recipe 规则，内置拆解对比、Host 下发、计算及通信等 20 余种分析能力，支持灵活扩展。 | [查看](./msprof_analyze/cluster_analyse/recipes) |
+| 功能名称 | 功能简介                                                      | 源码                                           |
+| --- |-----------------------------------------------------------|----------------------------------------------|
+| [专家建议](./docs/zh/user_guide/advisor_instruct.md) | 基于性能数据自动识别计算、调度、通信等潜在问题，并输出优化建议。                          | [查看](./msprof_analyze/advisor)               |
+| [性能比对](./docs/zh/user_guide/compare_tool_instruct.md) | 支持 GPU/NPU、NPU/NPU 等多种场景的性能差异分析。                          | [查看](./msprof_analyze/compare_tools)         |
+| [集群分析](./docs/zh/user_guide/cluster_analyse_instruct.md) | 汇总集群通信数据，输出结果支持在 MindStudio Insight 中可视化查看。               | [查看](./msprof_analyze/cluster_analyse)       |
+| [进阶分析](./docs/zh/advanced_features/README.md) | 基于DB性能数据，提供自定义Recipe规则，涵盖拆解对比、Host下发、计算通信等20余种分析能力，可灵活扩展。 | [查看](./msprof_analyze/cluster_analyse/recipes) |
 
 ## 🚀 快速入门
 
