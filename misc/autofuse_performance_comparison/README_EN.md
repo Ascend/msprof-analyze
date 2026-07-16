@@ -14,7 +14,7 @@ Only the TensorFlow framework is supported.
 
 - **Hardware**: For hardware environment requirements, see [Ascend Product Models](https://www.hiascend.com/document/detail/en/AscendFAQ/ProduTech/productform/hardwaredesc_0001.html).
 
-- **Software**: Install the matching CANN Toolkit and ops packages, and then configure CANN environment variables. For details, see [CANN Quick Installation Guide](https://www.hiascend.com/cann/download).
+- **Software**: Install the matching CANN Toolkit and ops packages, and then configure CANN environment variables. For details, see [CANN Quick Installation Guide](https://www.hiascend.com/en/cann/download).
 
 - **PyTorch & torch_npu**: The `torch_npu` version must be 7.2.0 or later. Supported PyTorch versions are v2.6.0 and v2.7.1. For installation details, see "Installing Pytorch > [Method 1: Binary Package Installation](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/installation_guide/installation_via_binary_package.md)" in [Ascend Extension for PyTorch](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/installation_guide/installation_description.md).
 
