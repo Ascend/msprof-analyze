@@ -81,7 +81,7 @@ Successfully installed msprof-analyze-{version}
 2. 下载源码。
 
    ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze
+   git clone https://gitcode.com/Ascend/msprof-analyze -b 26.1.0
    ```
 
 3. 编译whl包。

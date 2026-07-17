@@ -201,7 +201,7 @@ export_type = Db
 1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对； 
 2. MindSpore训练工程在NPU上、不同版本之间的性能数据比对。
 
-性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.1.0/zh/mindspore_profiler_user_guide.md)》。
+性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.1.0/zh/menu/mindspore_profiler_user_guide.md)》。
 
 采集结果目录结构：根据`export_type`参数设置的不同，工具会输出两种格式的结果目录：
 
