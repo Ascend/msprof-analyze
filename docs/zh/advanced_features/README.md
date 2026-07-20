@@ -9,7 +9,7 @@
 支持以下两种集群数据：
 
 * Ascend PyTorch Profiler 采集的 DB 格式集群数据，参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》
-* msMonitor 采集的集群轻量化 DB 数据，参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start/quick_start.md)》
+* msMonitor 采集的集群轻量化 DB 数据，参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start/msmonitor_quick_start.md)》
 
 使用 Ascend PyTorch Profiler 时，需要采集或离线解析出 `db` 类型结果。示例如下：
 
