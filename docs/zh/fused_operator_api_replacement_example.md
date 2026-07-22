@@ -6,7 +6,7 @@ TorchNPU API的功能和参数描述见[API列表](https://gitcode.com/Ascend/op
 
 ## 1. 优化器替换
 
-替换优化器一般都能有较大的性能收益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://gitcode.com/Ascend/ModelZoo-PyTorch/blob/master/PyTorch/docs/performance_tuning/performance_tuning_methods/npu_affinity_opt/fusion_optimizer.md)。下文以AdamW优化器为例，其他优化器的替换方式一致。
+替换优化器一般都能有较大的性能收益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://gitcode.com/Ascend/ModelZoo-PyTorch/blob/master/PyTorch/docs/zh/performance_tuning/performance_tuning_methods/npu_affinity_opt/fusion_optimizer.md)。下文以AdamW优化器为例，其他优化器的替换方式一致。
 
 ### 1.1 torch_npu.optim.NpuFusedAdamW
 
