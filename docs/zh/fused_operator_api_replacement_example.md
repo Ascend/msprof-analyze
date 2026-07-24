@@ -2,11 +2,11 @@
 
 部分torch原生的API在下发和执行时会包括多个小算子，下发和执行耗时较长，可以通过替换成NPU API来使能融合算子，提升训练性能。
 
-torch_npu API的功能和参数描述见[API列表](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/torch_npu接口列表.md)。
+torch_npu API的功能和参数描述见[API列表](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu/torch_npu_list.md)。
 
 ## 优化器替换
 
-替换优化器一般都能有较大的性能收益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0036.html)。下文以AdamW优化器为例，其他优化器的替换方式一致。
+替换优化器一般都能有较大的性能收益，可以优先考虑将torch原生的优化器替换为[昇腾提供的亲和优化器](https://gitcode.com/Ascend/docs/blob/master/FrameworkPTAdapter/26.0.0/zh/pytorch_model_migration_fine_tuning/fusion_opt.md)。下文以AdamW优化器为例，其他优化器的替换方式一致。
 
 ### torch_npu.optim.NpuFusedAdamW
 

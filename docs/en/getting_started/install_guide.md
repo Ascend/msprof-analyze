@@ -77,7 +77,7 @@ Successfully installed msprof-analyze-{version}
 2. Download the source code.
 
    ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze
+   git clone https://gitcode.com/Ascend/msprof-analyze -b 26.0.0
    ```
 
 3. Build the `.whl` package.

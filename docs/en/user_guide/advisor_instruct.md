@@ -22,7 +22,7 @@ For details about how to collect profile data by using Ascend PyTorch Profiler, 
   2. Download the `msprof-analyze` source code.
 
       ```bash
-      git clone https://gitcode.com/Ascend/msprof-analyze
+      git clone https://gitcode.com/Ascend/msprof-analyze -b 26.0.0
       ```
 
 **Data preparation**
@@ -345,7 +345,7 @@ For details regarding these APIs, see [torch_npu.npu.set_compile_mode](https://g
 
 ![Input Image Description](../figures/schedule_1.png)
 
-For details regarding the `aclopCompileAndExecute` API, see [aclopCompileAndExecute](https://www.hiascend.com/document/detail/en/canncommercial/850/API/appdevgapi/aclcppdevg_03_0251.html).
+For details regarding the `aclopCompileAndExecute` API, see [aclopCompileAndExecute](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/900/API/ascendgraphapi/aclcppdevg_03_0251.html).
 
 ### Report Analysis (With Benchmark)
 

@@ -22,7 +22,7 @@ Ascend PyTorch Profiler采集方法请参见《[Ascend PyTorch调优工具](http
   2.下载msprof-analyze源码。
 
    ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze
+   git clone https://gitcode.com/Ascend/msprof-analyze -b 26.0.0
    ```
 
 **数据准备**
@@ -286,7 +286,7 @@ computation模块从device计算性能维度进行分析，能够识别AICPU、�
 
 ![AI_Core_Performance_Analysis](./figures/AI_Core_Performance_analysis.png)
 
-上图中torch_npu.npu.set_compile_mode接口介绍请参见[torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)；AICPU算子替换样例可参考《[AICPU 算子替换样例](./aicpu_operator_replacement_example.md)》。
+上图中torch_npu.npu.set_compile_mode接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)；AICPU算子替换样例可参考《[AICPU 算子替换样例](./aicpu_operator_replacement_example.md)》。
 
 当存在pp stage（流水线并行）时，computation会按stage分析，每个stage就是一个流水线切分，比如0\~7卡为stage-0、8\~15卡为stage-1。
 
@@ -296,7 +296,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 ![dataloader](./figures/dataloader.png)
 
-上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html)使用。
+上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://gitcode.com/Ascend/docs/blob/master/FrameworkPTAdapter/26.0.0/zh/pytorch_model_migration_fine_tuning/data_loading_optimization.md)使用。
 
 schedule模块包含GC Analysis、亲和API、aclOpCompile、SyncBatchNorm、SynchronizeStream和Fusible Operator Analysis等多项检测。
 
@@ -334,7 +334,7 @@ schedule模块包含GC Analysis、亲和API、aclOpCompile、SyncBatchNorm、Syn
 
 ![schedule_2](./figures/schedule_2.png)
 
-上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://www.hiascend.com/document/detail/zh/Pytorch/710/comref/Envvariables/Envir_006.html)。
+上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/environment_variable_reference/ASCEND_LAUNCH_BLOCKING.md)。
 
 如下图示例，Operator Dispatch Issues提示需要在运行脚本的最开头添加如下代码用于消除aclOpCompile：
 
@@ -343,11 +343,11 @@ torch_npu.npu.set_compile_mode(jit_compile=False);
 torch_npu.npu.config.allow_internal_format = False
 ```
 
-以上接口介绍请参见[torch_npu.npu.set_compile_mode](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)和[torch_npu.npu.config.allow_internal_format](https://www.hiascend.com/document/detail/zh/Pytorch/710/apiref/torchnpuCustomsapi/context/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md)。
+以上接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu-npu/（beta）torch_npu-npu-set_compile_mode.md)和[torch_npu.npu.config.allow_internal_format](https://gitcode.com/Ascend/op-plugin/blob/26.0.0/docs/zh/custom_APIs/torch_npu-npu/（beta）torch_npu-npu-config-allow_internal_format.md)。
 
 ![输入图片说明](./figures/schedule_1.png)
 
-上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/82RC1/API/appdevgapi/aclcppdevg_03_0251.html)。
+上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/API/ascendgraphapi/aclcppdevg_03_0251.html)。
 
 ### 报告解析（有标杆）
 

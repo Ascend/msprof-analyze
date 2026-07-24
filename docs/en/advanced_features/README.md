@@ -12,7 +12,7 @@ The tool supports the following cluster data types:
 Details about profile data collection:
 
 * For details about how to collect profile data in PyTorch scenarios, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/en/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
-* For details about how to collect profile data in msMonitor scenarios, see [msMonitor](https://gitcode.com/Ascend/msmonitor).
+* For details about how to collect profile data in msMonitor scenarios, see [msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.0.0/docs/en/overview.md).
 
 When you use Ascend PyTorch Profiler, you must collect or parse `db` results offline. Example:
 

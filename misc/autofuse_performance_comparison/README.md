@@ -16,12 +16,12 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
 
 - 软件环境请参见[CANN快速安装](https://www.hiascend.com/cann/download)安装配套版本的CANN Toolkit开发套件包和ops算子包并配置CANN环境变量。
 
-- torch_npu版本大于等于7.2.0，PyTorch仅支持v2.6.0、v2.7.1，具体安装方式请参见《[Ascend Extension for PyTorch](https://www.hiascend.com/document/detail/zh/Pytorch/720/configandinstg/instg/insg_0001.html)》的“安装PyTorch > [方式一：二进制软件包安装](https://www.hiascend.com/document/detail/zh/Pytorch/720/configandinstg/instg/insg_0004.html)”章节。
+- torch_npu版本大于等于7.2.0，PyTorch仅支持v2.6.0、v2.7.1，具体安装方式请参见《[Ascend Extension for PyTorch](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/installation_guide/installation_description.md)》的“安装PyTorch > [方式一：离线安装（Whl）](https://gitcode.com/Ascend/pytorch/blob/v2.7.1-26.0.0/docs/zh/installation_guide/installation_via_binary_package.md)”章节。
 
 - 执行构建脚本：
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze
+    git clone https://gitcode.com/Ascend/msprof-analyze -b 26.0.0
     cd msprof-analyze
     # 安装依赖
     pip install -r requirements.txt
@@ -40,11 +40,11 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
 
-    自动融合开关的更多介绍，请参见《[AutoFuse使能方式](https://www.hiascend.com/document/detail/zh/canncommercial/850/graph/autofuse/autofuse_1_0004.html)》。
+    自动融合开关的更多介绍，请参见《[AutoFuse使能方式](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/programug/graphdevg/autofuse_1_0004.html)》。
 
 2. TensorFlow模型运行时开启datadump和自动融合，获取datadump数据和Build图。
 
-    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
+    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
 
     2. 开启graphdump，可设置以下几个环境变量：
 
@@ -55,11 +55,11 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
         export DUMP_GRAPH_PATH=<dump_path>
         ```
 
-        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html)》。
+        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/maintenref/envvar/envref_07_0001.html)》。
 
 3. 数据处理。
 
-   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/canncommercial/850/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
+   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
 
       例如AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365转换为npy文件可以得到AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.0.npy、AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.1.npy和AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.output.0.npy。
 
