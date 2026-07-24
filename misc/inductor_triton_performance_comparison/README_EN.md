@@ -21,7 +21,7 @@ Only the PyTorch framework is supported.
 - Clone the code repository.
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze
+    git clone https://gitcode.com/Ascend/msprof-analyze -b 26.0.0
     ```
 
 - Install dependencies.

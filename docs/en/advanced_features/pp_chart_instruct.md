@@ -156,7 +156,7 @@ The following table describes the fields in the `StepTaskInfo` table.
 | endNs   | End time (`INTEGER` type) of the forward or backward task on the device|
 | type    | Type (`INTEGER` type) used to display different colors|
 
-You do not need to focus on the specific meanings of these fields. The data can be displayed directly using MindStudio Insight. For details about the installation and operation of this tool, see [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight).
+You do not need to focus on the specific meanings of these fields. The data can be displayed directly using MindStudio Insight. For details about the installation and operation of this tool, see [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight/blob/26.0.0/docs/en/user_guide/overview.md).
 
 Import the analyzed profile data into MindStudio Insight, click **Generate** on the **Summary** page, and configure the parameters as shown in the following figure.
 
