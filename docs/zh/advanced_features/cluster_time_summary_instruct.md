@@ -37,6 +37,7 @@ msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 | -m   | 必选      | 设置为cluster_time_summary，启动集群性能数据细粒度拆解。 |
 | -d   | 必选      | 集群性能数据文件父目录路径。                             |
 | -o   | 可选      | 分析结果输出路径，默认输出在-d参数指定的目录下。         |
+| --export_type | 可选 | 输出文件类型，可选db或text，默认为db。              |
 
 更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 

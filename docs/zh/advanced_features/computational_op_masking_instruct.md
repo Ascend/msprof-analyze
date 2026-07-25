@@ -34,7 +34,7 @@ msprof-analyze -m computational_op_masking [--export_type <export_type>] [--step
 |-------------------|-------|--------------------------------------------------------------------------------------|
 | -m                | 必选    | 设置为computational_op_masking，启动集群性能数据细粒度拆解。                                      |
 | --export_type     | 可选    | 输出文件类型，当前场景仅支持配置为 `db`。                           |
-| --step_id         | 可选    | 设置step取该step结果进行保存，不设置默认输出所有step的结果。                                                 |
+| --step_id         | 可选    | 设置step ID取该step结果进行保存，不设置默认输出所有step的结果。                                                 |
 | --parallel_types  | 可选    | 设置计算不同并行模式下，通信算子被计算算子掩盖的程度。例如："edp,dp;dp;edp" 实际含义：[('edp','dp'), ('dp',), ('edp',)] |
 | -d                | 必选    | 集群性能数据文件父目录路径。                                                                         |
 | -o   | 可选      | 分析结果输出路径，默认输出在-d参数指定的目录下。               |

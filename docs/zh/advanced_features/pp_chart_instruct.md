@@ -56,7 +56,7 @@
        def wrapper(*args, **kwargs):
            new_msg = {"name": msg}
            if msg == "forward_step_with_model_graph" and kwargs.get("extra_block_kwargs") is not None:
-               new_msg["name"] = "forward_backward_overlaping"
+               new_msg["name"] = "forward_backward_overlapping"
            if "current_microbatch" in kwargs:
                new_msg["current_microbatch"] = kwargs["current_microbatch"]
            if msg == "WeightGradStore.pop" and len(WeightGradStore.cache) == 0:
@@ -145,7 +145,7 @@ msprof-analyze cluster -m pp_chart -d ./cluster_data
 
 **输出说明**
 
-完成数据分析后，在每个Rank的数据的ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db文件中生成StepTaskInfo表。
+完成数据分析后，在每个Rank数据的ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_{rank_id}.db文件中生成StepTaskInfo表。
 
 具体文件介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 

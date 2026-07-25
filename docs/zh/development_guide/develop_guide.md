@@ -25,7 +25,6 @@
 其中核心运行依赖包括：
 
 - `click`
-- `tabulate`
 - `networkx`
 - `jinja2`
 - `PyYaml`

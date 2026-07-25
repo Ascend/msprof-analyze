@@ -25,7 +25,6 @@ Basic dependencies are defined in `requirements/build.txt`, and test dependencie
 The core runtime dependencies include:
 
 - `click`
-- `tabulate`
 - `networkx`
 - `jinja2`
 - `PyYaml`

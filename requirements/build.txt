@@ -1,5 +1,4 @@
 click
-tabulate
 networkx
 jinja2
 PyYaml
