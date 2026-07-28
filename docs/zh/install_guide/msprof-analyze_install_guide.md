@@ -13,7 +13,7 @@
 ### 2.1 在线安装
 
 ```shell
-pip install msprof-analyze
+pip install msprof-analyze==26.1.0
 ```
 
 使用`pip install msprof-analyze==版本号`可安装指定版本的包，使用采集性能数据对应的CANN版本号即可。
@@ -25,7 +25,7 @@ pip install msprof-analyze
 提示如下信息则表示安装成功。
 
 ```bash
-Successfully installed msprof-analyze-{version}
+Successfully installed msprof-analyze-26.1.0
 ```
 
 ### 2.2 离线安装
