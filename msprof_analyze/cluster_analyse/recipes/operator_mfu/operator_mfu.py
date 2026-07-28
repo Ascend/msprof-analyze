@@ -24,6 +24,7 @@ from msprof_analyze.cluster_analyse.common_func.excel_utils import ExcelUtils
 from msprof_analyze.prof_exports.module_statistic_export import ModuleMstxRangeExport
 from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_columns
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
@@ -34,6 +35,7 @@ class OperatorMfu(ModuleStatistic):
 
     TABLE_OPERATOR_MFU = "OperatorMFU"
     TABLE_MODULE_MFU = "ModuleMFU"
+    SUGGESTION = "kernel级或者module级MFU统计，后者仅当采集数据包含Module domain的msTX Range时生成。"
 
     @property
     def base_dir(self):
@@ -284,6 +286,13 @@ class OperatorMfu(ModuleStatistic):
             self.dump_data(
                 module_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_MODULE_MFU, index=False
             )
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [self.TABLE_OPERATOR_MFU, self.TABLE_MODULE_MFU],
+            },
+            suggestion=self.SUGGESTION,
+        )
 
     def save_excel(self, mapper_res):
         """将各 rank 的分析结果写入 Excel 文件。"""
@@ -328,6 +337,7 @@ class OperatorMfu(ModuleStatistic):
                     excel_utils.clear()
                 except Exception as e:
                     logger.error("Save module MFU excel failed, err: %s", e)
+        set_json_success(msg_dict={"csv_dir": self.output_path}, suggestion=self.SUGGESTION)
 
     def _format_kernel_mfu_columns(self, df, export_type):
         """按导出类型格式化 kernel 级 MFU 列名。"""

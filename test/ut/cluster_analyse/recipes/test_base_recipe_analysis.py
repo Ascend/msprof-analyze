@@ -260,11 +260,15 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
         # 测试 PyTorch 情况
         result = self.analysis._get_profiler_db_path(0, 'test_path')
         self.assertEqual(result, os.path.join('test_path', Constant.SINGLE_OUTPUT, 'ascend_pytorch_profiler_0.db'))
+        result = self.analysis._get_profiler_db_path(-1, 'test_path')
+        self.assertEqual(result, os.path.join('test_path', Constant.SINGLE_OUTPUT, 'ascend_pytorch_profiler.db'))
 
         # 测试 MindSpore 情况
         self.analysis._prof_type = Constant.MINDSPORE
         result = self.analysis._get_profiler_db_path(0, 'test_path')
         self.assertEqual(result, os.path.join('test_path', Constant.SINGLE_OUTPUT, 'ascend_mindspore_profiler_0.db'))
+        result = self.analysis._get_profiler_db_path(-1, 'test_path')
+        self.assertEqual(result, os.path.join('test_path', Constant.SINGLE_OUTPUT, 'ascend_mindspore_profiler.db'))
 
     def test_get_analysis_db_path(self):
         # 测试 _get_analysis_db_path 函数

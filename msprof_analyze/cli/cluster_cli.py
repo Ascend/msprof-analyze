@@ -26,24 +26,53 @@ context_settings = dict(Constant.CONTEXT_SETTINGS)
 context_settings['ignore_unknown_options'] = True
 
 
-@click.command(context_settings=context_settings, name="cluster",
-               short_help='Analyze cluster data to locate performance bottleneck')
-@click.option('--profiling_path', '-d', type=click.Path(exists=True, file_okay=False, resolve_path=True),
-              required=True, callback=PathManager.expanduser_for_cli, help='path of the profiling data')
-@click.option('--mode', '-m', type=click.Choice(ALL_FEATURE_LIST), default='all')
-@click.option('--output_path', '-o',
-              type=click.Path(file_okay=False, writable=True, executable=True),
-              callback=PathManager.expanduser_for_cli, help='Path of cluster analysis output')
-@click.option('--force', is_flag=True,
-              help="Indicates whether to skip verification of the owner, size, and permissions.")
+@click.command(
+    context_settings=context_settings,
+    name="cluster",
+    short_help='Analyze cluster data to locate performance bottleneck',
+)
+@click.option(
+    '--profiling_path',
+    '-d',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    required=True,
+    callback=PathManager.expanduser_for_cli,
+    help='path of the profiling data',
+)
+@click.option(
+    '--mode',
+    '-m',
+    type=click.Choice(ALL_FEATURE_LIST),
+    default='all',
+    help='Analysis mode, select specific feature type for cluster analysis',
+)
+@click.option(
+    '--output_path',
+    '-o',
+    type=click.Path(file_okay=False, writable=True, executable=True),
+    callback=PathManager.expanduser_for_cli,
+    help='Path of cluster analysis output',
+)
+@click.option(
+    '--force', is_flag=True, help="Indicates whether to skip verification of the owner, size, and permissions."
+)
 @click.option("--parallel_mode", type=str, help="context mode", default="concurrent")
 @click.option("--export_type", help="recipe export type", type=click.Choice(["db", "notebook", "text"]), default="db")
 @click.option("--rank_list", type=str, help="Rank id list", default='all')
 @click.option("--step_id", type=int, help="Step id", default=Constant.VOID_STEP)
-@click.option('--version', '-V', '-v', is_flag=True,
-              callback=print_version_callback, expose_value=False,
-              is_eager=True, help=cli_version())
-@click.option('--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal')
+@click.option(
+    '--version',
+    '-V',
+    '-v',
+    is_flag=True,
+    callback=print_version_callback,
+    expose_value=False,
+    is_eager=True,
+    help=cli_version(),
+)
+@click.option(
+    '--agent', is_flag=True, help='Agent mode: save logs to temp file, only output structured JSON to terminal'
+)
 @click.argument('args', nargs=-1)
 @cli_json_output
 def cluster_cli(**kwargs) -> None:
@@ -51,4 +80,3 @@ def cluster_cli(**kwargs) -> None:
         os.environ["AGENT_MODE"] = "agent"
         set_agent_mode()
     Interface(kwargs).run()
-

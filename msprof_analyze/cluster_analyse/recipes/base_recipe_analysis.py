@@ -46,6 +46,7 @@ class BaseRecipeAnalysis(ABC):
         Constant.PROFILER_DB_PATH: "profiler DB file (e.g. ascend_pytorch_profiler_xxx.db)",
         Constant.ANALYSIS_DB_PATH: "analysis DB file (analysis.db)",
     }
+    DEFAULT_RANK_ID = -1
 
     def __init__(self, params):
         self._collection_dir = params.get(Constant.COLLECTION_PATH, "")
@@ -296,9 +297,19 @@ class BaseRecipeAnalysis(ABC):
             db_path = MsprofDataPreprocessor.get_msprof_profiler_db_path(data_path)
             return db_path if db_path else os.path.join(data_path, "msprof_xx.db")
         if self._prof_type == Constant.MINDSPORE:
-            return os.path.join(data_path, Constant.SINGLE_OUTPUT, f"ascend_mindspore_profiler_{rank_id}.db")
+            db_name = (
+                "ascend_mindspore_profiler.db"
+                if rank_id == self.DEFAULT_RANK_ID
+                else f"ascend_mindspore_profiler_{rank_id}.db"
+            )
+            return os.path.join(data_path, Constant.SINGLE_OUTPUT, db_name)
         if self._prof_type == Constant.PYTORCH:
-            return os.path.join(data_path, Constant.SINGLE_OUTPUT, f"ascend_pytorch_profiler_{rank_id}.db")
+            db_name = (
+                "ascend_pytorch_profiler.db"
+                if rank_id == self.DEFAULT_RANK_ID
+                else f"ascend_pytorch_profiler_{rank_id}.db"
+            )
+            return os.path.join(data_path, Constant.SINGLE_OUTPUT, db_name)
         if self._prof_type == Constant.MSMONITOR:
             return data_path
         return ""
