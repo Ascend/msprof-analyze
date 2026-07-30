@@ -1,6 +1,6 @@
-# 开发指南
+# msprof-analyze 开发指南
 
-## 1. MindStudio Profiler Analyze开发软件
+## 1. msprof-analyze开发软件
 
 | 软件名 | 用途 |
 | --- | --- |
@@ -11,40 +11,13 @@
 
 ## 2. 开发环境配置
 
-| 软件名 | 版本要求 | 用途 |
-| --- | --- | --- |
-| Python | 3.7 及以上 | 主开发环境 |
-| pip | 与 Python 配套 | 安装依赖和本地包 |
-| wheel | 最新稳定版 | 构建 whl 包 |
-| Git | 无硬性要求 | 代码管理 |
+按照《[msprof-analyze 安装指南 — 源码安装](../install_guide/msprof-analyze_install_guide.md#231-环境准备)》章节完成编译和测试环境的搭建。
 
-### 2.1 开发依赖
+> **说明：** 环境镜像的构建方法及配套软件版本由 MindStudio 统一镜像制作指南维护，本仓库不重复定义。
 
-基础依赖定义在 `requirements/build.txt`，测试依赖定义在 `requirements/tests.txt`。
-
-其中核心运行依赖包括：
-
-- `click`
-- `networkx`
-- `jinja2`
-- `PyYaml`
-- `tqdm`
-- `prettytable`
-- `ijson`
-- `xlsxwriter`
-- `sqlalchemy`
-- `numpy`
-- `pandas`
-- `psutil`
-- `pybind11`
-
-### 2.2 推荐环境准备
-
-建议在仓库根目录下使用虚拟环境进行开发：
+进入编译容器环境，可执行如下步骤完成依赖安装（为了依赖不冲突使用 venv 或启动多个容器隔离都可以）：
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -U pip wheel
 pip install -r requirements/build.txt
 pip install -r requirements/tests.txt
@@ -53,6 +26,8 @@ pip install -r requirements/tests.txt
 ## 3. 开发步骤
 
 ### 3.1 代码下载与本地安装
+
+进入编译容器环境，可执行如下步骤完成代码下载与本地安装：
 
 ```bash
 git clone https://gitcode.com/Ascend/msprof-analyze
