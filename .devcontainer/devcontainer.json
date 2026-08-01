@@ -1,0 +1,45 @@
+{
+  "name": "msprof-analyze-devcontainer",
+  "image": "swr.cn-north-4.myhuaweicloud.com/mindstudio-image/mindstudio-build:26.1.0-0701",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "remoteUser": "mindstudio",
+  "updateRemoteUserUID": true,
+  "runArgs": [
+    "--network=host",
+    "--privileged",
+    "--ipc=host",
+    "--ulimit=nproc=65535:65535",
+    "--security-opt=seccomp=unconfined"
+  ],
+  "mounts": [
+    "source=/usr/local/sbin,target=/usr/local/sbin,type=bind,ro"
+  ],
+  "containerEnv": {
+    "GCC11_NO_RPATH": "1",
+    "NPM_CONFIG_PREFIX": "/home/mindstudio/.local"
+  },
+  "remoteEnv": {
+    "PATH": "/home/mindstudio/.local/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "bash /workspace/.devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "bierner.markdown-preview-github-styles"
+      ],
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "args": ["-l"]
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

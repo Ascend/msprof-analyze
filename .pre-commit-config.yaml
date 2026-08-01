@@ -61,6 +61,7 @@ repos:
       - id: bandit
         name: bandit (Python 安全漏洞检查)
         types: [python]
+        additional_dependencies: ["bandit[toml]"]
         args: [
           "--config=pre-commit/pyproject.toml",
           "--quiet",
@@ -90,7 +91,7 @@ repos:
     hooks:
       - id: gitleaks-offline-scan
         name: Gitleaks Secret Scan(Local Binary)
-        entry: ./gitleaks
+        entry: gitleaks
         language: system
         pass_filenames: true
         exclude: ^\.pre-commit-config\.yaml$
