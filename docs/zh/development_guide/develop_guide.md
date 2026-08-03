@@ -11,6 +11,51 @@
 
 ## 2. 开发环境配置
 
+### 2.1 方式一：devcontainer 一键开发环境（推荐）
+
+msprof-analyze 已内置 [devcontainer](https://containers.dev/) 开发环境配置，开发者通过 VS Code 打开仓库后可一键进入标准化容器，无需手工安装任何依赖。容器自动完成以下准备：
+
+- Python 3 环境
+- pip 依赖预安装（wheel、pre-commit、bandit）
+- pre-commit 自动启用
+- Git 身份同步
+
+**前置条件：**
+
+| 环境 | 要求 |
+|------|------|
+| PC | VS Code，安装 Dev Containers 插件 和 Remote-SSH 插件 |
+| Linux 服务器 | Docker 服务运行中 |
+
+**使用步骤：**
+
+1. 将 msprof-analyze 仓库 clone 到 Linux 服务器
+2. VS Code 通过 Remote-SSH 连接服务器，打开仓库目录
+3. VS Code 自动检测到 `.devcontainer` 配置，点击左下角 **"Reopen in Container"**
+4. 容器启动后自动执行 `post-create.sh` 完成初始化（约 1 分钟）
+5. 按 `Ctrl+Shift+P` → `Tasks: Run Task` 选择构建任务
+
+**VS Code 内置任务：**
+
+| 任务 | 快捷键 | 说明 |
+|------|--------|------|
+| `Build: Release Mode` | `Ctrl+Shift+B` | 一键构建 whl 包 |
+| `Test: Run Unit Tests` | — | 运行全量单元测试 |
+| `Clean: All Workspace` | — | 清理构建产物（build/、dist/、artifacts/ 等） |
+
+**代码智能跳转：**
+
+- Python：Pylance 提供语义跳转和类型推导
+
+**图形化调试：**
+
+- 打开 Python 源文件，按 `F5` 选择 `Python: Debug Active File` 进入 debugpy 调试
+- 断点、变量查看、调用栈等功能均可正常使用
+
+### 2.2 方式二：手动环境配置
+
+如果不能使用 devcontainer，请按以下步骤手工配置。
+
 | 软件名 | 版本要求 | 用途 |
 | --- | --- | --- |
 | Python | 3.7 及以上 | 主开发环境 |
@@ -18,7 +63,7 @@
 | wheel | 最新稳定版 | 构建 whl 包 |
 | Git | 无硬性要求 | 代码管理 |
 
-### 2.1 开发依赖
+### 2.3 开发依赖
 
 基础依赖定义在 `requirements/build.txt`，测试依赖定义在 `requirements/tests.txt`。
 
