@@ -4,7 +4,7 @@
 
 The expert suggestion (`advisor`) feature analyzes profile data collected by using Ascend PyTorch Profiler or MindSpore Profiler and provides performance tuning suggestions.
 
-For details about how to collect profile data by using Ascend PyTorch Profiler, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md). For details about how to collect profile data using MindSpore Profiler, see [Performance Profiling](https://www.mindspore.cn/mindinsight/docs/en/r2.3/performance_profiling_ascend.html).
+For details about how to collect profile data by using Ascend PyTorch Profiler, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md). For details about how to collect profile data using MindSpore Profiler, see [Performance Profiling](https://www.mindspore.cn/mindinsight/docs/en/r2.3/performance_profiling_ascend.html).
 
 ## Preparations
 
@@ -151,17 +151,17 @@ None
 - The content of the `mstt_advisor_{timestamp}.xlsx` file is identical to the terminal output.
 - For details about the analysis of the `mstt_advisor_{timestamp}.html` file, see [Output File Description](#output-file-description).
 - The following examples show the content format of the command output.
-  
+
    Overall performance bottlenecks
-   
+
    ![all](../figures/all.png)
-   
+
    Compute bottlenecks
-   
+
    ![computation](../figures/computation.png)
-   
+
    Scheduling bottlenecks
-   
+
    ![schedule](../figures/schedule.png)
 
 ## `advisor` Functions (Jupyter Notebook)
@@ -239,7 +239,7 @@ The following figure shows the content of the **comparison** module, which ident
   If the **Diff Total Ratio**, **Diff Self Ratio**, **Diff Avg Ratio**, or **Diff Calls Ratio** is greater than 1, the performance of the current environment is better. If the ratio is less than 1, the current environment requires optimization. If the ratio is equal to 1, the performance of the current environment is close to the benchmark environment.
 
   ![comparison3](../figures/comparison3.png)
-  
+
   In the preceding figure, **inf** indicates a denominator of 0 (target data not obtained or is zero); **None** indicates that no data was obtained.
 
 The **comparison** module in the `mstt_advisor_{timestamp}.html` file displays only the top 10 kernel and API records. For details, refer to the `mstt_advisor_{timestamp}.xlsx` file.
@@ -376,7 +376,7 @@ The following figure shows an example of the **comparison** module, which identi
   If the **Diff Total Ratio**, **Diff Self Ratio**, **Diff Avg Ratio**, or **Diff Calls Ratio** is greater than 1, the performance of the current environment is better. If the ratio is less than 1, the current environment requires optimization. If the ratio is equal to 1, the performance of the current environment is close to the benchmark environment.
 
   ![comparison1](../figures/comparison1.png)
-  
+
   In the preceding figure, **inf** indicates a denominator of 0 (target data not obtained or is zero); **None** indicates that no data was obtained.
 
 The **comparison** module in the `mstt_advisor_{timestamp}.html` file displays only the top 10 kernel and API records. For details, refer to the `mstt_advisor_{timestamp}.xlsx` file.

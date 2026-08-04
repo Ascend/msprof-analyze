@@ -11,7 +11,7 @@ Currently, `cluster_analyse` supports the following four types of profile data.
 | Collection Tool| Supported Result Type| Collection Guide                                                                                                                                         |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
 | msProf | db | [MindStudio Profiler](https://gitcode.com/Ascend/msprof)                                                                                                |
-| Ascend PyTorch Profiler | text, db| [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)|
+| Ascend PyTorch Profiler | text, db| [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md)|
 | MindSpore Profiler | text, db|                 |
 | msMonitor | db | [msMonitor](https://gitcode.com/Ascend/msmonitor)                                                                             |
 

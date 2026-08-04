@@ -23,12 +23,12 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
    ```bash
    #!/bin/bash
-   
+
    echo "Start Profiling"
    export CUDA_VISIBLE_DEVICES=0,1
    dir_model="/path/to/model"
    dir_output_prof="/path/to/model_profile_gpu"
-   
+
    nsys profile  \
        --stats=true \
        --trace-fork-before-exec=true \
@@ -58,26 +58,26 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
 
 2. NPU Profile Data Collection
 
-   For the NPU (Ascend) platform, use PyTorch Profiler to collect profile data and ensure that `MSTX` instrumentation is enabled. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md).
+   For the NPU (Ascend) platform, use PyTorch Profiler to collect profile data and ensure that `MSTX` instrumentation is enabled. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
 
    The following script shows how to collect NPU profile data for vLLM inference. Before running it, ensure you have modified the vLLM benchmark latency script by referring to [Modifying the vLLM Benchmark Latency Script](#modifying-the-vllm-benchmark-latency-script).
 
    ```bash
    #!/bin/bash
-   
+
    # eager mode
    # Use the profiler capability of vLLM. To support MSTX, modify vllm-ascend/vllm_ascend/worker/worker_v1.py.
    # - Set mstx in experimental_config to True to enable custom instrumentation.
    # - Add db to export_type.
    # - Set enforce_eager to True during vLLM inference.
-   
+
    dir_model="/path/to/model"
    dir_ouput_prof="/path/to/model_profile_npu"
-   
+
    # Use the VLLM_TORCH_PROFILER_DIR environment variable to enable profile data collection and specify the profile data output directory. This variable can also be set directly in the terminal.
    export VLLM_TORCH_PROFILER_DIR=${dir_ouput_prof}
    export ASCEND_RT_VISIBLE_DEVICES=0,1
-   
+
    echo "Start Profiling"
    # Modify the benchmark code to add MSTX instrumentation.
    # Add a profile option to start llm.start_profile().
@@ -141,7 +141,7 @@ msprof-analyze cluster -m calibrate_npu_gpu \
   --baseline_profiling_path /path/to/gpu_profile.sqlite \
   --output_path ./calibration_result \
   --export_type text \
-  --dump_intermediate_results 
+  --dump_intermediate_results
 ```
 
 **Output Description**
@@ -222,7 +222,7 @@ nn.Module.__call__ = custom_call
 ... # original code
 
 def main(args: argparse.Namespace):
-    
+
     ... # original code
 
     def llm_generate():

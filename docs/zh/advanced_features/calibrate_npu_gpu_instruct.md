@@ -25,12 +25,12 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 
    ```bash
    #!/bin/bash
-   
+
    echo "Start Profiling"
    export CUDA_VISIBLE_DEVICES=0,1
    dir_model="/path/to/model"
    dir_output_prof="/path/to/model_profile_gpu"
-   
+
    nsys profile  \
        --stats=true \
        --trace-fork-before-exec=true \
@@ -60,26 +60,26 @@ NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyz
 
 2. NPU 性能数据采集
 
-   对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+   对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
    以下脚本展示如何采集 vLLM 推理的 NPU 性能数据，执行以下脚本前，须先完成[vllm bench latency 脚本修改](#51-vllm-bench-latency-脚本修改)。
 
    ```bash
    #!/bin/bash
-   
+
    # eager模式
    # 使用 vllm 的 profiler 能力，如果要支持 mstx 需要修改 vllm-ascend/vllm_ascend/worker/worker_v1.py
    # - 修改 experimental_config 中的 mstx 为 True，开启自定义打点功能
    # - 数据导出类型 export_type 添加 db
    # - vllm 推理时候打开 enforce_eager=True
-   
+
    dir_model="/path/to/model"
    dir_output_prof="/path/to/model_profile_npu"
-   
+
    # 通过 VLLM_TORCH_PROFILER_DIR 环境变量开启性能采集，设置性能数据落盘位置，也可以在终端设置该环境变量
    export VLLM_TORCH_PROFILER_DIR=${dir_output_prof}
    export ASCEND_RT_VISIBLE_DEVICES=0,1
-   
+
    echo "Start Profiling"
    # 修改benchmark代码加入mstx打点
    # 增加profile选项启动llm.start_profile()
@@ -143,7 +143,7 @@ msprof-analyze cluster -m calibrate_npu_gpu \
   --baseline_profiling_path /path/to/gpu_profile.sqlite \
   -o ./calibration_result \
   --export_type text \
-  --dump_intermediate_results 
+  --dump_intermediate_results
 ```
 
 **输出说明**
@@ -231,7 +231,7 @@ nn.Module.__call__ = custom_call
 ... # original code
 
 def main(args: argparse.Namespace):
-    
+
     ... # original code
 
     def llm_generate():
