@@ -54,7 +54,7 @@ msprof-analyze compare -d ./ascend_pt -bp ./gpu_trace.json -o ./compare_output
 pip install -U msprof-analyze
 ```
 
-如需 whl 包下载、源码编译，请参见 《[msprof-analyze工具安装指南](./docs/zh/install_guide/msprof-analyze_install_guide.md)》。
+如需 whl 包下载、源码编译，请参见 《[msprof-analyze 安装指南](./docs/zh/install_guide/msprof-analyze_install_guide.md)》。
 
 ## 📘 使用指南
 
