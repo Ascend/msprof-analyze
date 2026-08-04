@@ -224,7 +224,7 @@ overall模块仅识别问题，不提供调优建议。
 
 ![env_var.png](../figures/env_var.png)
 
-上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/canncommercial/900/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
+上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/910/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
 
 无标杆单卡场景的overall summary分析示例如下：
 
@@ -432,7 +432,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 ![输入图片说明](../figures/schedule_1.png)
 
-上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/900/API/ascendgraphapi/aclcppdevg_03_0251.html)。
+上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/910/API/ascendgraphapi/aclcppdevg_03_0251.html)。
 
 #### 5.4.4 memory/dataloader模块问题速查
 
@@ -449,7 +449,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 ![dataloader](../figures/dataloader.png)
 
-上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html)使用。
+上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://gitcode.com/Ascend/ModelZoo-PyTorch/blob/master/PyTorch/docs/zh/performance_tuning/performance_tuning_methods/data_loading_optimization.md)使用。
 
 ## 6. 功能介绍（advisor Jupyter Notebook方式）
 
@@ -474,7 +474,7 @@ pip install jupyter notebook
 **下载msprof-analyze源码**
 
 ```bash
-git clone https://gitcode.com/Ascend/msprof-analyze
+git clone https://gitcode.com/Ascend/msprof-analyze -b 26.1.0
 ```
 
 **准备性能数据**
