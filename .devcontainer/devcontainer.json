@@ -5,6 +5,8 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "remoteUser": "mindstudio",
   "updateRemoteUserUID": true,
+  // --privileged/--security-opt=seccomp=unconfined 为 MindStudio 镜像访问昇腾 NPU 硬件所需，
+  // 仅在开发环境内网使用，生产环境请评估权限需求
   "runArgs": [
     "--network=host",
     "--privileged",

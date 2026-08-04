@@ -1,4 +1,6 @@
 #!/bin/bash
+# This script is used to initialize devcontainer environment for msprof-analyze.
+# Copyright Huawei Technologies Co., Ltd. 2025-2026. All rights reserved.
 # -------------------------------------------------------------------------
 # 容器首次创建后的幂等初始化脚本 (msprof-analyze)
 # 所有动作必须幂等，失败不阻塞容器创建

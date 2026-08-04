@@ -1,6 +1,6 @@
-# 开发指南
+# msprof-analyze 开发指南
 
-## 1. MindStudio Profiler Analyze开发软件
+## 1. msprof-analyze开发软件
 
 | 软件名 | 用途 |
 | --- | --- |
@@ -32,8 +32,8 @@ msprof-analyze 已内置 [devcontainer](https://containers.dev/) 开发环境配
 1. 将 msprof-analyze 仓库 clone 到 Linux 服务器
 2. VS Code 通过 Remote-SSH 连接服务器，打开仓库目录
 3. VS Code 自动检测到 `.devcontainer` 配置，点击左下角 **"Reopen in Container"**
-4. 容器启动后自动执行 `post-create.sh` 完成初始化（约 1 分钟）
-5. 按 `Ctrl+Shift+P` → `Tasks: Run Task` 选择构建任务
+4. 容器启动后自动执行 `post-create.sh` 完成初始化
+5. 按 `Ctrl+Shift+P` → `Tasks: Run Task` 选择构建或测试任务
 
 **VS Code 内置任务：**
 
@@ -41,55 +41,19 @@ msprof-analyze 已内置 [devcontainer](https://containers.dev/) 开发环境配
 |------|--------|------|
 | `Build: Release Mode` | `Ctrl+Shift+B` | 一键构建 whl 包 |
 | `Test: Run Unit Tests` | — | 运行全量单元测试 |
-| `Clean: All Workspace` | — | 清理构建产物（build/、dist/、artifacts/ 等） |
+| `Clean: All Workspace` | — | 清理构建产物 |
 
-**代码智能跳转：**
-
-- Python：Pylance 提供语义跳转和类型推导
-
-**图形化调试：**
-
-- 打开 Python 源文件，按 `F5` 选择 `Python: Debug Active File` 进入 debugpy 调试
-- 断点、变量查看、调用栈等功能均可正常使用
+**代码智能跳转与调试：** Python 通过 Pylance 提供语义跳转（F12）和类型推导；按 `F5` 选择 `Python: Debug Active File` 进入 debugpy 调试。
 
 ### 2.2 方式二：手动环境配置
 
-如果不能使用 devcontainer，请按以下步骤手工配置。
+按照《[msprof-analyze 安装指南 — 源码安装](../install_guide/msprof-analyze_install_guide.md#231-环境准备)》章节完成编译和测试环境的搭建。
 
-| 软件名 | 版本要求 | 用途 |
-| --- | --- | --- |
-| Python | 3.7 及以上 | 主开发环境 |
-| pip | 与 Python 配套 | 安装依赖和本地包 |
-| wheel | 最新稳定版 | 构建 whl 包 |
-| Git | 无硬性要求 | 代码管理 |
+> **说明：** 环境镜像的构建方法及配套软件版本由 MindStudio 统一镜像制作指南维护，本仓库不重复定义。
 
-### 2.3 开发依赖
-
-基础依赖定义在 `requirements/build.txt`，测试依赖定义在 `requirements/tests.txt`。
-
-其中核心运行依赖包括：
-
-- `click`
-- `networkx`
-- `jinja2`
-- `PyYaml`
-- `tqdm`
-- `prettytable`
-- `ijson`
-- `xlsxwriter`
-- `sqlalchemy`
-- `numpy`
-- `pandas`
-- `psutil`
-- `pybind11`
-
-### 2.2 推荐环境准备
-
-建议在仓库根目录下使用虚拟环境进行开发：
+进入编译容器环境，可执行如下步骤完成依赖安装：
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -U pip wheel
 pip install -r requirements/build.txt
 pip install -r requirements/tests.txt
@@ -98,6 +62,8 @@ pip install -r requirements/tests.txt
 ## 3. 开发步骤
 
 ### 3.1 代码下载与本地安装
+
+进入编译容器环境，可执行如下步骤完成代码下载与本地安装：
 
 ```bash
 git clone https://gitcode.com/Ascend/msprof-analyze
