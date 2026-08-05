@@ -8,7 +8,7 @@
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
 #
-#          http://license.coscl.org.cn/MulanPSL2
+#           http://license.coscl.org.cn/MulanPSL2
 #
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 # EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
@@ -90,10 +90,23 @@ class BuildManager:
         os.chdir(self.project_root)
 
         if 'test' in self.args.command:
-            # -------------------- 单元测试 --------------------
-            # 在非 local 场景下按需更新依赖；在 local 场景下仅使用本地已有代码，不更新依赖。
             if 'local' not in self.args.command:
                 self._execute_command(["pip", "install", "-r", "requirements/tests.txt"], cwd=self.project_root)
+        else:
+            if 'local' not in self.args.command:
+                self._execute_command(["pip", "install", "-r", "requirements/build.txt"], cwd=self.project_root)
+
+        # only_down_deps 在依赖下载后、编译/测试前统一检查
+        extra_options = {}
+        for opt in self.args.extra:
+            key, _, val = opt.partition('=')
+            extra_options[key] = val
+        if extra_options.get('only_down_deps') == 'true':
+            logging.info("only_down_deps=true, exiting after dependency download.")
+            return
+
+        if 'test' in self.args.command:
+            # -------------------- 单元测试 --------------------
             self._execute_command(["python3", "run_ut.py"], cwd=self.project_root / "test")
         else:
             # -------------------- 产品构建 --------------------
@@ -101,10 +114,6 @@ class BuildManager:
             for opt in self.args.extra:
                 key, _, val = opt.partition('=')
                 logging.info("--extra: %s = %s", key, val)
-
-            # 在非 local 场景下按需更新依赖；在 local 场景下仅使用本地已有代码，不更新依赖。
-            if 'local' not in self.args.command:
-                self._execute_command(["pip", "install", "-r", "requirements/build.txt"], cwd=self.project_root)
 
             env = os.environ.copy()
             env["WHL_VERSION"] = self.args.version

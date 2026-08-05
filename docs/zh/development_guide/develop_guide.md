@@ -11,11 +11,47 @@
 
 ## 2. 开发环境配置
 
+### 2.1 方式一：devcontainer 一键开发环境（推荐）
+
+msprof-analyze 已内置 [devcontainer](https://containers.dev/) 开发环境配置，开发者通过 VS Code 打开仓库后可一键进入标准化容器，无需手工安装任何依赖。容器自动完成以下准备：
+
+- Python 3 环境
+- pip 依赖预安装（wheel、pre-commit、bandit）
+- pre-commit 自动启用
+- Git 身份同步
+
+**前置条件：**
+
+| 环境 | 要求 |
+|------|------|
+| PC | VS Code，安装 Dev Containers 插件 和 Remote-SSH 插件 |
+| Linux 服务器 | Docker 服务运行中 |
+
+**使用步骤：**
+
+1. 将 msprof-analyze 仓库 clone 到 Linux 服务器
+2. VS Code 通过 Remote-SSH 连接服务器，打开仓库目录
+3. VS Code 自动检测到 `.devcontainer` 配置，点击左下角 **"Reopen in Container"**
+4. 容器启动后自动执行 `post-create.sh` 完成初始化
+5. 按 `Ctrl+Shift+P` → `Tasks: Run Task` 选择构建或测试任务
+
+**VS Code 内置任务：**
+
+| 任务 | 快捷键 | 说明 |
+|------|--------|------|
+| `Build: Release Mode` | `Ctrl+Shift+B` | 一键构建 whl 包 |
+| `Test: Run Unit Tests` | — | 运行全量单元测试 |
+| `Clean: All Workspace` | — | 清理构建产物 |
+
+**代码智能跳转与调试：** Python 通过 Pylance 提供语义跳转（F12）和类型推导；按 `F5` 选择 `Python: Debug Active File` 进入 debugpy 调试。
+
+### 2.2 方式二：手动环境配置
+
 按照《[msprof-analyze 安装指南 — 源码安装](../install_guide/msprof-analyze_install_guide.md#231-环境准备)》章节完成编译和测试环境的搭建。
 
 > **说明：** 环境镜像的构建方法及配套软件版本由 MindStudio 统一镜像制作指南维护，本仓库不重复定义。
 
-进入编译容器环境，可执行如下步骤完成依赖安装（为了依赖不冲突使用 venv 或启动多个容器隔离都可以）：
+进入编译容器环境，可执行如下步骤完成依赖安装：
 
 ```bash
 pip install -U pip wheel

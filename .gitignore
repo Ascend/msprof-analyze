@@ -138,9 +138,27 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# vscode settings and analysis output
-.vscode/
+# vscode settings (tracked: launch.json, tasks.json)
+.vscode/settings.json
 att_advisor*.html
+mstt_advisor*.html
 *.xlsx
 operator_tuning_file*.cfg
 .ipynb_checkpoints/
+
+# UT 测试产物
+test/*.html
+test/**/*.db
+test/report/*.xml
+test/test_path
+test/cluster_analysis_output/
+test/test_cluster_time_compare_summary/
+
+# Build artifacts
+/artifacts/
+
+# Cache directories
+.ruff_cache/
+
+# Devcontainer generated
+.devcontainer/.host-gitconfig
