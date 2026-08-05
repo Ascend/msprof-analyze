@@ -105,6 +105,8 @@ install_build_deps() {
             done
             if ${GITLEAKS_INSTALLED}; then
                 sudo chmod +x /usr/local/bin/gitleaks
+                # CI 兼容：pre-commit 使用 ./gitleaks 入口，在仓库根目录创建软链
+                ln -sf /usr/local/bin/gitleaks ./gitleaks 2>/dev/null || true
                 log "  gitleaks ${GITLEAKS_VER} (${GITLEAKS_ARCH}) installed"
             else
                 warn "gitleaks install failed (all mirrors unreachable)"
