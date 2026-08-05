@@ -21,7 +21,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 - clone代码仓。
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze
+    git clone https://gitcode.com/Ascend/msprof-analyze -b 26.1.0
     ```
 
 - 安装依赖
