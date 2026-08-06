@@ -192,7 +192,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 ![img](../figures/cluster_communication_matrix.png)
     <div style="text-align: center;">
     图2 集群通信矩阵可视化呈现
-    </div>    
+    </div>
 
 ### 4.3 交付件字段说明
 
@@ -253,7 +253,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 该文件记录通信域信息。`collective` 表示集合通信域，`P2P` 表示点对点通信域。需要确认通信域包含哪些 rank，或需要理解通信算子和通信域的对应关系时，可结合 `cluster_communication.json` 使用。
 
-#### 4.3.5 cluster_analysis.db 
+#### 4.3.5 cluster_analysis.db
 
 db 格式性能数据解析后生成的集群分析数据库，用于支撑 MindStudio Insight 可视化展示，也可用于后续数据库分析。集群分析生成表如下：
 
@@ -268,14 +268,14 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 不同采集工具、采集级别、`--mode` 取值和原始 profiling 数据完整度会影响实际生成的表。若某类原始数据缺失，对应表可能不会生成。
 
-##### 4.3.5.1 `ClusterBaseInfo` 
+##### 4.3.5.1 `ClusterBaseInfo`
 
 | 字段 | 说明 |
 | --- | --- |
 | `key` | 基础信息名称，例如分布式参数。 |
 | `value` | 基础信息内容，通常为序列化后的字符串。 |
 
-##### 4.3.5.2 `ClusterStepTraceTime` 
+##### 4.3.5.2 `ClusterStepTraceTime`
 
 | 字段 | 说明 |
 | --- | --- |

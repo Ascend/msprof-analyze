@@ -191,14 +191,14 @@ export_type = Db
 ```
 
 > [!NOTE]
-> 
+>
 > 格式选择说明：两种格式可选择任意一种进行性能比对。若同一目录中同时包含以上两类文件，则优先使用Db格式（export_type = Db）的结果进行比对。
 
 #### 3.2.2 MindSpore框架性能数据采集
 
-当前MindSpore场景仅支持以下两种性能数据比对：  
+当前MindSpore场景仅支持以下两种性能数据比对：
 
-1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对； 
+1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对；
 2. MindSpore训练工程在NPU上、不同版本之间的性能数据比对。
 
 性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
@@ -225,7 +225,7 @@ export_type = Db
 ```
 
 > [!NOTE]
-> 
+>
 > 两种格式可选择任意一种进行性能比对。若同一目录中同时包含以上两类文件，则优先使用Db格式（export_type = Db）的结果进行比对。
 
 性能比对时需指定的目录层级：需将采集结果路径指定到以下任意一个层级：
@@ -609,23 +609,23 @@ API比对结果在performance_comparison_result_*.xlsx中ApiCompare页呈现。
 
 ## 7. 常见问题FAQ
 
-**Q：只想快速知道性能差异来自哪里，应该看哪个结果？**  
+**Q：只想快速知道性能差异来自哪里，应该看哪个结果？**
 A：先看终端总体性能打印和`OverallMetrics`。`OverallMetrics`会把差异拆成计算、通信、调度和E2E等耗时方向；内存使用`Mem Usage`可能出现在终端总体性能打印中，算子级内存差异看`MemoryCompareStatistic`和`MemoryCompare`。
 
-**Q：采集了多个step，为什么结果不稳定？**  
+**Q：采集了多个step，为什么结果不稳定？**
 A：工具默认会比对所有可用性能数据，可能同时包含预热、稳定训练和偶发抖动阶段。建议只采集一个step；如需固定分析某个step，请同时配置`--base_step`和`--comparison_step`。
 
-**Q：Text格式和Db格式都能比对吗？**  
+**Q：Text格式和Db格式都能比对吗？**
 A：两种格式可选择任意一种进行性能比对。若同一目录中同时包含Text和Db格式文件，则优先使用Db格式结果进行比对。
 
-**Q：为什么设置了某个`--enable_*`开关后，其他结果没有输出？**  
+**Q：为什么设置了某个`--enable_*`开关后，其他结果没有输出？**
 A：只要设置了任意比对开关，工具就按照已设置的开关执行。若所有比对开关均不设置，工具默认开启全部支持的性能比对能力。
 
-**Q：为什么没有明细Sheet？**  
+**Q：为什么没有明细Sheet？**
 A：如果配置了`--disable_details`，工具会隐藏明细比对，只进行统计级比对，因此`OperatorCompare`、`ModuleCompare`、`MemoryCompare`等明细Sheet可能不会输出。
 
-**Q：GPU数据里Device Duration(us)都是0怎么办？**  
+**Q：GPU数据里Device Duration(us)都是0怎么办？**
 A：可配置`--gpu_flow_cat`。使用chrome://tracing打开GPU的json，在右上角Flow events找到CPU侧算子与device kernel的连线标识，并将该标识配置进参数。
 
-**Q：NPU与NPU比对时kernel结果太大或比对较慢怎么办？**  
+**Q：NPU与NPU比对时kernel结果太大或比对较慢怎么办？**
 A：可配置`--use_kernel_type`，使用op_statistic.csv进行比对，输出简化结果并减少比对时间。
