@@ -16,10 +16,12 @@ import copy
 from decimal import Decimal
 
 from msprof_analyze.prof_common.db_manager import DBManager
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.framework_api_bean import \
-    FrameworkApiBean
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.kernel_bean import \
-    KernelBean
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.framework_api_bean import (
+    FrameworkApiBean,
+)
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.kernel_bean import (
+    KernelBean,
+)
 from msprof_analyze.prof_common.constant import Constant
 
 from msprof_analyze.prof_common.utils import convert_to_float
@@ -32,8 +34,15 @@ class Event:
 
 
 class OverallMetricsParser:
-    FILTER_TASK_TYPE = ["KERNEL_AICORE", "KERNEL_AIVEC", "FFTS_PLUS", "KERNEL_MIX_AIC",
-                        "KERNEL_MIX_AIV", "PROFILING_ENABLE", "PROFILING_DISABLE"]
+    FILTER_TASK_TYPE = [
+        "KERNEL_AICORE",
+        "KERNEL_AIVEC",
+        "FFTS_PLUS",
+        "KERNEL_MIX_AIC",
+        "KERNEL_MIX_AIV",
+        "PROFILING_ENABLE",
+        "PROFILING_DISABLE",
+    ]
 
     def __init__(self, npu_db_parser):
         self.npu_db_parser = npu_db_parser
@@ -43,7 +52,8 @@ class OverallMetricsParser:
         self.connect_map = {
             op.cann_connection_id: op.start_time
             for op in self.npu_db_parser.result_data.torch_op_data
-            if op.cann_connection_id}
+            if op.cann_connection_id
+        }
         self.not_overlapped_comm = []
         self.pmu_data = {}
         self._c_core_sqe_list = None
@@ -54,16 +64,18 @@ class OverallMetricsParser:
         if self._c_core_sqe_list is not None:
             return self._c_core_sqe_list
         sql = """
-        SELECT 
+        SELECT
             round(TASK.endNs - TASK.startNs) AS "Duration",
             TASK.startNs AS "startNs",
             TASK.endNs AS "endNs"
-        FROM 
-            TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id 
-        WHERE STRING_IDS.value == 'C_CORE_SQE' {}
+        FROM
+            TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id
+        WHERE STRING_IDS.value == 'C_CORE_SQE'{}
         ORDER BY TASK.startNs
         """
-        sql = sql.format("AND TASK.startNs>=? AND TASK.startNs<=?") if self.npu_db_parser.step_range else sql.format("")
+        sql = (
+            sql.format(" AND TASK.startNs>=? AND TASK.startNs<=?") if self.npu_db_parser.step_range else sql.format("")
+        )
         if self.npu_db_parser.step_range:
             all_data = DBManager.fetch_all_data(self.npu_db_parser.cursor, sql, param=self.npu_db_parser.step_range)
         else:
@@ -91,7 +103,7 @@ class OverallMetricsParser:
                 merged[-1][1] = max(last_merged_end, current[1])
             else:
                 # 否则，将当前区间添加到合并列表中
-                merged.append(current)
+                merged.append(copy.deepcopy(current))
 
         return merged
 
@@ -129,13 +141,19 @@ class OverallMetricsParser:
                     break
                 if uncovered_comm_events[index].end_time < comm_event.end_time:
                     uncovered_comm_range.append(
-                        Event(max(comm_event.start_time, uncovered_comm_events[index].start_time),
-                              uncovered_comm_events[index].end_time))
+                        Event(
+                            max(comm_event.start_time, uncovered_comm_events[index].start_time),
+                            uncovered_comm_events[index].end_time,
+                        )
+                    )
                     index += 1
                     continue
                 uncovered_comm_range.append(
-                    Event(max(comm_event.start_time, uncovered_comm_events[index].start_time),
-                          min(comm_event.end_time, uncovered_comm_events[index].end_time)))
+                    Event(
+                        max(comm_event.start_time, uncovered_comm_events[index].start_time),
+                        min(comm_event.end_time, uncovered_comm_events[index].end_time),
+                    )
+                )
                 break
         return uncovered_comm_range
 
@@ -162,12 +180,13 @@ class OverallMetricsParser:
             all_data = DBManager.fetch_all_data(self.npu_db_parser.cursor, sql)
         if all_data:
             self.npu_db_parser.result_data.overall_metrics.set_memory_used(
-                all_data[0].get('totalReserved', 0) / 1024 / 1024 / 1024)
+                all_data[0].get('totalReserved', 0) / 1024 / 1024 / 1024
+            )
 
     def calculate_computing_time(self):
         if DBManager.judge_table_exists(self.npu_db_parser.cursor, Constant.TABLE_TASK_PMU_INFO):
             sql = """
-            SELECT 
+            SELECT
                 TASK_PMU_INFO.globalTaskId AS "globalTaskId",
                 STRING_IDS.value AS "pmuName",
                 TASK_PMU_INFO.value AS "value"
@@ -191,8 +210,9 @@ class OverallMetricsParser:
         if kernel.is_mc2():
             communication_time = self.calculate_mc2_communication_time(kernel)
             computing_time = kernel.mc2_computing_time(self.pmu_data)
-            self.npu_db_parser.result_data.overall_metrics.update_mc2_info(kernel.name, kernel.dur, computing_time,
-                                                                           communication_time)
+            self.npu_db_parser.result_data.overall_metrics.update_mc2_info(
+                kernel.name, kernel.dur, computing_time, communication_time
+            )
             return
         flow_start_time = self.connect_map.get(kernel.connection_id)
         if flow_start_time:
@@ -295,20 +315,21 @@ class OverallMetricsParser:
         for task_event in self.npu_db_parser.comm_task_data:
             last_4_task_mode = last_4_task_mode_dict.get((task_event.group_name, task_event.plane_id))
             if task_event.name == 'RDMASend':
-                last_4_task_mode_dict[(task_event.group_name,
-                                       task_event.plane_id)] = f"{last_4_task_mode[1:]}R" \
-                    if last_4_task_mode else "OOOR"
+                last_4_task_mode_dict[(task_event.group_name, task_event.plane_id)] = (
+                    f"{last_4_task_mode[1:]}R" if last_4_task_mode else "OOOR"
+                )
             elif task_event.name == 'Notify_Wait':
                 if not last_4_task_mode or last_4_task_mode != "RRNR" and last_4_task_mode[2:] != "RR":
                     notify_wait_task_group_by_plane_id.setdefault(task_event.group_name, {}).setdefault(
-                        task_event.plane_id, []).append(task_event)
-                last_4_task_mode_dict[(task_event.group_name,
-                                       task_event.plane_id)] = f"{last_4_task_mode[1:]}N" \
-                    if last_4_task_mode else "OOON"
+                        task_event.plane_id, []
+                    ).append(task_event)
+                last_4_task_mode_dict[(task_event.group_name, task_event.plane_id)] = (
+                    f"{last_4_task_mode[1:]}N" if last_4_task_mode else "OOON"
+                )
             else:
-                last_4_task_mode_dict[(task_event.group_name,
-                                       task_event.plane_id)] = f"{last_4_task_mode[1:]}O" \
-                    if last_4_task_mode else "OOOO"
+                last_4_task_mode_dict[(task_event.group_name, task_event.plane_id)] = (
+                    f"{last_4_task_mode[1:]}O" if last_4_task_mode else "OOOO"
+                )
 
         group_comm_time_dict = {}
         for group_name, notify_wait_task_dict in notify_wait_task_group_by_plane_id.items():
@@ -319,14 +340,17 @@ class OverallMetricsParser:
                 if notify_wait_time < min_wait_time:
                     min_wait_time = notify_wait_time
                     notify_wait_tasks = tasks
-            comm_ops = list(filter(lambda x: x.group_name == group_name, self.npu_db_parser.comm_op_data))
-            wait_time = self.__calculate_overlap_time_with_uncovered_communication(self.not_overlapped_comm,
-                                                                                   notify_wait_tasks)
+            comm_ops = [comm_op for comm_op in self.npu_db_parser.comm_op_data if comm_op.group_name == group_name]
+            wait_time = self.__calculate_overlap_time_with_uncovered_communication(
+                self.not_overlapped_comm, notify_wait_tasks
+            )
             uncovered_communication_time = self.__calculate_overlap_time_with_uncovered_communication(
-                self.not_overlapped_comm, comm_ops)
+                self.not_overlapped_comm, comm_ops
+            )
             group_comm_time_dict[group_name] = {
                 Constant.WAIT_TIME: wait_time,
-                Constant.TRANSMIT_TIME: uncovered_communication_time - wait_time}
+                Constant.TRANSMIT_TIME: uncovered_communication_time - wait_time,
+            }
 
         group_name_list = set(notify_wait_task_group_by_plane_id.keys())
         comm_op_dict = {}
@@ -336,10 +360,12 @@ class OverallMetricsParser:
             comm_op_dict.setdefault(comm_op.group_name, []).append(comm_op)
         for group_name, comm_ops in comm_op_dict.items():
             uncovered_communication_time = self.__calculate_overlap_time_with_uncovered_communication(
-                self.not_overlapped_comm, comm_ops)
+                self.not_overlapped_comm, comm_ops
+            )
             group_comm_time_dict[group_name] = {
                 Constant.WAIT_TIME: 0,
-                Constant.TRANSMIT_TIME: uncovered_communication_time}
+                Constant.TRANSMIT_TIME: uncovered_communication_time,
+            }
 
         self.npu_db_parser.result_data.overall_metrics.update_communication_group_time(group_comm_time_dict)
 
@@ -355,17 +381,21 @@ class OverallMetricsParser:
             for index_2 in range(index + 1, len(group_name_list)):
                 comm_op_events_1 = comm_data_dict.get(group_name)
                 comm_op_events_1.sort(key=lambda x: x.start_time)
-                uncovered_comm_op_events_1 = self.__calculate_uncovered_comm_range(comm_op_events_1,
-                                                                                   self.not_overlapped_comm)
+                uncovered_comm_op_events_1 = self.__calculate_uncovered_comm_range(
+                    comm_op_events_1, self.not_overlapped_comm
+                )
                 comm_op_events_2 = comm_data_dict.get(group_name_list[index_2])
                 comm_op_events_2.sort(key=lambda x: x.start_time)
-                uncovered_comm_op_events_2 = self.__calculate_uncovered_comm_range(comm_op_events_2,
-                                                                                   self.not_overlapped_comm)
-                overlap_time = self.__calculate_overlap_time_with_uncovered_communication(uncovered_comm_op_events_1,
-                                                                                          uncovered_comm_op_events_2)
+                uncovered_comm_op_events_2 = self.__calculate_uncovered_comm_range(
+                    comm_op_events_2, self.not_overlapped_comm
+                )
+                overlap_time = self.__calculate_overlap_time_with_uncovered_communication(
+                    uncovered_comm_op_events_1, uncovered_comm_op_events_2
+                )
                 if overlap_time:
-                    comm_overlap_time_dict[
-                        (group_name, group_name_list[index_2])] = overlap_time / Constant.MILLISECONDS_TO_MICROSECONDS
+                    comm_overlap_time_dict[(group_name, group_name_list[index_2])] = (
+                        overlap_time / Constant.MILLISECONDS_TO_MICROSECONDS
+                    )
         self.npu_db_parser.result_data.overall_metrics.update_communication_overlap_time(comm_overlap_time_dict)
 
     def calculate_lccl_time(self):
@@ -375,15 +405,16 @@ class OverallMetricsParser:
 
     def calculate_sdma_time(self) -> (float, int):
         sql = """
-        SELECT  
+        SELECT
             STRING_IDS.value AS "task_type",
             round(TASK.endNs - TASK.startNs) AS "Duration",
             TASK.streamId AS "streamId"
-        FROM 
+        FROM
             TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id {}
         """
-        sql = sql.format("WHERE TASK.startNs>=? AND TASK.startNs<=?") if self.npu_db_parser.step_range else sql.format(
-            "")
+        sql = (
+            sql.format("WHERE TASK.startNs>=? AND TASK.startNs<=?") if self.npu_db_parser.step_range else sql.format("")
+        )
         if self.npu_db_parser.step_range:
             all_data = DBManager.fetch_all_data(self.npu_db_parser.cursor, sql, param=self.npu_db_parser.step_range)
         else:
@@ -447,17 +478,17 @@ class OverallMetricsParser:
 
         # SQL查询模板
         first_task_time_sql_template = """
-        SELECT 
+        SELECT
             TASK.startNs
         FROM TASK
         LEFT JOIN STRING_IDS as str_task ON str_task.id = TASK.taskType
-        WHERE {condition} 
+        WHERE {condition}
         ORDER BY TASK.startNs ASC
         LIMIT 1
         """
 
         last_task_time_sql_template = """
-        SELECT 
+        SELECT
             TASK.endNs
         FROM TASK
         LEFT JOIN STRING_IDS as str_task ON str_task.id = TASK.taskType
@@ -500,4 +531,3 @@ class OverallMetricsParser:
         # 计算并设置E2E时间
         e2e_duration_us = e2e_end_time - e2e_start_time
         self.npu_db_parser.result_data.overall_metrics.set_e2e_time(convert_to_float(e2e_duration_us))
-
