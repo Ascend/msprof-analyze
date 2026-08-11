@@ -31,9 +31,14 @@ class LinearityUtils:
 
     # 保持原有常量名以兼容外部引用
     COMPUTATIONAL_OPERATOR_LINEARITY_COLUMNS = [
-        "stepId", "parallelType", "stepStartTime", "stepEndTime",
-        "totalCommunicationOperatorTime", "timeRatioOfStepCommunicationOperator",
-        "totalTimeWithoutCommunicationBlackout", "ratioOfUnmaskedCommunication",
+        "stepId",
+        "parallelType",
+        "stepStartTime",
+        "stepEndTime",
+        "totalCommunicationOperatorTime",
+        "timeRatioOfStepCommunicationOperator",
+        "totalTimeWithoutCommunicationBlackout",
+        "ratioOfUnmaskedCommunication",
     ]
     EPSILON = 1e-15  # 除零保护阈值
 
@@ -50,8 +55,7 @@ class LinearityUtils:
     @staticmethod
     def _to_ranges(df, start_col, end_col):
         """转换为TimeRange对象列表"""
-        return [RangeCaculator.generate_time_range(row[start_col], row[end_col])
-                for _, row in df.iterrows()]
+        return [RangeCaculator.generate_time_range(row[start_col], row[end_col]) for _, row in df.iterrows()]
 
     @staticmethod
     def _calc_comm_time(ranges, use_merge):
@@ -63,7 +67,7 @@ class LinearityUtils:
 
     @staticmethod
     def calculate_linearity_for_parallel_type(
-            step_df, comm_df, comp_df, parallel_type, parallel_col_name="parallelType", use_merge=False
+        step_df, comm_df, comp_df, parallel_type, parallel_col_name="parallelType", use_merge=False
     ):
         """计算单个并行类型的线性度"""
         result = []
@@ -82,12 +86,8 @@ class LinearityUtils:
                 continue
 
             # 获取时间范围内的数据
-            comm_in_step = LinearityUtils._filter_by_time(
-                filtered_comm, "startNs", "endNs", start, end
-            )
-            comp_in_step = LinearityUtils._filter_by_time(
-                filtered_comp, "task_start_time", "task_end_time", start, end
-            )
+            comm_in_step = LinearityUtils._filter_by_time(filtered_comm, "startNs", "endNs", start, end)
+            comp_in_step = LinearityUtils._filter_by_time(filtered_comp, "task_start_time", "task_end_time", start, end)
 
             # 转换为时间范围对象
             comm_ranges = LinearityUtils._to_ranges(comm_in_step, "startNs", "endNs")
@@ -102,15 +102,18 @@ class LinearityUtils:
             total_uncovered = sum(uncovered)
             ratio_uncovered = round(LinearityUtils.safe_divide(total_uncovered, step_duration), 5)
 
-            result.append([
-                step.get("id", 0),
-                "+".join(parallel_type),
-                start, end,
-                total_comm,
-                ratio_comm,
-                total_uncovered,
-                ratio_uncovered
-            ])
+            result.append(
+                [
+                    step.get("id", 0),
+                    "+".join(parallel_type),
+                    start,
+                    end,
+                    total_comm,
+                    ratio_comm,
+                    total_uncovered,
+                    ratio_uncovered,
+                ]
+            )
 
         return result
 
@@ -154,14 +157,17 @@ class LinearityUtils:
 
     @staticmethod
     def compute_linearity_df(
-            data_map, analysis_class, parallel_types, step_columns,
-            parallel_col_name="parallelType", target_step_id=None, use_merge=False
+        data_map,
+        analysis_class,
+        parallel_types,
+        step_columns,
+        parallel_col_name="parallelType",
+        target_step_id=None,
+        use_merge=False,
     ):
         """计算线性度（主入口）"""
         # 获取数据
-        step_df, comm_df, comp_df = LinearityUtils._get_dataframe(
-            data_map, analysis_class, step_columns
-        )
+        step_df, comm_df, comp_df = LinearityUtils._get_dataframe(data_map, analysis_class, step_columns)
         if step_df is None:
             return pd.DataFrame()
 
