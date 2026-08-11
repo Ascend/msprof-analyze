@@ -31,6 +31,7 @@ repos:
       - id: ruff-format
         args: ["--config", "pre-commit/pyproject.toml"]
         types: [python]
+        exclude: test/
 
   # codespell
   - repo: https://gitcode.com/gh_mirrors/co/codespell
@@ -53,6 +54,7 @@ repos:
         types: [python]
         args: ["--rcfile=pre-commit/pyproject.toml"]
         verbose: false
+        exclude: test/
 
   # Bandit：指定 pre-commit/pyproject.toml
   - repo: https://gitcode.com/gh_mirrors/ba/bandit

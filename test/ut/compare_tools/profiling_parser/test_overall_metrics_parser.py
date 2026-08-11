@@ -115,6 +115,14 @@ class TestOverallMetricsParser(unittest.TestCase):
         self.assertEqual(merged[1], [8, 10])
         self.assertEqual(merged[2], [15, 18])
 
+    def test_merge_intervals_second_call_does_not_mutate_first_call_result(self):
+        compute_intervals = [[1, 2], [5, 6]]
+        merged_compute_intervals = self.parser.merge_intervals(compute_intervals)
+
+        self.parser.merge_intervals(compute_intervals + [[5, 10]])
+
+        self.assertEqual(merged_compute_intervals, [[1, 2], [5, 6]])
+
     def test_calculate_lccl_time(self):
         mock_lccl_op = MagicMock(spec=HcclOpBean)
         mock_lccl_op.is_lccl.return_value = True
@@ -229,13 +237,13 @@ class TestOverallMetricsParser(unittest.TestCase):
 
         # Verify database query was called without step_range
         expected_sql = """
-        SELECT 
+        SELECT
             round(TASK.endNs - TASK.startNs) AS "Duration",
             TASK.startNs AS "startNs",
             TASK.endNs AS "endNs"
-        FROM 
-            TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id 
-        WHERE STRING_IDS.value == 'C_CORE_SQE' 
+        FROM
+            TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id
+        WHERE STRING_IDS.value == 'C_CORE_SQE'
         ORDER BY TASK.startNs
         """
 
@@ -657,4 +665,3 @@ class TestOverallMetricsParser(unittest.TestCase):
 
             # Expect E2E = 9000 - 1500 = 7500 us
             self.mock_npu_parser.result_data.overall_metrics.set_e2e_time.assert_called_with(7500.0)
-
