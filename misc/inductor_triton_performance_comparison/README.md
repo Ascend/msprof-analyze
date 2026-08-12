@@ -16,7 +16,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
 - 软件环境请参见[CANN快速安装](https://www.hiascend.com/cann/download)安装配套版本的CANN Toolkit开发套件包和ops算子包并配置CANN环境变量。
 
-- TorchNPU版本大于等于7.2.0，PyTorch仅支持v2.6.0、v2.7.1，具体安装方式请参见《[TorchNPU软件安装](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/installation_guide/quick_install.md)》。
+- TorchNPU版本大于等于7.2.0，PyTorch版本当前仅支持v2.7.1、2.9.0、2.10.0，具体安装方式请参见《[TorchNPU软件安装](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/installation_guide/quick_install.md)》。
 
 - clone代码仓。
 
@@ -41,7 +41,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
     def add(a, b):
         return a + b
     inductor_add = torch.compile(add)
-    ```
+   ```
 
    上面示例代码定义了一个名为add的函数，然后使用torch.compile进行编译，后端默认是inductor。
 
