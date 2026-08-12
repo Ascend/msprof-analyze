@@ -135,12 +135,12 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | -h，-H<br>--help     | 可选 | 命令行参数帮助信息。                                                                                                                                                                                             |
 | auto-completion     | 可选 | 自动补全，配置后在当前视图下配置msprof-analyze工具所有的子参数时，可以使用Tab将所有子参数自动补全。                                                      |
 
-#### 5.1.3 分析能力基础参数
+#### 5.1.3 分析能力自定义参数
 
-| 参数名                | 可选/必选 | 说明                                                                                                                                                                                                                                                                                             |
-| --------------------- | -------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。<br/>**需要对应分析能力适配才可使用， 当前分析能力设置cann_api_sum、compute_op_sum、hccl_sum、mstx_sum时支持。** |
-| --step_id             | 可选 | 性能数据Step ID，配置后对该Step的性能数据进行分析。需配置性能数据中实际存在的Step ID，默认未配置，表示全量分析。配置示例：--step_id=1。<br/>**需要对应分析能力适配才可使用， 当前分析能力设置cann_api_sum、compute_op_sum、hccl_sum、mstx_sum时支持。**                                                                                                                         |
-| --top_num             | 可选     | 设置TopN耗时的通信算子的数量，默认值为15，配置示例：--top_num 20。<br/>**只有-m配置hccl_sum时可配置此参数。**                                                                                                                                                                                                                      |
-| --exclude_op_name    | 可选     | 控制compute_op_name结果是否包含op_name，示例：--exclude_op_name，后面不需要跟参数。<br/>**只有-m配置compute_op_sum时可配置此参数。**                                                                                                                                                                                             |
-| --bp                 | 可选     | 要对比的标杆集群数据，示例：--bp {bp_cluster_profiling_path}，表示profiling_path和bp_cluster_profiling_path的数据进行对比。<br/>**只有-m配置cluster_time_compare_summary时可配置此参数。**|
+| 参数名                | 可选/必选 | 说明 | 适用范围 |
+| --------------------- | -------- | ---- | -------- |
+| --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
+| --step_id             | 可选 | 性能数据Step ID，配置后对该Step的性能数据进行分析。需配置性能数据中实际存在的Step ID，默认未配置，表示全量分析。配置示例：--step_id=1。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
+| --top_num             | 可选     | 设置TopN耗时的通信算子的数量，默认值为15，配置示例：--top_num 20。 | `hccl_sum` |
+| --exclude_op_name    | 可选     | 控制compute_op_name结果是否包含op_name，示例：--exclude_op_name，后面不需要跟参数。 | `compute_op_sum` |
+| --bp                 | 可选     | 要对比的标杆集群数据，示例：--bp {bp_cluster_profiling_path}，表示profiling_path和bp_cluster_profiling_path的数据进行对比。 | `cluster_time_compare_summary` |
