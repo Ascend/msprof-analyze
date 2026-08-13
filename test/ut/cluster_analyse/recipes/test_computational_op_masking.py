@@ -17,23 +17,21 @@ import unittest
 import argparse
 import pandas as pd
 
-
-from unittest.mock import patch, MagicMock
-from msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking import ComputationalOpMasking
+from unittest.mock import MagicMock, patch
+from msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking import (
+    ComputationalOpMasking,
+)
 
 
 class TestComputationalOpMasking(unittest.TestCase):
     def setUp(self):
         # Initialize the test environment.
-        self.params = {
-            "recipe_name": "test_recipe",
-            "args": ["--parallel_types", "dp,edp;edp;dp"]
-        }
+        self.params = {"recipe_name": "test_recipe", "extra_args": {"parallel_types": [["dp", "edp"], ["edp"], ["dp"]]}}
         self.computational_op_masking = ComputationalOpMasking(self.params)
 
     def test_parse_parallel_type(self):
         # Test empty input.
-        self.assertEqual(ComputationalOpMasking.parse_parallel_type(""),  [])
+        self.assertEqual(ComputationalOpMasking.parse_parallel_type(""), [])
 
         # Test single item.
         self.assertEqual(ComputationalOpMasking.parse_parallel_type("dp"), [("dp",)])
@@ -42,21 +40,14 @@ class TestComputationalOpMasking(unittest.TestCase):
         self.assertEqual(ComputationalOpMasking.parse_parallel_type("dp,edp"), [("dp", "edp")])
 
         # Test multiple groups.
-        self.assertEqual(
-            ComputationalOpMasking.parse_parallel_type("dp;edp"),
-            [("dp", ), ("edp", )]
-        )
+        self.assertEqual(ComputationalOpMasking.parse_parallel_type("dp;edp"), [("dp",), ("edp",)])
 
         # Test multiple groups with multiple items.
-        self.assertEqual(
-            ComputationalOpMasking.parse_parallel_type("dp,edp;mp,tp"),
-            [("dp", "edp"), ("mp", "tp")]
-        )
+        self.assertEqual(ComputationalOpMasking.parse_parallel_type("dp,edp;mp,tp"), [("dp", "edp"), ("mp", "tp")])
 
         # Test whitespace handling.
         self.assertEqual(
-            ComputationalOpMasking.parse_parallel_type(" dp, edp ; mp , tp "),
-            [("dp", "edp"), ("mp", "tp")]
+            ComputationalOpMasking.parse_parallel_type(" dp, edp ; mp , tp "), [("dp", "edp"), ("mp", "tp")]
         )
 
         # Test empty group (should raise error).
@@ -81,136 +72,103 @@ class TestComputationalOpMasking(unittest.TestCase):
         mock_future2.result.return_value = df2
 
         # Mock future_dict.
-        mock_context.future_dict = {
-            "step_linearity": [mock_future1, mock_future2]
-        }
+        mock_context.future_dict = {"step_linearity": [mock_future1, mock_future2]}
         result = self.computational_op_masking.aggregate_stats(mock_context)
         self.assertEqual(len(result), 2)
         self.assertIn(1, result["stepId"].values)
         self.assertIn(2, result["stepId"].values)
 
         # Test with empty futures.
-        mock_context.future_dict = {
-            "step_linearity": []
-        }
+        mock_context.future_dict = {"step_linearity": []}
         result = self.computational_op_masking.aggregate_stats(mock_context)
         self.assertTrue(result.empty)
 
+    def test_base_dir(self):
+        """测试 base_dir 属性"""
+        self.assertEqual(self.computational_op_masking.base_dir, "computational_op_masking")
 
-    @patch(
-        'msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.DatabaseService')
-    @patch(
-        'msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.CommunicationOpWithExport')
-    @patch(
-        'msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.ComputeTaskInfoWithExport')
-    def test_get_linearity_df_valid(self, mock_compute_export, mock_communication_export, mock_db_service):
-        # Simulated database service.
-        mock_db_service_instance = MagicMock()
-        mock_db_service.return_value = mock_db_service_instance
+    def test_init_with_default_parallel_types(self):
+        """测试默认并行类型初始化"""
+        params = {"extra_args": {}}
+        analyzer = ComputationalOpMasking(params)
+        # 验证默认值不为空且是列表
+        self.assertIsInstance(analyzer.parallel_types, list)
+        self.assertTrue(len(analyzer.parallel_types) > 0)
+        # 验证每个元素都是元组
+        for pt in analyzer.parallel_types:
+            self.assertIsInstance(pt, tuple)
+        # 验证默认值包含预期的并行类型
+        expected_default = [("dp", "edp"), ("edp",), ("dp",), ("ep",), ("pp",), ("mp",), ("tp",)]
+        self.assertEqual(analyzer.parallel_types, expected_default)
 
-        # Simulate the object returned by the query_data method.
-        mock_query_result = MagicMock()
-        mock_query_result.get.return_value = pd.DataFrame([{"id": 1, "startNs": 100, "endNs": 200}])
-        mock_db_service_instance.query_data.return_value = mock_query_result
+    def test_init_with_custom_parallel_types(self):
+        """测试自定义并行类型初始化"""
+        custom_types = [["dp"], ["tp", "cp"]]
+        params = {"extra_args": {"parallel_types": custom_types}}
+        analyzer = ComputationalOpMasking(params)
+        # 注意：_extra_args 中存储的可能是原始值，也可能是转换后的值
+        # 我们直接验证 parallel_types 是否被正确设置
+        expected = [("dp",), ("tp", "cp")]
+        self.assertEqual(analyzer.parallel_types, expected)
 
-        # Simulate CommunicationOpWithExport and ComputeTaskInfoWithExport
-        mock_communication_df = pd.DataFrame([
-            {"startNs": 110, "endNs": 150, "parallelType": "dp"},
-            {"startNs": 160, "endNs": 190, "parallelType": "edp"}
-        ])
-        mock_communication_export.return_value.read_export_db.return_value = mock_communication_df
+    def test_init_with_empty_extra_args(self):
+        """测试空 extra_args 的情况"""
+        params = {}
+        analyzer = ComputationalOpMasking(params)
+        # 应该使用默认值
+        expected_default = [("dp", "edp"), ("edp",), ("dp",), ("ep",), ("pp",), ("mp",), ("tp",)]
+        self.assertEqual(analyzer.parallel_types, expected_default)
 
-        mock_computation_df = pd.DataFrame([
-            {"task_start_time": 120, "task_end_time": 130},
-            {"task_start_time": 140, "task_end_time": 150}
-        ])
-        mock_compute_export.return_value.read_export_db.return_value = mock_computation_df
+    @patch('msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.LinearityUtils')
+    def test_get_linearity_df(self, mock_linearity_utils):
+        """测试 get_linearity_df 方法"""
+        # 创建 mock 对象
+        mock_linearity_utils.compute_linearity_df.return_value = pd.DataFrame(
+            {"stepId": [1], "parallelType": ["dp"], "ratioOfUnmaskedCommunication": [0.5]}
+        )
 
-        # Calling the get_linearity_df method
-        data_map = {
-            "profiler_db_path": "test_db_path",
-            "step_range": {}
-        }
-        result_df = self.computational_op_masking.get_linearity_df(data_map, "test_analysis_class")
+        data_map = {"profiler_db_path": "test.db", "step_range": {"startNs": 0, "endNs": 100}}
+        analysis_class = "test_analysis"
 
-        # Verify the result
-        self.assertFalse(result_df.empty)
-        self.assertEqual(len(result_df), 3)
-        self.assertEqual(result_df.iloc[0]["stepId"], 1)
-        self.assertEqual(result_df.iloc[0]["parallelType"], "dp+edp")
-        self.assertEqual(result_df.iloc[0]["stepStartTime"], 100)
-        self.assertEqual(result_df.iloc[0]["stepEndTime"], 200)
-        self.assertEqual(result_df.iloc[0]["totalCommunicationOperatorTime"], 70)
-        self.assertEqual(result_df.iloc[0]["timeRatioOfStepCommunicationOperator"], 0.7)
-        self.assertEqual(result_df.iloc[0]["totalTimeWithoutCommunicationBlackout"], 50)
-        self.assertEqual(result_df.iloc[0]["ratioOfUnmaskedCommunication"], round(50 / (200 - 100), 5))
+        result = self.computational_op_masking.get_linearity_df(data_map, analysis_class)
 
-        self.assertEqual(result_df.iloc[1]["stepId"], 1)
-        self.assertEqual(result_df.iloc[1]["parallelType"], "edp")
-        self.assertEqual(result_df.iloc[1]["stepStartTime"], 100)
-        self.assertEqual(result_df.iloc[1]["stepEndTime"], 200)
-        self.assertEqual(result_df.iloc[1]["totalCommunicationOperatorTime"], 30)
-        self.assertEqual(result_df.iloc[1]["timeRatioOfStepCommunicationOperator"], 0.3)
-        self.assertEqual(result_df.iloc[1]["totalTimeWithoutCommunicationBlackout"], 30)
-        self.assertEqual(result_df.iloc[1]["ratioOfUnmaskedCommunication"], round(30 / (200 - 100), 5))
+        # 验证 LinearityUtils.compute_linearity_df 被正确调用
+        mock_linearity_utils.compute_linearity_df.assert_called_once()
+        call_args = mock_linearity_utils.compute_linearity_df.call_args[1]
+        self.assertEqual(call_args["data_map"], data_map)
+        self.assertEqual(call_args["analysis_class"], analysis_class)
+        self.assertEqual(call_args["parallel_types"], self.computational_op_masking.parallel_types)
+        self.assertEqual(call_args["step_columns"], ["id", "startNs", "endNs"])
+        self.assertEqual(call_args["parallel_col_name"], "parallelType")
+        self.assertEqual(call_args["target_step_id"], None)  # _step_id = -1 时返回 None
+        self.assertTrue(call_args["use_merge"])
 
-    @patch(
-        'msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.DatabaseService')
-    @patch(
-        'msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.CommunicationOpWithExport')
-    @patch(
-        'msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.ComputeTaskInfoWithExport')
-    def test_get_linearity_df_invalid(self, mock_compute_export, mock_communication_export, mock_db_service):
-        # Simulated database service.
-        mock_db_service_instance = MagicMock()
-        mock_db_service.return_value = mock_db_service_instance
+        # 验证返回值
+        self.assertIsInstance(result, pd.DataFrame)
+        self.assertEqual(len(result), 1)
 
-        # Simulate the object returned by the query_data method.
-        mock_query_result = MagicMock()
-        mock_query_result.get.return_value = pd.DataFrame([{"id": 1, "startNs": 100, "endNs": 200}])
-        mock_db_service_instance.query_data.return_value = mock_query_result
+    @patch('msprof_analyze.cluster_analyse.recipes.computational_op_masking.computational_op_masking.LinearityUtils')
+    def test_get_linearity_df_with_step_id(self, mock_linearity_utils):
+        """测试 get_linearity_df 方法（指定 step_id）"""
+        # 设置 _step_id
+        self.computational_op_masking._step_id = 5
 
-        # Simulate CommunicationOpWithExport and ComputeTaskInfoWithExport
-        mock_communication_df = pd.DataFrame([
-            {"startNs": 110, "endNs": 150, "parallelType": "dp"},
-            {"startNs": 160, "endNs": 190, "parallelType": "edp"}
-        ])
-        mock_communication_export.return_value.read_export_db.return_value = mock_communication_df
+        mock_linearity_utils.compute_linearity_df.return_value = pd.DataFrame(
+            {"stepId": [5], "parallelType": ["dp"], "ratioOfUnmaskedCommunication": [0.3]}
+        )
 
-        mock_computation_df = pd.DataFrame([
-            {"task_start_time": 120, "task_end_time": 130},
-            {"task_start_time": 140, "task_end_time": 150}
-        ])
-        mock_compute_export.return_value.read_export_db.return_value = mock_computation_df
+        data_map = {"profiler_db_path": "test.db", "step_range": {"startNs": 0, "endNs": 100}}
+        analysis_class = "test_analysis"
 
-        # Calling the get_linearity_df method
-        data_map = {
-            "profiler_db_path": "test_db_path",
-            "step_range": {"id": 1, "startNs": 100, "endNs": 200}
-        }
-        result_df = self.computational_op_masking.get_linearity_df(data_map, "test_analysis_class")
+        result = self.computational_op_masking.get_linearity_df(data_map, analysis_class)
 
-        # Verify the result
-        self.assertFalse(result_df.empty)
-        self.assertEqual(len(result_df), 3)
-        self.assertEqual(result_df.iloc[0]["stepId"], 1)
-        self.assertEqual(result_df.iloc[0]["parallelType"], "dp+edp")
-        self.assertEqual(result_df.iloc[0]["stepStartTime"], 100)
-        self.assertEqual(result_df.iloc[0]["stepEndTime"], 200)
-        self.assertEqual(result_df.iloc[0]["totalCommunicationOperatorTime"], 70)
-        self.assertEqual(result_df.iloc[0]["timeRatioOfStepCommunicationOperator"], 0.7)
-        self.assertEqual(result_df.iloc[0]["totalTimeWithoutCommunicationBlackout"], 50)
-        self.assertEqual(result_df.iloc[0]["ratioOfUnmaskedCommunication"], round(50 / (200 - 100), 5))
+        # 验证 target_step_id 被正确传递
+        call_args = mock_linearity_utils.compute_linearity_df.call_args[1]
+        self.assertEqual(call_args["target_step_id"], 5)
 
-        self.assertEqual(result_df.iloc[1]["stepId"], 1)
-        self.assertEqual(result_df.iloc[1]["parallelType"], "edp")
-        self.assertEqual(result_df.iloc[1]["stepStartTime"], 100)
-        self.assertEqual(result_df.iloc[1]["stepEndTime"], 200)
-        self.assertEqual(result_df.iloc[1]["totalCommunicationOperatorTime"], 30)
-        self.assertEqual(result_df.iloc[1]["timeRatioOfStepCommunicationOperator"], 0.3)
-        self.assertEqual(result_df.iloc[1]["totalTimeWithoutCommunicationBlackout"], 30)
-        self.assertEqual(result_df.iloc[1]["ratioOfUnmaskedCommunication"], round(30 / (200 - 100), 5))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["stepId"], 5)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
