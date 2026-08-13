@@ -14,7 +14,6 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-import pandas as pd
 
 DEFAULT_INT_VALUE = -1
 
@@ -26,13 +25,11 @@ class TimeRange:
 
 
 class CommunicationTimeRange(TimeRange):
-
     def __init__(self):
         super().__init__()
 
 
 class RangeCaculator:
-
     @staticmethod
     def generate_time_range(start, end, class_range=TimeRange):
         time_range = class_range()
@@ -66,9 +63,7 @@ class RangeCaculator:
         min_range = time_range_list.pop(0)
         for time_range in time_range_list:
             if min_range.end_ts - time_range.start_ts < 0:
-                free_time_range.append(
-                    RangeCaculator.generate_time_range(min_range.end_ts, time_range.start_ts)
-                )
+                free_time_range.append(RangeCaculator.generate_time_range(min_range.end_ts, time_range.start_ts))
                 if isinstance(min_range, CommunicationTimeRange):
                     pure_communication_range.append(
                         RangeCaculator.generate_time_range(min_range.start_ts, min_range.end_ts)
@@ -115,7 +110,7 @@ class RangeCaculator:
         if tasks_df is None or tasks_df.empty:
             # 如果没有任务，整个时间段都是free
             return [[start, end]]
-        
+
         # 1. 合并重叠的任务时间段
         task_intervals = tasks_df[[start_col, end_col]].sort_values(start_col).values
         merged_intervals = []
@@ -130,27 +125,67 @@ class RangeCaculator:
                 else:
                     # 不重叠，添加新区间
                     merged_intervals.append([task_start, task_end])
-        
+
         # 2. 从目标时间段中减去这些任务时间段，得到剩余的free时间段
         free_intervals = []
         current_start = start
-        
+
         for task_start, task_end in merged_intervals:
             # 确保任务时间段在目标时间段内
             task_start = max(task_start, start)
             task_end = min(task_end, end)
-            
+
             # 如果任务时间段完全在目标时间段外，跳过
             if task_end <= start or task_start >= end:
                 continue
-            
+
             if current_start < task_start:
                 # 有剩余free时间段
                 free_intervals.append([current_start, task_start])
             current_start = max(current_start, task_end)
-        
+
         # 检查最后一段
         if current_start < end:
             free_intervals.append([current_start, end])
-        
+
         return free_intervals
+
+    @staticmethod
+    def compute_uncovered_durations(communication_lst, calculation_lst):
+        """
+        :param:
+            communication_lst and calculation_lst
+        :return:
+            List of floats/integers for each uncovered duration values
+        """
+        uncovered_durations = []
+        if not communication_lst:
+            return uncovered_durations
+
+        try:
+            communication_merge_lst = RangeCaculator.merge_continuous_intervals(communication_lst)
+            calculation_merge_lst = RangeCaculator.merge_continuous_intervals(calculation_lst)
+        except (TypeError, ValueError, AttributeError) as e:
+            raise ValueError("Failed to merge time ranges due to invalid input data") from e
+
+        for c_item in communication_merge_lst:
+            if not isinstance(c_item, TimeRange):
+                raise ValueError(f"Invalid item in communication_lst: {c_item}")
+            if c_item.start_ts >= c_item.end_ts:
+                continue
+            total_cover = 0
+            a_length = c_item.end_ts - c_item.start_ts
+            for s_item in calculation_merge_lst:
+                if not isinstance(s_item, TimeRange):
+                    raise ValueError(f"Invalid item in calculation_lst: {s_item}")
+                if s_item.start_ts >= s_item.end_ts:
+                    continue
+                if s_item.end_ts <= c_item.start_ts or s_item.start_ts >= c_item.end_ts:
+                    continue
+                # Compute overlap
+                inner_start = max(c_item.start_ts, s_item.start_ts)
+                inner_end = min(c_item.end_ts, s_item.end_ts)
+                total_cover += inner_end - inner_start
+            uncovered_durations.append(a_length - total_cover)
+
+        return uncovered_durations
