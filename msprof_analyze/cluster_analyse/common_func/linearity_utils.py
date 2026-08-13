@@ -50,7 +50,7 @@ class LinearityUtils:
     @staticmethod
     def _filter_by_time(df, start_col, end_col, start, end):
         """按时间范围过滤DataFrame"""
-        return df[(df[start_col] >= start) & (df[end_col] <= end)]
+        return df[(df[end_col] > start) & (df[start_col] < end)]
 
     @staticmethod
     def _to_ranges(df, start_col, end_col):
