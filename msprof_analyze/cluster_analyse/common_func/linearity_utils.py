@@ -78,7 +78,7 @@ class LinearityUtils:
             return result
 
         # 过滤当前并行类型的计算数据
-        filtered_comp = comp_df[comp_df[parallel_col_name].isin(parallel_type)]
+        filtered_comp = comp_df
 
         for _, step in step_df.iterrows():
             start, end = step["startNs"], step["endNs"]
