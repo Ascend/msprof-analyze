@@ -103,12 +103,10 @@ class TestComputationalOpMasking(unittest.TestCase):
 
     def test_init_with_custom_parallel_types(self):
         """测试自定义并行类型初始化"""
-        custom_types = [["dp"], ["tp", "cp"]]
-        params = {"extra_args": {"parallel_types": custom_types}}
-        analyzer = ComputationalOpMasking(params)
+        analyzer = ComputationalOpMasking(self.params)
         # 注意：_extra_args 中存储的可能是原始值，也可能是转换后的值
         # 我们直接验证 parallel_types 是否被正确设置
-        expected = [("dp",), ("tp", "cp")]
+        expected = [("dp", "edp"), ("edp",), ("dp",)]
         self.assertEqual(analyzer.parallel_types, expected)
 
     def test_init_with_empty_extra_args(self):

@@ -53,7 +53,6 @@ class ComputationalOpMasking(BaseRecipeAnalysis):
         self.db_paths = self._get_rank_db()
 
         # 从 params 中获取 parallel_types（更健壮的方式）
-        extra_args = params.get("extra_args", {})
         parallel_types_arg = self._extra_args.get(self.PARALLEL_INPUT_NAME)
         if parallel_types_arg is not None:
             # 转换为元组列表
