@@ -26,7 +26,7 @@ from msprof_analyze.cluster_analyse.recipes.computational_op_masking.computation
 class TestComputationalOpMasking(unittest.TestCase):
     def setUp(self):
         # Initialize the test environment.
-        self.params = {"recipe_name": "test_recipe", "extra_args": {"parallel_types": [["dp", "edp"], ["edp"], ["dp"]]}}
+        self.params = {"recipe_name": "test_recipe", "args": ["--parallel_types", "dp,edp;edp;dp"]}
         self.computational_op_masking = ComputationalOpMasking(self.params)
 
     def test_parse_parallel_type(self):
