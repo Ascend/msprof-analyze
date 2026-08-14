@@ -54,7 +54,7 @@ class ComputationalOpMasking(BaseRecipeAnalysis):
 
         # 从 params 中获取 parallel_types（更健壮的方式）
         extra_args = params.get("extra_args", {})
-        parallel_types_arg = extra_args.get(self.PARALLEL_INPUT_NAME)
+        parallel_types_arg = self._extra_args.get(self.PARALLEL_INPUT_NAME)
         if parallel_types_arg is not None:
             # 转换为元组列表
             if isinstance(parallel_types_arg, list) and len(parallel_types_arg) > 0:
