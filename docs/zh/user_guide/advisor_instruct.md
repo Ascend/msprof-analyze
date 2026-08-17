@@ -41,12 +41,12 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
 
 **约束**
 
-- CANN软件版本8.0RC1之前仅支持对text格式文件分析，8.0RC1及之后支持text、db格式的采集数据分析。
-- Ascend 950 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
+- CANN软件版本8.0.RC1之前仅支持对text格式文件分析，8.0.RC1及之后支持text、db格式的采集数据分析。
+- 昇腾950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
 
 ## 4. 功能介绍（advisor命令行方式）
 
@@ -549,4 +549,4 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -bp /path/to/benchmark_pr
 
 **Q8：文件太大或属主不一致导致工具不执行怎么办？**
 
-确认风险后可以使用`--force`。该参数会强制跳过目录或文件属主判断，也会忽略csv文件大于5G、json文件大于10G、db文件大于8G的文件过大判断。
+确认风险后可以使用`--force`。该参数会强制跳过目录或文件属主判断，也会忽略csv文件大于5GB、json文件大于10GB、db文件大于8GB的文件过大判断。
