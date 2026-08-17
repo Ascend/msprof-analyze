@@ -201,7 +201,7 @@ export_type = Db
 1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对；
 2. MindSpore训练工程在NPU上、不同版本之间的性能数据比对。
 
-性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
 
 采集结果目录结构：根据`export_type`参数设置的不同，工具会输出两种格式的结果目录：
 
@@ -323,7 +323,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 | --- | --- | --- | --- | --- |
 | `--force` | 可选 | 强制执行compare。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行；csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 | 是 | 是 |
 | `--debug` | 可选 | 工具执行报错时可打开此开关，日志将输出DEBUG级别信息，便于定位问题。配置该参数表示开启Debug，默认未配置表示关闭。 | 是 | 是 |
-| `-h`、`-H`、`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
+| `-h`或`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
 
 ### 4.4 使用示例
 

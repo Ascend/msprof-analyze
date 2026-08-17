@@ -22,7 +22,7 @@
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
 | msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start/msprof_quick_start.md)》                                                                                                 |
 | Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》 |
-| MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》 |
+| MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》 |
 | msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start/msmonitor_quick_start.md)》                                                                              |
 
 下面以 Ascend PyTorch Profiler 为例说明输入数据要求。

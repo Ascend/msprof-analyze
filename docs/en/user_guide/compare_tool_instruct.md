@@ -105,7 +105,7 @@ Before using this tool, collect profile data from the GPU or NPU. You are advise
 
   Use MindSpore Profiler to collect NPU profile data. You are advised to collect or parse profile data for only a single step. For details, see [Performance Profiling (Ascend)](https://www.mindspore.cn/mindinsight/docs/en/r2.3/performance_profiling_ascend.html).
 
-  The directory structure for MindSpore Profiler results is as follows: 
+  The directory structure for MindSpore Profiler results is as follows:
 
   ```bash
   |- profiler/{rank-*}_{timestamps}_ascend_ms
@@ -171,7 +171,7 @@ The `compare` tool supports profile data comparison using CLI or scripts. Both m
 | --comparison_step              | No    | Sets the step ID for target profile data for comparison. Once set, the tool uses data from the corresponding step for comparison. The value must be an integer matching an existing step ID. By default, it is not set (all data is compared). This option must be used with `--base_step`. Example: `--comparison_step=1`.<br>**This option takes effect only when `-enable_profiling_compare` (db data only), `--enable_operator_compare`, `--enable_communication_compare`, `--enable_memory_compare`, `--enable_kernel_compare`, or `--enable_api_compare` is enabled.**| Yes           | Yes           |
 | --force                        | No    | Forcibly executes the `compare` operation. This option forcibly skips the following checks:<br>        Ownership check: Proceed even if the current user is not the owner of the specified directory or files.<br>        File size check: Proceed even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB.<br>Specifying this option enables forced execution, which is disabled if not specified.   | Yes           | Yes           |
 | --debug                        | No    | Enables detailed stack trace printing if a tool error occurs. Specifying this option enables debug mode, which is disabled if not specified. | Yes           | Yes           |
-| -h, -H<br>--help              | No    | Displays help information for the subcommands and parameters of the current command.   | Yes           | Yes           |
+| -h or --help              | No    | Displays help information for the subcommands and parameters of the current command.   | Yes           | Yes           |
 
 Note: The optional parameters above serve as performance comparison switches. If no switches are set, the **tool enables all comparisons by default**. If any switches are set, the tool performs only the specified comparisons.
 
@@ -338,10 +338,10 @@ The operator performance comparison results are displayed on the `OperatorCompar
 - `Diff Ratio`: ratio of the total device execution duration of the target operator to that of the benchmark operator. Red indicates a performance bottleneck.
 - `Device Duration(us)`: total duration of all kernels delivered by the operator to the device.
 
-To identify the performance bottlenecks, perform the following steps: 
+To identify the performance bottlenecks, perform the following steps:
 
 * Step 1: Check the `OperatorCompareStatistic` sheet for operators with the largest time differences.
-* Step 2: Search for these operators on the `OperatorCompare` sheet, check the specific kernel durations, and identify optimization points. 
+* Step 2: Search for these operators on the `OperatorCompare` sheet, check the specific kernel durations, and identify optimization points.
 
 **Profile Data With Python Function Events**
 
@@ -378,13 +378,13 @@ If the `with_stack` option is enabled during profile data collection, Python fun
 - `Base Call Stack`: call stack of the bottleneck module or operator in the baseline file.
 - `Comparison Call Stack`: call stack of the bottleneck module or operator in the comparison file.
 
-To identify the performance bottlenecks, perform the following steps: 
+To identify the performance bottlenecks, perform the following steps:
 
 * Step 1: Check the `ModuleCompareStatistic` sheet for modules with the largest time differences.
     - Filter the `Operator Name` column by `[ TOTAL ]` and sort the modules in descending order by `Device Self Time(ms)`.
     - To restore the data view, sort by the `Order Id` field in ascending order.
-* Step 2: On the `ModuleCompare` sheet, locate the bottleneck operators under the modules with the largest time differences. 
-* Step 3: Use the code stack to find the corresponding lines of code. 
+* Step 2: On the `ModuleCompare` sheet, locate the bottleneck operators under the modules with the largest time differences.
+* Step 3: Use the code stack to find the corresponding lines of code.
 
 ### Communication Performance
 

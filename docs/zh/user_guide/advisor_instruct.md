@@ -41,7 +41,7 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
 
 **约束**
 
@@ -126,7 +126,7 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 | `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
 | `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值： `cn`：输出中文，默认值。 `en`：输出英文。 |
 | `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
-| `-h`，`-H` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
+| `-h` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
 #### 4.3.3 环境与版本配置
 

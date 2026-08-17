@@ -22,117 +22,42 @@ from msprof_analyze.cli.analyze_cli import analyze_cli
 from msprof_analyze.cli.complete_cli import auto_complete_cli
 from msprof_analyze.cli.compare_cli import compare_cli
 from msprof_analyze.cli.cluster_cli import cluster_cli
-from msprof_analyze.advisor.version import print_version_callback, cli_version
+from msprof_analyze.cli.unified_cli import help_callback
+from msprof_analyze.cli.version import build_version_text
+from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.path_manager import is_root
 
 logger = get_logger()
-CONTEXT_SETTINGS = dict(help_option_names=['-H', '-h', '--help'],
-                        max_content_width=160)
 
-COMMAND_PRIORITY = {
-    "cluster": 1,
-    "compare": 2,
-    "advisor": 3,
-    "auto-completion": 4
-}
+COMMAND_PRIORITY = {"cluster": 1, "compare": 2, "advisor": 3, "auto-completion": 4}
 
 
 class SpecialHelpOrder(click.Group):
-    SKIP_PARAM_NAMES = {'help', 'version'}
-
-    def __init__(self, *args, **kwargs):
-        super(SpecialHelpOrder, self).__init__(*args, **kwargs)
-
-    def list_commands_for_help(self, ctx):
+    def list_commands(self, ctx):
         """
         reorder the list of commands when listing the help
         """
-        commands = super(SpecialHelpOrder, self).list_commands(ctx)
+        commands = super().list_commands(ctx)
         priority_items = []
         for command in commands:
-            priority_items.append((COMMAND_PRIORITY.get(command, float('INF')), command))
+            priority_items.append((COMMAND_PRIORITY.get(command, float('inf')), command))
         return [item[1] for item in sorted(priority_items)]
-
-    def get_help(self, ctx):
-        self.list_commands = self.list_commands_for_help
-        original_help = super(SpecialHelpOrder, self).get_help(ctx)
-        commands_help = ['\n\nSubcommands Options:']
-        for cmd_name in self.list_commands_for_help(ctx):
-            cmd = self.get_command(ctx, cmd_name)
-            if not cmd:
-                continue
-            cmd_help = cmd.get_short_help_str()
-            commands_help.append(f'\n  {cmd_name}: {cmd_help}')
-            # Group 类型命令，显示子命令及其参数
-            if hasattr(cmd, 'list_commands'):
-                commands_help.extend(self._get_subcommand_help(cmd, cmd_name, ctx))
-            else:
-                # 普通命令，直接显示参数
-                commands_help.extend(self._get_command_params(cmd, indent='    '))
-        return original_help + '\n'.join(commands_help)
 
     def parse_args(self, ctx, args):
         # 检查是否有已知的子命令
         has_subcommand = any(arg in self.list_commands(ctx) for arg in args if not arg.startswith('-'))
         # 检查包含help参数
         has_help = any(arg in ['-H', '-h', '--help'] for arg in args)
+        # 检查包含version参数
+        has_version = any(arg in ['-V', '-v', '--version'] for arg in args)
         # 如果没有子命令但有参数，自动添加 cluster 子命令
-        if not has_subcommand and args and not has_help:
+        if not has_subcommand and args and not has_help and not has_version:
             args = ['cluster'] + args
         # 如果没有子命令也没有参数，显示所有help信息
         elif not has_subcommand and not args:
             args = ['--help']
-        return super(SpecialHelpOrder, self).parse_args(ctx, args)
-
-    def _should_skip_param(self, param):
-        """检查是否应该跳过该参数"""
-        if param.name in self.SKIP_PARAM_NAMES:
-            return True
-        if param.is_eager:
-            return True
-        if not (hasattr(param, 'opts') and param.opts):
-            return True
-        return False
-
-    def _format_param(self, param):
-        """格式化单个参数"""
-        param_names = ', '.join(param.opts)
-        help_text = getattr(param, 'help', '') or ''
-        required = '<required>' if getattr(param, 'required', False) else '<optional>'
-        return f'{param_names:<40}{required} {help_text}'
-
-    def _get_command_params(self, cmd, indent='    '):
-        """获取命令的参数列表"""
-        params_help = []
-        if not hasattr(cmd, 'params'):
-            return params_help
-        for param in cmd.params:
-            if self._should_skip_param(param):
-                continue
-            help_text = getattr(param, 'help', '') or ''
-            if not help_text:
-                continue
-            formatted = self._format_param(param)
-            params_help.append(f'{indent}{formatted}')
-        return params_help
-
-    def _get_subcommand_help(self, cmd, cmd_name, ctx):
-        """获取 Group 类型命令的子命令help信息"""
-        subcommands_help = []
-        if not hasattr(cmd, 'list_commands'):
-            return subcommands_help
-        subcommands = cmd.list_commands(ctx)
-        if not subcommands:
-            return subcommands_help
-        for subcmd_name in subcommands:
-            subcmd = cmd.get_command(ctx, subcmd_name)
-            if not subcmd:
-                continue
-            subcmd_help = subcmd.get_short_help_str()
-            subcommands_help.append(f'\n    {cmd_name} {subcmd_name}: {subcmd_help}')
-            subcommands_help.extend(self._get_command_params(subcmd, indent='      '))
-        return subcommands_help
+        return super().parse_args(ctx, args)
 
 
 class CliLogo:
@@ -153,10 +78,14 @@ class CliLogo:
     def _render_simple(self) -> str:
         """Return the plain ASCII logo."""
         return (
-            "=================================================================" "\n"
-            "                   >>>>>   MindStudio   <<<<<" "\n"
-            "    THE END-TO-END TOOLCHAIN TO UNLEASH HUAWEI ASCEND COMPUTE" "\n"
-            "=================================================================" "\n\n"
+            "================================================================="
+            "\n"
+            "                   >>>>>   MindStudio   <<<<<"
+            "\n"
+            "    THE END-TO-END TOOLCHAIN TO UNLEASH HUAWEI ASCEND COMPUTE"
+            "\n"
+            "================================================================="
+            "\n\n"
         )
 
     def _render_colored(self) -> str:
@@ -201,14 +130,23 @@ def _has_help_option(ctx) -> bool:
     return False
 
 
-@click.group(context_settings=CONTEXT_SETTINGS, cls=SpecialHelpOrder, invoke_without_command=True)
-@click.option('--version', '-V', '-v', is_flag=True,
-              callback=print_version_callback, expose_value=False,
-              is_eager=True, help=cli_version())
+def _version_callback(ctx: click.Context, param: click.Parameter, value: bool):
+    if value and not ctx.resilient_parsing:
+        logo = CliLogo()
+        logo.print_logo()
+        sys.stderr.write(build_version_text())
+        sys.stderr.flush()
+        ctx.exit()
+
+
+@click.group(context_settings=Constant.CONTEXT_SETTINGS, cls=SpecialHelpOrder, invoke_without_command=True)
+@click.option(
+    '--version', '-V', is_flag=True, expose_value=False, callback=_version_callback, help="Show version and exit."
+)
+@click.option('-v', is_flag=True, expose_value=False, hidden=True, callback=_version_callback)
+@click.option('-H', is_flag=True, expose_value=False, hidden=True, callback=help_callback)
 @click.pass_context
 def msprof_analyze_cli(ctx, **kwargs):
-    """如果没有子命令，默认执行 cluster"""
-    # 检查是否包含帮助选项
     if not _has_help_option(ctx):
         logo = CliLogo()
         logo.print_logo()
@@ -219,8 +157,7 @@ def msprof_analyze_cli(ctx, **kwargs):
             "Running with elevated privileges may compromise system security. "
             "Use a regular user account."
         )
-    if ctx.invoked_subcommand is None:
-        ctx.invoke(cluster_cli)
+
 
 msprof_analyze_cli.add_command(analyze_cli, name="advisor")
 msprof_analyze_cli.add_command(compare_cli, name="compare")
