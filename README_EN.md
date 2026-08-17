@@ -9,6 +9,8 @@
 
 </div>
 
+English | [简体中文](./README.md)
+
 ## 📢 What's New
 
 * [2025.12.30] Added the `module_statistic` feature, which automatically analyzes PyTorch model hierarchies to help accurately locate performance bottlenecks.

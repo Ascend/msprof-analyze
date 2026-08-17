@@ -1,12 +1,14 @@
-
 <h1 align="center">MindStudio Profiler Analyze</h1>
 <div align="center">
   <p>🚀 <b>昇腾性能分析工具</b></p>
+
 [📖工具文档](./docs/zh/README.md) |
 [🔥昇腾社区](https://www.hiascend.com/developer/software/mindstudio) |
 [🌐Release](https://gitcode.com/Ascend/msprof-analyze/releases)
 
 </div>
+
+简体中文 | [English](./README_EN.md)
 
 ## 📌 简介
 
