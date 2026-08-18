@@ -131,8 +131,8 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | --export_type         | 可选     | 输出文件类型。取值为db（.db格式文件）、notebook（Jupyter Notebook文件）、text（泛指json/csv/excel等文本格式文件），默认值为db。                                                                                                                               |
 | --force               | 可选     | 强制执行，用户对force行为负责，配置后可强制跳过如下情况：<br/>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>&#8226; csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。<br/>&#8226; 指定的目录、文件的读写权限，忽略权限判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 |
 | --parallel_mode       | 可选     | 设置收集多卡、多节点db数据时的并发方式。取值为concurrent（使用concurrent.futures进程池实现并发）。                                                                                                                                       |
-| -v，-V<br/>--version | 可选 | 查看版本号。                                                                                                                                                                                                 |
-| -h，-H<br>--help     | 可选 | 命令行参数帮助信息。                                                                                                                                                                                             |
+| --version 或 -V     | 可选 | 查看版本号。                   |
+| --help 或 -h     | 可选 | 命令行参数帮助信息。                   |
 | auto-completion     | 可选 | 自动补全，配置后在当前视图下配置msprof-analyze工具所有的子参数时，可以使用Tab将所有子参数自动补全。                                                      |
 
 #### 5.1.3 分析能力自定义参数

@@ -33,12 +33,12 @@ class TestSpecialHelpOrder(unittest.TestCase):
     def setUp(self):
         self.cli = SpecialHelpOrder(name="test_cli")
 
-    def test_list_commands_for_help_should_order_by_priority_when_commands_exist(self):
+    def test_list_commands_should_order_by_priority_when_commands_exist(self):
         ctx = MagicMock()
         with patch.object(
             click.Group, 'list_commands', return_value=["advisor", "compare", "auto-completion", "cluster"]
         ):
-            result = self.cli.list_commands_for_help(ctx)
+            result = self.cli.list_commands(ctx)
             self.assertEqual(result, ["cluster", "compare", "advisor", "auto-completion"])
 
     def test_parse_args_should_prepend_first_command_when_no_subcommand_with_args(self):
@@ -54,148 +54,6 @@ class TestSpecialHelpOrder(unittest.TestCase):
             with patch.object(click.Group, 'parse_args', return_value=["--help"]) as mock_super:
                 self.cli.parse_args(ctx, [])
                 mock_super.assert_called_once_with(ctx, ["--help"])
-
-    def test_should_skip_param_should_return_true_when_param_name_is_help(self):
-        param = MagicMock()
-        param.name = "help"
-        self.assertTrue(self.cli._should_skip_param(param))
-
-    def test_should_skip_param_should_return_true_when_param_name_is_version(self):
-        param = MagicMock()
-        param.name = "version"
-        self.assertTrue(self.cli._should_skip_param(param))
-
-    def test_should_skip_param_should_return_true_when_param_is_eager(self):
-        param = MagicMock()
-        param.name = "normal_param"
-        param.is_eager = True
-        self.assertTrue(self.cli._should_skip_param(param))
-
-    def test_should_skip_param_should_return_true_when_param_has_no_opts(self):
-        param = MagicMock()
-        param.name = "normal_param"
-        param.is_eager = False
-        param.opts = []
-        self.assertTrue(self.cli._should_skip_param(param))
-
-    def test_should_skip_param_should_return_false_when_param_is_valid(self):
-        param = MagicMock()
-        param.name = "normal_param"
-        param.is_eager = False
-        param.opts = ["--test-opt"]
-        self.assertFalse(self.cli._should_skip_param(param))
-
-    def test_format_param_should_include_required_label_when_param_is_required(self):
-        param = MagicMock()
-        param.opts = ["--test-opt"]
-        param.help = "Test help text"
-        param.required = True
-        result = self.cli._format_param(param)
-        self.assertIn("--test-opt", result)
-        self.assertIn("<required>", result)
-        self.assertIn("Test help text", result)
-
-    def test_format_param_should_include_optional_label_when_param_is_optional(self):
-        param = MagicMock()
-        param.opts = ["--test-opt"]
-        param.help = "Test help text"
-        param.required = False
-        result = self.cli._format_param(param)
-        self.assertIn("<optional>", result)
-
-    def test_format_param_should_still_format_when_param_has_no_help(self):
-        param = MagicMock()
-        param.opts = ["--test-opt"]
-        param.help = ""
-        param.required = False
-        result = self.cli._format_param(param)
-        self.assertIn("--test-opt", result)
-
-    def test_get_command_params_should_return_empty_when_cmd_has_no_params(self):
-        cmd = MagicMock(spec=[])
-        result = self.cli._get_command_params(cmd)
-        self.assertEqual(result, [])
-
-    def test_get_command_params_should_return_formatted_params_when_cmd_has_params(self):
-        param = MagicMock()
-        param.name = "test_param"
-        param.is_eager = False
-        param.opts = ["--test-opt"]
-        param.help = "Test help"
-        param.required = False
-
-        cmd = MagicMock()
-        cmd.params = [param]
-        result = self.cli._get_command_params(cmd)
-        self.assertEqual(len(result), 1)
-        self.assertIn("--test-opt", result[0])
-
-    def test_get_command_params_should_skip_when_param_name_is_help(self):
-        param = MagicMock()
-        param.name = "help"
-        param.is_eager = False
-        param.opts = ["--help"]
-        param.help = "Show help"
-
-        cmd = MagicMock()
-        cmd.params = [param]
-        result = self.cli._get_command_params(cmd)
-        self.assertEqual(result, [])
-
-    def test_get_command_params_should_skip_when_param_has_empty_help(self):
-        param = MagicMock()
-        param.name = "test_param"
-        param.is_eager = False
-        param.opts = ["--test-opt"]
-        param.help = ""
-
-        cmd = MagicMock()
-        cmd.params = [param]
-        result = self.cli._get_command_params(cmd)
-        self.assertEqual(result, [])
-
-    def test_get_subcommand_help_should_return_empty_when_cmd_has_no_list_commands(self):
-        cmd = MagicMock(spec=[])
-        ctx = MagicMock()
-        result = self.cli._get_subcommand_help(cmd, "parent", ctx)
-        self.assertEqual(result, [])
-
-    def test_get_subcommand_help_should_return_empty_when_subcommands_are_empty(self):
-        cmd = MagicMock()
-        cmd.list_commands.return_value = []
-        ctx = MagicMock()
-        result = self.cli._get_subcommand_help(cmd, "parent", ctx)
-        self.assertEqual(result, [])
-
-    def test_get_subcommand_help_should_return_help_lines_when_subcommands_exist(self):
-        subcmd = MagicMock()
-        subcmd.get_short_help_str.return_value = "Subcommand help"
-        subcmd.params = []
-
-        cmd = MagicMock()
-        cmd.list_commands.return_value = ["sub1"]
-        cmd.get_command.return_value = subcmd
-
-        ctx = MagicMock()
-        result = self.cli._get_subcommand_help(cmd, "parent", ctx)
-        self.assertEqual(len(result), 1)
-        self.assertIn("parent sub1", result[0])
-        self.assertIn("Subcommand help", result[0])
-
-    def test_get_help_should_include_subcommands_options_when_commands_exist(self):
-        ctx = MagicMock()
-        with patch.object(SpecialHelpOrder, 'list_commands_for_help', return_value=["cluster", "compare"]):
-            with patch.object(click.Group, 'get_help', return_value="Base help"):
-                with patch.object(SpecialHelpOrder, 'get_command') as mock_get_cmd:
-                    mock_cmd = MagicMock()
-                    mock_cmd.get_short_help_str.return_value = "Cluster analysis"
-                    mock_cmd.params = []
-                    mock_get_cmd.return_value = mock_cmd
-
-                    result = self.cli.get_help(ctx)
-                    self.assertIn("Base help", result)
-                    self.assertIn("Subcommands Options", result)
-                    self.assertIn("cluster", result)
 
 
 class TestCliLogo(unittest.TestCase):

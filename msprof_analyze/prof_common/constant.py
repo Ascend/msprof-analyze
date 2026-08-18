@@ -16,11 +16,11 @@ import os
 import stat
 
 
-class Constant(object):
+class Constant:
     COLLECTION_PATH = "collection_path"
     ANALYSIS_MODE = "analysis_mode"
     MODE = "mode"
-    CONTEXT_SETTINGS = dict(help_option_names=['-H', '-h', '--help'])
+    CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'], max_content_width=160)
 
     MAX_FILE_SIZE_5_GB = 1024 * 1024 * 1024 * 5
 
@@ -180,9 +180,9 @@ class Constant(object):
     NS_TO_US = 1000
     KB_TO_MB = 1024
     INVALID_VALUE = -1
-    MILLISECONDS_TO_SECONDS = 10 ** 3
-    MICROSECONDS_TO_SECONDS = 10 ** 6
-    MILLISECONDS_TO_MICROSECONDS = 10 ** 3
+    MILLISECONDS_TO_SECONDS = 10**3
+    MICROSECONDS_TO_SECONDS = 10**6
+    MILLISECONDS_TO_MICROSECONDS = 10**3
 
     PROFILING_TYPE = "profiling type"
 
@@ -253,7 +253,12 @@ class Constant(object):
     BWD_LIST = ["bwd", "backward", "back", "grad"]
 
     CPU_OP_FA_MASK = (
-        "flash_attention", "fusion_attention", "flashattn", "xformers_flash", "efficient_attention", "flash2attn"
+        "flash_attention",
+        "fusion_attention",
+        "flashattn",
+        "xformers_flash",
+        "efficient_attention",
+        "flash2attn",
     )
     CPU_OP_CONV = "aten::conv"
     CPU_OP_MATMUL_MASK = ("aten::addmm", "aten::bmm", "aten::mm", "aten::matmul")
@@ -303,12 +308,14 @@ class Constant(object):
     TIMELINE_FUSION_OPS_NO_STACK_FLAG = "NO STACK"
     NO_STACK_REASON_MAP = {
         TIMELINE_BACKWARD_NO_STACK_CODE: "Backward broadcast, without call stacks in profiling.",
-        TIMELINE_ACL_TO_NPU_NO_STACK_CODE: "Incoming flow is 'acl_to_npu', without call stacks in profiling."
+        TIMELINE_ACL_TO_NPU_NO_STACK_CODE: "Incoming flow is 'acl_to_npu', without call stacks in profiling.",
     }
     AFFINITY_TRAINING_API = "Affinity training api"
-    TIMELINE_EMPTY_STACKS_PROMPT = "These APIs have no code stack. If parameter 'with_stack=False' while profiling, " \
-                                   "please refer to {timeline_profiling_doc_url} to set 'with_stack=True'. " \
-                                   "Otherwise, ignore following affinity APIs due to backward broadcast lack of stack."
+    TIMELINE_EMPTY_STACKS_PROMPT = (
+        "These APIs have no code stack. If parameter 'with_stack=False' while profiling, "
+        "please refer to {timeline_profiling_doc_url} to set 'with_stack=True'. "
+        "Otherwise, ignore following affinity APIs due to backward broadcast lack of stack."
+    )
 
     CLUSTER_ANALYSIS = "Cluster analysis"
     SLOW_RANK_TIME_RATIO_THRESHOLD = 0.05
@@ -340,8 +347,11 @@ class Constant(object):
     CLOUD_RULE_REGION_CN_NORTH_9 = "cn-north-9"
     CLOUD_RULE_REGION_CN_NORTH_7 = "cn-north-7"
     CLOUD_RULE_REGION_CN_SOUTHWEST_2 = "cn-southwest-2"
-    CLOUD_RULE_REGION_LIST = [CLOUD_RULE_REGION_CN_NORTH_7, CLOUD_RULE_REGION_CN_NORTH_9,
-                              CLOUD_RULE_REGION_CN_SOUTHWEST_2]
+    CLOUD_RULE_REGION_LIST = [
+        CLOUD_RULE_REGION_CN_NORTH_7,
+        CLOUD_RULE_REGION_CN_NORTH_9,
+        CLOUD_RULE_REGION_CN_SOUTHWEST_2,
+    ]
     INNER_REGION_LIST = [CLOUD_RULE_REGION_CN_NORTH_7]
     DEFAULT_CLOUD_RULE_REGION = CLOUD_RULE_REGION_CN_SOUTHWEST_2
 
@@ -352,7 +362,7 @@ class Constant(object):
     INNER_ENDPOINT_SUFFIX = "obs.{}.ulanqab.huawei.com"
 
     AICPU_RULES_YAML_NAME = "aicpu_rules.yaml"
-    FUSION_PASS_YAML_NAME = "op_fusion_pass.yaml"
+    FUSION_PASS_YAML_NAME = "op_fusion_pass.yaml"  # nosec B105
     TIMELINE_FUSION_OPS_YAML_NAME = "timeline_fusion_ops.yaml"
     CLOUD_YAML_NAME_LIST = [AICPU_RULES_YAML_NAME, FUSION_PASS_YAML_NAME, TIMELINE_FUSION_OPS_YAML_NAME]
 
@@ -379,7 +389,10 @@ class Constant(object):
     ADVISOR_ANALYSIS_OUTPUT_DIR = "advisor_analysis_result"
     DEFAULT_PROCESSES = 8
     CLUSTER_ANALYSIS_FILE_PATTERN = [
-        r'profiler_info_\d+\.json', "step_trace_time.csv", "communication.json", "communication_matrix.json"
+        r'profiler_info_\d+\.json',
+        "step_trace_time.csv",
+        "communication.json",
+        "communication_matrix.json",
     ]
     ANALYSIS_OUTPUT_PATH = "ANALYSIS_OUTPUT_PATH"
     DEFAULT_RANK_FOR_PROFILING_ANALYSIS = 0
@@ -395,8 +408,8 @@ class Constant(object):
     MAX_READ_FILE_BYTES = 64 * 1024 * 1024 * 1024
 
     # Unit Conversion
-    COMMUNICATION_B_TO_GB = 0.001 ** 3
-    US_TO_S = 0.001 ** 2
+    COMMUNICATION_B_TO_GB = 0.001**3
+    US_TO_S = 0.001**2
     TIME_UNIT_SCALE = 1000
 
     WRITE_MODES = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP
@@ -450,10 +463,9 @@ class Constant(object):
     START_NS = "startNs"
     END_NS = "endNs"
 
-
     # hccl_sum
     UINT32_BITS = 32
-    UINT32_MASK = 0xffffffff
+    UINT32_MASK = 0xFFFFFFFF
 
     INVALID_RANK_NUM = 4294967295
     MAX_INTEGER = 9223372036854775807  # Default MAX value: 2^63 - 1 for 64-bit integer
@@ -499,14 +511,15 @@ class Constant(object):
     PP = "pp"
 
     # --force log
-    FORCE_BYPASSES_SECURITY = "You can add the '--force' parameter and retry. " \
-                              "This parameter will skip verification of the owner, size, and permissions."
+    FORCE_BYPASSES_SECURITY = (
+        "You can add the '--force' parameter and retry. "
+        "This parameter will skip verification of the owner, size, and permissions."
+    )
 
     NA = "N/A"
 
 
 class ProfilerTableConstant:
-
     # COMMUNICATION OP
     OP_ID = "opId"
     OP_NAME = "opName"

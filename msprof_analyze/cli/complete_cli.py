@@ -14,22 +14,20 @@
 # limitations under the License.
 import click
 
-from msprof_analyze.advisor.utils.tools import CONTEXT_SETTINGS
+from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.cli.unified_cli import UnifiedCommand, help_callback
 
 
-@click.command(context_settings=CONTEXT_SETTINGS,
-               short_help='Auto complete ma-advisor command in terminal, support "bash(default)/zsh/fish".')
+@click.command(
+    context_settings=Constant.CONTEXT_SETTINGS,
+    cls=UnifiedCommand,
+    short_help='Auto complete ma-advisor command in terminal, support "bash(default)/zsh/fish".',
+    examples='#print bash auto complete command to terminal\nmsprof-analyze auto-completion Bash',
+)
+@click.option("-H", is_flag=True, expose_value=False, hidden=True, callback=help_callback)
 @click.argument('shell_type', nargs=1, default="Bash", type=click.Choice(["Bash", "Zsh", "Fish"], case_sensitive=False))
 def auto_complete_cli(shell_type):
-    """
-    Auto complete ma-advisor command in terminal.
-
-    Example:
-
-    \b
-    # print bash auto complete command to terminal
-    msprof-analyze auto-completion Bash
-    """
+    """Auto complete ma-advisor command in terminal."""
     click.echo("Tips: please paste following shell command to your terminal to activate auto completion.\n")
     if shell_type.lower() == "bash":
         bash_str = 'eval "$(_MSPROF_ANALYZE_COMPLETE=bash_source msprof-analyze)"'

@@ -121,7 +121,7 @@ None
 | --force                            | No     | Forcibly executes `advisor`. This option forcibly skips the following checks:<br>        Ownership check: Proceed even if the current user is not the owner of the specified directory or files.<br>        File size check: Proceed even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB.<br>Specifying this option enables forced execution, which is disabled if not specified.|
 | -l<br>--language                  | No     | Specifies the output language for the analysis results. Valid values:<br>        `cn` (default): Chinese<br>        `en`: English|
 | --debug                            | No     | Enables detailed stack trace printing if a tool error occurs. Specifying this option enables debug mode, which is disabled if not specified.|
-| -h, -H<br>--help                  | No     | Displays help information for the subcommands and parameters of the current command.    |
+| -h<br>--help                  | No     | Displays help information for the subcommands and parameters of the current command.    |
 
 **Examples**
 
