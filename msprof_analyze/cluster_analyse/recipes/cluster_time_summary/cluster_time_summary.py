@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
 import pandas as pd
 from datetime import datetime
@@ -105,9 +104,7 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         data_service.add_table_for_query(Constant.TABLE_STEP_TIME, ["id", "startNs", "endNs"])
         df = data_service.query_data().get(Constant.TABLE_STEP_TIME)
         if df is None or df.empty:
-            df = pd.DataFrame(
-                {"id": [-1], "stepTime": None}
-            )
+            df = pd.DataFrame({"id": [-1], "stepTime": None})
         else:
             df["stepTime"] = (df["endNs"] - df["startNs"]) / Constant.TIME_UNIT_SCALE
         result_df = df[["id", "stepTime"]].rename(columns={"id": "step"})
@@ -118,12 +115,20 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         analysis_db_path = data_map.get(Constant.ANALYSIS_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
         data_service = DatabaseService(analysis_db_path, {})
-        data_service.add_table_for_query(Constant.TABLE_STEP_TRACE, ["step", "computing",
-                                                                     "communication_not_overlapped", "overlapped",
-                                                                     "communication", "free", ])
+        data_service.add_table_for_query(
+            Constant.TABLE_STEP_TRACE,
+            [
+                "step",
+                "computing",
+                "communication_not_overlapped",
+                "overlapped",
+                "communication",
+                "free",
+            ],
+        )
         df = data_service.query_data().get(Constant.TABLE_STEP_TRACE)
         if df is None or df.empty:
-            logger.warning(f"There is no TABLE_STEP_TRACE data in {analysis_db_path}.")
+            logger.warning("There is no TABLE_STEP_TRACE data in %s.", analysis_db_path)
             return None
         df.insert(0, "rank", rank_id)
         df["step"] = df["step"].fillna("-1").astype(int)
@@ -133,19 +138,26 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         analysis_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         step_range = data_map.get(Constant.STEP_RANGE)
-        df = CommunicationOpWithStepExport(analysis_db_path, analysis_class, step_range,
-            step_exits=DBManager.check_tables_in_db(profiler_db_path,
-                                                    Constant.TABLE_COMM_ANALYZER_TIME,)).read_export_db()
+        df = CommunicationOpWithStepExport(
+            analysis_db_path,
+            analysis_class,
+            step_range,
+            step_exits=DBManager.check_tables_in_db(
+                profiler_db_path,
+                Constant.TABLE_STEP_TIME,
+            ),
+        ).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no communication op data in {analysis_db_path}.")
+            logger.warning("There is no communication op data in %s.", analysis_db_path)
             return None
         return df
 
     def calculate_transmit_and_wait_df(self, communication_df):
-        transmit_and_wait_df = pd.DataFrame(columns=["rank", "step", "communicationWaitStageTime",
-                                                     "communicationTransmitStageTime"])
+        transmit_and_wait_df = pd.DataFrame(
+            columns=["rank", "step", "communicationWaitStageTime", "communicationTransmitStageTime"]
+        )
         if communication_df.empty:
-            logger.warning(f"There is no communication op data in cluster, skip calculate transmit and wait time")
+            logger.warning("There is no communication op data in cluster, skip calculate transmit and wait time")
             return transmit_and_wait_df
 
         # 得到group_name与rank_set的对应关系
@@ -159,7 +171,7 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
                 ranks_list = set(map(int, rank_set.strip('()').split(',')))
                 return ranks_list
             except Exception as e:
-                logger.error(f"Failed to parse rank_set: {rank_set}, error: {e}")
+                logger.error("Failed to parse rank_set: %s, error: %s", rank_set, e)
                 return set()
 
         rank_set_df[TableConstant.RANK_SET] = rank_set_df[TableConstant.RANK_SET].apply(parse_rank_set)
@@ -174,19 +186,23 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
             return required_ranks.issubset(actual_ranks)
 
         communication_df["groupName"] = communication_df["groupName"].apply(double_hash)
-        filtered_df = (communication_df.groupby(["groupName", "opName", "step"], group_keys=False).
-                       filter(valid_group))
+        filtered_df = communication_df.groupby(["groupName", "opName", "step"], group_keys=False).filter(valid_group)
         if filtered_df.empty:
             logger.warning("No group satisfies the required rank set condition.")
             return transmit_and_wait_df
 
         # 通信算子分组计算传输和等待耗时
-        filtered_df["communicationTransmitStageTime"] = \
-            filtered_df.groupby(["groupName", "opName", "step"])["communication_time"].transform("min")
-        filtered_df["communicationWaitStageTime"] = \
+        filtered_df["communicationTransmitStageTime"] = filtered_df.groupby(["groupName", "opName", "step"])[
+            "communication_time"
+        ].transform("min")
+        filtered_df["communicationWaitStageTime"] = (
             filtered_df["communication_time"] - filtered_df["communicationTransmitStageTime"]
-        transmit_and_wait_df = filtered_df.groupby(["rank", "step"])[
-            ["communicationWaitStageTime", "communicationTransmitStageTime"]].sum().reset_index()
+        )
+        transmit_and_wait_df = (
+            filtered_df.groupby(["rank", "step"])[["communicationWaitStageTime", "communicationTransmitStageTime"]]
+            .sum()
+            .reset_index()
+        )
         return transmit_and_wait_df
 
     def calculate_memory_and_not_overlapped_time(self, data_map, analysis_class):
@@ -199,15 +215,22 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
         step_range = data_map.get(Constant.STEP_RANGE)
-        df = MemoryAndDispatchTimeExport(profiler_db_path, analysis_class, step_range,
-            step_exits=DBManager.check_tables_in_db(profiler_db_path, Constant.TABLE_STEP_TIME)).read_export_db()
+        df = MemoryAndDispatchTimeExport(
+            profiler_db_path,
+            analysis_class,
+            step_range,
+            step_exits=DBManager.check_tables_in_db(profiler_db_path, Constant.TABLE_STEP_TIME),
+        ).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"Can not get memcpy task info from {profiler_db_path}.")
+            logger.warning("Can not get memcpy task info from %s.", profiler_db_path)
             return pd.DataFrame(columns=columns)
 
         memory_df = ClusterTimeSummary.calculate_memory_time(df)
-        memory_not_overlap_df = (df.groupby(["step"])[["start", "end", "type"]].apply(self.get_memory_not_overlap).
-                                 reset_index(name="memoryNotOverlapComputationCommunication"))
+        memory_not_overlap_df = (
+            df.groupby(["step"])[["start", "end", "type"]]
+            .apply(self.get_memory_not_overlap)
+            .reset_index(name="memoryNotOverlapComputationCommunication")
+        )
         result_df = pd.merge(memory_df, memory_not_overlap_df, on='step', how='inner')
         result_df.insert(0, "rank", rank_id)
         return result_df
@@ -229,13 +252,13 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         step_time_df = self._filter_by_step_id(step_time_df)
         step_trace_df = self._filter_by_step_id(step_trace_df)
         if step_time_df.empty or step_trace_df.empty:
-            logger.error(f"No valid step_time/step_trace_time in cluster data, skipping analysis")
+            logger.error("No valid step_time/step_trace_time in cluster data, skipping analysis")
             return pd.DataFrame()
 
         # 通信时间细粒度拆解
         transmit_and_wait_df = self.calculate_transmit_and_wait_df(communication_df)
         if transmit_and_wait_df.empty:
-            logger.error(f"No valid transmit and wait time in cluster data, skipping analysis")
+            logger.error("No valid transmit and wait time in cluster data, skipping analysis")
             return pd.DataFrame()
 
         # 合并所有信息
@@ -244,8 +267,9 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         for df in all_dfs[1:]:
             merged_df = pd.merge(merged_df, df, on=['rank', 'step'], how='outer')
         # 缺少step id的情况下需要补充stepTime
-        merged_df.loc[merged_df["stepTime"].isna(), "stepTime"] = merged_df["computing"] + merged_df[
-            "communication_not_overlapped"] + merged_df["free"]
+        merged_df.loc[merged_df["stepTime"].isna(), "stepTime"] = (
+            merged_df["computing"] + merged_df["communication_not_overlapped"] + merged_df["free"]
+        )
         # 将所有NaN替换为0
         merged_df = merged_df.fillna(0)
         # 根据 step 和 rank 列对合并后的 DataFrame 进行排序
@@ -254,27 +278,32 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
         # 单卡场景，通信传输时间和等待时间全部置0
         if communication_df.empty or len(communication_df['rank'].unique()) == 1:
             merged_df[['communicationWaitStageTime', 'communicationTransmitStageTime']] = 0
-        merged_df = merged_df.rename(columns={
-            'computing': 'computation',
-            'overlapped': 'communicationOverlapComputation',
-            'communication_not_overlapped': 'communicationNotOverlapComputation'})
+        merged_df = merged_df.rename(
+            columns={
+                'computing': 'computation',
+                'overlapped': 'communicationOverlapComputation',
+                'communication_not_overlapped': 'communicationNotOverlapComputation',
+            }
+        )
         return merged_df.sort_values(by=['rank', 'step'])
 
     def mapper_func(self, context: ConcurrentContext):
         for db_map in self.db_paths:
             context.submit(self.STEP_TIME, self.calculate_step_time, db_map, self._recipe_name)
             context.submit(self.STEP_TRACE, self.calculate_step_trace_time, db_map, self._recipe_name)
-            context.submit(self.COMMUNICATION, self.calculate_communication_time,
-                           db_map, self._recipe_name)
-            context.submit(self.MEMORY, self.calculate_memory_and_not_overlapped_time,
-                           db_map, self._recipe_name)
+            context.submit(self.COMMUNICATION, self.calculate_communication_time, db_map, self._recipe_name)
+            context.submit(self.MEMORY, self.calculate_memory_and_not_overlapped_time, db_map, self._recipe_name)
 
     def run(self, context: ConcurrentContext):
         logger.info("ClusterTimeSummary init.")
 
         if self._export_type not in [Constant.DB, Constant.TEXT]:
-            logger.error(f"Invalid export type: {self._export_type} for 'cluster time summary', "
-                         f"required to be {Constant.DB} or {Constant.TEXT}")
+            logger.error(
+                "Invalid export type: %s for 'cluster time summary', required to be %s or %s",
+                self._export_type,
+                Constant.DB,
+                Constant.TEXT,
+            )
             return
 
         # Prepare: 需要CommunicationGroupMap
@@ -287,52 +316,58 @@ class ClusterTimeSummary(BaseRecipeAnalysis):
             context.wait_all_futures()
             self.stats_data = self.aggregate_stats(context)
             if self._export_type == Constant.DB:
-                self.dump_data(self.stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                               Constant.TABLE_CLUSTER_TIME_SUMMARY, index=False)
+                self.dump_data(
+                    self.stats_data,
+                    Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+                    Constant.TABLE_CLUSTER_TIME_SUMMARY,
+                    index=False,
+                )
                 set_json_success(
                     msg_dict={
                         "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                        "tables": [Constant.TABLE_CLUSTER_TIME_SUMMARY]
+                        "tables": [Constant.TABLE_CLUSTER_TIME_SUMMARY],
                     },
-                    suggestion=self.SUGGESTION
+                    suggestion=self.SUGGESTION,
                 )
             elif self._export_type == Constant.TEXT:
                 file_name = f"cluster_time_summary_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.csv"
-                self.stats_data = self.stats_data.rename(columns={
-                    "rank": "Rank",
-                    "step": "Step",
-                    "stepTime": "Step Time(us)",
-                    "computation": "Computation(us)",
-                    "communicationNotOverlapComputation": "Communication Not Overlap Computation(us)",
-                    "communicationOverlapComputation": "Communication Overlap Computation(us)",
-                    "communication": "Communication(us)",
-                    "free": "Free(us)",
-                    "communicationWaitStageTime": "Communication Wait Stage Time(us)",
-                    "communicationTransmitStageTime": "Communication Transmit Stage Time(us)",
-                    "memory": "Memory(us)",
-                    "memoryNotOverlapComputationCommunication": "Memory Not Overlap Computation Communication(us)",
-                })
+                self.stats_data = self.stats_data.rename(
+                    columns={
+                        "rank": "Rank",
+                        "step": "Step",
+                        "stepTime": "Step Time(us)",
+                        "computation": "Computation(us)",
+                        "communicationNotOverlapComputation": "Communication Not Overlap Computation(us)",
+                        "communicationOverlapComputation": "Communication Overlap Computation(us)",
+                        "communication": "Communication(us)",
+                        "free": "Free(us)",
+                        "communicationWaitStageTime": "Communication Wait Stage Time(us)",
+                        "communicationTransmitStageTime": "Communication Transmit Stage Time(us)",
+                        "memory": "Memory(us)",
+                        "memoryNotOverlapComputationCommunication": "Memory Not Overlap Computation Communication(us)",
+                    }
+                )
                 self.dump_data(self.stats_data, file_name=file_name, index=False)
                 set_json_success(
-                    msg_dict={
-                        "csv_path": os.path.join(self.output_path, file_name)
-                    },
-                    suggestion=self.SUGGESTION
+                    msg_dict={"csv_path": os.path.join(self.output_path, file_name)}, suggestion=self.SUGGESTION
                 )
         except Exception as err:
-            logger.error("Execute ClusterTimeSummary with exception: %s" % str(err))
+            logger.error("Execute ClusterTimeSummary with exception: %s", err)
             return
 
     def run_communication_group_map_recipe(self, context):
         """
         Run Recipe to create CommunicationGroupMapping table
         """
-        logger.info(f"Run CommunicationGroupMap recipe first to get {Constant.TABLE_COMMUNICATION_GROUP_MAPPING} table")
+        logger.info(
+            "Run CommunicationGroupMap recipe first to get %s table",
+            Constant.TABLE_COMMUNICATION_GROUP_MAPPING,
+        )
         try:
             group_map_recipe = CommunicationGroupMap(self.params)
             self.communication_group_mapping = group_map_recipe.generate_communication_group_mapping(context)
         except Exception as e:
-            logger.error(f"Run CommunicationGroupMap recipe failed: {e}!")
+            logger.error("Run CommunicationGroupMap recipe failed: %s!", e)
             return False
         return True
 
