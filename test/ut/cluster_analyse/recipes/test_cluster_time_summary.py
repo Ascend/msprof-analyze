@@ -160,6 +160,35 @@ class TestClusterTimeSummary(unittest.TestCase):
         res = recipe.calculate_communication_time(self.RANK_1_DATA_MAP, "ClusterTimeSummary")
         self.assertIsNone(res)
 
+    @mock.patch(NAMESPACE_RECIPE + ".DBManager.check_tables_in_db", return_value=True)
+    @mock.patch(NAMESPACE_RECIPE + ".CommunicationOpWithStepExport")
+    def test_calculate_communication_time_checks_step_time_table(
+            self, mock_export_cls, mock_check_table):
+        mock_export_cls.return_value.read_export_db.return_value = pd.DataFrame({
+            "rank": [0],
+            "groupName": ["group_0"],
+            "opName": ["hcom_allGather"],
+            "communication_time": [10.0],
+            "step": [1],
+        })
+        recipe = ClusterTimeSummary(self.PARAMS)
+
+        result = recipe.calculate_communication_time(
+            self.RANK_1_DATA_MAP, "ClusterTimeSummary"
+        )
+
+        self.assertFalse(result.empty)
+        mock_check_table.assert_called_once_with(
+            self.RANK_1_DATA_MAP[Constant.PROFILER_DB_PATH],
+            Constant.TABLE_STEP_TIME,
+        )
+        mock_export_cls.assert_called_once_with(
+            self.RANK_1_DATA_MAP[Constant.PROFILER_DB_PATH],
+            "ClusterTimeSummary",
+            self.RANK_1_DATA_MAP[Constant.STEP_RANGE],
+            step_exits=True,
+        )
+
     @mock.patch("msprof_analyze.prof_exports.cluster_time_summary_export.MemoryAndDispatchTimeExport.read_export_db")
     def test_calculate_memory_and_not_overlapped_time(self, mock_export_db):
         mock_export_db.return_value = pd.DataFrame([
@@ -290,4 +319,3 @@ class TestClusterTimeSummary(unittest.TestCase):
              mock.patch(NAMESPACE_RECIPE + ".BaseRecipeAnalysis.dump_data") as mock_dump:
             recipe.run(context=FakeContext())
             mock_dump.assert_called_once()  # saved to db
-
