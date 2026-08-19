@@ -17,31 +17,42 @@ from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
 from msprof_analyze.prof_common.constant import Constant
 
 QUERY = """
+WITH MSTX_COMMUNICATION_DATA AS (
+    SELECT
+        ms.startNs AS mstxStartNs,
+        ms.connectionId AS mstxConnectionId,
+        replace(si.value, char(92) || '"', '"') AS value
+    FROM
+        MSTX_EVENTS ms
+    JOIN
+        STRING_IDS si
+        ON ms.message = si.id
+)
 SELECT
     ta.startNs,
     ta.endNs,
     ta.connectionId,
-    si.value
+    mstx.value
 FROM
-    MSTX_EVENTS ms
+    MSTX_COMMUNICATION_DATA mstx
 JOIN
     TASK ta
-    ON ms.connectionId = ta.connectionId
-JOIN
-    STRING_IDS si
-    ON ms.message = si.id
+    ON mstx.mstxConnectionId = ta.connectionId
+    OR (
+        json_valid(mstx.value)
+        AND CAST(json_extract(mstx.value, '$.streamId') AS INTEGER) = ta.streamId
+    )
 WHERE
-    si.value LIKE '%"streamId":%'
-    AND si.value LIKE '%"count":%'
-    AND si.value LIKE '%"dataType":%'
-    AND si.value LIKE '%"groupName":%'
-    AND si.value LIKE '%"opName":%'
-    AND ms.startNs >= ? and ms.startNs <= ?
+    mstx.value LIKE '%"streamId":%'
+    AND mstx.value LIKE '%"count":%'
+    AND mstx.value LIKE '%"dataType":%'
+    AND mstx.value LIKE '%"groupName":%'
+    AND mstx.value LIKE '%"opName":%'
+    AND mstx.mstxStartNs >= ? and mstx.mstxStartNs <= ?
     """
 
 
 class Mstx2CommopExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name, param_dict):
         super().__init__(db_path, recipe_name, param_dict)
         self._query = QUERY
