@@ -291,10 +291,10 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 | 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
 | `--enable_profiling_compare` | 可选 | 开启总体性能比对。 | 是 | 是 |
-| `--enable_operator_compare` | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见**5.4 算子比对高级参数**。 | 是 | 否 |
+| `--enable_operator_compare` | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见[算子比对高级参数](#434-算子比对高级参数)。 | 是 | 否 |
 | `--enable_communication_compare` | 可选 | 开启通信性能比对。 | 是 | 是 |
 | `--enable_memory_compare` | 可选 | 开启算子内存比对。该开关较耗时，建议只采集一个step的性能数据。 | 是 | 否 |
-| `--enable_kernel_compare` | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见**5.5 kernel比对高级参数**。 | 是 | 是 |
+| `--enable_kernel_compare` | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见[kernel比对高级参数](#435-kernel比对高级参数)。 | 是 | 是 |
 | `--enable_api_compare` | 可选 | 开启API性能比对。需要使用性能数据中的trace_view.json文件。 | 是 | 否 |
 
 #### 4.3.4 算子比对高级参数

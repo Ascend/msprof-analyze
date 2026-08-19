@@ -99,7 +99,7 @@ profiling_data/
 
 ### 2.4 约束
 
-Ascend 950 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
+昇腾950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
 
 ## 3. 功能介绍
 
@@ -212,7 +212,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 | Free | Device 侧既不在通信也不在计算的空闲时间，可能来自 SDMA 拷贝、host bound 或等待。 |
 | Stage | PP 并行时有效，表示除 receive 算子时间外的 stage 时间。 |
 | Bubble | Receive 时间总和。 |
-| Communication(Not Overlapped and Exclude Receive) | 剔除 receive 算子后，未被计算掩盖的通信时间。 |
+| Communication(Not Overlapped and Exclude Receive) | 剔除 receive 算子后，未被计算掩盖的通信耗时。 |
 | Preparing | 迭代开始到首个计算或通信算子运行前的准备时间。 |
 | DP Index | 数据按照并行策略切分后所属 DP 组的索引，未采集则不显示。 |
 | PP Index | 数据按照并行策略切分后所属 PP 组的索引，未采集则不显示。 |
@@ -289,7 +289,7 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | `free` | Device 侧空闲时间，单位 ms。 |
 | `stage` | PP 并行场景下的 stage 时间，单位 ms。 |
 | `bubble` | Receive 时间总和，单位 ms。 |
-| `communication_not_overlapped_and_exclude_receive` | 剔除 receive 算子后，未被计算掩盖的通信时间，单位 ms。 |
+| `communication_not_overlapped_and_exclude_receive` | 剔除 receive 算子后，未被计算掩盖的通信耗时，单位 ms。 |
 | `preparing` | 迭代开始到首个计算或通信算子运行前的准备时间，单位 ms。 |
 | `dp_index` | 所属 DP 组索引，未采集则为空或默认值。 |
 | `pp_index` | 所属 PP 组索引，未采集则为空或默认值。 |
