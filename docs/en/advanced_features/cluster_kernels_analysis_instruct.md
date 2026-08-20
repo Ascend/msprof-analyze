@@ -1,12 +1,12 @@
 # Cluster Operator Duration Analysis
 
-## Overview
+## 1. Overview
 
 The cluster operator duration analysis feature uses `cluster_prof_info_analysis.py` to collect and display statistics for the top N operators in cluster scenarios. It identifies operators with the fastest, slowest, and average duration, as well as the highest variance, on each rank based on the `op_summary` information of the multi-rank profile data.
 
 Currently, operator information for multiple ranks can be obtained only by viewing the profile data of each rank individually. Compute performance differences between operators across different ranks cannot be compared directly.
 
-## Preparations
+## 2. Preparations
 
 **Environment Setup**
 
@@ -34,9 +34,9 @@ Copy the profile data of all nodes to an environment. The profile data must be p
 |   ......             
 ```
 
-## Cluster Operator Duration Analysis
+## 3. Function
 
-**Function**
+**Description**
 
 Collects and displays statistics for the top N operators with the fastest, slowest, and average duration, as well as the highest variance, on each rank.
 
@@ -52,7 +52,7 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 
 **Command-line Options**
 
-| Option| Mandatory (Yes/No)| Description                                             |
+| Option| Required (Yes/No)| Description                                             |
 | ---- | -------- | ------------------------------------------------- |
 | -d   | Yes     | Specifies the profile data directory for cluster scenarios. Enter the parent directory of the `node*` directories.<br>&#8226; If `op_summary` does not exist in some directories, no information is displayed and no error is reported.<br>&#8226; If no `op_summary` data exists in the specified directory, an error is reported indicating that the data files cannot be found.<br>&#8226; If data in the `op_summary` column of a file is incorrect or cannot be read, the specific faulty file is identified.|
 | -t   | Yes     | Specifies the output file type for the analysis results. The values can be: `html` (default), `csv`, or `all`.<br>If the configuration is incorrect, an error message is displayed along with the correct configuration format.|
@@ -61,16 +61,16 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 **Example**
 
 ```bash
-python3 cluster_prof_info_analysis.py –d ./cluster_data -t csv -n 5
+python3 cluster_prof_info_analysis.py -d ./cluster_data -t csv -n 5
 ```
 
-## Output File Description
+## 4. Output File Description
 
-### `cluster_op_time_analysis.csv`
+### 4.1 `cluster_op_time_analysis.csv`
 
 Classifies operators by `op_name`, `input_shape`, `input_size`, and `output_shape`. Statistics, such as the maximum, minimum, variance, average, and range of the duration, are collected and displayed for each operator category across different ranks and nodes.
 
-### `xxx_info.html`
+### 4.2 `xxx_info.html`
 
 HTML files for various features (`time` and `ratio`), displaying the box plots of the top N operators.
 

@@ -12,6 +12,8 @@
 
 </div>
 
+简体中文 | [English](./README_EN.md)
+
 ## ✨ 最新消息
 
 🔹 [2025.12.30]：新增 `module_statistic` 功能：自动解析PyTorch模型层级结构，精准定位性能瓶颈。  
