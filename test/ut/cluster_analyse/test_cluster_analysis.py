@@ -363,7 +363,9 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             # Verify analysis facade is called
             mock_analysis_facade.assert_called()
             mock_analysis_facade_instance.cluster_analyze.assert_called()
-            mock_file_manager.create_output_dir.assert_called_once_with(self.output_path, is_overwrite=True)
+            mock_file_manager.create_output_dir.assert_called_once_with(
+                mock_path_manager.get_realpath.return_value, is_overwrite=True
+            )
 
     def test_run_with_all_mode(self):
         """
@@ -407,7 +409,9 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             # Verify analysis facade
             mock_analysis_facade.assert_called()
             mock_analysis_facade_instance.cluster_analyze.assert_called()
-            mock_file_manager.create_output_dir.assert_called_once_with(self.output_path, is_overwrite=True)
+            mock_file_manager.create_output_dir.assert_called_once_with(
+                mock_path_manager.get_realpath.return_value, is_overwrite=True
+            )
 
     def test_run_with_text_comm_mode_generates_comm_data(self):
         """
@@ -452,4 +456,6 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             mock_comm_group_instance.generate.assert_called_once()
             mock_analysis_facade.assert_called_once()
             mock_analysis_facade_instance.cluster_analyze.assert_called_once()
-            mock_file_manager.create_output_dir.assert_called_once_with(self.output_path)
+            mock_file_manager.create_output_dir.assert_called_once_with(
+                mock_path_manager.get_realpath.return_value, is_overwrite=False
+            )
