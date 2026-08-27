@@ -1,10 +1,10 @@
 # Custom Analysis Rule Development Guide
 
-## Overview
+## 1. Overview
 
 Custom analysis rules are developed based on the analysis of profile data within `analysis.db` and `ascend_pytorch_profiler_{rank_id}.db` files. Similar to the implementation of parameters such as `cann_api_sum`, `compute_op_sum`, and `hccl_sum`, these rules allow you to define custom logic for profile data analysis.
 
-## Procedure for Developing Custom Analysis Rules
+## 2. Procedure
 
 Perform the following steps:
 
@@ -28,7 +28,7 @@ Perform the following steps:
            logger.error("Unknown export type.")
    ```
 
-   1. `mapper_func` function: queries multi-rank data and merges the results. Since data processing for each rank in a cluster is identical, the context is used to process profile data in parallel and assemble the results in sequence. You only need to implement the `self._mapper_func` function for single-rank data data processing.
+   1. `mapper_func` function: queries multi-rank data and merges the results. Since data processing for each rank in a cluster is identical, the context is used to process profile data in parallel and assemble the results in sequence. You only need to implement the `self._mapper_func` function for single-rank data processing.
 
       ```python
       def mapper_func(self, context):
