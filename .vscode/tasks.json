@@ -18,7 +18,7 @@
     {
       "label": "Test: Run Unit Tests",
       "type": "shell",
-      "command": "python3 build.py test local",
+      "command": "python3 build.py test",
       "group": {
         "kind": "test",
         "isDefault": true
