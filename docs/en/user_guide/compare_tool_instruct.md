@@ -291,7 +291,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 | Option | Required (Yes/No) | Description | Supported by TorchNPU | Supported by MindSpore |
 | --- | --- | --- | --- | --- |
 | `--enable_profiling_compare` | No | Enables overall performance comparison. | Yes | Yes |
-| `--enable_operator_compare` | No | Enables operator performance comparison. This option is time-consuming. You are advised to collect profile data for only a single step. For supported extended options, see [Operator Performance Comparison Options](#Operator Performance Comparison Options). | Yes | No |
+| `--enable_operator_compare` | No | Enables operator performance comparison. This option is time-consuming. You are advised to collect profile data for only a single step. For supported extended options, see [Operator Performance Comparison Options](#434-operator-performance-comparison-options). | Yes | No |
 | `--enable_communication_compare` | No | Enables communication performance comparison. | Yes | Yes |
 | `--enable_memory_compare` | No | Enables operator memory comparison. This option is time-consuming. You are advised to collect profile data for only a single step. | Yes | No |
 | `--enable_kernel_compare` | No | Enables kernel performance comparison. This option applies only to NPU-to-NPU comparison scenarios. For supported extended options, see [Kernel Performance Comparison Options](#435-kernel-performance-comparison-options). | Yes | Yes |
