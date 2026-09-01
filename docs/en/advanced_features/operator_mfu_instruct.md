@@ -55,13 +55,14 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    ```
 
    > [!NOTE]
-   * `with_flops=True` enables FLOPs calculation on the collection side.
-   * `mstx=True` enables MSTX event collection. In the current collection-side implementation, automatic FLOPs recording also depends on the legacy `msprof_tx=True` parameter, so the example sets both `mstx=True` and `msprof_tx=True`.
-   * `export_type` must include `Db` because the analysis reads tables such as `MSTX_EVENTS`, `PYTORCH_API`, `COMPUTE_TASK_INFO`, and `TASK`.
-   * `record_shapes=True` keeps kernel shape and data type information.
-   * Set `profiler_level` to `Level1` or higher to collect the kernel information required for MFU calculation.
-   * If `mstx_domain_include` is configured, make sure FLOPs-related MSTX events are not filtered out. If module-level aggregation is required, also include `Module`.
-   * MFU calculation no longer uses manual marks in the `flash_attn_args` domain. FlashAttention FLOPs are calculated automatically on the collection side from operator arguments.
+   > 
+   > - `with_flops=True` enables FLOPs calculation on the collection side.
+   > - `mstx=True` enables MSTX event collection. In the current collection-side implementation, automatic FLOPs recording also depends on the legacy `msprof_tx=True` parameter, so the example sets both `mstx=True` and `msprof_tx=True`.
+   > - `export_type` must include `Db` because the analysis reads tables such as `MSTX_EVENTS`, `PYTORCH_API`, `COMPUTE_TASK_INFO`, and `TASK`.
+   > - `record_shapes=True` keeps kernel shape and data type information.
+   > - Set `profiler_level` to `Level1` or higher to collect the kernel information required for MFU calculation.
+   > - If `mstx_domain_include` is configured, make sure FLOPs-related MSTX events are not filtered out. If module-level aggregation is required, also include `Module`.
+   > - MFU calculation no longer uses manual marks in the `flash_attn_args` domain. FlashAttention FLOPs are calculated automatically on the collection side from operator arguments.
 
 2. (Optional) Add model-level MSTX instrumentation.
 
