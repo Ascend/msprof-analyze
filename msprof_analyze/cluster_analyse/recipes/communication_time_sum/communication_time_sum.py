@@ -358,14 +358,16 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
 
         is_time_df_empty = time_df is None or time_df.empty
         is_bandwidth_df_empty = bandwidth_df is None or bandwidth_df.empty
-        if is_time_df_empty or is_bandwidth_df_empty:
+        if is_time_df_empty and is_bandwidth_df_empty:
             logger.warning("There is no stats data in %s.", analysis_db_path)
             return None, None
-        # 补充step、rank_id字段
-        time_df[TableConstant.RANK_ID] = rank_id
-        bandwidth_df[TableConstant.RANK_ID] = rank_id
-        if TableConstant.STEP not in time_df.columns:
-            time_df[TableConstant.STEP] = TableConstant.STEP
-        if TableConstant.STEP not in bandwidth_df.columns:
-            bandwidth_df[TableConstant.STEP] = TableConstant.STEP
+        # 两类统计数据可独立生成，分别补充step、rank_id字段。
+        if not is_time_df_empty:
+            time_df[TableConstant.RANK_ID] = rank_id
+            if TableConstant.STEP not in time_df.columns:
+                time_df[TableConstant.STEP] = TableConstant.STEP
+        if not is_bandwidth_df_empty:
+            bandwidth_df[TableConstant.RANK_ID] = rank_id
+            if TableConstant.STEP not in bandwidth_df.columns:
+                bandwidth_df[TableConstant.STEP] = TableConstant.STEP
         return time_df, bandwidth_df
