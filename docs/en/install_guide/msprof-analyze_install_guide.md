@@ -136,4 +136,4 @@ Successfully uninstalled msprof-analyze-{version}
 
 The `msprof-analyze` tool does not support direct upgrades. You must first [uninstall](#4-uninstallation) the tool and then [reinstall](#2-installation-methods) it.
 
-You can run the `msprof-analyze --version` command to view the version information in the current environment and then select the version to upgrade to. When upgrading the version, pay attention to the version compatibility requirements. For details, see the [Release Notes](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.1.0/release_notes.md).
+You can run the `msprof-analyze --version` command to view the version information in the current environment and then select the version to upgrade to. When upgrading the version, pay attention to the version compatibility requirements. For details, see the [Release Notes](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.1.0/release_notes_en.md).
