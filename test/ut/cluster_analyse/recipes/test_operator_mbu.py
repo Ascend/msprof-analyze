@@ -1,4 +1,4 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
+# Copyright (c) 2026, Huawei Technologies Co., Ltd.
 # All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0  (the "License");
@@ -16,6 +16,7 @@
 import argparse
 import os
 import shutil
+import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -53,13 +54,15 @@ class TestOperatorMbu(unittest.TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        params = {
+        self.analysis = OperatorMbu(self._params(Constant.TEXT))
+
+    def _params(self, export_type):
+        return {
             Constant.COLLECTION_PATH: self.temp_dir,
             Constant.RECIPE_NAME: "operator_mbu",
-            Constant.EXPORT_TYPE: Constant.TEXT,
+            Constant.EXPORT_TYPE: export_type,
             Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.temp_dir,
         }
-        self.analysis = OperatorMbu(params)
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -134,10 +137,10 @@ class TestOperatorMbu(unittest.TestCase):
         self.assertEqual([0, 1, 1], result["rank_id"].tolist())
         self.assertEqual([20, 10, 30], result["kernel_ts"].tolist())
 
-    def test_save_then_write_single_mbu_csv_with_friendly_headers(self):
+    def test_save_csv_then_write_single_mbu_csv_with_friendly_headers(self):
         df = _calc_result_df()
         df.insert(0, "rank_id", 0)
-        self.analysis.save(df)
+        self.analysis.save_csv(df)
         output_file = os.path.join(self.analysis.output_path, OperatorMbu.MBU_CSV)
         self.assertTrue(os.path.exists(output_file))
         written = pd.read_csv(output_file)
@@ -148,10 +151,100 @@ class TestOperatorMbu(unittest.TestCase):
         # Byte/s -> GB/s: 5.2e9 / 1e9 = 5.2
         self.assertAlmostEqual(5.2, written.iloc[0]["Achieved Bandwidth(GB/s)"])
 
-    def test_save_when_empty_then_skip_writing(self):
-        self.analysis.save(pd.DataFrame())
+    def test_save_csv_when_empty_then_skip_writing(self):
+        self.analysis.save_csv(pd.DataFrame())
         output_file = os.path.join(self.analysis.output_path, OperatorMbu.MBU_CSV)
         self.assertFalse(os.path.exists(output_file))
+
+    def test_save_db_then_write_operator_mbu_table_with_db_headers(self):
+        analysis = OperatorMbu(self._params(Constant.DB))
+        df = _calc_result_df()
+        df.insert(0, "rank_id", 0)
+        analysis.save_db(df)
+
+        db_file = os.path.join(analysis.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
+        self.assertTrue(os.path.exists(db_file))
+        conn = sqlite3.connect(db_file)
+        try:
+            written = pd.read_sql(f"SELECT * FROM {OperatorMbu.TABLE_OPERATOR_MBU}", conn)
+        finally:
+            conn.close()
+        self.assertEqual(1, len(written))
+        # 精确比对列名与顺序：DataFrame 索引不应落库，列名应为 DB 风格。
+        self.assertEqual(list(OperatorMbu.DB_COLUMN_MAPPING.values()), list(written.columns))
+        # Byte/s -> GB/s: 5.2e9 / 1e9 = 5.2
+        self.assertAlmostEqual(5.2, written.iloc[0]["achieved_bandwidth(GB/s)"])
+
+    def test_save_db_when_empty_then_skip_dump_data(self):
+        analysis = OperatorMbu(self._params(Constant.DB))
+        # 断言未进入 dump_data，避免被基类自带的空数据兜底掩盖 save_db 自身的校验。
+        with patch.object(analysis, "dump_data") as mock_dump:
+            analysis.save_db(pd.DataFrame())
+        mock_dump.assert_not_called()
+        db_file = os.path.join(analysis.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
+        self.assertFalse(os.path.exists(db_file))
+
+    def test_run_when_export_type_is_db_then_dispatch_to_save_db(self):
+        analysis = OperatorMbu(self._params(Constant.DB))
+        mapper_res = [(0, _calc_result_df())]
+        with (
+            patch.object(analysis, "mapper_func", return_value=mapper_res),
+            patch.object(analysis, "save_db") as mock_save_db,
+            patch.object(analysis, "save_csv") as mock_save_csv,
+        ):
+            analysis.run(context=None)
+        mock_save_db.assert_called_once()
+        mock_save_csv.assert_not_called()
+
+    def test_run_when_export_type_is_text_then_dispatch_to_save_csv(self):
+        mapper_res = [(0, _calc_result_df())]
+        with (
+            patch.object(self.analysis, "mapper_func", return_value=mapper_res),
+            patch.object(self.analysis, "save_db") as mock_save_db,
+            patch.object(self.analysis, "save_csv") as mock_save_csv,
+        ):
+            self.analysis.run(context=None)
+        mock_save_csv.assert_called_once()
+        mock_save_db.assert_not_called()
+
+    def test_run_when_export_type_is_notebook_then_return_none_without_mapper(self):
+        analysis = OperatorMbu(self._params(Constant.NOTEBOOK))
+        with patch.object(analysis, "mapper_func") as mock_mapper:
+            self.assertIsNone(analysis.run(context=None))
+        mock_mapper.assert_not_called()
+
+    def test_run_when_export_type_is_db_then_write_table_end_to_end(self):
+        # 只 mock mapper_func，让 run 走完 reducer 与落库全链路。
+        analysis = OperatorMbu(self._params(Constant.DB))
+        rank_df = _calc_result_df()
+        rank_df.insert(0, "rank_id", 0)
+        with patch.object(analysis, "mapper_func", return_value=[(0, rank_df)]):
+            self.assertIsNone(analysis.run(context=None))
+
+        db_file = os.path.join(analysis.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
+        self.assertTrue(os.path.exists(db_file))
+        conn = sqlite3.connect(db_file)
+        try:
+            written = pd.read_sql(f"SELECT * FROM {OperatorMbu.TABLE_OPERATOR_MBU}", conn)
+        finally:
+            conn.close()
+        self.assertEqual(list(OperatorMbu.DB_COLUMN_MAPPING.values()), list(written.columns))
+        self.assertEqual(0, written.iloc[0]["rank_id"])
+        self.assertEqual("MatMulV2", written.iloc[0]["op_type"])
+        self.assertAlmostEqual(0.0052, written.iloc[0]["mbu"])
+
+    def test_run_when_export_type_is_text_then_write_csv_end_to_end(self):
+        # 只 mock mapper_func，让 run 走完 reducer 与写文件全链路。
+        rank_df = _calc_result_df()
+        rank_df.insert(0, "rank_id", 0)
+        with patch.object(self.analysis, "mapper_func", return_value=[(0, rank_df)]):
+            self.assertIsNone(self.analysis.run(context=None))
+
+        output_file = os.path.join(self.analysis.output_path, OperatorMbu.MBU_CSV)
+        self.assertTrue(os.path.exists(output_file))
+        written = pd.read_csv(output_file)
+        self.assertEqual(list(OperatorMbu.TEXT_COLUMN_MAPPING.values()), list(written.columns))
+        self.assertAlmostEqual(5.2, written.iloc[0]["Achieved Bandwidth(GB/s)"])
 
 
 if __name__ == "__main__":
