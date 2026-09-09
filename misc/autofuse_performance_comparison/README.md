@@ -19,7 +19,7 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
 - 执行构建脚本：
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze
+    git clone https://gitcode.com/Ascend/msprof-analyze -b master
     cd msprof-analyze
     # 安装依赖
     pip install -r requirements.txt

@@ -2,15 +2,15 @@
 
 Some native `torch` APIs involve multiple small operators during delivery and execution, resulting in long durations. You can replace these APIs with NPU APIs to enable fused operators and improve training performance.
 
-For details about the functions and parameters of torch_npu APIs, see the [torch_npu APIs](<>).
+For details about the functions and parameters of TorchNPU APIs, see the [torch_npu APIs](https://gitcode.com/Ascend/op-plugin/blob/master/docs/en/custom_APIs/torch_npu/torch_npu_list.md).
 
-## Optimizer Replacement
+## 1. Optimizer Replacement
 
-Replacing an optimizer generally provides significant performance benefits. Prioritize replacing native torch optimizers with [Ascend affinity optimizers](<>). The following example uses the `AdamW` optimizer. The replacement method also applies to other optimizers.
+Replacing an optimizer generally provides significant performance benefits. Prioritize replacing native torch optimizers with [Ascend affinity optimizers](https://gitcode.com/Ascend/ModelZoo-PyTorch/blob/master/PyTorch/docs/en/performance_tuning/performance_tuning_methods/npu_affinity_opt/fusion_optimizer.md). The following section uses the `AdamW` optimizer as an example. The replacement method also applies to other optimizers.
 
-### torch_npu.optim.NpuFusedAdamW
+### 1.1 `torch_npu.optim.NpuFusedAdamW`
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -22,7 +22,7 @@ optimizer = torch.optim.AdamW(
 )
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch_npu
@@ -36,13 +36,13 @@ optimizer = torch_npu.optim.NpuFusedAdamW(
 )
 ```
 
-## Affinity API Replacement
+## 2. Affinity API Replacement
 
-### optimizer.clip_grad_norm_fused_
+### 2.1 `optimizer.clip_grad_norm_fused_`
 
 Before replacing the API with the NPU affinity gradient clipping API, ensure that an NPU affinity optimizer is already used in the code.
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -50,7 +50,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr = lr)
 torch.nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=10, norm_type=2)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -61,11 +61,11 @@ optimizer = torch_npu.optim.NpuFusedAdamW(model.parameters(), lr = lr)
 optimizer.clip_grad_norm_fused_(max_norm=10, norm_type=2)
 ```
 
-### torch_npu.npu_confusion_transpose
+### 2.2 `torch_npu.npu_confusion_transpose`
 
 **Example 1**
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -75,7 +75,7 @@ batch, channel, height, width = data.shape
 result = torch.permute(data, (0, 2, 1, 3)).reshape(height, batch, channel*width)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -89,7 +89,7 @@ result = torch_npu.npu_confusion_transpose(data, (0, 2, 1, 3), (height, batch, c
 
 **Example 2**
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -99,7 +99,7 @@ batch, channel, height, width = data.shape
 result = data.view(batch, height*channel*width).transpose(1, 0)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -111,11 +111,11 @@ batch, channel, height, width = data.shape
 result = torch_npu.npu_confusion_transpose(data, (1, 0), (batch, height*channel*width), transpose_first=False)
 ```
 
-### torch_npu.npu_scaled_masked_softmax
+### 2.3 `torch_npu.npu_scaled_masked_softmax`
 
 Note that the value of the last dimension for the `atten_mask` and `atten_scores` tensors must be within the range of [32, 8192] and must be a multiple of 32.
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -127,7 +127,7 @@ output = torch.softmax((x * scale).masked_fill(mask, -1*torch.inf), dim=-1)
 # shape is (64, 8, 128, 256)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -142,13 +142,13 @@ output = torch_npu.npu_scaled_masked_softmax(x, mask, scale)
 # shape is (64, 8, 128, 256)
 ```
 
-### torch_npu.fast_gelu
+### 2.4 `torch_npu.fast_gelu`
 
 **Example 1**
 
 Replace the `torch.nn.functional.gelu` method. There are implementation differences, and the output of the activation function is different.
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -156,7 +156,7 @@ input_data = torch.rand(64, 32).cuda()
 result = torch.nn.functional.gelu(input_data)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -171,7 +171,7 @@ result = torch_npu.fast_gelu(input_data)
 
 Inherit from `torch.nn.GELU` and rewrite the `forward` method based on `torch_npu.fast_gelu`.
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -180,7 +180,7 @@ gelu_module = torch.nn.GELU().cuda()
 result3 = gelu_module(input_data)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -197,11 +197,11 @@ fast_gelu_module = FastGelu().cuda()
 result = fast_gelu_module(input_data)
 ```
 
-### torch_npu.npu_rms_norm
+### 2.5 `torch_npu.npu_rms_norm`
 
 The input `dtype` supports only `float16`, `bfloat16`, or `float`.
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -224,7 +224,7 @@ torch_rms_norm = TorchRMSNorm((128, 256))
 result = torch_rms_norm(input_data)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -245,11 +245,11 @@ npu_rms_norm = NpuRMSNorm((128, 256))
 result = npu_rms_norm(input_data)
 ```
 
-### torch_npu.npu_swiglu
+### 2.6 `torch_npu.npu_swiglu`
 
 The input `dtype` supports only `float16`, `bfloat16`, or `float`.
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -271,7 +271,7 @@ torch_swiglu = TorchSwiGlu()
 result = torch_swiglu(input_data)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -292,9 +292,9 @@ npu_swiglu = NpuSwiGlu()
 result = npu_swiglu(input_data)
 ```
 
-### torch_npu.npu_rotary_mul
+### 2.7 `torch_npu.npu_rotary_mul`
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -313,7 +313,7 @@ def torch_func(x, r1, r2):
 result = torch_func(x, r1, r2)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
@@ -327,9 +327,9 @@ r2 = torch.rand([1, 8192, 1, 128]).cuda()
 result = torch_npu.npu_rotary_mul(x, r1, r2)
 ```
 
-### torch_npu.npu_fusion_attention
+### 2.8 `torch_npu.npu_fusion_attention`
 
-Native `torch` code example:
+Native `torch` code sample:
 
 ```python
 import torch
@@ -371,7 +371,7 @@ class TorchFlashAttention():
         # result shape (1, 128, 4096)
 ```
 
-`torch_npu` code example:
+`torch_npu` code sample:
 
 ```python
 import torch
