@@ -45,12 +45,29 @@ class ClusterCompareReportMixin:
     def _record_operator(self, **kwargs):
         if not hasattr(self, "operator_reports"):
             self.operator_reports = []
-        row = {k: kwargs.get(k) for k in [
-            "step_id", "phase", "parallel_type", "op_type", "data_type", "count",
-            "group_rank", "start_ns", "end_ns", "current_domain", "baseline_domain",
-            "current_duration", "baseline_duration", "actual_ratio", "theoretical_ratio",
-            "is_abnormal", "conclusion", "suggestion"
-        ]}
+        row = {
+            k: kwargs.get(k)
+            for k in [
+                "step_id",
+                "phase",
+                "parallel_type",
+                "op_type",
+                "data_type",
+                "count",
+                "group_rank",
+                "start_ns",
+                "end_ns",
+                "current_domain",
+                "baseline_domain",
+                "current_duration",
+                "baseline_duration",
+                "actual_ratio",
+                "theoretical_ratio",
+                "is_abnormal",
+                "conclusion",
+                "suggestion",
+            ]
+        }
         row["rank_id"] = getattr(self, "_current_report_rank_id", None)
         self.operator_reports.append(row)
         return row
@@ -58,9 +75,23 @@ class ClusterCompareReportMixin:
     def _record_operator_table(self, title, rows):
         if not rows:
             return
-        cols = ["step_id", "phase", "parallel_type", "op_type", "data_type", "count", "group_rank",
-                "current_domain", "baseline_domain", "current_duration", "baseline_duration",
-                "actual_ratio", "theoretical_ratio", "is_abnormal", "conclusion"]
+        cols = [
+            "step_id",
+            "phase",
+            "parallel_type",
+            "op_type",
+            "data_type",
+            "count",
+            "group_rank",
+            "current_domain",
+            "baseline_domain",
+            "current_duration",
+            "baseline_duration",
+            "actual_ratio",
+            "theoretical_ratio",
+            "is_abnormal",
+            "conclusion",
+        ]
         df = pd.DataFrame(rows)
         df = df[[c for c in cols if c in df.columns]]
         for col in ("current_duration", "baseline_duration", "actual_ratio", "theoretical_ratio"):

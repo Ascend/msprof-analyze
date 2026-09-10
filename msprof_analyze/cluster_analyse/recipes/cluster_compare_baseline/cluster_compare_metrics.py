@@ -48,14 +48,13 @@ class ClusterCompareMetricsMixin:
 
     @staticmethod
     def _ns_to_ms(duration_ns):
-        return duration_ns / (10 ** 6)
+        return duration_ns / (10**6)
 
     @staticmethod
     def _linearity_ratio(linearity_df, step_id, parallel_type):
         if linearity_df is None or linearity_df.empty:
             return 0
-        filtered = linearity_df[(linearity_df["stepId"] == step_id) &
-                                (linearity_df["parallelType"] == parallel_type)]
+        filtered = linearity_df[(linearity_df["stepId"] == step_id) & (linearity_df["parallelType"] == parallel_type)]
         return filtered["ratioOfUnmaskedCommunication"].values[0] if not filtered.empty else 0
 
     def compare_by_parallel_type(self, current_df: pd.DataFrame, baseline_df: pd.DataFrame) -> pd.DataFrame:
@@ -67,17 +66,30 @@ class ClusterCompareMetricsMixin:
             logger.warning("baseline_df is empty!")
             return pd.DataFrame()
 
-        merged = pd.merge(current_df, baseline_df, on="parallelType", how="outer", suffixes=("_current", "_baseline")).fillna(0)
-        merged["diff"] = merged["totalTimeWithoutCommunicationBlackout_sum_current"] - merged["totalTimeWithoutCommunicationBlackout_sum_baseline"]
+        merged = pd.merge(
+            current_df, baseline_df, on="parallelType", how="outer", suffixes=("_current", "_baseline")
+        ).fillna(0)
+        merged["diff"] = (
+            merged["totalTimeWithoutCommunicationBlackout_sum_current"]
+            - merged["totalTimeWithoutCommunicationBlackout_sum_baseline"]
+        )
         diff_sum = merged["diff"].sum()
         merged["diff_percent"] = 0 if diff_sum == 0 else (merged["diff"] / diff_sum) * 100
         merged["diff_percent"] = merged["diff_percent"].replace([float('inf'), -float('inf')], 0).fillna(0)
 
-        return merged[["parallelType", "totalTimeWithoutCommunicationBlackout_sum_current",
-                      "totalTimeWithoutCommunicationBlackout_sum_baseline", "diff", "diff_percent"]]
+        return merged[
+            [
+                "parallelType",
+                "totalTimeWithoutCommunicationBlackout_sum_current",
+                "totalTimeWithoutCommunicationBlackout_sum_baseline",
+                "diff",
+                "diff_percent",
+            ]
+        ]
 
-    def comm_lower_bound(self, count, T0, K0=64, K=128, B=200 * 1024 ** 3 / 8 * 0.8,
-                         datatype="BFP16", op_type="allGather", alpha=None):
+    def comm_lower_bound(
+        self, count, T0, K0=64, K=128, B=200 * 1024**3 / 8 * 0.8, datatype="BFP16", op_type="allGather", alpha=None
+    ):
         """
         计算 allGather / reduceScatter / allReduce 理论下界
 
