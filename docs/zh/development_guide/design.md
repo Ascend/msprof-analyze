@@ -19,8 +19,6 @@
     </tr>
 </table>
 
-**Copyright © 2022 openGauss Community**
-
 您对&quot;本文档&quot;的复制，使用，修改及分发受知识共享（Creative Commons）署名—相同方式共享4.0国际公共许可协议（以下简称&quot;CC BY-SA 4.0&quot;）的约束。
 为了方便用户理解，您可以通过访问<https://creativecommons.org/licenses/by-sa/4.0/>了解CC BY-SA 4.0的概要 （但不是替代）。
 CC BY-SA 4.0的完整协议内容您可以访问如下网址获取：<https://creativecommons.org/licenses/by-sa/4.0/legalcode>。
@@ -65,13 +63,13 @@ CC BY-SA 4.0的完整协议内容您可以访问如下网址获取：<https://cr
         <td>1</td>
         <td>支持模型性能拆解比对能力</td>
         <td>模型算子的拆解和比对能力分析报告</td>
-        <td></td>  
+        <td></td>
     </tr>
     <tr>
         <td>2</td>
         <td>支持Host的分析能力</td>
         <td>Host Bound性能问题的自动化识别能力</td>
-        <td></td>  
+        <td></td>
     </tr>
 </table>
 
@@ -166,7 +164,7 @@ NA
 
 具体方案实现细节描述如下：
 
-1. 首先，计算并筛选NPU硬件的闲置时间，关注某个大块闲置时间 
+1. 首先，计算并筛选NPU硬件的闲置时间，关注某个大块闲置时间
 
 2. 对于某个大块闲置时间，明确其性能瓶颈所在层级，归类为Host侧瓶颈，将设备层的问题归为Device侧瓶颈:
 

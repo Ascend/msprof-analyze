@@ -4,17 +4,19 @@
 <p><b><span style="font-size:24px;">昇腾性能分析工具</span></b></p>
 
  [![快速入门](https://badgen.net/badge/快速入门/QuickStart/blue)](docs/zh/quick_start/msprof-analyze_quick_start.md)
- [![AI问答(DeepWiki)](https://badgen.net/badge/AI问答/DeepWiki/blue)](https://deepwiki.com/mindstudio-docs/master) 
- [![AI问答(ZRead)](https://badgen.net/badge/AI问答/ZRead/blue)](https://zread.ai/mindstudio-docs/master) 
- [![精确搜索](https://badgen.net/badge/精确搜索/ReadTheDocs/blue)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/) 
- [![昇腾社区](https://badgen.net/badge/昇腾社区/Community/blue)](https://www.hiascend.com/cn/developer/software/mindstudio) 
- [![报告问题](https://badgen.net/badge/报告问题/Issues/blue)](https://gitcode.com/Ascend/msprof-analyze/issues) 
+ [![AI问答(DeepWiki)](https://badgen.net/badge/AI问答/DeepWiki/blue)](https://deepwiki.com/mindstudio-docs/master)
+ [![AI问答(ZRead)](https://badgen.net/badge/AI问答/ZRead/blue)](https://zread.ai/mindstudio-docs/master)
+ [![精确搜索](https://badgen.net/badge/精确搜索/ReadTheDocs/blue)](https://mindstudio-profiler-docs.readthedocs.io/zh-cn/latest/msprof-analyze/)
+ [![昇腾社区](https://badgen.net/badge/昇腾社区/Community/blue)](https://www.hiascend.com/cn/developer/software/mindstudio)
+ [![报告问题](https://badgen.net/badge/报告问题/Issues/blue)](https://gitcode.com/Ascend/msprof-analyze/issues)
 
 </div>
 
+简体中文 | [English](./README_EN.md)
+
 ## ✨ 最新消息
 
-🔹 [2025.12.30]：新增 `module_statistic` 功能：自动解析PyTorch模型层级结构，精准定位性能瓶颈。  
+🔹 [2025.12.30]：新增 `module_statistic` 功能：自动解析PyTorch模型层级结构，精准定位性能瓶颈。
 
 ## ℹ️ 简介
 
@@ -31,10 +33,10 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 
 ## 🚀 快速入门
 
-**10 分钟实战体验**  
+**10 分钟实战体验**
 以 ResNet50 训练为例，覆盖**采集数据、执行 Advisor 分析与查看分析结果**全流程。点击立即开始：《[msprof-analyze 快速入门](docs/zh/quick_start/msprof-analyze_quick_start.md)》。
 
-**极简命令行速查**  
+**极简命令行速查**
 若已熟悉操作流程，可直接执行分析命令，示例如下：
 
 ```bash
@@ -64,16 +66,16 @@ pip install -U msprof-analyze
 
 为提升文档查阅效率，我们提供多种高效检索方式：
 
-🔹 [AI 问答（DeepWiki）](https://deepwiki.com/mindstudio-docs/master)：自然语言问答，快速把握项目架构与模块关系。   
-🔹 [AI 问答（ZRead）](https://zread.ai/mindstudio-docs/master)：中文问答体验更优，精准定位功能用法与细节。   
-🔹 [精确搜索（ReadTheDocs）](https://mindstudio-docs-master.readthedocs.io)：关键词全文检索，直达接口、参数与报错等信息。 
+🔹 [AI 问答（DeepWiki）](https://deepwiki.com/mindstudio-docs/master)：自然语言问答，快速把握项目架构与模块关系。
+🔹 [AI 问答（ZRead）](https://zread.ai/mindstudio-docs/master)：中文问答体验更优，精准定位功能用法与细节。
+🔹 [精确搜索（ReadTheDocs）](https://mindstudio-docs-master.readthedocs.io)：关键词全文检索，直达接口、参数与报错等信息。
 
 ## ⚖️ 相关说明
 
-🔹 《[版本说明](https://gitcode.com/Ascend/msprof-analyze/releases)》  
-🔹 《[许可证声明](docs/zh/legal/license_notice.md)》  
-🔹 《[安全声明](docs/zh/legal/security_statement.md)》  
-🔹 《[免责声明](docs/zh/legal/disclaimer.md)》  
+🔹 《[版本说明](https://gitcode.com/Ascend/msprof-analyze/releases)》
+🔹 《[许可证声明](docs/zh/legal/license_notice.md)》
+🔹 《[安全声明](docs/zh/legal/security_statement.md)》
+🔹 《[免责声明](docs/zh/legal/disclaimer.md)》
 
 ## 🤝 建议与交流
 
@@ -87,10 +89,10 @@ pip install -U msprof-analyze
 
 ## 🙏 致谢
 
-本工具由华为公司的下列部门联合贡献：  
-🔹 昇腾计算MindStudio开发部  
-🔹 昇腾计算生态使能部  
-🔹 华为云昇腾云服务  
+本工具由华为公司的下列部门联合贡献：
+🔹 昇腾计算MindStudio开发部
+🔹 昇腾计算生态使能部
+🔹 华为云昇腾云服务
 🔹 2012 网络实验室
 
 感谢来自社区的每一个 PR，欢迎贡献 `msprof-analyze`。

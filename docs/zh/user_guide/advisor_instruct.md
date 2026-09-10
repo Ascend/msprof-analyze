@@ -46,7 +46,9 @@ msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为
 **约束**
 
 - CANN软件版本8.0.RC1之前仅支持对text格式文件分析，8.0.RC1及之后支持text、db格式的采集数据分析。
+<!-- npu="950" id1 -->
 - 昇腾950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
+<!-- end id1 -->
 
 ## 4. 功能介绍（advisor命令行方式）
 
@@ -474,7 +476,7 @@ pip install jupyter notebook
 **下载msprof-analyze源码**
 
 ```bash
-git clone https://gitcode.com/Ascend/msprof-analyze
+git clone https://gitcode.com/Ascend/msprof-analyze -b master
 ```
 
 **准备性能数据**

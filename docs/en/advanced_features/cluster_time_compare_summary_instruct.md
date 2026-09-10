@@ -1,24 +1,24 @@
 # cluster_time_compare_summary
 
-## Overview
+## 1. Overview
 
 Large-scale cluster scenarios involve multiple compute nodes and massive amounts of data. Existing single-rank profile data comparison capabilities cannot evaluate the overall operational performance of a cluster.
 
-Fine-grained cluster profile data comparison (`cluster_time_compare_summary`) provides the capability to compare profile data at the cluster level during AI task execution. By analyzing the computation, communication, and memory copy durations, it helps users identify performance bottlenecks.
+Fine-grained cluster profile data comparison (`cluster_time_compare_summary`) provides the feature to compare profile data at the cluster level during AI task execution. By analyzing the computation, communication, and memory copy durations, it helps users identify performance bottlenecks.
 
-## Preparations
+## 2. Preparations
 
 **Environment Setup**
 
-Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installation Guide](../getting_started/install_guide.md).
+Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](../install_guide/msprof-analyze_install_guide.md).
 
 **Data Preparation**
 
-`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Data Preparation](.//README.md#preparations).
+`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Preparations](./README.md#2-preparations).
 
-## Fine-grained Cluster Profile Data Comparison
+## 3. Function
 
-**Function**
+**Description**
 
 Compares and analyzes the collected cluster profile data by using the `cluster_time_compare_summary` feature of `msprof-analyze`.
 
@@ -30,14 +30,14 @@ msprof-analyze -m cluster_time_compare_summary -d <cluster_data> --bp <base_clus
 
 **Command-line Options**
 
-| Option| Mandatory (Yes/No)| Description                                                        |
+| Option| Required (Yes/No)| Description                                                        |
 | ---- | --------- | ------------------------------------------------------------ |
-| -m   | Yes     | Specifies the analysis mode to execute. Set it to `cluster_time_compare_summary` to enable fine-grained comparison of cluster durations.|
-| -d   | Yes     | Specifies the cluster profile data directory.                                    |
-| --bp | Yes     | Specifies the basic cluster profile data directory.                                |
-| -o   | No     | Specifies the output directory. The default value is the directory specified by the `-d` option.                  |
+| -m   | Yes     | Specifies the analysis feature. Set it to `cluster_time_compare_summary` to enable fine-grained cluster duration comparison.|
+| -d   | Yes     | Specifies the parent directory of the cluster profile data files.                                    |
+| --bp | Yes     | Specifies the parent directory of the basic cluster profile data files.                                |
+| -o   | No     | Specifies the analysis result output directory. The default value is the directory specified by `-d`.                  |
 
-For details about more options, see [Command-line Options and Parameters](./README.md#command-line-options-and-parameters) of `msprof-analyze`.
+For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
 **Example**
 
@@ -58,10 +58,9 @@ For details about more options, see [Command-line Options and Parameters](./READ
 
 **Output Description**
 
-* Storage location: `cluster_analysis_output/cluster_analysis.db` in the output directory.
-* Data table name: `ClusterTimeCompareSummary`
+The `cluster_analysis_output/cluster_analysis.db` file is generated in the directory specified by `-o`. The `ClusterTimeCompareSummary` table is generated in this file. For details, see [Output File Description](#4-output-file-description).
 
-## Output File Description
+## 4. Output File Description
 
 The following table describes the fields in the `ClusterTimeCompareSummary` table.
 

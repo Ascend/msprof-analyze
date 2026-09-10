@@ -25,6 +25,7 @@ Basic dependencies are defined in `requirements/build.txt`, and test dependencie
 The core runtime dependencies include:
 
 - `click`
+- `tabulate`
 - `networkx`
 - `jinja2`
 - `PyYaml`
@@ -263,14 +264,14 @@ After feature development is complete, update the related documents if the chang
 
 | Change Type| Document to Update|
 | --- | --- |
-| Installation, compilation, and upgrade methods| `docs/en/getting_started/install_guide.md`|
-| Quick start process| `docs/en/getting_started/quick_start.md`|
+| Installation, compilation, and upgrade methods| `docs/en/install_guide/msprof-analyze_install_guide.md`|
+| Quick start process| `docs/en/quick_start/msprof-analyze_quick_start.md`|
 | `advisor` feature| `docs/en/user_guide/advisor_instruct.md`|
 | `compare` feature| `docs/en/user_guide/compare_tool_instruct.md`|
 | `cluster` feature| `docs/en/user_guide/cluster_analyse_instruct.md`|
 | Recipe extension capabilities| `docs/en/advanced_features/README.md`|
 | Custom recipe development methods| `docs/en/advanced_features/custom_analysis_guide.md`|
-| Release notes| `docs/en/release_notes.md`|
+| Release notes| `https://gitcode.com/Ascend/msprof-analyze/releases`|
 
 ## 6. Submission Process Suggestions
 

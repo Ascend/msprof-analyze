@@ -87,7 +87,7 @@ Successfully installed msprof-analyze-{version}
 
 ```bash
 cd ~
-git clone https://gitcode.com/Ascend/msprof-analyze.git
+git clone https://gitcode.com/Ascend/msprof-analyze.git -b master
 ```
 
 #### 2.3.2 执行编译
@@ -150,4 +150,4 @@ Successfully uninstalled msprof-analyze-{version}
 
 msprof-analyze工具不支持直接升级，需要先完成[卸载](#4-卸载)后再重新[安装](#2-安装方式)。
 
-可通过`msprof-analyze --version`命令查看当前环境的版本信息，再选择需要升级的版本。升级版本时需要关注版本配套关系，请参见《[版本说明](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.1.0/release_notes.md)》。
+可通过`msprof-analyze --version`命令查看当前环境的版本信息，再选择需要升级的版本。升级版本时需要关注版本配套关系，请参见《[版本说明](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/master/release_notes.md)》。
