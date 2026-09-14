@@ -101,6 +101,33 @@ class TestClusterCompareMetricsMixin(unittest.TestCase):
         dp_row = result[result["parallelType"] == "dp"]
         self.assertEqual(dp_row["diff_percent"].values[0], 100.0)
 
+    def test_compare_by_parallel_type_outer_merge_asymmetric(self):
+        """current 含 dp，baseline 仅含 tp，验证 outer merge + fillna(0) 行为"""
+        current = pd.DataFrame({
+            "parallelType": ["dp"],
+            "totalTimeWithoutCommunicationBlackout_sum": [100],
+        })
+        baseline = pd.DataFrame({
+            "parallelType": ["tp"],
+            "totalTimeWithoutCommunicationBlackout_sum": [50],
+        })
+        result = self.metrics.compare_by_parallel_type(current, baseline)
+        self.assertFalse(result.empty)
+        self.assertEqual(len(result), 2)
+
+        # dp 行：diff = 100 - 0 = 100
+        dp_row = result[result["parallelType"] == "dp"]
+        self.assertEqual(dp_row["diff"].values[0], 100)
+        self.assertEqual(dp_row["totalTimeWithoutCommunicationBlackout_sum_baseline"].values[0], 0)
+
+        # tp 行：diff = 0 - 50 = -50
+        tp_row = result[result["parallelType"] == "tp"]
+        self.assertEqual(tp_row["diff"].values[0], -50)
+        self.assertEqual(tp_row["totalTimeWithoutCommunicationBlackout_sum_current"].values[0], 0)
+
+        # diff_percent 之和应在合法范围内
+        self.assertAlmostEqual(result["diff_percent"].sum(), 100.0, places=6)
+
     # ---------- comm_lower_bound ----------
     def test_comm_lower_bound_T0_zero(self):
         result = self.metrics.comm_lower_bound(100, 0)
@@ -120,18 +147,34 @@ class TestClusterCompareMetricsMixin(unittest.TestCase):
         self.assertEqual(result["T_total_ms"], 10)
         self.assertEqual(result["ratio"], 1.0)
 
-    def test_comm_lower_bound_allGather(self):
-        result = self.metrics.comm_lower_bound(100, 10, K0=64, K=128, op_type="allGather")
-        self.assertGreater(result["T_total_ms"], 10)
-        self.assertGreater(result["ratio"], 1.0)
+    def test_comm_lower_bound_exact_values(self):
+        """精确验证 comm_lower_bound 公式输出"""
+        alpha = 60e-6
+        B = 200 * 1024 ** 3 / 8 * 0.8
+        m = 100 * 2  # count * bytes_per_elem (BFP16=2)
+        expected_T_L3 = (alpha * 1 + (m / B) * 1) * 1000
+        expected_T_total = 10 + expected_T_L3
+        expected_ratio = expected_T_total / 10
 
-    def test_comm_lower_bound_reduceScatter(self):
-        result = self.metrics.comm_lower_bound(100, 10, K0=64, K=128, op_type="reduceScatter")
-        self.assertGreater(result["T_total_ms"], 10)
+        with self.subTest(op_type="allGather"):
+            result = self.metrics.comm_lower_bound(100, 10, K0=64, K=128, op_type="allGather")
+            self.assertAlmostEqual(result["T_L3_ms"], expected_T_L3, places=6)
+            self.assertAlmostEqual(result["T_total_ms"], expected_T_total, places=6)
+            self.assertAlmostEqual(result["ratio"], expected_ratio, places=6)
 
-    def test_comm_lower_bound_allReduce(self):
-        result = self.metrics.comm_lower_bound(100, 10, K0=64, K=128, op_type="allReduce")
-        self.assertGreater(result["T_total_ms"], 10)
+        with self.subTest(op_type="reduceScatter"):
+            result = self.metrics.comm_lower_bound(100, 10, K0=64, K=128, op_type="reduceScatter")
+            self.assertAlmostEqual(result["T_L3_ms"], expected_T_L3, places=6)
+            self.assertAlmostEqual(result["T_total_ms"], expected_T_total, places=6)
+
+        with self.subTest(op_type="allReduce"):
+            expected_T_L3_allreduce = (2 * alpha * 1 + 2 * (m / B) * 1) * 1000
+            expected_T_total_allreduce = 10 + expected_T_L3_allreduce
+            expected_ratio_allreduce = expected_T_total_allreduce / 10
+            result = self.metrics.comm_lower_bound(100, 10, K0=64, K=128, op_type="allReduce")
+            self.assertAlmostEqual(result["T_L3_ms"], expected_T_L3_allreduce, places=6)
+            self.assertAlmostEqual(result["T_total_ms"], expected_T_total_allreduce, places=6)
+            self.assertAlmostEqual(result["ratio"], expected_ratio_allreduce, places=6)
 
     def test_comm_lower_bound_invalid_op_type(self):
         with self.assertRaises(ValueError):
@@ -159,6 +202,16 @@ class TestClusterCompareMetricsMixin(unittest.TestCase):
         })
         result = self.metrics.sum_by_columns(df, ["parallelType"], "duration", step_id=1)
         self.assertEqual(result["duration_sum"].values[0], 30)
+
+    def test_sum_by_columns_step_id_no_match(self):
+        """step_id 过滤后无匹配行，应返回空 DataFrame"""
+        df = pd.DataFrame({
+            "stepId": [1, 1, 2],
+            "parallelType": ["dp", "dp", "dp"],
+            "duration": [10, 20, 30],
+        })
+        result = self.metrics.sum_by_columns(df, ["parallelType"], "duration", step_id=99)
+        self.assertTrue(result.empty)
 
     def test_sum_by_columns_normal(self):
         df = pd.DataFrame({

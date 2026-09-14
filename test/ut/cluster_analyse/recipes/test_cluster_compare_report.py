@@ -75,6 +75,15 @@ class TestClusterCompareReportMixin(unittest.TestCase):
         row = self.report._record_operator(step_id=1)
         self.assertEqual(row["rank_id"], 5)
 
+    def test_record_operator_rank_id_none_when_unset(self):
+        """未设置 _current_report_rank_id 时，rank_id 应为 None"""
+        raw_mixin = ClusterCompareReportMixin()
+        if hasattr(raw_mixin, "_current_report_rank_id"):
+            delattr(raw_mixin, "_current_report_rank_id")
+
+        row = raw_mixin._record_operator(step_id=1)
+        self.assertIsNone(row["rank_id"])
+
     # ---------- _record_operator_table ----------
     def test_record_operator_table_empty(self):
         self.report._record_operator_table("title", [])
