@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import unittest
-from unittest.mock import patch, MagicMock
 
 from msprof_analyze.cluster_analyse.recipes.cluster_compare_baseline.cluster_compare_report import (
     ClusterCompareReportMixin,
