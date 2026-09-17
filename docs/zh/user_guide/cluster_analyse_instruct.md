@@ -20,10 +20,10 @@
 
 | 采集工具 | 支持的结果类型 | 采集指南                                                                                                                                          |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
-| msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start/msprof_quick_start.md)》                                                                                                 |
-| Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》 |
-| MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》 |
-| msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start/msmonitor_quick_start.md)》                                                                              |
+| msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/26.2.0/docs/zh/quick_start/msprof_quick_start.md)》                                                                                                 |
+| Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》 |
+| MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/zh/menu/mindspore_profiler_user_guide.md)》 |
+| msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.2.0/docs/zh/quick_start/msmonitor_quick_start.md)》                                                                              |
 
 下面以 Ascend PyTorch Profiler 为例说明输入数据要求。
 
@@ -184,7 +184,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 **推荐查看工具**
 
-推荐使用 MindStudio Insight 工具导入生成的 `cluster_analysis_output` 文件夹进行可视化展示，如下图所示。具体使用方法请参见《[MindStudio Insight用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/overview.md)》。
+推荐使用 MindStudio Insight 工具导入生成的 `cluster_analysis_output` 文件夹进行可视化展示，如下图所示。具体使用方法请参见《[MindStudio Insight用户指南](https://gitcode.com/Ascend/msinsight/blob/26.2.0/docs/zh/user_guide/overview.md)》。
 
 ![img](../figures/cluster_summary.png)
     <div style="text-align: center;">

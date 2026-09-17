@@ -19,7 +19,7 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
 - 执行构建脚本：
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze -b master
+    git clone https://gitcode.com/Ascend/msprof-analyze -b 26.2.0
     cd msprof-analyze
     # 安装依赖
     pip install -r requirements.txt
@@ -121,7 +121,7 @@ GE自动融合性能对比的输出结果在autofuse_performance_comparison_resu
 | Duration(us) | 融合算子耗时，单位us。|
 | Duration Diff Ratio | 融合算子耗时占融合前算子总耗时的百分比。 |
 
-其他表头详细介绍请参见[op_summary（算子详细信息](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/user_guide/profile_data_file_references.md#op_summary%E7%AE%97%E5%AD%90%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF)中aic_metrics为PipeUtilization时的字段说明。
+其他表头详细介绍请参见[op_summary（算子详细信息](https://gitcode.com/Ascend/msprof/blob/26.2.0/docs/zh/user_guide/profile_data_file_references.md#op_summary%E7%AE%97%E5%AD%90%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF)中aic_metrics为PipeUtilization时的字段说明。
 
 **输出结果分析：**
 

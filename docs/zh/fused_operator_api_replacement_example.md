@@ -2,7 +2,7 @@
 
 部分torch原生的API在下发和执行时会包括多个小算子，下发和执行耗时较长，可以通过替换成NPU API来使能融合算子，提升训练性能。
 
-TorchNPU API的功能和参数描述见[API列表](https://gitcode.com/Ascend/op-plugin/blob/master/docs/zh/custom_APIs/torch_npu/torch_npu_list.md)。
+TorchNPU API的功能和参数描述见[API列表](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/zh/custom_APIs/torch_npu/torch_npu_list.md)。
 
 ## 1. 优化器替换
 
