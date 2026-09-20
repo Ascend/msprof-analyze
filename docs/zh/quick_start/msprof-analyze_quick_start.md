@@ -46,13 +46,13 @@ source /dev/stdin <<< "$(dev_id=$(lspci -n -D | grep -o '19e5:d[0-9a-f]\{3\}' | 
 
 > [!NOTE]说明
 >
-> **命令原理**  
-> 通过 `lspci` 获取 NPU 的 PCI ID，自动匹配 CANN 官方镜像，并将镜像地址赋给环境变量 `MY_STUDY_VAR_CANN_IMAGE`，供后续使用。  
+> **命令原理**
+> 通过 `lspci` 获取 NPU 的 PCI ID，自动匹配 CANN 官方镜像，并将镜像地址赋给环境变量 `MY_STUDY_VAR_CANN_IMAGE`，供后续使用。
 > 所有镜像均来自华为云 AscendHub 上发布的 CANN 官方镜像。如需了解镜像详情，请参阅 [CANN 官方镜像仓库](https://www.hiascend.com/developer/ascendhub/detail/17da20d1c2b6493cb38765adeba85884)。
 
 若命令执行后输出 `[PASS]`，则表示执行成功；若输出 `[FAIL]`，可能原因如下：
 
-1. 硬件不在本教程支持范围内：本学习环境仅支持昇腾 310P、A2、A3 及 950 系列产品，请切换至兼容的硬件环境后重试；
+1. 硬件不在本教程支持范围内：本学习环境仅支持Atlas推理系列产品、Atlas A2系列产品、Atlas A3系列产品及Ascend 950PR&950DT系列产品，请切换至兼容的硬件环境后重试；
 2. 底层环境异常：未安装 `lspci`，或当前用户无法通过 `lspci -n -D` 查询 NPU PCI ID，请联系环境管理员确认底层环境。
 
 #### 2.1.3 宿主机：拉取镜像
