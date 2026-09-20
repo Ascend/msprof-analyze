@@ -8,7 +8,7 @@
 
 支持以下两种集群数据：
 
-* Ascend PyTorch Profiler 采集的 DB 格式集群数据，参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》
+* Ascend PyTorch Profiler 采集的 DB 格式集群数据，参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》
 * msMonitor 采集的集群轻量化 DB 数据，参见《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.2.0/docs/zh/quick_start/msmonitor_quick_start.md)》
 
 使用 Ascend PyTorch Profiler 时，需要采集或离线解析出 `db` 类型结果。示例如下：
@@ -91,7 +91,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 <!-- npu="950" id1 -->
 > [!NOTE]
 >
-> Ascend 950PR&950DT 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具communication_time_sum和communication_matrix_sum分析功能不具有参考意义。
+> Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具communication_time_sum和communication_matrix_sum分析功能不具有参考意义。
 <!-- end id1 -->
 
 | 分析能力                     | 介绍                    | 文档链接                                                     |

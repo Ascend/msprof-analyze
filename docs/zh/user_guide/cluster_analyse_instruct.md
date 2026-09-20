@@ -21,7 +21,7 @@
 | 采集工具 | 支持的结果类型 | 采集指南                                                                                                                                          |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
 | msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/26.2.0/docs/zh/quick_start/msprof_quick_start.md)》                                                                                                 |
-| Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》 |
+| Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》 |
 | MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/zh/menu/mindspore_profiler_user_guide.md)》 |
 | msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.2.0/docs/zh/quick_start/msmonitor_quick_start.md)》                                                                              |
 
@@ -100,7 +100,7 @@ profiling_data/
 <!-- npu="950" id1 -->
 ### 2.4 约束
 
-Ascend 950PR&950DT 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
+Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
 <!-- end id1 -->
 
 ## 3. 功能介绍

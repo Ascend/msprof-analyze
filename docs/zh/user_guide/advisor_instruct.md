@@ -41,13 +41,13 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/zh/menu/mindspore_profiler_user_guide.md)》。
+msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/zh/menu/mindspore_profiler_user_guide.md)》。
 
 **约束**
 
 - CANN软件版本8.0.RC1之前仅支持对text格式文件分析，8.0.RC1及之后支持text、db格式的采集数据分析。
 <!-- npu="950" id1 -->
-- Ascend 950PR&950DT 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
+- Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
 <!-- end id1 -->
 
 ## 4. 功能介绍（advisor命令行方式）
@@ -421,7 +421,7 @@ Synchronize Stream Issues示例如下，需要根据堆栈来修改对应代码�
 
 ![schedule_2](../figures/schedule_2.png)
 
-上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md)。
+上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md)。
 
 Operator Dispatch Issues示例如下，提示需要在运行脚本的最开头添加如下代码用于消除aclopCompile：
 
@@ -459,7 +459,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能数据分析过程和分析结果。
 
-使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
+使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 > Jupyter Notebook方式作为命令行方式的补充，不参与命令行主流程。MindSpore场景不支持Jupyter Notebook方式。
 
@@ -481,7 +481,7 @@ git clone https://gitcode.com/Ascend/msprof-analyze -b 26.2.0
 
 **准备性能数据**
 
-advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.13.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
+advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 **使用限制**
 
