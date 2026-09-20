@@ -41,13 +41,13 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
+msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/zh/menu/mindspore_profiler_user_guide.md)》。
 
 **约束**
 
 - CANN软件版本8.0.RC1之前仅支持对text格式文件分析，8.0.RC1及之后支持text、db格式的采集数据分析。
 <!-- npu="950" id1 -->
-- Ascend 950PR&950DT 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
+- Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
 <!-- end id1 -->
 
 ## 4. 功能介绍（advisor命令行方式）
@@ -127,7 +127,7 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 | ------------------- | --------- | ------------------------------------------------------------ |
 | `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
 | `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值： `cn`：输出中文，默认值。 `en`：输出英文。 |
-| `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
+| `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
 | `-h` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
 #### 4.3.3 环境与版本配置
@@ -335,7 +335,7 @@ computation模块从device计算性能维度进行分析，能够识别AICPU、�
 
 ![AI_Core_Performance_Analysis](../figures/AI_Core_Performance_analysis.png)
 
-上图中torch_npu.npu.set_compile_mode接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/master/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)；AICPU算子替换样例可参考《[AICPU 算子替换样例](../aicpu_operator_replacement_example.md)》。
+上图中torch_npu.npu.set_compile_mode接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)；AICPU算子替换样例可参考《[AICPU 算子替换样例](../aicpu_operator_replacement_example.md)》。
 
 当存在pp stage（流水线并行）时，computation会按stage分析，每个stage就是一个流水线切分，比如0\~7卡为stage-0、8\~15卡为stage-1。
 
@@ -360,7 +360,7 @@ communication模块从通信维度进行分析，目前支持通信小包检测�
 
 - Zero1：每张NPU存储完整的一份梯度和模型参数，只有1/N优化器。每张NPU使用各自的数据做前向传播、反向传播，反向传播后使用all-reduce同步梯度到所有卡，使得每张卡有所有算子的梯度。每张卡根据梯度和1/N优化器更新1/N模型参数，再使用all-gather通信将优化器更新后的1/N模型参数发送给其它卡，因为每张卡有完整的一份模型参数需要更新。
 - Zero2：每张NPU存储完整的一份模型参数，只有1/N优化器和1/N梯度。每张NPU使用各自的数据做前向传播。反向传播后，计算出本卡的局部梯度，使用Reduce-Scatter通信聚合梯度，保证每张卡只保存1/N梯度。每张卡根据自己保持的1/N优化器和1/N梯度更新1/N模型参数，再使用all-gather通信将更新后的模型参数发送给其它卡，因为每张卡有完整的一份模型参数需要更新。
-- Zero3：每张NPU存储1/N模型参数、1/N优化器和1/N梯度。前向传播前，每张卡all-gather通信获取到完整的模型参数，再做前向传播计算，每用完一部分模型参数后就把它删除。反向传播开始前，每张卡all-gather通信获取到完整的模型参数，每用完一部分模型参数后就把它删除。使用reduce-scatter通信聚合梯度。每张卡根据自己保持的1/N优化器和1/N梯度更新1/N模型参数，由于每张卡只保存1/N模型参数，无需要将更新后的模型参数发送给其它卡。
+- Zero3：每张NPU存储1/N模型参数、1/N优化器和1/N梯度。前向传播前，每张卡all-gather通信获取到完整的模型参数，再做前向传播计算，每用完一部分模型参数后就把它删除。反向传播开始前，每张卡all-gather通信获取到完整的模型参数，每用完一部分模型参数后就把它删除。使用reduce-scatter通信聚合梯度。每张卡根据自己保持的1/N优化器和1/N梯度更新1/N模型参数，由于每张卡只保存1/N模型参数，无需将更新后的模型参数发送给其它卡。
 
 通信重传检测示例如下：
 
@@ -421,7 +421,7 @@ Synchronize Stream Issues示例如下，需要根据堆栈来修改对应代码�
 
 ![schedule_2](../figures/schedule_2.png)
 
-上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md)。
+上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md)。
 
 Operator Dispatch Issues示例如下，提示需要在运行脚本的最开头添加如下代码用于消除aclopCompile：
 
@@ -430,7 +430,7 @@ torch_npu.npu.set_compile_mode(jit_compile=False);
 torch_npu.npu.config.allow_internal_format = False
 ```
 
-以上接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/master/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)和[torch_npu.npu.config.allow_internal_format](https://gitcode.com/Ascend/op-plugin/blob/master/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md)。
+以上接口介绍请参见[torch_npu.npu.set_compile_mode](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-set_compile_mode.md)和[torch_npu.npu.config.allow_internal_format](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/zh/custom_APIs/torch_npu-npu/%EF%BC%88beta%EF%BC%89torch_npu-npu-config-allow_internal_format.md)。
 
 ![输入图片说明](../figures/schedule_1.png)
 
@@ -459,7 +459,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能数据分析过程和分析结果。
 
-使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
+使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 > Jupyter Notebook方式作为命令行方式的补充，不参与命令行主流程。MindSpore场景不支持Jupyter Notebook方式。
 
@@ -476,12 +476,12 @@ pip install jupyter notebook
 **下载msprof-analyze源码**
 
 ```bash
-git clone https://gitcode.com/Ascend/msprof-analyze -b master
+git clone https://gitcode.com/Ascend/msprof-analyze -b 26.2.0
 ```
 
 **准备性能数据**
 
-advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
+advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 **使用限制**
 

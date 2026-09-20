@@ -16,12 +16,12 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
 - 软件环境请参见[CANN快速安装](https://www.hiascend.com/cann/download)安装配套版本的CANN Toolkit开发套件包和ops算子包并配置CANN环境变量。
 
-- TorchNPU版本大于等于7.2.0，PyTorch版本当前仅支持v2.7.1、2.9.0、2.10.0，具体安装方式请参见《[TorchNPU软件安装](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/installation_guide/building_from_source.md)》。
+- TorchNPU版本大于等于7.2.0，PyTorch版本当前仅支持v2.7.1、2.9.0、2.10.0，具体安装方式请参见《[TorchNPU软件安装](https://gitcode.com/Ascend/pytorch/tree/v2.14.0-26.2.0/docs/zh/installation_guide/building_from_source.md)》。
 
 - clone代码仓。
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze -b master
+    git clone https://gitcode.com/Ascend/msprof-analyze -b 26.2.0
     ```
 
 - 安装依赖
