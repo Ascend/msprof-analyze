@@ -280,7 +280,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
             merged_df.groupby(
                 [TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID, TableConstant.TRANSPORT_TYPE]
             )
-            .apply(self._get_sum_distinct_op)
+            .apply(self._get_sum_distinct_op, include_groups=False)
             .reset_index()
             .rename(
                 columns={TableConstant.TRANSIT_SIZE: sum_transit_size, TableConstant.TRANSIT_TIME: sum_transit_time}

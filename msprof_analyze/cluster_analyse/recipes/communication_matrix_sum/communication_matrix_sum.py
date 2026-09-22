@@ -66,6 +66,16 @@ class CommMatrixSum(BaseRecipeAnalysis):
         return pd.DataFrame(mapping_rows, columns=["group_name", "local_rank", "global_rank"])
 
     @staticmethod
+    def _build_rank_lookup(rank_mapping_df):
+        """Build a lookup from the canonical string-key rank mapping."""
+        return rank_mapping_df.set_index(["group_name", "local_rank"])["global_rank"]
+
+    @staticmethod
+    def _lookup_global_ranks(group_names, rank_values, rank_lookup):
+        lookup_keys = pd.MultiIndex.from_arrays([group_names, rank_values.astype(str)])
+        return rank_lookup.reindex(lookup_keys).to_numpy()
+
+    @staticmethod
     def _log_invalid_rank_mapping(grouped_df, rank_column, group_column, invalid_mask, message_template):
         if not invalid_mask.any():
             return
@@ -160,7 +170,7 @@ class CommMatrixSum(BaseRecipeAnalysis):
             return
 
         rank_set_map = self._build_rank_set_map(rank_map)
-        concat_df[self.RANK_SET] = concat_df["group_name"].map(rank_set_map).fillna("")
+        concat_df[self.RANK_SET] = concat_df["group_name"].astype(str).map(rank_set_map).fillna("")
         p2p_mask = concat_df["type"] == Constant.P2P
         concat_df.loc[p2p_mask, self.RANK_SET] = Constant.P2P
 
@@ -174,16 +184,10 @@ class CommMatrixSum(BaseRecipeAnalysis):
         if rank_mapping_df.empty:
             filtered_df = grouped_df.iloc[0:0].copy()
         else:
-            grouped_df = grouped_df.merge(
-                rank_mapping_df.rename(columns={"local_rank": "src_rank", "global_rank": "src_global_rank"}),
-                on=["group_name", "src_rank"],
-                how="left",
-            )
-            grouped_df = grouped_df.merge(
-                rank_mapping_df.rename(columns={"local_rank": "dst_rank", "global_rank": "dst_global_rank"}),
-                on=["group_name", "dst_rank"],
-                how="left",
-            )
+            rank_lookup = self._build_rank_lookup(rank_mapping_df)
+            group_names = grouped_df["group_name"].astype(str)
+            grouped_df["src_global_rank"] = self._lookup_global_ranks(group_names, grouped_df["src_rank"], rank_lookup)
+            grouped_df["dst_global_rank"] = self._lookup_global_ranks(group_names, grouped_df["dst_rank"], rank_lookup)
 
             src_invalid_mask = grouped_df["src_global_rank"].isna()
             self._log_invalid_rank_mapping(
@@ -256,7 +260,11 @@ class CommMatrixSum(BaseRecipeAnalysis):
 
         rank_map_frames = []
         for rank_data in mapper_res:
-            rank_map.update(rank_data.get(self.RANK_MAP))
+            for group_name, group_rank_map in rank_data.get(self.RANK_MAP).items():
+                normalized_group_name = str(group_name)
+                rank_map.setdefault(normalized_group_name, {}).update(
+                    {str(local_rank): global_rank for local_rank, global_rank in group_rank_map.items()}
+                )
             matrix_df = rank_data.get(self.MATRIX_DATA)
             if matrix_df is None or matrix_df.empty:
                 continue
@@ -273,6 +281,8 @@ class CommMatrixSum(BaseRecipeAnalysis):
         )
 
         for group_name, local_rank, global_rank in rank_map_df.itertuples(index=False, name=None):
+            group_name = str(group_name)
+            local_rank = str(local_rank)
             if group_name not in rank_map:
                 rank_map[group_name] = {local_rank: global_rank}
                 continue

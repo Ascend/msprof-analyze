@@ -136,3 +136,33 @@ class TestCommMatrixSum(unittest.TestCase):
             atol=1e-8,
             obj="cluster_matrix_df",
         )
+
+    def test_reducer_should_preserve_exported_key_types_when_merge_keys_have_different_types(self):
+        group_name = 12785366648811189660
+        recipe = CommMatrixSum({})
+        mapper_res = [
+            {
+                "rank_map": {group_name: {0: 0, 1: 1}},
+                "matrix_data": pd.DataFrame(
+                    {
+                        "type": ["collective"],
+                        "step": ["step0"],
+                        "hccl_op_name": ["hcom_allreduce-total"],
+                        "group_name": [str(group_name)],
+                        "src_rank": ["0"],
+                        "dst_rank": ["1"],
+                        "transport_type": ["HCCS"],
+                        "op_name": ["hcom_allReduce__0_0_0"],
+                        "transit_size": [1.0],
+                        "transit_time": [1.0],
+                    }
+                ),
+            }
+        ]
+
+        recipe.reducer_func(mapper_res)
+
+        result_df = recipe.cluster_matrix_df
+        self.assertEqual(result_df.loc[0, "group_name"], str(group_name))
+        self.assertTrue(pd.api.types.is_integer_dtype(result_df["src_rank"]))
+        self.assertTrue(pd.api.types.is_integer_dtype(result_df["dst_rank"]))
