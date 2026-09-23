@@ -16,12 +16,12 @@
 """
 dataset module
 """
+
 from msprof_analyze.prof_common.logger import get_logger
 import os
 import re
 
 from msprof_analyze.prof_common.constant import Constant
-from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.advisor.config.config import Config
 
@@ -33,6 +33,7 @@ class Dataset:
     :param collection_path: dataSet absolute path
     dataset base class
     """
+
     PYTORCH_DB_PATTERN = re.compile(r'ascend_pytorch_profiler(?:_\d+)?\.db$')
     MINDSPORE_DB_PATTERN = re.compile(r'ascend_mindspore_profiler(?:_\d+)?\.db$')
 
@@ -51,8 +52,7 @@ class Dataset:
                 data[key] = []
             data[key].append(self)
 
-    @staticmethod
-    def _parse():
+    def _parse(self):
         return None
 
     @classmethod
