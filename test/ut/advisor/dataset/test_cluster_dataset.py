@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import unittest
-from unittest.mock import patch, MagicMock
 import shutil
+import unittest
+from unittest.mock import patch
 
+from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.dataset.cluster.cluster_dataset import ClusterDataset
 
 
@@ -45,11 +46,61 @@ class TestClusterDataset(unittest.TestCase):
         if os.path.exists(self.test_collection_path):
             shutil.rmtree(self.test_collection_path)
 
-    @patch('os.path.exists')
-    @patch('os.listdir')
-    def test_is_cluster_analysis_output_exist(self, mock_listdir, mock_exists):
-        mock_listdir.return_value = ['cluster_analysis_output']
-        self.assertTrue(self.dataset.is_cluster_analysis_output_exist())
+    @patch('os.path.isdir')
+    @patch('os.path.isfile')
+    def test_is_cluster_analysis_result_exist_for_text(self, mock_isfile, mock_isdir):
+        self.dataset.data_type = Constant.TEXT
+        mock_isdir.return_value = True
 
-        mock_listdir.return_value = ['other_file']
-        self.assertFalse(self.dataset.is_cluster_analysis_output_exist())
+        self.assertTrue(self.dataset.is_cluster_analysis_result_exist())
+        expected_path = os.path.join(
+            self.dataset.output_path,
+            Constant.CLUSTER_ANALYSIS_OUTPUT,
+        )
+        mock_isdir.assert_called_once_with(expected_path)
+        mock_isfile.assert_not_called()
+
+        mock_isdir.return_value = False
+        self.assertFalse(self.dataset.is_cluster_analysis_result_exist())
+
+    @patch('os.path.isfile')
+    def test_is_cluster_analysis_result_exist_for_db(self, mock_isfile):
+        self.dataset.data_type = Constant.DB
+        mock_isfile.return_value = True
+
+        self.assertTrue(self.dataset.is_cluster_analysis_result_exist())
+        expected_path = os.path.join(
+            self.dataset.output_path,
+            Constant.CLUSTER_ANALYSIS_OUTPUT,
+            Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+        )
+        mock_isfile.assert_called_once_with(expected_path)
+
+        mock_isfile.return_value = False
+        self.assertFalse(self.dataset.is_cluster_analysis_result_exist())
+
+    @patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.Interface')
+    @patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.ClusterDataset.is_cluster_analysis_result_exist')
+    def test_cluster_analyze_skips_when_result_exists(self, mock_result_exist, mock_interface):
+        mock_result_exist.return_value = True
+
+        self.dataset.cluster_analyze()
+
+        mock_interface.assert_not_called()
+
+    @patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.Interface')
+    @patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.ClusterDataset.is_cluster_analysis_result_exist')
+    def test_cluster_analyze_runs_when_result_missing(self, mock_result_exist, mock_interface):
+        self.dataset.data_type = Constant.DB
+        mock_result_exist.return_value = False
+
+        self.dataset.cluster_analyze()
+
+        mock_interface.assert_called_once_with({
+            Constant.PROFILING_PATH: self.dataset.collection_path,
+            Constant.MODE: 'all',
+            Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.dataset.output_path,
+            Constant.PARALLEL_MODE: Constant.CONCURRENT_MODE,
+            Constant.EXPORT_TYPE: Constant.DB,
+        })
+        mock_interface.return_value.run.assert_called_once_with()
