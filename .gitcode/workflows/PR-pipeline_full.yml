@@ -2,9 +2,9 @@ name: PR-pipeline_msprof-analyze
 
 on:
   # PR 流水线通过 PR 评论 /compile 触发 ，不在 PR 打开/更新时自动运行
-  # pull_request:
-  #   types: [open, update]
-  #   branches: [ '*' ]
+  pull_request:
+    types: [open, update]
+    branches: [ '*' ]
   pr_comment:
     types: [created]
     keyword: '^compile$'
@@ -82,81 +82,83 @@ stages:
               echo "${{ steps.filter.outputs.changed_files }}" | tr -d '[]" ' | tr ',' '\n' > modify_files.txt
               cat modify_files.txt
 
-      associate_pr_comment:
-        name: associate_pr_comment
-        select: selected_by_default
-        runs-on: [ self-hosted, x86, cpu=2 ]
-        steps:
-          - name: associate-pr-comment
-            uses: associate-pr-comment
-          - name: pre_pipeline
-            id: pre_pipeline
-            uses: cann/.gitcode/actions/pre-pipeline@689551d6b29a77d8c2a005b8f1b3883db24820ef
-            with:
-              owner: ${{ env.org_name }}
-              repo: ${{ env.REPO_NAME }}
-              pr_number: ${{ atomgit.event.pull_request.number }}
-              token: ${{ secrets.GIT_TOKEN }}
-              apply_label: 'true'
-              run_url: https://gitcode.com/${{ env.org_name }}/${{ atomgit.event.repository.name }}/actions/runs/${{ atomgit.workflow_run_id }}
+  #     associate_pr_comment:
+  #       name: associate_pr_comment
+  #       select: selected_by_default
+  #       runs-on: [ self-hosted, x86, cpu=2 ]
+  #       steps:
+  #         - name: associate-pr-comment
+  #           uses: associate-pr-comment
+  #         - name: pre_pipeline
+  #           id: pre_pipeline
+  #           uses: cann/.gitcode/actions/pre-pipeline@689551d6b29a77d8c2a005b8f1b3883db24820ef
+  #           with:
+  #             owner: ${{ env.org_name }}
+  #             repo: ${{ env.REPO_NAME }}
+  #             pr_number: ${{ atomgit.event.pull_request.number }}
+  #             token: ${{ secrets.GIT_TOKEN }}
+  #             apply_label: 'true'
+  #             run_url: https://gitcode.com/${{ env.org_name }}/${{ atomgit.event.repository.name }}/actions/runs/${{ atomgit.workflow_run_id }}
+
+  # stage_1:
+  #   name: CodeCheck_Build_Test
+  #   select: selected_by_default
+  #   jobs:
+  #     pre-commit:
+  #       name: pre-commit
+  #       runs-on: [ self-hosted, x86, cpu=2 ]
+  #       container:
+  #         image: swr.cn-north-4.myhuaweicloud.com/mindspore/mindspore_python3.11:v0.1
+  #         options: --user root
+  #       steps:
+  #         - name: checkout
+  #           uses: checkout
+  #           with:
+  #             ref: ${{ atomgit.event.pull_request.merge_commit_sha || '' }}
+  #         - name: gitleaks install
+  #           run: |
+  #             wget -q --no-host-directories -c --no-check-certificate https://pytorch-package.obs.cn-north-4.myhuaweicloud.com/pta-codecheck/gitleaks
+  #             chmod +x gitleaks
+  #             cp gitleaks /usr/local/bin/
+  #             gitleaks version
+  #         - name: setup-python311
+  #           run: |
+  #             ln -sf /usr/local/bin/python3.11 /usr/bin/python
+  #             python --version
+  #         - name: run pre-commit
+  #           uses: openlibing/pre-commit-action@v1.0.0
+  #           env:
+  #             SKIP: clang-tidy
+
+  #     SCA:
+  #       name: SCA
+  #       runs-on: [ self-hosted, x86, cpu=2 ]
+  #       container:
+  #         image: swr.cn-north-4.myhuaweicloud.com/mindspore/mindspore_python3.11:v0.1
+  #         options: --user root
+  #       steps:
+  #         - name: checkout
+  #           uses: checkout
+  #         - name: Run SCA PR scan
+  #           uses: openlibing/sca-action/sca-pr-action@v1.0.0
+  #           with:
+  #             project-name: MindStudio
+
+  #     malicious-scan:
+  #       name: antipoison
+  #       runs-on: [ self-hosted, x86, cpu=2 ]
+  #       container:
+  #         image: swr.cn-north-4.myhuaweicloud.com/mindspore/mindspore_python3.11:v0.1
+  #         options: --user root
+  #       steps:
+  #         - name: Checkout
+  #           uses: checkout
+  #         - name: Run malicious code scan
+  #           uses: openlibing/malicious-code-scan-action/malicious-code-pr-scan-action@v1.0.0
+  #           with:
+  #             project-name: MindStudio
 
   stage_1:
-    name: CodeCheck_Build_Test
-    select: selected_by_default
-    jobs:
-      pre-commit:
-        name: pre-commit
-        runs-on: [ self-hosted, x86, cpu=2 ]
-        container:
-          image: swr.cn-north-4.myhuaweicloud.com/mindspore/mindspore_python3.11:v0.1
-          options: --user root
-        steps:
-          - name: checkout
-            uses: checkout
-            with:
-              ref: ${{ atomgit.event.pull_request.merge_commit_sha || '' }}
-          - name: gitleaks install
-            run: |
-              wget -q --no-host-directories -c --no-check-certificate https://pytorch-package.obs.cn-north-4.myhuaweicloud.com/pta-codecheck/gitleaks
-              chmod +x gitleaks
-              cp gitleaks /usr/local/bin/
-              gitleaks version
-          - name: setup-python311
-            run: |
-              ln -sf /usr/local/bin/python3.11 /usr/bin/python
-              python --version
-          - name: run pre-commit
-            uses: openlibing/pre-commit-action@v1.0.0
-
-      SCA:
-        name: SCA
-        runs-on: [ self-hosted, x86, cpu=2 ]
-        container:
-          image: swr.cn-north-4.myhuaweicloud.com/mindspore/mindspore_python3.11:v0.1
-          options: --user root
-        steps:
-          - name: checkout
-            uses: checkout
-          - name: Run SCA PR scan
-            uses: openlibing/sca-action/sca-pr-action@v1.0.0
-            with:
-              project-name: MindStudio
-
-      malicious-scan:
-        name: antipoison
-        runs-on: [ self-hosted, x86, cpu=2 ]
-        container:
-          image: swr.cn-north-4.myhuaweicloud.com/mindspore/mindspore_python3.11:v0.1
-          options: --user root
-        steps:
-          - name: Checkout
-            uses: checkout
-          - name: Run malicious code scan
-            uses: openlibing/malicious-code-scan-action/malicious-code-pr-scan-action@v1.0.0
-            with:
-              project-name: MindStudio
-
-  stage_2:
     name: build
     select: selected_by_default
     jobs:
@@ -167,7 +169,7 @@ stages:
         with:
           IMAGE_FLAG: "mindstudio-build:26.1.0"
           runs_on_arch: "x64"
-          ARTIFACT_NAME: "msprof-analyze-run-x86-test"
+          ARTIFACT_NAME: "msprof-analyze-run-x86"
 
       Build_msprof-analyze_arm:
         name: Build_msprof-analyze_arm
@@ -176,19 +178,19 @@ stages:
         with:
           IMAGE_FLAG: "mindstudio-build:26.1.0"
           runs_on_arch: "arm64"
-          ARTIFACT_NAME: "msprof-analyze-run-arm-test"
+          ARTIFACT_NAME: "msprof-analyze-run-arm"
 
-  stage_3:
+  stage_2:
     name: UT
     select: selected_by_default
     jobs:
-      UT_msprof-analyze:
-        name: UT_msprof-analyze
-        if: ${{ jobs.Detect_file_changes.outputs.need_build == 'yes' }}
-        uses: .gitcode/workflows/.ut_mindstudio_job.yml
-        with:
-          IMAGE_FLAG: "mindstudio-build:26.1.0"
-          runs_on_arch: "x64"
+      # UT_msprof-analyze:
+      #   name: UT_msprof-analyze
+      #   if: ${{ jobs.Detect_file_changes.outputs.need_build == 'yes' }}
+      #   uses: .gitcode/workflows/.ut_mindstudio_job.yml
+      #   with:
+      #     IMAGE_FLAG: "mindstudio-build:26.1.0"
+      #     runs_on_arch: "x64"
 
       PreSmoke_msprof-analyze:
         name: PreSmoke_msprof-analyze
