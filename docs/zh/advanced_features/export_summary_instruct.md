@@ -29,10 +29,10 @@ msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数
 **命令格式**
 
 ```bash
-msprof-analyze cluster -m export_summary -d <cluster_data> 
+msprof-analyze cluster -m export_summary -d <cluster_data>
 ```
 
-**参数说明**  
+**参数说明**
 
 | 参数 | 可选/必选 | 说明                                         |
 | ---- | --------- | -------------------------------------------- |
@@ -46,10 +46,10 @@ msprof-analyze cluster -m export_summary -d <cluster_data>
 执行集群算子信息导出。
 
 ```bash
-msprof-analyze cluster -m export_summary -d ./xxx/cluster_data 
+msprof-analyze cluster -m export_summary -d ./xxx/cluster_data
 ```
 
-**输出说明**  
+**输出说明**
 
 在各卡的ASCEND_PROFILER_OUTPUT目录下生成：
 
@@ -80,7 +80,7 @@ API统计信息表，包含以下字段：
 
 ### 4.2 kernel_details.csv
 
-Kernel详情信息表，包含不限于以下字段：
+Kernel详情信息表，包含但不限于以下字段：
 
 | 字段名称 | 类型 | 说明 |
 | --- | --- | --- |

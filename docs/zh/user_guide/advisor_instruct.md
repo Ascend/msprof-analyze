@@ -64,7 +64,7 @@ msprof-analyze advisor命令行包含如下三个子命令：
 
 | dimension  | mode                                  | 参数释义                                                                                | 支持场景                         |
 | ---------- |---------------------------------------|-------------------------------------------------------------------------------------| ------------------------------------ |
-| overall    | Overall Summary                       | 计算、通信、空闲等维度对性能数据进行拆解                                                                | PyTorch、MindSpore |
+| overall    | Overall Summary                       | 从计算、通信、空闲等维度对性能数据进行拆解                                                                | PyTorch、MindSpore |
 |            | Environment Variable Issues | 环境变量设置推荐                                                                            | PyTorch |
 |     | slow rank                             | 慢卡识别                                                                                | PyTorch、MindSpore            |
 |            | slow link                             | 慢链路识别                                                                               | PyTorch、MindSpore          |
@@ -125,8 +125,8 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 
 | 参数                | 可选/必选 | 说明                                                         |
 | ------------------- | --------- | ------------------------------------------------------------ |
-| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
-| `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值： `cn`：输出中文，默认值。 `en`：输出英文。 |
+| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值：`cn`：输出中文，默认值。`en`：输出英文。 |
 | `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
 | `-h` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
@@ -134,7 +134,7 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 
 | 参数 | 说明 |
 | --- | --- |
-| `-cv`<br>`--cann_version` | 使用Profiling工具采集时对应的CANN软件版本。目前配套的兼容版本为“6.3.RC2”，“7.0.RC1”、“7.0.0”、“8.0.RC1”，此字段不填默认按“8.0.RC1”版本数据进行处理，其余版本采集的Profiling数据在分析时可能会导致不可知问题。可通过在环境中执行如下命令获取其version字段：`cat /usr/local/Ascend/cann/aarch64-linux/ascend_toolkit_install.info` |
+| `-cv`<br>`--cann_version` | 使用Profiling工具采集时对应的CANN软件版本。目前配套的兼容版本为“6.3.RC2”，“7.0.RC1”、“7.0.0”、“8.0.RC1”，此字段不填默认按“8.0.RC1”版本数据进行处理，其余版本采集的Profiling数据在分析时可能会导致不可预知的问题。可通过在环境中执行如下命令获取其version字段：`cat /usr/local/Ascend/cann/aarch64-linux/ascend_toolkit_install.info` |
 | `-tv`<br>`--torch_version` | 运行环境的torch版本，默认为1.11.0，支持torch1.11.0和torch2.1.0，当运行环境torch版本为其他版本如torch1.11.3时，可以忽略小版本号差异选择相近的torch版本如1.11.0。 |
 | `-pt`<br>`--profiling_type` | 配置性能数据采集使用的Profiling工具类型。可取值：<br>`pytorch`：使用Ascend PyTorch Profiler接口方式采集的性能数据时配置，默认值。<br>`mindspore`：使用MindSpore Profiler接口方式采集的性能数据时配置。<br>`mslite`：使用[Benchmark](https://gitee.com/ascend/tools/tree/master/ais-bench_workload/tool/ais_bench)工具采集的性能数据时配置。不建议使用。<br>**schedule不支持该参数。** |
 
@@ -254,7 +254,7 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
   ![comparison2](../figures/comparison2.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 - Api compare of RankStep and RankStep：API的待比对总耗时、待比对API自身耗时（除去API调用的子API的耗时）、待比对平均耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）、Diff Self Ratio（标杆API自身耗时/待比对API自身耗时）、Diff Avg Ratio（标杆平均耗时/待比对平均耗时）和Diff Calls Ratio（标杆执行次数/待比对执行次数）。
 
@@ -262,7 +262,7 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
   ![comparison3](../figures/comparison3.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 `mstt_advisor_{timestamp}.html`文件的comparison模块内容仅展示Kernel和API的Top 10条数据，详细数据需要查看`mstt_advisor_{timestamp}.xlsx`文件。
 
@@ -293,7 +293,7 @@ performance problem analysis模块包含memory、communication、computation、d
 
   ![comparison](../figures/comparison.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 - Api compare of Target and Benchmark：API的待比对总耗时、待比对API自身耗时（除去API调用的子API的耗时）、待比对平均耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）、Diff Self Ratio（标杆API自身耗时/待比对API自身耗时）、Diff Avg Ratio（标杆平均耗时/待比对平均耗时）和Diff Calls Ratio（标杆执行次数/待比对执行次数）。
 
@@ -301,7 +301,7 @@ performance problem analysis模块包含memory、communication、computation、d
 
   ![comparison1](../figures/comparison1.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 `mstt_advisor_{timestamp}.html`文件的comparison模块内容仅展示Kernel和API的Top 10条数据，详细数据需要查看`mstt_advisor_{timestamp}.xlsx`文件。
 

@@ -16,7 +16,7 @@ Only the PyTorch framework is supported.
 
 - **Software**: Install the matching CANN Toolkit and ops packages, and then configure CANN environment variables. For details, see [CANN Quick Installation Guide](https://www.hiascend.com/en/cann/download).
 
-- The TorchNPU version must be 7.2.0 or later. Supported PyTorch versions are v2.7.1, 2.9.0 and 2.10.0. For installation details, see [Installing Guide](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/installation_guide/building_from_source.md).
+- The TorchNPU version must be 7.2.0 or later. Supported PyTorch versions are v2.7.1, 2.9.0 and 2.10.0. For installation details, see [Installing Guide](https://www.hiascend.com/en/developer/software/ai-frameworks/pytorch/download).
 
 - Clone the code repository.
 

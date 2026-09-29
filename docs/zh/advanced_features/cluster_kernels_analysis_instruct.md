@@ -31,7 +31,7 @@ pip install plotly
 │   ├── PROF_XXXXX    # 单个device的profiling数据
 │       ├── SUMMARY
 │           ├── op_summary_XX.csv   # 用来做解析的op_summary表格
-|   ......             
+|   ......
 ```
 
 ## 3. 功能介绍
@@ -54,14 +54,14 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 
 | 参数 | 可选/必选 | 说明                                              |
 | ---- | -------- | ------------------------------------------------- |
-| -d   | 必选      | 集群场景性能数据目录，输入node的上一级目录。 <br>&#8226; 部分没有op_summary的，不显示也不报错。<br>&#8226; 目录下不存在op_summary时，执行报错无法找到数据文件。<br>&#8226; op_summary列数据错误或读不到数据时，提示具体出错文件。 |
-| -t   | 必选      | 获取分析信息结果文件类型，可取值：html、csv、all，默认html。<br>参数配置错误时，提示输入错误，并提示正确的配置。 |
+| -d   | 必选      | 集群场景性能数据目录，输入node的上一级目录。<br>&#8226; 部分没有op_summary的，不显示也不报错。<br>&#8226; 目录下不存在op_summary时，执行报错无法找到数据文件。<br>&#8226; op_summary列数据错误或读不到数据时，提示具体出错文件。 |
+| -t   | 可选      | 获取分析信息结果文件类型，可取值：html、csv、all，默认html。<br>参数配置错误时，提示输入错误，并提示正确的配置。 |
 | -n   | 可选      | html分析独有，表示需要展示的是平均时间top_n的算子，默认10，配置超过30时需要一定时间。<br>&#8226; 必须大于0，如果输入<= 0，默认只导出一个算子的数据。<br>&#8226; 大于算子总数时，按等于算子数处理。 |
 
 **使用示例**
 
 ```bash
-python3 cluster_prof_info_analysis.py -d ./cluster_data -t csv -n 5
+python3 cluster_prof_info_analysis.py -d ./cluster_data -t html -n 5
 ```
 
 ## 4. 输出结果文件说明
