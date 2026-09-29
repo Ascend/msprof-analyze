@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.compare_tools.compare_backend.profiling_parser.npu_profiling_db_parser import NPUProfilingDbParser
 from msprof_analyze.compare_tools.compare_backend.profiling_parser.gpu_profiling_parser import GPUProfilingParser
 from msprof_analyze.compare_tools.compare_backend.profiling_parser.npu_profiling_parser import NPUProfilingParser
@@ -50,7 +51,9 @@ class OverallPerfInterface:
 
     def _check_path(self):
         profiling_path = PathManager.get_realpath(self._profiling_path)
-        self._profiling_path_dict = ArgsManager().parse_profiling_path(profiling_path)
+        self._profiling_path_dict = ArgsManager(Args(enable_profiling_compare=True)).parse_profiling_path(
+            profiling_path
+        )
 
     def _load_data(self):
         args = Args(enable_profiling_compare=True)
@@ -66,26 +69,36 @@ class OverallPerfInterface:
         self._result_data = {
             "profiling_type": overall_data.profiling_type,
             "minimal_profiling": overall_data.minimal_profiling,
-            "overall": {"e2e_time_ms": overall_data.e2e_time_ms,
-                        "computing_time_ms": overall_data.compute_time_ms,
-                        "uncovered_communication_time_ms": overall_data.communication_not_overlapped_ms,
-                        "free_time_ms": overall_data.free_time_ms},
-            "computing_time_disaggregate": {"fa_time_ms": overall_data.fa_fwd_time + overall_data.fa_bwd_time,
-                                            "conv_time_ms": overall_data.conv_fwd_time + overall_data.conv_bwd_time,
-                                            "matmul_time_ms": overall_data.mm_total_time,
-                                            "page_attention_time_ms": overall_data.page_attention_time,
-                                            "vector_time_ms": overall_data.vector_total_time,
-                                            "tensor_move_time_ms": overall_data.sdma_time_tensor_move,
-                                            "other_cube_time_ms": overall_data.other_cube_time},
-            "computing_num_disaggregate": {"fa_num": overall_data.fa_fwd_num + overall_data.fa_bwd_num,
-                                           "conv_num": overall_data.conv_fwd_num + overall_data.conv_bwd_num,
-                                           "matmul_num": overall_data.mm_total_num,
-                                           "page_attention_num": overall_data.page_attention_num,
-                                           "vector_num": overall_data.vector_total_num,
-                                           "tensor_move_num": overall_data.sdma_num_tensor_move,
-                                           "other_cube_num": overall_data.other_cube_num},
-            "communication_time_disaggregate": {"wait_time_ms": overall_data.wait_time_ms,
-                                                "transmit_time_ms": overall_data.transmit_time_ms},
-            "free_time_disaggregate": {"sdma_time_ms": overall_data.sdma_time_stream,
-                                       "free_ms": overall_data.free_time_ms - overall_data.sdma_time_stream}
+            "overall": {
+                "e2e_time_ms": overall_data.e2e_time_ms,
+                "computing_time_ms": overall_data.compute_time_ms,
+                "uncovered_communication_time_ms": overall_data.communication_not_overlapped_ms,
+                "free_time_ms": overall_data.free_time_ms,
+            },
+            "computing_time_disaggregate": {
+                "fa_time_ms": overall_data.fa_fwd_time + overall_data.fa_bwd_time,
+                "conv_time_ms": overall_data.conv_fwd_time + overall_data.conv_bwd_time,
+                "matmul_time_ms": overall_data.mm_total_time,
+                "page_attention_time_ms": overall_data.page_attention_time,
+                "vector_time_ms": overall_data.vector_total_time,
+                "tensor_move_time_ms": overall_data.sdma_time_tensor_move,
+                "other_cube_time_ms": overall_data.other_cube_time,
+            },
+            "computing_num_disaggregate": {
+                "fa_num": overall_data.fa_fwd_num + overall_data.fa_bwd_num,
+                "conv_num": overall_data.conv_fwd_num + overall_data.conv_bwd_num,
+                "matmul_num": overall_data.mm_total_num,
+                "page_attention_num": overall_data.page_attention_num,
+                "vector_num": overall_data.vector_total_num,
+                "tensor_move_num": overall_data.sdma_num_tensor_move,
+                "other_cube_num": overall_data.other_cube_num,
+            },
+            "communication_time_disaggregate": {
+                "wait_time_ms": overall_data.wait_time_ms,
+                "transmit_time_ms": overall_data.transmit_time_ms,
+            },
+            "free_time_disaggregate": {
+                "sdma_time_ms": overall_data.sdma_time_stream,
+                "free_ms": overall_data.free_time_ms - overall_data.sdma_time_stream,
+            },
         }

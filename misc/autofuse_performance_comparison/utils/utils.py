@@ -1,20 +1,21 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import argparse
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from typing import List
 from msprof_analyze.prof_common.logger import get_logger
@@ -25,30 +26,33 @@ logger = get_logger()
 
 def subprocess_cmd(cmd: List[str]) -> bool:
     if not isinstance(cmd, list) or not cmd:
-        logger.error(f"Invalid command: {cmd}")
+        logger.error("Invalid command: %s", cmd)
         return False
-    logger.info(f"Execute command: {' '.join(cmd)}")
+    logger.info("Execute command: %s", ' '.join(cmd))
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             cmd,
             stdout=sys.stdout,
             stderr=sys.stderr,
             text=True,
             timeout=300,
+            check=False,
         )
         if result.returncode != 0:
-            logger.error(f"Command execute failed! return code: {result.returncode}")
+            logger.error("Command execute failed! return code: %s", result.returncode)
             return False
         else:
             return True
     except Exception as err:
-        logger.error(f"Command execute failed, error: {str(err)}")
+        logger.error("Command execute failed, error: %s", str(err))
         return False
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Autofuse Performance Comparison")
-    parser.add_argument("-f", "--whole_graph", type=str, required=True,
-                        help="The JSON file converted from ge_proto_xxxx_Build.txt")
+    parser.add_argument(
+        "-f", "--whole_graph", type=str, required=True, help="The JSON file converted from ge_proto_xxxx_Build.txt"
+    )
     parser.add_argument("-d", "--subgraph_dir", type=str, required=True, help="Path of subgraph directory")
     parser.add_argument("-p", "--dump_path", type=str, required=True, help="Path of datadump")
     parser.add_argument("-o", "--output_path", type=str, default=os.getcwd(), help="Path of comparison result")

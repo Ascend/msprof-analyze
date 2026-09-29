@@ -1,21 +1,21 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
 from unittest.mock import patch, MagicMock
-import json
 import os
 from msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis import ClusterBaseInfoAnalysis
 from msprof_analyze.prof_common.constant import Constant
@@ -35,7 +35,7 @@ class TestClusterBaseInfoAnalysis(unittest.TestCase):
 
     @patch('msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis.increase_shared_value')
     def test_run_when_data_type_is_text(self, mock_increase):
-        with patch.object(self.analysis, 'extract_base_info') as mock_extract:
+        with patch.object(self.analysis, 'extract_base_info'):
             self.analysis.data_type = "text"
             completed_processes = MagicMock()
             lock = MagicMock()
@@ -45,7 +45,7 @@ class TestClusterBaseInfoAnalysis(unittest.TestCase):
     @patch('msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis.increase_shared_value')
     def test_run_when_extract_base_info_returns_true(self, mock_increase):
         with patch.object(self.analysis, 'extract_base_info', return_value=True), \
-             patch.object(self.analysis, 'dump_db') as mock_dump:
+             patch.object(self.analysis, 'dump_db'):
             completed_processes = MagicMock()
             lock = MagicMock()
             self.analysis.run(completed_processes, lock)
@@ -58,7 +58,7 @@ class TestClusterBaseInfoAnalysis(unittest.TestCase):
         mock_conn = MagicMock()
         mock_curs = MagicMock()
         mock_db.create_connect_db.return_value = (mock_conn, mock_curs)
-        
+
         with patch('msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis.DBManager', mock_db), \
              patch('msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis.PathManager.make_dir_safety'):
             self.analysis.dump_db()
@@ -70,7 +70,7 @@ class TestClusterBaseInfoAnalysis(unittest.TestCase):
         self.analysis.distributed_args = {}
         mock_db = MagicMock()
         with patch('msprof_analyze.cluster_analyse.analysis.cluster_base_info_analysis.DBManager', mock_db):
-            self.analysis.dump_db() 
+            self.analysis.dump_db()
             mock_db.create_connect_db.assert_not_called()
             mock_db.create_tables.assert_not_called()
             mock_db.executemany_sql.assert_not_called()
@@ -109,10 +109,10 @@ class TestClusterBaseInfoAnalysis(unittest.TestCase):
                 ("/path/rank0", [], [Constant.PROFILER_METADATA, "other.txt"]),
                 ("/path/rank1", [], ["other.txt"]),
                 ("/path/rank2", [], [Constant.PROFILER_METADATA])
-            ]     
+            ]
             result = self.analysis.get_profiler_metadata_file()
             expected = [
                 os.path.join("/path/rank0", Constant.PROFILER_METADATA),
                 os.path.join("/path/rank2", Constant.PROFILER_METADATA)
             ]
-            self.assertEqual(result, expected)   
+            self.assertEqual(result, expected)

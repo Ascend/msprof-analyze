@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import threading
@@ -26,13 +27,14 @@ from msprof_analyze.prof_common.logger import get_logger, set_agent_mode, is_age
 logger = get_logger()
 
 
-class Context(object):
+class Context:
     """abstract base class"""
 
     ctx_map = None
+    _mode = "base"
 
     def __init__(self):
-        logger.info("context {} initialized.".format(self._mode))
+        logger.info("context %s initialized.", self._mode)
         self._lock = threading.RLock()
 
     def __enter__(self):
@@ -41,7 +43,7 @@ class Context(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
         if exc_type is not None:
-            logger.error(f"Failed to exit context: {exc_val}")
+            logger.error("Failed to exit context: %s", exc_val)
 
     @classmethod
     def create_context(cls, mode=Constant.CONCURRENT_MODE):
@@ -64,16 +66,17 @@ class Context(object):
     def wait(self, waitable):
         raise NotImplementedError
 
+    def close(self):
+        """release resources, implemented in subclasses"""
+
 
 def init_subprocess(config_dict):
-    from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
     AdditionalArgsManager().init(config_dict)
     if is_agent_mode():
         set_agent_mode()
 
 
 class ConcurrentContext(Context):
-
     def __init__(self, executor=None):
         self._mode = Constant.CONCURRENT_MODE
         super().__init__()
@@ -81,8 +84,9 @@ class ConcurrentContext(Context):
         config = {
             "force": AdditionalArgsManager().force,
         }
-        self._executor = executor or futures.ProcessPoolExecutor(max_workers=os.cpu_count(),
-                                                                 initializer=init_subprocess, initargs=(config,))
+        self._executor = executor or futures.ProcessPoolExecutor(
+            max_workers=os.cpu_count(), initializer=init_subprocess, initargs=(config,)
+        )
         self.future_dict = defaultdict(list)
 
     def __enter__(self):

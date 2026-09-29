@@ -1,20 +1,20 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import multiprocessing
-from msprof_analyze.prof_common.logger import get_logger
 import re
 
 from tqdm import tqdm
@@ -30,6 +30,7 @@ from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.advisor.utils.utils import format_timeline_result
 from msprof_analyze.advisor.common.timeline.fusion_ops_db import init_timeline_ops_db
 from msprof_analyze.advisor.display.html.priority_background_color import PriorityBackgroundColor
+from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
 
@@ -51,17 +52,19 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
     def optimize(self, **kwargs):
         disable_affinity_api = os.getenv(Constant.DISABLE_AFFINITY_API)
         if disable_affinity_api is not None and disable_affinity_api.lower() == "true":
-            logger.info(
-                "Skip affinity api analysis due to longer processing time due to env 'DISABLE_AFFINITY_API'")
+            logger.info("Skip affinity api analysis due to longer processing time due to env 'DISABLE_AFFINITY_API'")
             return self.result
 
         for mode in [Constant.ATEN.lower(), Constant.OPTIMIZER.lower()]:
-
-            for op_combined, npu_apis in tqdm(getattr(init_timeline_ops_db(self.cann_version,
-                                                                           self.profiling_type,
-                                                                           self.profiling_version),
-                                                      f"_{mode}_op_api_map").items(), leave=False, ncols=100,
-                                              desc="Scanning timeline for affinity apis"):
+            for op_combined, npu_apis in tqdm(
+                getattr(
+                    init_timeline_ops_db(self.cann_version, self.profiling_type, self.profiling_version),
+                    f"_{mode}_op_api_map",
+                ).items(),
+                leave=False,
+                ncols=100,
+                desc="Scanning timeline for affinity apis",
+            ):
                 for npu_api in npu_apis.split("/"):
                     self.find_fusion_ops(self.timeline_event_dataset, op_combined, npu_api, mode)
 
@@ -95,11 +98,12 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         """
         if not self.matched_op_stacks:
             return
-        
+
         prompt_class = BasePrompt.get_prompt_class(self.__class__.__name__)
 
-        desc = prompt_class.DESCRIPTION.format(self.cann_version, self.profiling_version,
-                                                  len(format_timeline_result(self.matched_op_stacks)))
+        desc = prompt_class.DESCRIPTION.format(
+            self.cann_version, self.profiling_version, len(format_timeline_result(self.matched_op_stacks))
+        )
         suggestion = prompt_class.SUGGESTION
         if self.empty_stacks:
             desc += prompt_class.EMPTY_STACK_DESCRIPTION
@@ -124,27 +128,28 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         rank = kwargs.get("rank")
         format_result_for_html = format_timeline_result(dict(self.matched_op_stacks), dump_html=True)
 
-        self.html_render.render_template(key="schedule",
-                                         template_dir="templates",
-                                         template_name="affinity_api.html",
-                                         cann_version=self.cann_version,
-                                         profiling_type=self.profiling_type,
-                                         profiling_version=self.profiling_version,
-                                         empty_stacks=self.empty_stacks,
-                                         with_stack_doc_url=Config().timeline_with_stack_doc_url,
-                                         api_doc_url=Config().timeline_api_doc_url,
-                                         result=format_result_for_html,
-                                         priority_background_color=self.get_priority(),
-                                         rank=rank)
+        self.html_render.render_template(
+            key="schedule",
+            template_dir="templates",
+            template_name="affinity_api.html",
+            cann_version=self.cann_version,
+            profiling_type=self.profiling_type,
+            profiling_version=self.profiling_version,
+            empty_stacks=self.empty_stacks,
+            with_stack_doc_url=Config().timeline_with_stack_doc_url,
+            api_doc_url=Config().timeline_api_doc_url,
+            result=format_result_for_html,
+            priority_background_color=self.get_priority(),
+            rank=rank,
+        )
 
     def query_stack(self, event_dataset):
-        if all([len(matched_index) == 0 for matched_index in self._matched_op_index.values()]):
+        if all(len(matched_index) == 0 for matched_index in self._matched_op_index.values()):
             return
         if event_dataset.data_type == Constant.TEXT:
             self.query_stack_from_timeline_json(event_dataset)
         elif event_dataset.data_type == Constant.DB:
             self.query_stack_from_db(event_dataset.timeline_file)
-
 
     def query_stack_from_timeline_json(self, event_dataset):
         op_stack_list = event_dataset.parse_data_with_generator(self._query_stack_by_matched_index)
@@ -170,7 +175,7 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
                 self.matched_op_stacks[op_rule][stack] += 1
 
     def _match_ops(self, event_dataset, ops: str, npu_api: str, mode: str):
-        """ match operator based on fusion operators rule(without regex),
+        """match operator based on fusion operators rule(without regex),
             only strictly equals of op name list means matched
         :Param event_dataset: dataset of timeline event
         :Param ops: operator combination with '-' as separator , e.g. permute-reshape
@@ -185,8 +190,10 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         for index, event in enumerate(getattr(event_dataset, mode)):
             if self._replace_op_name_prefix(event.name, mode) != op_list[0]:
                 continue
-            tmp_dequeue_event_names = [self._replace_op_name_prefix(event.name, mode)
-                                       for event in getattr(event_dataset, mode)[index: index + len(op_list)]]
+            tmp_dequeue_event_names = [
+                self._replace_op_name_prefix(event.name, mode)
+                for event in getattr(event_dataset, mode)[index : index + len(op_list)]
+            ]
             if tmp_dequeue_event_names != op_list:
                 continue
             api_ops_matched = True
@@ -195,9 +202,8 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         if api_ops_matched:
             self._matched_op_index[npu_api + f":{ops}"] = matched_op_index
 
-    def _match_ops_with_regex(self, event_dataset, op_rule_pattern: str, npu_api: str,
-                              mode: str):
-        """ match operator based on fusion operators rule(with regex),
+    def _match_ops_with_regex(self, event_dataset, op_rule_pattern: str, npu_api: str, mode: str):
+        """match operator based on fusion operators rule(with regex),
             using regex to support condition like 'a = torch.mul(xxx) if xxx else torch.add(xxx)'
         :Param event_dataset: dataset of timeline event
         :Param op_rule_pattern: fusion operators rule with regex definition , e.g. add-mul{0,10}, add-mul*
@@ -205,14 +211,16 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         :Param mode: aten or dequeue or optimizer
         """
         matched_op_index = set()
-        total_op_name = "".join([f"{Constant.OP_SEP}{self._replace_op_name_prefix(event.name, mode)}{Constant.OP_SEP}"
-                                 for event in getattr(event_dataset, mode)])
+        total_op_name = "".join(
+            [
+                f"{Constant.OP_SEP}{self._replace_op_name_prefix(event.name, mode)}{Constant.OP_SEP}"
+                for event in getattr(event_dataset, mode)
+            ]
+        )
 
         matched_pattern_index_tuple = [(x.start(0), x.end(0)) for x in re.finditer(op_rule_pattern, total_op_name)]
         # convert list of index tuple to a whole list:  [(3, 25), ...] -> [3, 25, ...]
-        total_ops_split_points = [num
-                                  for sublist in matched_pattern_index_tuple
-                                  for num in sublist]
+        total_ops_split_points = [num for sublist in matched_pattern_index_tuple for num in sublist]
 
         api_ops_matched = len(total_ops_split_points) != 0
 
@@ -225,9 +233,8 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         # convert total ops name like "-add-mul-xxx-div-" to small pieces like [["add", "mul"], [...], ["div"]]
         # by the regex index and then calculate the real index for matched fusion operators in event dataset
         for left, right in zip(total_ops_split_points, total_ops_split_points[1:]):
-            matched_op_flag = True if (left, right) in matched_pattern_index_tuple else False
-            matched_ops_list = \
-                total_op_name[left: right].strip(Constant.OP_SEP).split(Constant.OP_SEP + Constant.OP_SEP)
+            matched_op_flag = (left, right) in matched_pattern_index_tuple
+            matched_ops_list = total_op_name[left:right].strip(Constant.OP_SEP).split(Constant.OP_SEP + Constant.OP_SEP)
             op_index.append([matched_op_flag, len(matched_ops_list)])
         for i, _ in enumerate(op_index):
             if i > 0:
@@ -304,14 +311,13 @@ class TimelineFusionOpsAnalyzer(BaseAnalyzer):
         for op_pattern in op_pattern_list:
             matched_res = re.search(r'\((\w+)\)', op_pattern)
 
-            ops_index_range = (matched_res.start() + 1, matched_res.end() - 1) if matched_res else (
-                0, len(op_pattern))
+            ops_index_range = (matched_res.start() + 1, matched_res.end() - 1) if matched_res else (0, len(op_pattern))
 
-            op_names = op_pattern[ops_index_range[0]: ops_index_range[1]]
+            op_names = op_pattern[ops_index_range[0] : ops_index_range[1]]
             tmp_op_names_record = []
             for op_name in op_names.split("|"):
                 tmp_op_names_record.append(f"{Constant.OP_SEP}{op_name.strip(' ')}{Constant.OP_SEP}")
-            op_suffix = op_pattern[ops_index_range[1] + 1:]
+            op_suffix = op_pattern[ops_index_range[1] + 1 :]
             op_names_format = f"({'|'.join(tmp_op_names_record)}){op_suffix}"
 
             format_op_pattern += op_names_format

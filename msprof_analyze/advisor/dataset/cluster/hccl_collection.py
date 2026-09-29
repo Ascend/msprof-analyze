@@ -1,30 +1,40 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 """
 hccl info
 """
+
 from msprof_analyze.prof_common.logger import get_logger
 
-import pandas as pd
 
 logger = get_logger()
 
 
 class HcclInfo:
-    def __init__(self, group: str, step: str, rank: str, op_name: str,
-                 start_time: float, elapse_time: float, sdma_info: dict, rdma_info: dict):
+    def __init__(
+        self,
+        group: str,
+        step: str,
+        rank: str,
+        op_name: str,
+        start_time: float,
+        elapse_time: float,
+        sdma_info: dict,
+        rdma_info: dict,
+    ):
         self._group = group
         self._step = step
         self._rank = rank
@@ -78,12 +88,16 @@ class HcclInfo:
 
     @classmethod
     def construct_instance_from_dict(cls, group: str, step: str, rank: str, op: str, rank_dict: dict):
-        return cls(group, step, rank, op.split("@")[0],
-                   HcclInfo.get_communication_time_info(rank_dict, "Start Timestamp(us)"),
-                   HcclInfo.get_communication_time_info(rank_dict, "Elapse Time(ms)"),
-                   HcclInfo.get_communication_info(rank_dict, "SDMA"),
-                   HcclInfo.get_communication_info(rank_dict, "RDMA")
-                   )
+        return cls(
+            group,
+            step,
+            rank,
+            op.split("@")[0],
+            HcclInfo.get_communication_time_info(rank_dict, "Start Timestamp(us)"),
+            HcclInfo.get_communication_time_info(rank_dict, "Elapse Time(ms)"),
+            HcclInfo.get_communication_info(rank_dict, "SDMA"),
+            HcclInfo.get_communication_info(rank_dict, "RDMA"),
+        )
 
     def get_rdma_transmit_time(self):
         return self.rdma_info.get('Transit Time(ms)', 0)
@@ -93,4 +107,3 @@ class HcclInfo:
 
     def get_rdma_bandwidth(self):
         return self.rdma_info.get('Bandwidth(GB/s)', 0)
-

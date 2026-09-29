@@ -1,22 +1,25 @@
-# Copyright (C) 2024-2024. Huawei Technologies Co., Ltd. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.prof_common.logger import get_logger
 import math
 import os
 from abc import abstractmethod, ABCMeta
 
-from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_sql import TimelineEventType, TimelineDBHelper
+from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_sql import TimelineEventType
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.common.timeline.event import TimelineEvent
@@ -27,7 +30,6 @@ logger = get_logger()
 
 
 class BaseOpCollector(metaclass=ABCMeta):
-
     def __init__(self):
         self.attribute_to_dataset = {}
         self.op_list = []
@@ -36,27 +38,23 @@ class BaseOpCollector(metaclass=ABCMeta):
         self.related_table_list = []
         self.event_type = []
 
-
     @abstractmethod
     def add_op(self, event):
-        """ add timeline event into self.op_list, and then will filter event in self.op_list by specific step
-        """
+        """add timeline event into self.op_list, and then will filter event in self.op_list by specific step"""
         pass
 
     @abstractmethod
     def post_process(self, target_op_list, **kwargs):
-        """ convert self.op_list to required format like dict, set and so on and then record the final object into
-            self.attribute_to_dataset which used to set property of timeline event dataset
+        """convert self.op_list to required format like dict, set and so on and then record the final object into
+        self.attribute_to_dataset which used to set property of timeline event dataset
         """
         pass
 
     def add_op_from_db(self, df):
         logger.debug("Skip add_op_from_db for collector %s", self.__class__.__name__)
-        return
 
     def get_event_type(self):
         return self.event_type
-
 
 
 class StepCollector(BaseOpCollector):
@@ -81,9 +79,7 @@ class StepCollector(BaseOpCollector):
         self.attribute_to_dataset["profiler_step"] = self.op_list
 
 
-
 class OpCompileCollector(BaseOpCollector):
-
     def __init__(self):
         super().__init__()
         self.event_type = [TimelineEventType.CANN_API]
@@ -126,9 +122,7 @@ class OpCompileCollector(BaseOpCollector):
         self.attribute_to_dataset["ops_compile"] = self
 
 
-
 class SynchronizeStreamCollector(BaseOpCollector):
-
     def __init__(self):
         super().__init__()
         self.event_type = [TimelineEventType.CANN_API]
@@ -142,16 +136,14 @@ class SynchronizeStreamCollector(BaseOpCollector):
         if df is None or df.empty:
             return
         filtered_df = df[
-            df['name'].str.startswith(Constant.SYNC_STREAM) |
-            df['name'].str.startswith(Constant.NODE_LAUNCH)
-            ]
+            df['name'].str.startswith(Constant.SYNC_STREAM) | df['name'].str.startswith(Constant.NODE_LAUNCH)
+        ]
         self.op_list = [TimelineEvent(record) for record in filtered_df.to_dict('records')]
 
     def post_process(self, *args, **kwargs):
         self.op_list.sort(key=lambda x: x.ts)
 
         self.attribute_to_dataset["synchronize_stream"] = self.op_list
-
 
 
 class MemCollector(BaseOpCollector):
@@ -166,10 +158,12 @@ class MemCollector(BaseOpCollector):
     @staticmethod
     def _load_rule():
         language = AdditionalArgsManager().language
-        memory_rule_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
-                                        "rules",
-                                        language,
-                                        "memory.yaml")
+        memory_rule_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+            "rules",
+            language,
+            "memory.yaml",
+        )
 
         memory_rule = FileManager.read_yaml_file(memory_rule_path)
         return memory_rule
@@ -195,7 +189,6 @@ class MemCollector(BaseOpCollector):
         self.attribute_to_dataset["memory_ops"] = self
 
 
-
 class DataloaderCollector(BaseOpCollector):
     KEY_WORD = "dataloader"
 
@@ -205,10 +198,17 @@ class DataloaderCollector(BaseOpCollector):
 
     def add_op(self, event):
         if self.KEY_WORD in event.name.lower():
-            self.op_list.append(TimelineEvent({
-                "name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur,
-                "stack": event.args.get("Call stack")
-            }))
+            self.op_list.append(
+                TimelineEvent(
+                    {
+                        "name": event.name,
+                        "dataset_index": event.dataset_index,
+                        "ts": event.ts,
+                        "dur": event.dur,
+                        "stack": event.args.get("Call stack"),
+                    }
+                )
+            )
 
     def add_op_from_db(self, df):
         if df is None or df.empty:
@@ -216,10 +216,8 @@ class DataloaderCollector(BaseOpCollector):
         filtered_df = df[df['name'].str.contains(self.KEY_WORD, case=False)]
         self.op_list = [TimelineEvent(record) for record in filtered_df.to_dict('records')]
 
-
     def post_process(self, *args, **kwargs):
         self.attribute_to_dataset["dataloader"] = self.op_list
-
 
 
 class SyncBNCollector(BaseOpCollector):
@@ -231,9 +229,11 @@ class SyncBNCollector(BaseOpCollector):
 
     def add_op(self, event):
         if event.name.lower() == self.KEY_WORD:
-            self.op_list.append(TimelineEvent({
-                "name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur
-            }))
+            self.op_list.append(
+                TimelineEvent(
+                    {"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur}
+                )
+            )
 
     def add_op_from_db(self, df):
         if df is None or df.empty:
@@ -245,16 +245,17 @@ class SyncBNCollector(BaseOpCollector):
         self.attribute_to_dataset["sync_batchnorm"] = target_op_list
 
 
-
 class AtenCollector(BaseOpCollector):
-
     def __init__(self):
         super().__init__()
         self.event_type = [TimelineEventType.FRAMEWORK_API, TimelineEventType.CANN_API]
 
     def add_op(self, event):
-        if event.name.lower().startswith(f"{Constant.ATEN}{Constant.ATEN_SEP}") or event.name.lower().startswith(
-                f"{Constant.NPU_LOWER}{Constant.ATEN_SEP}") or event.name.startswith(Constant.SYNC_STREAM):
+        if (
+            event.name.lower().startswith(f"{Constant.ATEN}{Constant.ATEN_SEP}")
+            or event.name.lower().startswith(f"{Constant.NPU_LOWER}{Constant.ATEN_SEP}")
+            or event.name.startswith(Constant.SYNC_STREAM)
+        ):
             self._add_aten(event)
             return
 
@@ -278,18 +279,15 @@ class AtenCollector(BaseOpCollector):
         # 组合条件
         filtered_df = df[aten_condition | npu_condition | sync_condition]
 
-        self.op_list.extend(
-            TimelineEvent(record)
-            for record in filtered_df.to_dict('records')
-        )
+        self.op_list.extend(TimelineEvent(record) for record in filtered_df.to_dict('records'))
 
     def post_process(self, target_op_list, **kwargs):
         self.attribute_to_dataset["aten"] = target_op_list
 
     def _add_aten(self, event: TimelineEvent):
-        self.op_list.append(TimelineEvent({
-            "name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur
-        }))
+        self.op_list.append(
+            TimelineEvent({"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur})
+        )
 
 
 class OptimizerCollector(BaseOpCollector):
@@ -301,8 +299,11 @@ class OptimizerCollector(BaseOpCollector):
 
     def add_op(self, event):
         if event.name.startswith(self.KEY_WORD):
-            self.op_list.append(TimelineEvent(
-                {"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur}))
+            self.op_list.append(
+                TimelineEvent(
+                    {"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur}
+                )
+            )
 
     def add_op_from_db(self, df):
         if df is None or df.empty:
@@ -312,8 +313,6 @@ class OptimizerCollector(BaseOpCollector):
 
     def post_process(self, target_op_list, **kwargs):
         self.attribute_to_dataset["optimizer"] = target_op_list
-
-
 
 
 class FrequencyCollector(BaseOpCollector):
@@ -340,16 +339,14 @@ class FrequencyCollector(BaseOpCollector):
                     op_freq_list.append(convert_to_float(freq_event.args.MHz))
                     freq_index += 1
                     continue
-                elif convert_to_float(freq_event.ts) < op_end_time:
+                if convert_to_float(freq_event.ts) < op_end_time:
                     if op_event.name not in op_freq_record:
                         op_freq_record[op_event.name] = {"count": 0, "dur": 0, "freq_list": []}
                     op_freq_record[op_event.name]["count"] += 1
                     op_freq_record[op_event.name]["dur"] += convert_to_float(op_event.dur)
                     op_freq_list.append(convert_to_float(freq_event.args.MHz))
                     op_freq_record[op_event.name]["freq_list"].append(min(op_freq_list))
-                    break
-                else:
-                    break
+                break
 
             op_index += 1
         return op_freq_record
@@ -377,10 +374,7 @@ class FrequencyCollector(BaseOpCollector):
         self.attribute_to_dataset["op_freq"] = op_freq
 
 
-
-
 class SpecificTaskTypeOpCollector(BaseOpCollector):
-
     def __init__(self, op_type_list=None):
         super().__init__()
         self.op_type_list = op_type_list if op_type_list else [Constant.AI_CPU, Constant.AI_CORE, Constant.MIX_AIC]
@@ -395,7 +389,7 @@ class SpecificTaskTypeOpCollector(BaseOpCollector):
                         "tid": event.tid,
                         "name": event.name,
                         "ts": str(event.ts),
-                        "dur": str(event.dur)
+                        "dur": str(event.dur),
                     }
                 )
             )
@@ -407,14 +401,10 @@ class SpecificTaskTypeOpCollector(BaseOpCollector):
             op_map[key] = op
 
         self.attribute_to_dataset["ops_with_task_type"] = op_map
-        self.attribute_to_dataset["task_op_names"] = list(
-            set([event_key.split("-")[0] for event_key in op_map.keys()]))
+        self.attribute_to_dataset["task_op_names"] = list({event_key.split("-")[0] for event_key in op_map})
 
 
 class TorchToNpuCollector(BaseOpCollector):
-    def __init__(self):
-        super().__init__()
-
     def add_op(self, event):
         if event.name.lower() == Constant.TORCH_TO_NPU:
             self.op_list.append(TimelineEvent({"tid": event.tid, "ts": str(event.ts), "ph": event.ph, "id": event.id}))
@@ -429,9 +419,6 @@ class TorchToNpuCollector(BaseOpCollector):
 
 
 class AclToNpuCollector(BaseOpCollector):
-    def __init__(self):
-        super().__init__()
-
     def add_op(self, event):
         if event.name and event.ts and event.name == Constant.ACL_TO_NPU:
             self.op_list.append(TimelineEvent({"ts": event.ts}))
@@ -442,14 +429,11 @@ class AclToNpuCollector(BaseOpCollector):
 
 
 class OpStackCollector(BaseOpCollector):
-
-    def __init__(self):
-        super().__init__()
-
     def add_op(self, event):
         if event.args.get(Constant.CALL_STACKS):
             self.op_list.append(
-                TimelineEvent({"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts}))
+                TimelineEvent({"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts})
+            )
 
     def post_process(self, target_op_list, **kwargs):
         op_map = dict()
@@ -460,15 +444,17 @@ class OpStackCollector(BaseOpCollector):
 
 
 class GcCollector(BaseOpCollector):
-
     def __init__(self):
         super().__init__()
         self.event_type = [TimelineEventType.GC_RECORD]
 
     def add_op(self, event):
         if event.cat and isinstance(event.cat, str) and event.cat.lower() == "gc":
-            self.op_list.append(TimelineEvent(
-                {"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur}))
+            self.op_list.append(
+                TimelineEvent(
+                    {"name": event.name, "dataset_index": event.dataset_index, "ts": event.ts, "dur": event.dur}
+                )
+            )
 
     def add_op_from_db(self, df):
         if df is None or df.empty:
@@ -480,7 +466,6 @@ class GcCollector(BaseOpCollector):
 
 
 class FreeEventsCollector(BaseOpCollector):
-
     def __init__(self):
         super().__init__()
         self.event_type = [TimelineEventType.OVERLAP_ANALYSIS]
@@ -492,7 +477,8 @@ class FreeEventsCollector(BaseOpCollector):
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
             "rules",
             language,
-            "conjectured_gc.yaml")
+            "conjectured_gc.yaml",
+        )
 
         gc_rule = FileManager.read_yaml_file(sync_stream_rule_path)
         return gc_rule
@@ -511,8 +497,9 @@ class FreeEventsCollector(BaseOpCollector):
             current_start = df.iloc[i]['startNs']
             idle_dur = current_start - prev_end
             if idle_dur > 0.0:
-                self.op_list.append(TimelineEvent({'name': Constant.FREE, 'ts': prev_end / 1000.0,
-                                                   'dur': idle_dur / 1000.0}))
+                self.op_list.append(
+                    TimelineEvent({'name': Constant.FREE, 'ts': prev_end / 1000.0, 'dur': idle_dur / 1000.0})
+                )
             prev_end = max(prev_end, df.iloc[i]['endNs'])
 
     def post_process(self, target_op_list, **kwargs):
@@ -530,7 +517,6 @@ class FreeEventsCollector(BaseOpCollector):
 
         large_free_events.sort(key=lambda x: convert_to_float(x.ts))
         self.attribute_to_dataset["large_free_events"] = large_free_events
-
 
 
 class AclEventsCollector(BaseOpCollector):

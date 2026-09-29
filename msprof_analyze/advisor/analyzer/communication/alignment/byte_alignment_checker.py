@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import List
@@ -51,9 +52,7 @@ class ByteAlignmentChecker:
         self.abnormal_ops = []
         self.suggestions = []
         self._init_rule()
-        self.headers = [
-            "op name", "total size(Byte)", "duration(us)", "abnormal duration(us)", "bandwidth(GB/s)"
-        ]
+        self.headers = ["op name", "total size(Byte)", "duration(us)", "abnormal duration(us)", "bandwidth(GB/s)"]
 
     @staticmethod
     def _calculate_bandwidth_gb_s(size, duration):
@@ -68,8 +67,15 @@ class ByteAlignmentChecker:
             size, duration, abnormal_dur, flag = self._check_op([hccl_op.memcpy_tasks, hccl_op.reduce_inline_tasks])
             if flag:
                 self.abnormal_ops_count += 1
-                self.abnormal_ops.append([hccl_op.op_name, size, round(duration, 4), round(abnormal_dur, 4),
-                                          self._calculate_bandwidth_gb_s(size, duration)])
+                self.abnormal_ops.append(
+                    [
+                        hccl_op.op_name,
+                        size,
+                        round(duration, 4),
+                        round(abnormal_dur, 4),
+                        self._calculate_bandwidth_gb_s(size, duration),
+                    ]
+                )
         if self.abnormal_ops_count:
             self.byge_alignment_issue = True
             self.desc = self.desc.format(count=self.abnormal_ops_count)
@@ -89,16 +95,18 @@ class ByteAlignmentChecker:
 
     def make_render(self, html_render, **kwargs):
         rank = kwargs.get("rank")
-        return html_render.render_template(key="communication",
-                                           template_dir="templates",
-                                           template_name="byte_alignment.html",
-                                           desc=self.desc,
-                                           solutions=self.solutions,
-                                           headers=self.headers,
-                                           datas=self.abnormal_ops[:min(self.topk, len(self.abnormal_ops))],
-                                           num=min(self.topk, len(self.abnormal_ops)),
-                                           priority_background_color=self._get_priority(),
-                                           rank=rank)
+        return html_render.render_template(
+            key="communication",
+            template_dir="templates",
+            template_name="byte_alignment.html",
+            desc=self.desc,
+            solutions=self.solutions,
+            headers=self.headers,
+            data_list=self.abnormal_ops[: min(self.topk, len(self.abnormal_ops))],
+            num=min(self.topk, len(self.abnormal_ops)),
+            priority_background_color=self._get_priority(),
+            rank=rank,
+        )
 
     def _pre_check(self, task: HcclTask, type_):
         """
@@ -132,7 +140,7 @@ class ByteAlignmentChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "byte_alignment.yaml"
+            "byte_alignment.yaml",
         )
 
         byte_alignment_rule = FileManager.read_yaml_file(rule_path)

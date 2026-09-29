@@ -1,4 +1,18 @@
-#  Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import copy
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -7,7 +21,6 @@ logger = get_logger()
 
 
 class OpRule:
-
     def __init__(self, rule=None, timeline_op_rule_handler=None):
         if rule is None:
             self._tmp_rule = {}
@@ -40,8 +53,9 @@ class OpRule:
                 try:
                     getattr(self, f"{func}")(key, op_rules)
                 except AttributeError:
-                    logger.error("Undefined field and function name. Ensure that %s is correct in the rule "
-                                 "library.", func)
+                    logger.error(
+                        "Undefined field and function name. Ensure that %s is correct in the rule library.", func
+                    )
 
     def get_final_rules(self):
         """获取最终的规则库"""
@@ -60,8 +74,11 @@ class OpRule:
             if add_key not in self._tmp_rule:
                 self._tmp_rule[key][add_key] = add_val
             else:
-                logger.warning("This key has been written to the rule, "
-                               "%s: %s should be written in the overwrite section", add_key, add_val)
+                logger.warning(
+                    "This key has been written to the rule, %s: %s should be written in the overwrite section",
+                    add_key,
+                    add_val,
+                )
                 self._tmp_rule[key][add_key].update(add_val)
 
     def overwrite(self, key, overwrite_rules: dict):
@@ -74,8 +91,11 @@ class OpRule:
         for overwrite_key, overwrite_val in format_overwrite_rules.items():
             logger.debug("overwrite: %s: %s", overwrite_key, overwrite_val)
             if overwrite_key not in self._tmp_rule:
-                logger.warning("This key is not written to the rule. "
-                               "%s: %s should be written in the add section", overwrite_key, overwrite_val)
+                logger.warning(
+                    "This key is not written to the rule. %s: %s should be written in the add section",
+                    overwrite_key,
+                    overwrite_val,
+                )
                 self._tmp_rule[key][overwrite_key] = overwrite_val
             else:
                 self._tmp_rule[key][overwrite_key].update(overwrite_val)
@@ -88,8 +108,7 @@ class OpRule:
             logger.debug("exclude: %s", exclude_key)
             if isinstance(exclude_key, str):
                 if exclude_key not in self._tmp_rule[key]:
-                    logger.warning("This key is not written to the rule. "
-                                   "do not need to exclude: %s.", exclude_key)
+                    logger.warning("This key is not written to the rule. do not need to exclude: %s.", exclude_key)
                     continue
                 self._tmp_rule[key].pop(exclude_key)
             else:

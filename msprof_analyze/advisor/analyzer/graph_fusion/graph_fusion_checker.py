@@ -1,22 +1,23 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-from msprof_analyze.prof_common.logger import get_logger
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from typing import List
 
 from tqdm import tqdm
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.advisor.display.prompt.base_prompt import BasePrompt
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord, StatisticsItem
@@ -62,7 +63,7 @@ class GraphFusionRules:
     def find_fusion_matched_issues(self, graphs: List[GraphDataset]):
         query_graphs = QueryGraphParser(self.fusion_rules)
         with tqdm(total=query_graphs.num_rules, leave=False, ncols=100, unit=" rules") as pbar:
-            pbar.set_description(f"Searching Isomorphic Subgraph")
+            pbar.set_description("Searching Isomorphic Subgraph")
             for query_graph in self.build_query_graph(query_graphs):
                 query_candidates = find_isomorphisms(query_graph.graph, graphs[0].graphs[-1].graph)
                 pbar.update(1)
@@ -85,10 +86,8 @@ class GraphFusionRules:
         self.match_time_from_summary(profiling[0].op_summary)
         time_duration_sum = []
         for task_duration in self.task_duration_list:
-            time_duration_sum.append(sum([sum(duration) for duration in task_duration]))
-        time_duration_index = sorted(range(len(time_duration_sum)),
-                                     key=time_duration_sum.__getitem__,
-                                     reverse=True)
+            time_duration_sum.append(sum(sum(duration) for duration in task_duration))
+        time_duration_index = sorted(range(len(time_duration_sum)), key=time_duration_sum.__getitem__, reverse=True)
         self.task_duration_list = [self.task_duration_list[i] for i in time_duration_index]
         self.candidates = [self.candidates[i] for i in time_duration_index]
 
@@ -139,10 +138,8 @@ class GraphFusionRules:
             if self.task_duration_list:
                 has_time_info = True
                 candidate_dict['total_duration'] = round(
-                    sum(
-                        sum(duration)
-                        for duration in self.task_duration_list[case_id]
-                    ), 2)
+                    sum(sum(duration) for duration in self.task_duration_list[case_id]), 2
+                )
             for node_index, refer_node in enumerate(nodes):
                 match = []
                 index = 0
@@ -169,10 +166,9 @@ class GraphFusionRules:
                 match.append(match_attr)
                 candidate_dict['matches'].append(match)
             candidates_list.append(candidate_dict)
-        html_render.render_template(key="computation",
-                                    template_dir="templates",
-                                    template_name="fusion.html",
-                                    candidates=candidates_list)
+        html_render.render_template(
+            key="computation", template_dir="templates", template_name="fusion.html", candidates=candidates_list
+        )
 
     def make_record(self, result: OptimizeResult):
         """
@@ -183,24 +179,28 @@ class GraphFusionRules:
 
         prompt_class = BasePrompt.get_prompt_class(self.__class__.__name__)
         optimization_item = OptimizeItem(
-            prompt_class.PROBLEM,
-            prompt_class.DESCRIPTION.format(len(self.candidates)),
-            [prompt_class.SUGGESTION]
+            prompt_class.PROBLEM, prompt_class.DESCRIPTION.format(len(self.candidates)), [prompt_class.SUGGESTION]
         )
         total_time = 0.0
         for candidate in self.task_duration_list:
             for duration in candidate:
                 total_time += sum(duration)
-        statistics_item = StatisticsItem(0,
-                                         total_time,
-                                         sum([len(candidate) for candidate in self.candidates])
-                                         )
+        statistics_item = StatisticsItem(0, total_time, sum(len(candidate) for candidate in self.candidates))
         result.add(OptimizeRecord(optimization_item, statistics_item))
 
         record_title = [
-            "issue_id", "graph_name", "op_name", "fusion_structure", "fusion_pattern",
-            "op_type", "input_shape", "input_format",
-            "input_dtype", "output_shape", "output_format", "output_dtype"
+            "issue_id",
+            "graph_name",
+            "op_name",
+            "fusion_structure",
+            "fusion_pattern",
+            "op_type",
+            "input_shape",
+            "input_format",
+            "input_dtype",
+            "output_shape",
+            "output_format",
+            "output_dtype",
         ]
         result.add_detail('fusion issues', headers=record_title)
 

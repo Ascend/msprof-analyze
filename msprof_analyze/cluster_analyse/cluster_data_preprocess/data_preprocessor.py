@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
 from abc import abstractmethod
@@ -25,17 +26,12 @@ logger = get_logger()
 class DataPreprocessor:
     PROFILER_INFO_HEAD = 'profiler_info_'
     PROFILER_INFO_EXTENSION = '.json'
-    TIME_POSITION_DICT = {
-        Constant.PYTORCH: -3,
-        Constant.MINDSPORE: -3,
-        Constant.MSMONITOR: -2,
-        Constant.MSPROF: -2
-    }
+    TIME_POSITION_DICT = {Constant.PYTORCH: -3, Constant.MINDSPORE: -3, Constant.MSMONITOR: -2, Constant.MSPROF: -2}
     PROFILING_DIR_FORMAT = {
         Constant.PYTORCH: "{worker_name}_{timestamp}_ascend_pt",
         Constant.MINDSPORE: "{worker_name}_{timestamp}_ascend_ms",
         Constant.MSPROF: "PROF_{number}_{timestamp}_{string}",
-        Constant.MSMONITOR: "msmonitor_{pid}_{timestamp}_{rank_id}.db"
+        Constant.MSMONITOR: "msmonitor_{pid}_{timestamp}_{rank_id}.db",
     }
 
     def __init__(self, path_list: list):
@@ -55,8 +51,9 @@ class DataPreprocessor:
 
         timestamp_position = DataPreprocessor.TIME_POSITION_DICT.get(prof_type, None)
         if timestamp_position is None:
-            logger.error(f'Unsupported profiling type: {prof_type}. '
-                         f'Unable to determine timestamp position for path processing.')
+            logger.error(
+                'Unsupported profiling type: %s. Unable to determine timestamp position for path processing.', prof_type
+            )
             return {}
 
         valid_data_map = {}
@@ -74,16 +71,21 @@ class DataPreprocessor:
                 sorted_paths = sorted(path_list, key=lambda x: int(x.split('_')[timestamp_position]), reverse=True)
                 latest_path = sorted_paths[0]
                 valid_data_map[rank_id] = latest_path
-                logger.info(f"Rank {rank_id}: Multiple profiling paths detected. "
-                             f"Selected latest timestamp path: {latest_path}")
-            except Exception as e:
+                logger.info(
+                    "Rank %s: Multiple profiling paths detected. Selected latest timestamp path: %s",
+                    rank_id,
+                    latest_path,
+                )
+            except Exception:
                 invalid_ranks.append(rank_id)
 
         if invalid_ranks:
             logger.warning(
                 "Failed to process multiple profiling paths for some ranks. "
-                f"Affected rank_id: {invalid_ranks}. "
-                f"Expected path formats: {DataPreprocessor.PROFILING_DIR_FORMAT.get(prof_type)}"
+                "Affected rank_id: %s. "
+                "Expected path formats: %s",
+                invalid_ranks,
+                DataPreprocessor.PROFILING_DIR_FORMAT.get(prof_type),
             )
 
         return valid_data_map
@@ -96,8 +98,12 @@ class DataPreprocessor:
     def get_rank_id(dir_name: str) -> int:
         files = os.listdir(dir_name)
         for file_name in files:
-            if file_name.startswith(DataPreprocessor.PROFILER_INFO_HEAD) and file_name.endswith(DataPreprocessor.PROFILER_INFO_EXTENSION):
-                rank_id_str = file_name[len(DataPreprocessor.PROFILER_INFO_HEAD): -1 * len(DataPreprocessor.PROFILER_INFO_EXTENSION)]
+            if file_name.startswith(DataPreprocessor.PROFILER_INFO_HEAD) and file_name.endswith(
+                DataPreprocessor.PROFILER_INFO_EXTENSION
+            ):
+                rank_id_str = file_name[
+                    len(DataPreprocessor.PROFILER_INFO_HEAD) : -1 * len(DataPreprocessor.PROFILER_INFO_EXTENSION)
+                ]
                 try:
                     rank_id = int(rank_id_str)
                 except ValueError:

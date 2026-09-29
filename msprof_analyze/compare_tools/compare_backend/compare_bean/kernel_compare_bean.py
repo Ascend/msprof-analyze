@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.compare_tools.compare_backend.utils.common_func import calculate_diff_ratio, convert_to_float
 from msprof_analyze.compare_tools.compare_backend.utils.excel_config import ExcelConfig
 from msprof_analyze.prof_common.constant import Constant
@@ -74,23 +75,33 @@ class KernelCompareBean:
     def __init__(self, base_kernel: list, comparison_kernel: list):
         self._base_kernel = KernelCompareInfo(base_kernel)
         self._comparison_kernel = KernelCompareInfo(comparison_kernel)
-        self._kernel_type = self._base_kernel.kernel_type \
-            if self._base_kernel.kernel_type else self._comparison_kernel.kernel_type
-        self._input_shapes = self._base_kernel.input_shapes \
-            if self._base_kernel.input_shapes else self._comparison_kernel.input_shapes
+        self._kernel_type = (
+            self._base_kernel.kernel_type if self._base_kernel.kernel_type else self._comparison_kernel.kernel_type
+        )
+        self._input_shapes = (
+            self._base_kernel.input_shapes if self._base_kernel.input_shapes else self._comparison_kernel.input_shapes
+        )
 
     @property
     def row(self):
         row = [
-            None, self._kernel_type, self._input_shapes,
-            self._base_kernel.total_dur, self._base_kernel.avg_dur,
-            self._base_kernel.max_dur, self._base_kernel.min_dur, self._base_kernel.number,
-            self._comparison_kernel.total_dur, self._comparison_kernel.avg_dur,
-            self._comparison_kernel.max_dur, self._comparison_kernel.min_dur, self._comparison_kernel.number
+            None,
+            self._kernel_type,
+            self._input_shapes,
+            self._base_kernel.total_dur,
+            self._base_kernel.avg_dur,
+            self._base_kernel.max_dur,
+            self._base_kernel.min_dur,
+            self._base_kernel.number,
+            self._comparison_kernel.total_dur,
+            self._comparison_kernel.avg_dur,
+            self._comparison_kernel.max_dur,
+            self._comparison_kernel.min_dur,
+            self._comparison_kernel.number,
         ]
         diff_fields = [
             calculate_diff_ratio(self._base_kernel.total_dur, self._comparison_kernel.total_dur)[1],
-            calculate_diff_ratio(self._base_kernel.avg_dur, self._comparison_kernel.avg_dur)[1]
+            calculate_diff_ratio(self._base_kernel.avg_dur, self._comparison_kernel.avg_dur)[1],
         ]
         row.extend(diff_fields)
         return row

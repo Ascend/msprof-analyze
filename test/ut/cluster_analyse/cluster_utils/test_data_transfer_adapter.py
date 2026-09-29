@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
 
@@ -100,7 +101,7 @@ class TestDataTransferAdapter(unittest.TestCase):
         """
         result = self.adapter.transfer_comm_from_db_to_json([], [])
         self.assertEqual(result, {})
-        
+
         result = self.adapter.transfer_comm_from_db_to_json(None, None)
         self.assertEqual(result, {})
 
@@ -110,12 +111,12 @@ class TestDataTransferAdapter(unittest.TestCase):
         test from database to json with both time and bandwidth info
         """
         result = self.adapter.transfer_comm_from_db_to_json(self.mock_time_info, self.mock_bandwidth_info)
-        
+
         expected_hccl_name = "AllReduce@group_0"
-        
+
         # 验证时间信息
         self.assertIn(Constant.COMMUNICATION_TIME_INFO, result["step_0"]["forward"][expected_hccl_name])
-        
+
         # 验证带宽信息
         self.assertIn(Constant.COMMUNICATION_BANDWIDTH_INFO, result["step_0"]["forward"][expected_hccl_name])
 
@@ -203,9 +204,9 @@ class TestDataTransferAdapter(unittest.TestCase):
             Constant.TRANSIT_TIME_MS: TableConstant.TRANSIT_TIME,
             Constant.BANDWIDTH_GB_S: TableConstant.BANDWIDTH
         }
-        
+
         self.adapter.set_value_by_key(src_dict, dst_dict, key_dict)
-        
+
         expected = {
             Constant.TRANSIT_SIZE_MB: 1024,
             Constant.TRANSIT_TIME_MS: 50,
@@ -226,9 +227,9 @@ class TestDataTransferAdapter(unittest.TestCase):
             Constant.TRANSIT_TIME_MS: TableConstant.TRANSIT_TIME,
             Constant.BANDWIDTH_GB_S: TableConstant.BANDWIDTH
         }
-        
+
         self.adapter.set_value_by_key(src_dict, dst_dict, key_dict)
-        
+
         expected = {
             Constant.TRANSIT_SIZE_MB: 1024,
             Constant.TRANSIT_TIME_MS: 0,
@@ -242,7 +243,7 @@ class TestDataTransferAdapter(unittest.TestCase):
         """
         result = self.adapter.transfer_matrix_from_db_to_json([])
         self.assertEqual(result, {})
-        
+
         result = self.adapter.transfer_matrix_from_db_to_json(None)
         self.assertEqual(result, {})
 
@@ -251,7 +252,7 @@ class TestDataTransferAdapter(unittest.TestCase):
         test transfer matrix from db to json with data
         """
         result = self.adapter.transfer_matrix_from_db_to_json(self.mock_matrix_data)
-        
+
         expected_hccl_name = "AllReduce@group_0"
         expected_key = "0-1"
         expected_matrix_data = {
@@ -261,7 +262,7 @@ class TestDataTransferAdapter(unittest.TestCase):
             Constant.TRANSPORT_TYPE: "RDMA",
             Constant.OP_NAME: "AllReduce"
         }
-        
+
         self.assertIn("step_0", result)
         self.assertIn("forward", result["step_0"])
         self.assertIn(expected_hccl_name, result["step_0"]["forward"])
@@ -294,12 +295,12 @@ class TestDataTransferAdapter(unittest.TestCase):
                 }
             }
         }
-        
+
         result = self.adapter.transfer_matrix_from_json_to_db(json_data)
-        
+
         self.assertEqual(len(result), 1)
         matrix_record = result[0]
-        
+
         self.assertEqual(matrix_record[TableConstant.RANK_SET], "rank_set_0")
         self.assertEqual(matrix_record[TableConstant.STEP], "step_0")
         self.assertEqual(matrix_record[TableConstant.HCCL_OP_NAME], "AllReduce")
@@ -328,9 +329,9 @@ class TestDataTransferAdapter(unittest.TestCase):
                 }
             }
         }
-        
+
         result = self.adapter.transfer_matrix_from_json_to_db(json_data)
-        
+
         self.assertEqual(len(result), 1)
         matrix_record = result[0]
         self.assertEqual(matrix_record[TableConstant.HCCL_OP_NAME], "AllReduce")
@@ -388,16 +389,15 @@ class TestDataTransferAdapter(unittest.TestCase):
                 TableConstant.ELAPSED_TIME: 200
             }
         ]
-        
+
         result = self.adapter.transfer_comm_from_db_to_json(multi_step_time_info, [])
-        
+
         # 验证两个步骤都存在
         self.assertIn("step_0", result)
         self.assertIn("step_1", result)
         self.assertIn("forward", result["step_0"])
         self.assertIn("backward", result["step_1"])
-        
+
         # 验证不同的HCCL操作
         self.assertIn("AllReduce@group_0", result["step_0"]["forward"])
         self.assertIn("AllGather@group_1", result["step_1"]["backward"])
-

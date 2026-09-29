@@ -1,23 +1,24 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
 
 QUERY_BASIC_COMMUNICATION_OP_SQL = '''
-    SELECT 
+    SELECT
         COMMUNICATION_OP.startNs as "start_ns",
         COMMUNICATION_OP.endNs as "end_ns",
         COMMUNICATION_OP.endNs - COMMUNICATION_OP.startNs as "duration",
@@ -28,6 +29,7 @@ QUERY_BASIC_COMMUNICATION_OP_SQL = '''
     ORDER BY "duration" DESC
 '''
 
+
 class CommunicationOpExport(BaseStatsExport):
     def __init__(self, db_path, recipe_name, param_dict):
         super().__init__(db_path, recipe_name, param_dict)
@@ -37,22 +39,20 @@ class CommunicationOpExport(BaseStatsExport):
         return [Constant.START_NS, Constant.END_NS]
 
 
-
 QUERY_TARGET_COMMUNICATION_OP_WITH_NAME_SQL = '''
-    SELECT 
-        COMMUNICATION_OP.startNs as "start_ns", 
-        COMMUNICATION_OP.endNs as "end_ns", 
-        COMMUNICATION_OP.endNs - COMMUNICATION_OP.startNs AS "duration", 
+    SELECT
+        COMMUNICATION_OP.startNs as "start_ns",
+        COMMUNICATION_OP.endNs as "end_ns",
+        COMMUNICATION_OP.endNs - COMMUNICATION_OP.startNs AS "duration",
         STRING_IDS.value as "comm_name"
     FROM COMMUNICATION_OP
-    JOIN STRING_IDS ON COMMUNICATION_OP.opName = STRING_IDS.id 
+    JOIN STRING_IDS ON COMMUNICATION_OP.opName = STRING_IDS.id
     WHERE STRING_IDS.value = ?
     GROUP BY STRING_IDS.value
 '''
 
 
 class TargetCommunicationOpWithNameExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name, param_dict):
         super().__init__(db_path, recipe_name, param_dict)
         self._query = QUERY_TARGET_COMMUNICATION_OP_WITH_NAME_SQL
@@ -61,15 +61,14 @@ class TargetCommunicationOpWithNameExport(BaseStatsExport):
         return ["comm_op_name"]
 
 
-
 QUERY_ALL_DEVICE_NODE_LAUNCH_PYTORCH_TASK_SQL = '''
-    SELECT 
-        TASK.connectionId as "connection_id", 
-        TASK.startNs as "device_start_ns", 
-        TASK.endNs as "device_end_ns", 
-        CANN_API.startNs as "cann_start_ns", 
-        CANN_API.endNs as "cann_end_ns", 
-        PYTORCH_API.startNs as "pytorch_start_ns", 
+    SELECT
+        TASK.connectionId as "connection_id",
+        TASK.startNs as "device_start_ns",
+        TASK.endNs as "device_end_ns",
+        CANN_API.startNs as "cann_start_ns",
+        CANN_API.endNs as "cann_end_ns",
+        PYTORCH_API.startNs as "pytorch_start_ns",
         PYTORCH_API.endNs as "pytorch_end_ns"
     FROM TASK
     JOIN CANN_API ON TASK.connectionId = CANN_API.connectionId
@@ -83,7 +82,6 @@ QUERY_ALL_DEVICE_NODE_LAUNCH_PYTORCH_TASK_SQL = '''
 
 
 class AllDeviceNodeLaunchPytorchTaskExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name, param_dict):
         super().__init__(db_path, recipe_name, param_dict)
         self._query = QUERY_ALL_DEVICE_NODE_LAUNCH_PYTORCH_TASK_SQL
@@ -93,10 +91,10 @@ class AllDeviceNodeLaunchPytorchTaskExport(BaseStatsExport):
 
 
 QUERY_COMPUTE_TASK_SQL = '''
-    SELECT 
-        TASK.startNs as "start_ns", 
-        TASK.endNs as "end_ns", 
-        (TASK.endNs - TASK.startNs) as "duration", 
+    SELECT
+        TASK.startNs as "start_ns",
+        TASK.endNs as "end_ns",
+        (TASK.endNs - TASK.startNs) as "duration",
         STRING_IDS.value as "task_name"
     FROM TASK
     JOIN COMPUTE_TASK_INFO ON TASK.globalTaskId = COMPUTE_TASK_INFO.globalTaskId
@@ -116,10 +114,10 @@ class ComputeTaskExport(BaseStatsExport):
 
 
 QUERY_COMMUNICATION_TASK_SQL = '''
-    SELECT 
-        MIN(TASK.startNs) as "start_ns", 
-        MAX(TASK.endNs) as "end_ns", 
-        MAX(TASK.endNs) - MIN(TASK.startNs) as "duration",  
+    SELECT
+        MIN(TASK.startNs) as "start_ns",
+        MAX(TASK.endNs) as "end_ns",
+        MAX(TASK.endNs) - MIN(TASK.startNs) as "duration",
         STRING_IDS.value as "task_name"
     FROM TASK
     JOIN COMMUNICATION_TASK_INFO ON TASK.globalTaskId = COMMUNICATION_TASK_INFO.globalTaskId
@@ -140,16 +138,17 @@ class CommunicationTaskExport(BaseStatsExport):
 
 
 QUERY_MEMORY_DEVICE_TASK_SQL = '''
-    SELECT 
-        TASK.startNs as "start_ns", 
-        TASK.endNs as "end_ns", 
-        (TASK.endNs - TASK.startNs) as "duration", 
+    SELECT
+        TASK.startNs as "start_ns",
+        TASK.endNs as "end_ns",
+        (TASK.endNs - TASK.startNs) as "duration",
         STRING_IDS.value as "task_name"
     FROM TASK
     JOIN STRING_IDS ON TASK.taskType = STRING_IDS.id
-    WHERE TASK.startNs >= ? AND TASK.endNs <= ? and LOWER(STRING_IDS.value) LIKE LOWER('%memcpy%') 
+    WHERE TASK.startNs >= ? AND TASK.endNs <= ? and LOWER(STRING_IDS.value) LIKE LOWER('%memcpy%')
     ORDER BY TASK.startNs DESC
 '''
+
 
 class DeviceMemoryTaskExport(BaseStatsExport):
     def __init__(self, db_path, recipe_name, param_dict):
@@ -161,10 +160,10 @@ class DeviceMemoryTaskExport(BaseStatsExport):
 
 
 QUERY_BEFORE_TIME_PYTORCH_TASK_SQL = '''
-    SELECT 
-        PYTORCH_API.startNs as "start_ns", 
+    SELECT
+        PYTORCH_API.startNs as "start_ns",
         PYTORCH_API.endNs as "end_ns",
-        PYTORCH_API.endNs - PYTORCH_API.startNs as "duration", 
+        PYTORCH_API.endNs - PYTORCH_API.startNs as "duration",
         STRING_IDS.value as "task_name"
     FROM PYTORCH_API
     JOIN STRING_IDS ON STRING_IDS.id = PYTORCH_API.name
@@ -183,10 +182,10 @@ class PytorchTaskExport(BaseStatsExport):
 
 
 QUERY_CANN_TASK_SQL = '''
-    SELECT 
-        CANN_API.startNs as "start_ns", 
-        CANN_API.endNs as "end_ns", 
-        CANN_API.endNs - CANN_API.startNs as "duration", 
+    SELECT
+        CANN_API.startNs as "start_ns",
+        CANN_API.endNs as "end_ns",
+        CANN_API.endNs - CANN_API.startNs as "duration",
         ENUM_API_TYPE.name || '@' || STRING_IDS.value as "task_name"
     FROM CANN_API
     JOIN STRING_IDS ON STRING_IDS.id = CANN_API.name
@@ -203,6 +202,3 @@ class CannTaskExport(BaseStatsExport):
 
     def get_param_order(self):
         return [Constant.START_NS, Constant.END_NS]
-
-
-

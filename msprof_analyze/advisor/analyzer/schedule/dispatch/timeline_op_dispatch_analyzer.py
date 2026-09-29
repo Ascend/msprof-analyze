@@ -1,19 +1,19 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.display.prompt.base_prompt import BasePrompt
@@ -24,7 +24,6 @@ from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.display.html.render import HTMLRender
 from msprof_analyze.advisor.display.html.priority_background_color import PriorityBackgroundColor
-from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 logger = get_logger()
 
@@ -69,10 +68,9 @@ class OpDispatchAnalyzer(BaseAnalyzer):
             if not self._op_compile or self._op_compile.total_count < Constant.MAX_OP_COMPILE_NUM:
                 return
 
-            self._issues_record.append(['operator dispatch',
-                                        Constant.OP_COMPILE_ID,
-                                        self._op_compile.total_count,
-                                        self._op_compile.total_time])
+            self._issues_record.append(
+                ['operator dispatch', Constant.OP_COMPILE_ID, self._op_compile.total_count, self._op_compile.total_time]
+            )
         else:
             logger.debug("Skip operator compile checker, because no op_compile attr find.")
 
@@ -82,12 +80,15 @@ class OpDispatchAnalyzer(BaseAnalyzer):
         """
         if not self._op_compile or len(self._issues_record) <= 0:
             return
-        
+
         prompt_class = BasePrompt.get_prompt_class(self.__class__.__name__)
-        self.optimization_item.append(OptimizeItem(
-            prompt_class.PROBLEM,
-            prompt_class.DESCRIPTION.format(self._op_compile.total_count),
-            [prompt_class.SUGGESTION]))
+        self.optimization_item.append(
+            OptimizeItem(
+                prompt_class.PROBLEM,
+                prompt_class.DESCRIPTION.format(self._op_compile.total_count),
+                [prompt_class.SUGGESTION],
+            )
+        )
         for optimization in self.optimization_item:
             result.add(OptimizeRecord(optimization))
 
@@ -100,22 +101,18 @@ class OpDispatchAnalyzer(BaseAnalyzer):
         issues = []
         optimizations = []
         for optimization in self.optimization_item:
-            optimizations.append(dict(
-                description=optimization.description,
-                suggestion=optimization.suggestion[0]
-            ))
+            optimizations.append(dict(description=optimization.description, suggestion=optimization.suggestion[0]))
         for record in self._issues_record:
-            issues.append(dict(issue=record[0],
-                               op_name=record[1],
-                               counts=record[2],
-                               total_time=record[3]))
-        html_render.render_template(key="schedule",
-                                    template_dir="templates",
-                                    template_name="operator_dispatch.html",
-                                    issues=issues,
-                                    optimizers=optimizations,
-                                    priority_background_color=self.get_priority(),
-                                    rank=kwargs.get("rank"))
+            issues.append(dict(issue=record[0], op_name=record[1], counts=record[2], total_time=record[3]))
+        html_render.render_template(
+            key="schedule",
+            template_dir="templates",
+            template_name="operator_dispatch.html",
+            issues=issues,
+            optimizers=optimizations,
+            priority_background_color=self.get_priority(),
+            rank=kwargs.get("rank"),
+        )
 
     def get_priority(self, max_mem_op_dur=None):
         step_duration = getattr(self.dataset, "step_duration", None)

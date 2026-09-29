@@ -1,17 +1,18 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import pandas as pd
@@ -40,11 +41,12 @@ class FreeReason:
 
 
 class FreeAnalysis(BaseRecipeAnalysis):
-
     DEFAULT_TOP_NUM = 10
     TOP_NUM = "top_num"
     DIFF_WAIT_THRESHOLD_NS = 50 * 1000  # 50 us
-    SUGGESTION = "按 rank 记录每段空闲的时长、PyTorch/CANN 层空闲时间及空闲原因，识别每个rank中耗时最长的空闲时间及其产生原因。"
+    SUGGESTION = (
+        "按 rank 记录每段空闲的时长、PyTorch/CANN 层空闲时间及空闲原因，识别每个rank中耗时最长的空闲时间及其产生原因。"
+    )
 
     def __init__(self, params):
         super().__init__(params)
@@ -78,7 +80,7 @@ class FreeAnalysis(BaseRecipeAnalysis):
         """汇总所有rank的free分析结果"""
         if not mapper_res:
             return None
-        
+
         all_results = []
         for rank_id, free_reasons in mapper_res:
             if not free_reasons:
@@ -91,13 +93,13 @@ class FreeAnalysis(BaseRecipeAnalysis):
                     'duration(us)': convert_ns_to_us(free_reason.end_ns - free_reason.start_ns),
                     'pytorchIdleTime(us)': convert_ns_to_us(free_reason.pytorch_idle_time),
                     'cannIdleTime(us)': convert_ns_to_us(free_reason.cann_idle_time),
-                    'reason': free_reason.reason
+                    'reason': free_reason.reason,
                 }
                 all_results.append(result_dict)
-        
+
         if not all_results:
             return None
-        
+
         result_df = pd.DataFrame(all_results)
         return result_df
 
@@ -105,13 +107,13 @@ class FreeAnalysis(BaseRecipeAnalysis):
         # obtain busy time
         busy_df = free_analysis_export.BusyTimeOverlapExport(profiler_db_path, analysis_class).read_export_db()
         if busy_df is None or busy_df.empty:
-            logger.info(f"No busy overlap data found for rank {rank_id}. Find BusyTimeOnlyComputing.")
+            logger.info("No busy overlap data found for rank %s. Find BusyTimeOnlyComputing.", rank_id)
             return None
 
         # compute the free time
         free_df = pd.DataFrame()
-        free_df["start_ns"] = busy_df['end_ns'].iloc[0:len(busy_df['start_ns']) - 1].values
-        free_df['end_ns'] = busy_df['start_ns'].iloc[1:len(busy_df['start_ns'])].values
+        free_df["start_ns"] = busy_df['end_ns'].iloc[0 : len(busy_df['start_ns']) - 1].values
+        free_df['end_ns'] = busy_df['start_ns'].iloc[1 : len(busy_df['start_ns'])].values
         free_df['duration'] = free_df['end_ns'] - free_df['start_ns']
         if free_df is None or free_df.empty:
             return None
@@ -124,10 +126,8 @@ class FreeAnalysis(BaseRecipeAnalysis):
         free_reason = FreeReason(free_start_ns, free_end_ns, rank_id)
 
         # 基于预先查询好的 link_df，过滤出 free 区间内 device 上是否有任务在执行
-        task_df = link_df[
-            (link_df["task_ts"] > free_start_ns) & (link_df["task_end"] < free_end_ns)
-        ]
-    
+        task_df = link_df[(link_df["task_ts"] > free_start_ns) & (link_df["task_end"] < free_end_ns)]
+
         if not task_df.empty:
             # 有任务在执行，分析剩余free时间段
             self._analyze_device_task_remaining_free(task_df, free_reason)
@@ -137,12 +137,12 @@ class FreeAnalysis(BaseRecipeAnalysis):
         before_df = link_df[link_df["task_end"] <= free_start_ns]
         after_df = link_df[link_df["task_ts"] >= free_end_ns]
         prev_task = before_df.sort_values("task_end").iloc[-1] if not before_df.empty else None
-        next_task = after_df.sort_values("task_ts").iloc[0]  if not after_df.empty else None
+        next_task = after_df.sort_values("task_ts").iloc[0] if not after_df.empty else None
         if prev_task is None or next_task is None:
-            free_reason.reason = f"Skip free analysis due to no prev or next task."
+            free_reason.reason = "Skip free analysis due to no prev or next task."
             return free_reason
         if not prev_task.pytorch_ts or not next_task.pytorch_ts:
-            free_reason.reason = f"Skip free analysis due to no pytorch dispatch time."
+            free_reason.reason = "Skip free analysis due to no pytorch dispatch time."
             return free_reason
 
         free_reason.pytorch_idle_time = next_task.pytorch_end - prev_task.pytorch_end
@@ -152,8 +152,9 @@ class FreeAnalysis(BaseRecipeAnalysis):
         next_wait = next_task.cann_ts - next_task.pytorch_end
         # Pytorch层无任务下发
         if next_wait - prev_wait < self.DIFF_WAIT_THRESHOLD_NS:
-            free_reason.reason = (f"Idle Pytorch layer: no task dispatched in "
-                                  f"{convert_ns_to_us(free_reason.pytorch_idle_time)} us")
+            free_reason.reason = (
+                f"Idle Pytorch layer: no task dispatched in {convert_ns_to_us(free_reason.pytorch_idle_time)} us"
+            )
             return free_reason
 
         # CANN层下发瓶颈
@@ -163,11 +164,13 @@ class FreeAnalysis(BaseRecipeAnalysis):
 
         max_dur = max(prev_launch_dur, next_launch_dur, idle_gap)
         if max_dur == idle_gap:
-            free_reason.reason = (f"Abnormal CANN layer: long time between two node@launch "
-                                  f"{convert_ns_to_us(idle_gap)} us")
+            free_reason.reason = (
+                f"Abnormal CANN layer: long time between two node@launch {convert_ns_to_us(idle_gap)} us"
+            )
         else:
-            free_reason.reason = (f"Abnormal CANN layer: long node@launch "
-                                  f"{convert_ns_to_us(max(prev_launch_dur, next_launch_dur))} us")
+            free_reason.reason = (
+                f"Abnormal CANN layer: long node@launch {convert_ns_to_us(max(prev_launch_dur, next_launch_dur))} us"
+            )
 
         return free_reason
 
@@ -176,41 +179,33 @@ class FreeAnalysis(BaseRecipeAnalysis):
             logger.info("No free time data to save.")
             return
 
-        self.dump_data(
-            free_time_df,
-            Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-            "FreeAnalysis",
-            index=False
-        )
+        self.dump_data(free_time_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "FreeAnalysis", index=False)
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": ["FreeAnalysis"]
+                "tables": ["FreeAnalysis"],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
-    
+
     def save_csv(self, free_time_df):
         if free_time_df is None or free_time_df.empty:
             logger.info("No free time data to save.")
             return
-        
+
         column_mapping = {
             'rankId': 'Rank ID',
             'startTime(us)': 'Start Time(us)',
             'endTime(us)': 'End Time(us)',
             'duration(us)': 'Duration(us)',
             'pytorchIdleTime(us)': 'Pytorch Idle Time(us)',
-            'cannIdleTime(us)': 'Cann Idle Time(us)',
-            'reason': 'Reason'
+            'cannIdleTime(us)': 'CANN Idle Time(us)',
+            'reason': 'Reason',
         }
         csv_df = free_time_df.rename(columns=column_mapping)
         self.dump_data(csv_df, "free_analysis.csv", index=False)
         set_json_success(
-            msg_dict={
-                "csv_path": os.path.join(self.output_path, "free_analysis.csv")
-            },
-            suggestion=self.SUGGESTION
+            msg_dict={"csv_path": os.path.join(self.output_path, "free_analysis.csv")}, suggestion=self.SUGGESTION
         )
 
     def _mapper_func(self, data_map, analysis_class):
@@ -218,29 +213,27 @@ class FreeAnalysis(BaseRecipeAnalysis):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
 
         if not profiler_db_path:
-            logger.warning(f"No profiler db path for rank {rank_id}")
+            logger.warning("No profiler db path for rank %s", rank_id)
             return rank_id, []
 
         # 1. obtain_free_time：获取每个db文件中最大的Free时间段
         top_free_df = self.obtain_top_free_time(profiler_db_path, analysis_class, rank_id)
 
         if top_free_df is None or top_free_df.empty:
-            logger.info(f"No free time found for rank {rank_id}")
+            logger.info("No free time found for rank %s", rank_id)
             return rank_id, []
 
         # 2. 预先查询 device-task / CANN / PyTorch 关联信息，供后续按时间过滤使用
         link_df = DeviceTaskLinkCannPytorchExport(profiler_db_path, analysis_class).read_export_db()
         link_df = ensure_numeric_columns(link_df, ["task_ts", "task_end", "pytorch_end", "cann_ts", "cann_end"])
         if link_df is None or link_df.empty:
-            logger.info(f"Failed to get task dispatch time for rank {rank_id}")
+            logger.info("Failed to get task dispatch time for rank %s", rank_id)
             return rank_id, []
 
         # 3. locate_anomaly_reasons：对于每个free，分析原因
         free_reasons = []
         for row in top_free_df.itertuples():
-            free_reason = self.analyze_free_reason(
-                rank_id, row.start_ns, row.end_ns, link_df
-            )
+            free_reason = self.analyze_free_reason(rank_id, row.start_ns, row.end_ns, link_df)
             free_reasons.append(free_reason)
 
         return rank_id, free_reasons
@@ -252,16 +245,16 @@ class FreeAnalysis(BaseRecipeAnalysis):
 
         # 使用通用函数计算抛去这些task后剩余的free时间段
         remaining_free_intervals = RangeCaculator.generate_free_intervals(
-            free_reason.start_ns, free_reason.end_ns, task_df, start_col='task_ts', end_col='task_end')
+            free_reason.start_ns, free_reason.end_ns, task_df, start_col='task_ts', end_col='task_end'
+        )
 
         # 剩余free时间段的最大duration
         if remaining_free_intervals:
-            max_remaining_free = max(interval_end - interval_start
-                                     for interval_start, interval_end in remaining_free_intervals)
-            free_reason.reason = (f"Device task running: {types_desc}, "
-                                  f"max remaining free {convert_ns_to_us(max_remaining_free)} us")
+            max_remaining_free = max(
+                interval_end - interval_start for interval_start, interval_end in remaining_free_intervals
+            )
+            free_reason.reason = (
+                f"Device task running: {types_desc}, max remaining free {convert_ns_to_us(max_remaining_free)} us"
+            )
         else:
             free_reason.reason = f"Device task running: {types_desc}."
-
-
-

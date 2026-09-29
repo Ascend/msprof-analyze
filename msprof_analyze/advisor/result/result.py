@@ -1,25 +1,25 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-import json
 import os
 from collections import OrderedDict
 
 import click
 import xlsxwriter
-from prettytable import ALL, PrettyTable
+from prettytable import ALL, PrettyTable  # pylint: disable=no-name-in-module
 
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
@@ -31,7 +31,6 @@ from msprof_analyze.prof_common.file_manager import FileManager
 
 
 class ResultWriter:
-
     MAX_SHEET_NAME_LENGTH = 31
 
     def __init__(self, result_path=None):
@@ -46,13 +45,12 @@ class ResultWriter:
 
     def add_data(self, sheet_name, headers, data_list):
         if len(sheet_name) > self.MAX_SHEET_NAME_LENGTH:
-            sheet_name = sheet_name[:self.MAX_SHEET_NAME_LENGTH]
+            sheet_name = sheet_name[: self.MAX_SHEET_NAME_LENGTH]
 
         worksheet_name_list = [worksheet.name for worksheet in self.workbook.worksheets()]
         if sheet_name.lower() in [name.lower() for name in worksheet_name_list]:
             logger.warning(
-                "Exists worksheets %s, skip add duplicate worksheet with name '%s'",
-                           worksheet_name_list, sheet_name
+                "Exists worksheets %s, skip add duplicate worksheet with name '%s'", worksheet_name_list, sheet_name
             )
             return
 
@@ -77,29 +75,25 @@ class ResultWriter:
             logger.error("Failed to save analysis results, reason is %s", e)
 
     def _init_header_format(self):
-        self.header_format = self.workbook.add_format({
-            "bold": True,
-            "font_color": "#FFFFFF",
-            "bg_color": "#187498",
-            "align": "center",
-            "border": 1,
-            "font_name": "Arial",
-        })
+        self.header_format = self.workbook.add_format(
+            {
+                "bold": True,
+                "font_color": "#FFFFFF",
+                "bg_color": "#187498",
+                "align": "center",
+                "border": 1,
+                "font_name": "Arial",
+            }
+        )
 
     def _init_data_cell_format(self):
-        self.data_cell_format = self.workbook.add_format({
-            "bold": False,
-            "align": "left",
-            "valign": "top",
-            "border": 1,
-            "font_name": "Arial",
-            'text_wrap': True
-        })
+        self.data_cell_format = self.workbook.add_format(
+            {"bold": False, "align": "left", "valign": "top", "border": 1, "font_name": "Arial", 'text_wrap': True}
+        )
 
 
 @singleton
 class SheetRecoder:
-
     def __init__(self):
         self._sheet_data = OrderedDict()
 
@@ -131,7 +125,6 @@ class SheetRecoder:
 
 @singleton
 class OptimizeResult:
-
     def __init__(self):
         self.result_writer = ResultWriter(Config().analysis_result_file)
         self.sheet_recorder = SheetRecoder()
@@ -218,14 +211,14 @@ class TerminalResult:
             if self.width is None:
                 self.table = PrettyTable(["No.", "Category", "Description", "Suggestion"])
             else:
-                self.table = PrettyTable(["No.", "Category", "Description", "Suggestion"],
-                                         max_table_width=max(self.width - 20, 180))
+                self.table = PrettyTable(
+                    ["No.", "Category", "Description", "Suggestion"], max_table_width=max(self.width - 20, 180)
+                )
         else:
             if self.width is None:
                 self.table = PrettyTable(["No.", "类型", "描述", "建议"])
             else:
-                self.table = PrettyTable(["No.", "类型", "描述", "建议"],
-                                         max_table_width=max(self.width - 20, 180))
+                self.table = PrettyTable(["No.", "类型", "描述", "建议"], max_table_width=max(self.width - 20, 180))
         self.table.hrules = ALL
         self.result_list = []
 

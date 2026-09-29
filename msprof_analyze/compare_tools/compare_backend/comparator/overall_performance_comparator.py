@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.compare_tools.compare_backend.comparator.base_comparator import BaseComparator
 
 from msprof_analyze.prof_common.constant import Constant
@@ -29,10 +30,18 @@ class OverallPerformanceComparator(BaseComparator):
         comp_col = [f'{comp_profiling_info.profiling_type}']
         if not base_profiling_info.hide_op_details and not comp_profiling_info.hide_op_details:
             self._headers.extend(['Cube Time(Num)', 'Vector Time(Num)'])
-            base_col.extend([f'{base_profiling_info.cube_time:.3f}s({base_profiling_info.cube_num})',
-                             f'{base_profiling_info.vec_time:.3f}s({base_profiling_info.vec_num})'])
-            comp_col.extend([f'{comp_profiling_info.cube_time:.3f}s({comp_profiling_info.cube_num})',
-                             f'{comp_profiling_info.vec_time:.3f}s({comp_profiling_info.vec_num})'])
+            base_col.extend(
+                [
+                    f'{base_profiling_info.cube_time:.3f}s({base_profiling_info.cube_num})',
+                    f'{base_profiling_info.vec_time:.3f}s({base_profiling_info.vec_num})',
+                ]
+            )
+            comp_col.extend(
+                [
+                    f'{comp_profiling_info.cube_time:.3f}s({comp_profiling_info.cube_num})',
+                    f'{comp_profiling_info.vec_time:.3f}s({comp_profiling_info.vec_num})',
+                ]
+            )
         if base_profiling_info.conv_time_fwd or comp_profiling_info.conv_time_fwd:
             self._headers.append('Conv Time(Forward)(Num)')
             base_col.append(f'{base_profiling_info.conv_time_fwd:.3f}s({base_profiling_info.conv_num_fwd})')
@@ -71,14 +80,16 @@ class OverallPerformanceComparator(BaseComparator):
         self._headers.extend(['Uncovered Communication Time(Wait Time)'])
         if base_profiling_info.wait_time:
             base_col.extend(
-                [f'{base_profiling_info.communication_not_overlapped: .3f}s({base_profiling_info.wait_time:.3f}s)'])
+                [f'{base_profiling_info.communication_not_overlapped: .3f}s({base_profiling_info.wait_time:.3f}s)']
+            )
         else:
             base_col.extend([f'{base_profiling_info.communication_not_overlapped: .3f}s( / )'])
         if comp_profiling_info.is_level0:
             comp_col.extend([f'{comp_profiling_info.communication_not_overlapped: .3f}s( / )'])
         else:
             comp_col.extend(
-                [f'{comp_profiling_info.communication_not_overlapped: .3f}s({comp_profiling_info.wait_time:.3f}s)'])
+                [f'{comp_profiling_info.communication_not_overlapped: .3f}s({comp_profiling_info.wait_time:.3f}s)']
+            )
         if base_profiling_info.rdma_bandwidth or comp_profiling_info.rdma_bandwidth:
             self._headers.extend(['RDMA Bandwidth'])
             base_col.append(f'{base_profiling_info.rdma_bandwidth:.3f}GB/s')
@@ -91,8 +102,11 @@ class OverallPerformanceComparator(BaseComparator):
             self._headers.append('SDMA Time(Num)')
             base_col.append(f'{base_profiling_info.sdma_time:.3f}s({base_profiling_info.sdma_num})')
             comp_col.append(f'{comp_profiling_info.sdma_time:.3f}s({comp_profiling_info.sdma_num})')
-        cue = '(Not minimal profiling)' if base_profiling_info.is_not_minimal_profiling() or \
-                                           comp_profiling_info.is_not_minimal_profiling() else ''
+        cue = (
+            '(Not minimal profiling)'
+            if base_profiling_info.is_not_minimal_profiling() or comp_profiling_info.is_not_minimal_profiling()
+            else ''
+        )
         self._headers.extend(['Free Time', 'E2E Time' + cue])
         base_col.extend([f'{base_profiling_info.scheduling_time:.3f}s', f'{base_profiling_info.e2e_time:.3f}s'])
         comp_col.extend([f'{comp_profiling_info.scheduling_time:.3f}s', f'{comp_profiling_info.e2e_time:.3f}s'])

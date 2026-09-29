@@ -1,21 +1,21 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
-from unittest import mock
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import MagicMock, patch
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.free_analysis.free_analysis import FreeAnalysis, FreeReason
@@ -49,15 +49,15 @@ class TestFreeAnalysis(unittest.TestCase):
         free_reason1.reason = "Test reason 1"
         free_reason1.pytorch_idle_time = 500
         free_reason1.cann_idle_time = 300
-        
+
         free_reason2 = FreeReason(3000, 4000, 1)
         free_reason2.reason = "Test reason 2"
         free_reason2.pytorch_idle_time = None
         free_reason2.cann_idle_time = None
-        
+
         mapper_res = [(0, [free_reason1]), (1, [free_reason2])]
         result = self.recipe.reducer_func(mapper_res)
-        
+
         self.assertIsNotNone(result)
         self.assertEqual(len(result), 2)
         self.assertEqual(result['rankId'].tolist(), [0, 1])
@@ -71,7 +71,7 @@ class TestFreeAnalysis(unittest.TestCase):
         mock_export = MagicMock()
         mock_export.read_export_db.return_value = None
         mock_busy_export.return_value = mock_export
-        
+
         result = self.recipe.obtain_top_free_time("/path/to/db", "FreeAnalysis", 0)
         self.assertIsNone(result)
 
@@ -81,14 +81,14 @@ class TestFreeAnalysis(unittest.TestCase):
             'start_ns': [0, 1000, 2000],
             'end_ns': [500, 1500, 2500]
         })
-        
+
         mock_export = MagicMock()
         mock_export.read_export_db.return_value = busy_df
         mock_busy_export.return_value = mock_export
-        
+
         self.recipe.top_num = 2
         result = self.recipe.obtain_top_free_time("/path/to/db", "FreeAnalysis", 0)
-        
+
         self.assertIsNotNone(result)
         self.assertIn('start_ns', result.columns)
         self.assertIn('end_ns', result.columns)
@@ -105,7 +105,7 @@ class TestFreeAnalysis(unittest.TestCase):
             'cann_ts': [4050],
             'cann_end': [4080]
         })
-        
+
         free_reason = self.recipe.analyze_free_reason(0, 1000, 3000, link_df)
         self.assertIn("Skip free analysis due to no prev or next task", free_reason.reason)
 
@@ -119,7 +119,7 @@ class TestFreeAnalysis(unittest.TestCase):
             'cann_ts': [550, 4050],
             'cann_end': [580, 4080]
         })
-        
+
         free_reason = self.recipe.analyze_free_reason(0, 1000, 3000, link_df)
         self.assertIn("Skip free analysis due to no pytorch dispatch time", free_reason.reason)
 
@@ -133,7 +133,7 @@ class TestFreeAnalysis(unittest.TestCase):
             'cann_ts': [550, 4050],
             'cann_end': [580, 4080]
         })
-        
+
         free_reason = self.recipe.analyze_free_reason(0, 1000, 3000, link_df)
         self.assertIn("Idle Pytorch layer", free_reason.reason)
         self.assertIsNotNone(free_reason.pytorch_idle_time)
@@ -148,7 +148,7 @@ class TestFreeAnalysis(unittest.TestCase):
             'cann_ts': [550, 65000],  # 大的间隔
             'cann_end': [580, 65080]
         })
-        
+
         free_reason = self.recipe.analyze_free_reason(0, 1000, 3000, link_df)
         self.assertIn("Abnormal CANN layer", free_reason.reason)
         self.assertIsNotNone(free_reason.cann_idle_time)
@@ -159,7 +159,7 @@ class TestFreeAnalysis(unittest.TestCase):
             'task_end': [1200, 2200],
             'task_type': ['task1', 'task2']
         })
-        
+
         free_reason = FreeReason(1000, 3000, 0)
         self.recipe._analyze_device_task_remaining_free(task_df, free_reason)
 
@@ -176,7 +176,7 @@ class TestFreeAnalysis(unittest.TestCase):
             'pytorchIdleTime(us)': [500.0],
             'cannIdleTime(us)': [300.0]
         })
-        
+
         with patch.object(self.recipe, 'dump_data') as mock_dump:
             self.recipe.save_csv(df)
             mock_dump.assert_called_once()
@@ -193,12 +193,12 @@ class TestFreeAnalysis(unittest.TestCase):
         mock_busy = MagicMock()
         mock_busy.read_export_db.return_value = None
         mock_busy_export.return_value = mock_busy
-        
+
         data_map = {
             Constant.RANK_ID: 0,
             Constant.PROFILER_DB_PATH: "/path/to/db"
         }
-        
+
         result = self.recipe._mapper_func(data_map, "FreeAnalysis")
         self.assertEqual(result, (0, []))
 

@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 
@@ -30,7 +31,6 @@ logger = get_logger()
 
 
 class SynchronizeStreamChecker(TimelineBaseChecker):
-
     def __init__(self):
         super().__init__(n_processes=1)
         self.optimization_item = []
@@ -68,9 +68,9 @@ class SynchronizeStreamChecker(TimelineBaseChecker):
 
         self.priority = self.get_priority()
 
-        self.desc = self.desc.format(synchronize_num=synchronize_num,
-                                     node_launch_num=node_launch_num,
-                                     co_occur_ratio=co_occurrence_ratio)
+        self.desc = self.desc.format(
+            synchronize_num=synchronize_num, node_launch_num=node_launch_num, co_occur_ratio=co_occurrence_ratio
+        )
 
         solutions = []
         for solution in solutions:
@@ -97,17 +97,19 @@ class SynchronizeStreamChecker(TimelineBaseChecker):
         priority = kwargs.get("priority")
         rank = kwargs.get("rank")
         format_result_for_html = format_timeline_result(dict(self.matched_op_stacks), dump_html=True)
-        html_render.render_template(key="schedule",
-                                    template_dir="templates",
-                                    template_name="synchronize_stream.html",
-                                    desc=self.desc,
-                                    solutions=self.solutions,
-                                    result=format_result_for_html,
-                                    with_stack_doc_url=Config().timeline_with_stack_doc_url,
-                                    empty_stacks=self.empty_stacks,
-                                    framework_black_list=self.framework_black_list,
-                                    priority_background_color=priority,
-                                    rank=rank)
+        html_render.render_template(
+            key="schedule",
+            template_dir="templates",
+            template_name="synchronize_stream.html",
+            desc=self.desc,
+            solutions=self.solutions,
+            result=format_result_for_html,
+            with_stack_doc_url=Config().timeline_with_stack_doc_url,
+            empty_stacks=self.empty_stacks,
+            framework_black_list=self.framework_black_list,
+            priority_background_color=priority,
+            rank=rank,
+        )
 
     def get_priority(self):
         return PriorityBackgroundColor.high
@@ -118,7 +120,7 @@ class SynchronizeStreamChecker(TimelineBaseChecker):
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "synchronize.yaml"
+            "synchronize.yaml",
         )
 
         synchronize_rule = FileManager.read_yaml_file(synchronize_rule_path)

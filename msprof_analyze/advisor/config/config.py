@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 
 from msprof_analyze.prof_common.logger import get_logger
@@ -31,6 +32,7 @@ class Config:
     """
     config
     """
+
     # pylint: disable=too-many-instance-attributes
 
     _CONFIG_DIR_NAME = "config"
@@ -41,23 +43,28 @@ class Config:
         'THRESHOLD': ['operator_bound_ratio', 'frequency_threshold'],
         'RULE-BUCKET': ['cn-north-9', 'cn-southwest-2', 'cn-north-7'],
         'URL': [
-            'timeline_api_doc_url', 'timeline_with_stack_doc_url',
-            'pytorch_aoe_operator_tune_url', 'mslite_infer_aoe_operator_tune_url',
-            'enable_compiled_tune_url', 'ascend_profiler_url'
-        ]
+            'timeline_api_doc_url',
+            'timeline_with_stack_doc_url',
+            'pytorch_aoe_operator_tune_url',
+            'mslite_infer_aoe_operator_tune_url',
+            'enable_compiled_tune_url',
+            'ascend_profiler_url',
+        ],
     }
 
     def __init__(self) -> None:
         self._work_path = os.getcwd()  # pwd
         self._root_path = os.path.abspath(os.path.join(__file__, "../../"))
-        self.config_reader = SafeConfigReader(os.path.join(self._root_path, self._CONFIG_DIR_NAME,
-                                                           self._CONFIG_FILE_NAME))
+        self.config_reader = SafeConfigReader(
+            os.path.join(self._root_path, self._CONFIG_DIR_NAME, self._CONFIG_FILE_NAME)
+        )
         self.config_reader.validate(self._REQUIRED_SECTIONS)
         self.config = self.config_reader.get_config()
         # ANALYSE
         self._analysis_result_file = self._normalize_path(self.config.get("ANALYSE", "analysis_result_file"))
         self._tune_ops_file = os.path.abspath(
-            os.path.join(self._work_path, f"operator_tuning_file_{Timer().strftime}.cfg"))
+            os.path.join(self._work_path, f"operator_tuning_file_{Timer().strftime}.cfg")
+        )
         self.log_path = None
 
     @property

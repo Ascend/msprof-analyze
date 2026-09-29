@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import pandas as pd
@@ -81,7 +82,10 @@ class ComputeOpSum(BaseRecipeAnalysis):
         # get per rank stats by opname
         self.per_rank_stats_by_opname = pd.concat(
             describe_duration(df.groupby(["OpName", "OpType", "TaskType", "InputShapes"])["Duration"]).assign(
-                Rank=df["Rank"][0]) for df in mapper_res)
+                Rank=df["Rank"][0]
+            )
+            for df in mapper_res
+        )
         self.per_rank_stats_by_opname.sort_values(by=["SumNs"], inplace=True, ascending=False)
 
     def run(self, context):
@@ -114,29 +118,35 @@ class ComputeOpSum(BaseRecipeAnalysis):
                 "csv_path": [
                     os.path.join(self.output_path, "all_stats.csv"),
                     os.path.join(self.output_path, "rank_stats_by_optype.csv"),
-                    os.path.join(self.output_path, "rank_stats_by_opname.csv")
+                    os.path.join(self.output_path, "rank_stats_by_opname.csv"),
                 ]
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def save_db(self):
         self.dump_data(self.all_rank_stats, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_ALL_RANK_STATS)
-        self.dump_data(self.per_rank_stats_by_optype, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.TABLE_PER_RANK_STATS_BY_OPTYPE)
+        self.dump_data(
+            self.per_rank_stats_by_optype,
+            Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+            self.TABLE_PER_RANK_STATS_BY_OPTYPE,
+        )
         if not self.exclude_op_name:
-            self.dump_data(self.per_rank_stats_by_opname, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.TABLE_PER_RANK_STATS_BY_OPNAME)
+            self.dump_data(
+                self.per_rank_stats_by_opname,
+                Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+                self.TABLE_PER_RANK_STATS_BY_OPNAME,
+            )
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
                 "tables": [
                     self.TABLE_ALL_RANK_STATS,
                     self.TABLE_PER_RANK_STATS_BY_OPTYPE,
-                    self.TABLE_PER_RANK_STATS_BY_OPNAME
-                ]
+                    self.TABLE_PER_RANK_STATS_BY_OPNAME,
+                ],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def _mapper_func(self, data_map, analysis_class):
@@ -148,7 +158,7 @@ class ComputeOpSum(BaseRecipeAnalysis):
         else:
             df = ComputeOpSumExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
         df["Rank"] = rank_id
         return df

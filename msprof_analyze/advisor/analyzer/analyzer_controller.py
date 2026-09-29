@@ -1,21 +1,21 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+# pylint: disable=too-many-lines
 import copy
-from msprof_analyze.prof_common.logger import get_logger
 import json
-import sys
 import os
 import platform
 import multiprocessing as mp
@@ -24,6 +24,7 @@ from pathlib import Path
 
 import psutil
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.advisor.analyzer.cluster.slow_rank_analyzer import SlowRankAnalyzer
@@ -50,6 +51,7 @@ logger = get_logger()
 
 class AsyncParams:
     """处理用户异步请求的输入参数，包括cli arguments和环境变量两类参数."""
+
     user_valid_arguments = {}
     user_valid_envs = {}
     user_non_enum_params = {}
@@ -65,8 +67,13 @@ class AsyncParams:
 
         if sorted(value_list) not in [sorted(option) for option in option_values]:
             AsyncParams.user_invalid_values.append(
-                {"key": key, "invalid value": value, "optional values": option_values,
-                 "required value type": value_type})
+                {
+                    "key": key,
+                    "invalid value": value,
+                    "optional values": option_values,
+                    "required value type": value_type,
+                }
+            )
             return
         if key_type == EnumParamsParser.ENVS:
             AsyncParams.user_valid_envs[key.upper()] = ",".join(value_list)
@@ -77,8 +84,13 @@ class AsyncParams:
     def parse_async_int_params(key, value, option_values, key_type, value_type):
         if convert_to_int(value) not in option_values:
             AsyncParams.user_invalid_values.append(
-                {"key": key, "invalid value": value, "optional values": option_values,
-                 "required value type": value_type})
+                {
+                    "key": key,
+                    "invalid value": value,
+                    "optional values": option_values,
+                    "required value type": value_type,
+                }
+            )
             return
 
         if key_type == EnumParamsParser.ENVS:
@@ -90,8 +102,13 @@ class AsyncParams:
     def parse_async_str_params(key, value, option_values, key_type, value_type):
         if str(value) not in option_values:
             AsyncParams.user_invalid_values.append(
-                {"key": key, "invalid value": value, "optional values": option_values,
-                 "required value type": value_type})
+                {
+                    "key": key,
+                    "invalid value": value,
+                    "optional values": option_values,
+                    "required value type": value_type,
+                }
+            )
             return
         if key_type == EnumParamsParser.ENVS:
             AsyncParams.user_valid_envs[key.upper()] = str(value)
@@ -100,11 +117,15 @@ class AsyncParams:
 
     @staticmethod
     def parse_async_boolean_params(key, value, option_values, key_type, value_type):
-
         if str(value).lower() not in ["true", "false"]:
             AsyncParams.user_invalid_values.append(
-                {"key": key, "invalid value": value, "optional values": option_values,
-                 "required value type": value_type})
+                {
+                    "key": key,
+                    "invalid value": value,
+                    "optional values": option_values,
+                    "required value type": value_type,
+                }
+            )
             return
 
         if key_type == EnumParamsParser.ENVS:
@@ -135,8 +156,9 @@ class AsyncParams:
                 key_type = params_parser.ARGUMENTS
 
             if hasattr(AsyncParams, f"parse_async_{value_type}_params"):
-                getattr(AsyncParams, f"parse_async_{value_type}_params")(key, value, option_values, key_type,
-                                                                         value_type)
+                getattr(AsyncParams, f"parse_async_{value_type}_params")(
+                    key, value, option_values, key_type, value_type
+                )
 
         AsyncParams.user_total_params["async_analysis_env"] = AsyncParams.user_valid_envs
         AsyncParams.user_total_params.update(AsyncParams.user_valid_arguments)
@@ -147,10 +169,7 @@ class AnalyzerController:
     CLUSTER_RANK_THRESHOLD = 2
     SDMA_SUPPORT_SCOPES = [SupportedScopes.BANDWIDTH_CONTENTION_DETECTION, SupportedScopes.BYTE_ALIGNMENT_DETECTION]
     RDMA_SUPPORT_SCOPES = [SupportedScopes.PACKET]
-    COMMUNICATION_MAPPING = {
-        SlowLinkAnalyzer.SDMA: SDMA_SUPPORT_SCOPES,
-        SlowLinkAnalyzer.RDMA: RDMA_SUPPORT_SCOPES
-    }
+    COMMUNICATION_MAPPING = {SlowLinkAnalyzer.SDMA: SDMA_SUPPORT_SCOPES, SlowLinkAnalyzer.RDMA: RDMA_SUPPORT_SCOPES}
 
     def __init__(self):
         self.dimensions = Interface.all_dimension
@@ -186,10 +205,10 @@ class AnalyzerController:
 
         return True
 
-
     @staticmethod
-    def _get_step_rank_for_cluster_statistic_diff(target_cluster_statistic_data, benchmark_cluster_statistic_data,
-                                                  headers, dimension, get_max=False):
+    def _get_step_rank_for_cluster_statistic_diff(
+        target_cluster_statistic_data, benchmark_cluster_statistic_data, headers, dimension, get_max=False
+    ):
         if dimension not in headers:
             logger.warning("Invalid dimension %s for cluster statistics data, optionals are %s.", dimension, headers)
             return None, None, None
@@ -205,8 +224,10 @@ class AnalyzerController:
                 continue
             diff_record.append(target_data - benchmark_data)
 
-        if SlowRankAnalyzer.compute_max_gap_ratio(diff_record, safe_division(sum(diff_record), len(
-                diff_record))) < SlowRankAnalyzer.RATIO_THRESHOLD:
+        if (
+            SlowRankAnalyzer.compute_max_gap_ratio(diff_record, safe_division(sum(diff_record), len(diff_record)))
+            < SlowRankAnalyzer.RATIO_THRESHOLD
+        ):
             return None, None, None
 
         value = max(diff_record) if get_max else min(diff_record)
@@ -218,12 +239,14 @@ class AnalyzerController:
         step = safe_index(safe_index(target_cluster_statistic_data, value_index, []), step_value_index)
         benchmark_step = safe_index(safe_index(benchmark_cluster_statistic_data, value_index, []), step_value_index)
         target_rank_id = safe_index(safe_index(target_cluster_statistic_data, value_index, []), rank_id_value_index)
-        benchmark_rank_id = safe_index(safe_index(benchmark_cluster_statistic_data, value_index, []),
-                                       rank_id_value_index)
+        benchmark_rank_id = safe_index(
+            safe_index(benchmark_cluster_statistic_data, value_index, []), rank_id_value_index
+        )
 
         if target_rank_id != benchmark_rank_id:
             logger.error(
-                "Rank ids of target profiling must keep the same as benchmark profiling, skip cluster comparison")
+                "Rank ids of target profiling must keep the same as benchmark profiling, skip cluster comparison"
+            )
             return None, None, None
 
         return step, benchmark_step, target_rank_id
@@ -235,24 +258,31 @@ class AnalyzerController:
             os.environ[key] = value
 
     def format_async_analysis_params(self, pid, async_resp, dimensions, kwargs):
-
         AsyncParams.parse_params(kwargs)
         dimensions = AsyncParams.user_total_params.get("analysis_dimensions") or dimensions
 
         if AsyncParams.user_invalid_values:
             error_msg = "Got invalid arguments as follows: \n "
             for index, invalid_value in enumerate(AsyncParams.user_invalid_values):
-                error_msg += f"{index + 1}. Key '{invalid_value.get('key')}', " \
-                             f"invalid value '{invalid_value.get('invalid value')}', " \
-                             f"optional valid values '{invalid_value.get('optional values')}', " \
-                             f"required value type '{invalid_value.get('required value type')}'.\n "
-            self._update_analysis_process_resp(pid, async_resp, error_msg=error_msg,
-                                               status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
-                                               status=AsyncAnalysisStatus.FAILED)
+                error_msg += (
+                    f"{index + 1}. Key '{invalid_value.get('key')}', "
+                    f"invalid value '{invalid_value.get('invalid value')}', "
+                    f"optional valid values '{invalid_value.get('optional values')}', "
+                    f"required value type '{invalid_value.get('required value type')}'.\n "
+                )
+            self._update_analysis_process_resp(
+                pid,
+                async_resp,
+                error_msg=error_msg,
+                status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
+                status=AsyncAnalysisStatus.FAILED,
+            )
             raise ValueError(error_msg)
 
-        logger.warning("User parameters for async analysis is as follows:\n %s",
-                       json.dumps(AsyncParams.user_total_params, indent=4))
+        logger.warning(
+            "User parameters for async analysis is as follows:\n %s",
+            json.dumps(AsyncParams.user_total_params, indent=4),
+        )
         return dimensions, AsyncParams.user_total_params
 
     def do_analysis(self, dimensions, **kwargs):
@@ -281,13 +311,18 @@ class AnalyzerController:
 
             self._do_analysis(dimensions, pid=pid, async_resp=resp, **kwargs)
         except Exception as e:
-            self._update_analysis_process_resp(pid, resp, status_code=AsyncAnalysisStatus.INNER_ERROR_STATUS_CODE,
-                                               status=AsyncAnalysisStatus.FAILED, error_msg=str(e))
+            self._update_analysis_process_resp(
+                pid,
+                resp,
+                status_code=AsyncAnalysisStatus.INNER_ERROR_STATUS_CODE,
+                status=AsyncAnalysisStatus.FAILED,
+                error_msg=str(e),
+            )
             logger.error(e)
             raise RuntimeError("Do analysis error.") from e
 
     def async_do_analysis(self, dimensions, **kwargs):
-        """ Deploy a online service to start async analysis job, wrap this api by flask or tornado and so on,
+        """Deploy a online service to start async analysis job, wrap this api by flask or tornado and so on,
             then could query the analysis status by restful api.
             You can view file 'profiler/msprof_analyze/advisor/config/enum_parameters.yaml' to obtain detailed
             information for all the args listed below.
@@ -295,9 +330,9 @@ class AnalyzerController:
         Args:
             dimensions: analysis dimension, normally set as Interface.all_dimension, support specific dimension analysis
                 such as ['computation'] or ['computation', 'schedule']
-            cann_version: cann version of your runtime, inpact on the analysis of affinity api and AICPU operators
+            cann_version: cann version of your runtime, impact on the analysis of affinity api and AICPU operators
             profiling_type: profiling type of your runtime
-            profiling_version: profiling version of your runtime, inpact on the analysis of affinity api
+            profiling_version: profiling version of your runtime, impact on the analysis of affinity api
             analysis_dimensions: can overwite dimensions.
             advisor_analyze_processes: number of processes to use while the training params pipeline parallel(pp) >1,
                 can reduce the time of analysis.
@@ -327,12 +362,16 @@ class AnalyzerController:
         """
         kwargs["is_async_analysis"] = True
 
-        async_analysis_process = mp.Process(target=self.do_analysis, args=(dimensions,), kwargs=kwargs,
-                                            name="Async advisor performance analysis")
+        async_analysis_process = mp.Process(
+            target=self.do_analysis, args=(dimensions,), kwargs=kwargs, name="Async advisor performance analysis"
+        )
         async_analysis_process.start()
-        self._update_analysis_process_resp(async_analysis_process.pid, {"id": async_analysis_process.pid},
-                                           status_code=AsyncAnalysisStatus.NON_FAILED_STATUS_CODE,
-                                           status=AsyncAnalysisStatus.ANALYZING)
+        self._update_analysis_process_resp(
+            async_analysis_process.pid,
+            {"id": async_analysis_process.pid},
+            status_code=AsyncAnalysisStatus.NON_FAILED_STATUS_CODE,
+            status=AsyncAnalysisStatus.ANALYZING,
+        )
         return async_analysis_process
 
     def get_response_by_pid(self, pid):
@@ -343,15 +382,20 @@ class AnalyzerController:
             except psutil.NoSuchProcess:
                 return False
 
-        pid_not_exist_response = dict(id=pid, status_code=AsyncAnalysisStatus.NOT_FOUND_STATUS_CODE,
-                                      status=AsyncAnalysisStatus.FAILED,
-                                      error_msg="The advisor task id does not exist")
+        pid_not_exist_response = dict(
+            id=pid,
+            status_code=AsyncAnalysisStatus.NOT_FOUND_STATUS_CODE,
+            status=AsyncAnalysisStatus.FAILED,
+            error_msg="The advisor task id does not exist",
+        )
         if pid not in self.analysis_process_resp:
             return pid_not_exist_response
 
         response = self.analysis_process_resp.get(pid)
-        if response.get("status") not in [AsyncAnalysisStatus.FAILED,
-                                          AsyncAnalysisStatus.SUCCESS] and not _is_pid_exists(pid):
+        if response.get("status") not in [
+            AsyncAnalysisStatus.FAILED,
+            AsyncAnalysisStatus.SUCCESS,
+        ] and not _is_pid_exists(pid):
             return pid_not_exist_response
         return response
 
@@ -376,10 +420,16 @@ class AnalyzerController:
         if benchmark_profiling_path:
             # kernel/api 比对
             compare_profiling_list = [
-                dict(profiling_path=profiling_path, benchmark_profiling_path=benchmark_profiling_path,
-                     compare_mode=Constant.KERNEL_COMPARE),
-                dict(profiling_path=profiling_path, benchmark_profiling_path=benchmark_profiling_path,
-                     compare_mode=Constant.API_COMPARE)
+                dict(
+                    profiling_path=profiling_path,
+                    benchmark_profiling_path=benchmark_profiling_path,
+                    compare_mode=Constant.KERNEL_COMPARE,
+                ),
+                dict(
+                    profiling_path=profiling_path,
+                    benchmark_profiling_path=benchmark_profiling_path,
+                    compare_mode=Constant.API_COMPARE,
+                ),
             ]
 
             job_list += self._profiling_comparison(compare_profiling_list)
@@ -408,6 +458,7 @@ class AnalyzerController:
 
     def overall(self, profiling_path):
         from msprof_analyze.advisor.analyzer.overall.environment_variable_analyzer import EnvironmentVariableAnalyzer
+
         env_analyzer = EnvironmentVariableAnalyzer(profiling_path)
         env_analyzer.optimize()
 
@@ -418,8 +469,9 @@ class AnalyzerController:
             overall_analyzer = OverallSummaryAnalyzer(profiling_path)
             overall_analyzer.optimize()
 
-    def schedule_analysis(self, profiling_path, benchmark_profiling_path=None, step=None, benchmark_step=None,
-                          **kwargs):
+    def schedule_analysis(
+        self, profiling_path, benchmark_profiling_path=None, step=None, benchmark_step=None, **kwargs
+    ):
         # 任意单卡的下发分析
 
         input_kwargs = copy.deepcopy(self.kwargs)
@@ -438,8 +490,9 @@ class AnalyzerController:
                 job_list.append((dimension, scope, interface, input_kwargs))
         return job_list
 
-    def computation_analysis(self, profiling_path, benchmark_profiling_path=None, step=None,
-                             benchmark_step=None, stage=None, **kwargs):
+    def computation_analysis(
+        self, profiling_path, benchmark_profiling_path=None, step=None, benchmark_step=None, stage=None, **kwargs
+    ):
         # 任意单卡的计算分析
 
         input_kwargs = copy.deepcopy(self.kwargs)
@@ -480,7 +533,6 @@ class AnalyzerController:
         return job_list
 
     def communication_analysis(self, profiling_path, benchmark_profiling_path=None, **kwargs):
-
         job_list = []
         supported_trans_type = [SlowLinkAnalyzer.SDMA, SlowLinkAnalyzer.RDMA]
         step = kwargs.get("step", None)
@@ -491,10 +543,14 @@ class AnalyzerController:
             logger.error("Error transit type %s, optionals are %s", bandwidth_type, supported_trans_type)
             return job_list
 
-        job_list += self._communication_analysis(profiling_path=profiling_path,
-                                                 benchmark_profiling_path=benchmark_profiling_path,
-                                                 step=step, benchmark_step=benchmark_step,
-                                                 scope=scope, bandwidth_type=bandwidth_type)
+        job_list += self._communication_analysis(
+            profiling_path=profiling_path,
+            benchmark_profiling_path=benchmark_profiling_path,
+            step=step,
+            benchmark_step=benchmark_step,
+            scope=scope,
+            bandwidth_type=bandwidth_type,
+        )
 
         return job_list
 
@@ -521,12 +577,16 @@ class AnalyzerController:
             info_msg += f" and step {slow_step}"
         logger.info(info_msg)
 
-        kwargs = dict(profiling_path=self._get_profiling_path_by_rank(profiling_path, slow_rank_id),
-                      benchmark_profiling_path=self._get_profiling_path_by_rank(profiling_path, fast_rank_id),
-                      step=slow_step, benchmark_step=fast_step,
-                      rank=slow_rank_id, benchmark_rank=fast_rank_id,
-                      compare_mode=Constant.API_COMPARE,
-                      step_duration=self.slow_rank_analyzer.get_step_duration(slow_rank_id, slow_step))
+        kwargs = dict(
+            profiling_path=self._get_profiling_path_by_rank(profiling_path, slow_rank_id),
+            benchmark_profiling_path=self._get_profiling_path_by_rank(profiling_path, fast_rank_id),
+            step=slow_step,
+            benchmark_step=fast_step,
+            rank=slow_rank_id,
+            benchmark_rank=fast_rank_id,
+            compare_mode=Constant.API_COMPARE,
+            step_duration=self.slow_rank_analyzer.get_step_duration(slow_rank_id, slow_step),
+        )
 
         job_list += self.schedule_analysis(**kwargs)
 
@@ -543,9 +603,9 @@ class AnalyzerController:
         for dimension in [Interface.COMMUNICATION]:
             for scope in Interface.get_scope(dimension):
                 analyzer_class = Interface.get_analyzer(dimension, scope)
-                if hasattr(analyzer_class, "requires_cluster_dataset") and getattr(analyzer_class,
-                                                                                   "requires_cluster_dataset"):
-
+                if hasattr(analyzer_class, "requires_cluster_dataset") and getattr(
+                    analyzer_class, "requires_cluster_dataset"
+                ):
                     # 如果不依赖数据集，或者依赖的是ClusterDataset，则不用根据带宽确定需要分析的特定rank
                     kwargs = copy.deepcopy(self.kwargs)
                     kwargs["profiling_path"] = profiling_path
@@ -567,8 +627,9 @@ class AnalyzerController:
                             info_msg += f"and step {step}"
                         logger.info(info_msg)
 
-                        job_list += self.communication_analysis(analysis_profiling_path, step=step,
-                                                                bandwidth_type=bandwidth_type, scope=scope)
+                        job_list += self.communication_analysis(
+                            analysis_profiling_path, step=step, bandwidth_type=bandwidth_type, scope=scope
+                        )
 
         return job_list
 
@@ -606,8 +667,9 @@ class AnalyzerController:
 
         analysis_profiling_path = self._get_profiling_path_by_rank(profiling_path, slow_rank_id)
         step_duration = self.slow_rank_analyzer.get_step_duration(slow_rank_id, slow_step)
-        job_list += self.memory_analysis(analysis_profiling_path, step=slow_step, rank=slow_rank_id,
-                                         step_duration=step_duration)
+        job_list += self.memory_analysis(
+            analysis_profiling_path, step=slow_step, rank=slow_rank_id, step_duration=step_duration
+        )
         return job_list
 
     def _do_analysis(self, dimensions, pid=0, async_resp=None, **kwargs):
@@ -623,19 +685,27 @@ class AnalyzerController:
 
         if not self._check_profiling_path_valid(profiling_path):
             error_msg = f"Got invalid argument '-d/--profiling_path' {profiling_path}, skip analysis"
-            self._update_analysis_process_resp(pid, async_resp, error_msg=error_msg,
-                                               status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
-                                               status=AsyncAnalysisStatus.FAILED)
+            self._update_analysis_process_resp(
+                pid,
+                async_resp,
+                error_msg=error_msg,
+                status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
+                status=AsyncAnalysisStatus.FAILED,
+            )
             logger.error(error_msg)
             return
 
-
         if benchmark_profiling_path and not self._check_profiling_path_valid(benchmark_profiling_path):
-            error_msg = (f"Got invalid argument '-bp/--benchmark_profiling_path' {benchmark_profiling_path}, "
-                         f"skip analysis")
-            self._update_analysis_process_resp(pid, async_resp, error_msg=error_msg,
-                                               status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
-                                               status=AsyncAnalysisStatus.FAILED)
+            error_msg = (
+                f"Got invalid argument '-bp/--benchmark_profiling_path' {benchmark_profiling_path}, skip analysis"
+            )
+            self._update_analysis_process_resp(
+                pid,
+                async_resp,
+                error_msg=error_msg,
+                status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
+                status=AsyncAnalysisStatus.FAILED,
+            )
             logger.error(error_msg)
             return
 
@@ -644,12 +714,17 @@ class AnalyzerController:
             # 构建benchmark profiling的map，用于根据rank获取profiling路径，否则无法进行比对
             is_benchmark_cluster = self._is_cluster_profiling(benchmark_profiling_path)
             is_comparison_path_valid = (self._is_cluster and is_benchmark_cluster) or (
-                    not self._is_cluster and not is_benchmark_cluster)
+                not self._is_cluster and not is_benchmark_cluster
+            )
             if not is_comparison_path_valid:
-                error_msg = f"Only support profiling comparison for '1 npu vs 1 gpu/npu' and 'multi npus vs multi npus'"
-                self._update_analysis_process_resp(pid, async_resp, error_msg=error_msg,
-                                                   status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
-                                                   status=AsyncAnalysisStatus.FAILED)
+                error_msg = "Only support profiling comparison for '1 npu vs 1 gpu/npu' and 'multi npus vs multi npus'"
+                self._update_analysis_process_resp(
+                    pid,
+                    async_resp,
+                    error_msg=error_msg,
+                    status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
+                    status=AsyncAnalysisStatus.FAILED,
+                )
                 logger.error(error_msg)
                 return
 
@@ -664,11 +739,7 @@ class AnalyzerController:
         for i, (dimension, scope, interface, kwargs) in enumerate(job_list[::-1]):
             result_list.append(
                 interface.get_result(
-                    dimension,
-                    scope,
-                    render_html=i == len(job_list) - 1 and not is_agent,
-                    output_dict=False,
-                    **kwargs
+                    dimension, scope, render_html=i == len(job_list) - 1 and not is_agent, output_dict=False, **kwargs
                 )
             )
 
@@ -723,7 +794,8 @@ class AnalyzerController:
         disable_profiling_comparison = os.getenv(Constant.DISABLE_PROFILING_COMPARISON)
         if disable_profiling_comparison is not None and disable_profiling_comparison.lower() == "true":
             logger.info(
-                "Skip profiling comparison due to longer processing time due to env 'DISABLE_PROFILING_COMPARISON'")
+                "Skip profiling comparison due to longer processing time due to env 'DISABLE_PROFILING_COMPARISON'"
+            )
             return job_list
         kwargs = {}
         for index, _kwargs in enumerate(compare_profiling_list):
@@ -749,22 +821,32 @@ class AnalyzerController:
         benchmark_slow_link_analyzer = SlowLinkAnalyzer(benchmark_profiling_path)
 
         # 计算和下发分析
-        job_list += self._cluster_data_comparison(profiling_path,
-                                                  benchmark_profiling_path,
-                                                  self.slow_rank_analyzer,
-                                                  benchmark_slow_rank_analyzer,
-                                                  get_max=True)
+        job_list += self._cluster_data_comparison(
+            profiling_path,
+            benchmark_profiling_path,
+            self.slow_rank_analyzer,
+            benchmark_slow_rank_analyzer,
+            get_max=True,
+        )
 
         # 通信分析
-        job_list += self._cluster_data_comparison(profiling_path,
-                                                  benchmark_profiling_path,
-                                                  self.slow_link_analyzer,
-                                                  benchmark_slow_link_analyzer,
-                                                  get_max=False)
+        job_list += self._cluster_data_comparison(
+            profiling_path,
+            benchmark_profiling_path,
+            self.slow_link_analyzer,
+            benchmark_slow_link_analyzer,
+            get_max=False,
+        )
         return job_list
 
-    def _cluster_data_comparison(self, profiling_path, benchmark_profiling_path, target_cluster_analyzer,
-                                 benchmark_cluster_analyzer, get_max=False):
+    def _cluster_data_comparison(
+        self,
+        profiling_path,
+        benchmark_profiling_path,
+        target_cluster_analyzer,
+        benchmark_cluster_analyzer,
+        get_max=False,
+    ):
         # #low rank/slow link结果逐行对比获取差值最大的rank和step进行单卡分析
         job_list = []
 
@@ -784,23 +866,19 @@ class AnalyzerController:
         if len(target_data) != len(benchmark_data):
             logger.warning(
                 "The product of ranks and steps of Benchmark profiling is not equals to target profiling, "
-                "skip cluster comparison.")
+                "skip cluster comparison."
+            )
             return job_list
 
         compare_profiling_list = []
         for dimension, compare_mode in zip(comparison_dims, comparison_modes):
             step, benchmark_step, rank_id_for_comparison = AnalyzerController._get_step_rank_for_cluster_statistic_diff(
-                target_data,
-                benchmark_data,
-                headers,
-                dimension,
-                get_max=get_max
+                target_data, benchmark_data, headers, dimension, get_max=get_max
             )
 
             rank_profiling_path = self._get_profiling_path_by_rank(profiling_path, rank_id_for_comparison)
             rank_benchmark_profiling_path = self._get_profiling_path_by_rank(
-                benchmark_profiling_path,
-                rank_id_for_comparison
+                benchmark_profiling_path, rank_id_for_comparison
             )
 
             if rank_id_for_comparison is None:
@@ -808,9 +886,15 @@ class AnalyzerController:
                 continue
 
             compare_profiling_list.append(
-                dict(profiling_path=rank_profiling_path, benchmark_profiling_path=rank_benchmark_profiling_path,
-                     step=step, benchmark_step=benchmark_step,
-                     rank=rank_id_for_comparison, benchmark_rank=rank_id_for_comparison, compare_mode=compare_mode)
+                dict(
+                    profiling_path=rank_profiling_path,
+                    benchmark_profiling_path=rank_benchmark_profiling_path,
+                    step=step,
+                    benchmark_step=benchmark_step,
+                    rank=rank_id_for_comparison,
+                    benchmark_rank=rank_id_for_comparison,
+                    compare_mode=compare_mode,
+                )
             )
 
         if not compare_profiling_list:
@@ -832,7 +916,7 @@ class AnalyzerController:
             return False
         if ascend_ms_dirs and not ascend_pt_dirs:
             data_processor = MindsporeDataPreprocessor(ascend_ms_dirs)
-        elif ascend_pt_dirs and not ascend_ms_dirs:
+        else:
             data_processor = PytorchDataPreprocessor(ascend_pt_dirs)
 
         self.cluster_local_data_map[profiling_path] = data_processor.get_data_map()
@@ -845,7 +929,6 @@ class AnalyzerController:
         return len(self.cluster_local_data_map[profiling_path]) >= self.CLUSTER_RANK_THRESHOLD
 
     def _get_profiling_path_by_rank(self, profiling_path, rank_id=None):
-
         if not profiling_path:
             return profiling_path
 
@@ -860,8 +943,12 @@ class AnalyzerController:
             return rank_id_map.get(rank_id)
 
         local_first_rank_id = sorted(list(map(int, rank_id_map.keys())))[0]
-        logger.warning("Target rank id %s does not exist in local profiling data %s, use rank %s for analysis",
-                       rank_id, profiling_path, local_first_rank_id)
+        logger.warning(
+            "Target rank id %s does not exist in local profiling data %s, use rank %s for analysis",
+            rank_id,
+            profiling_path,
+            local_first_rank_id,
+        )
         return rank_id_map.get(local_first_rank_id)
 
     def _update_analysis_process_resp(self, pid, resp, **kwargs):
@@ -875,17 +962,27 @@ class AnalyzerController:
         xlsx_path = os.path.join(Config().work_path, "log", f"{advisor_output_file_prefix}.xlsx")
         if os.path.exists(html_path) and os.path.exists(xlsx_path):
             result_files = {"html": html_path, "xlsx": xlsx_path}
-            self._update_analysis_process_resp(pid, resp, status_code=AsyncAnalysisStatus.NON_FAILED_STATUS_CODE,
-                                               status=AsyncAnalysisStatus.SUCCESS, result_files=result_files)
+            self._update_analysis_process_resp(
+                pid,
+                resp,
+                status_code=AsyncAnalysisStatus.NON_FAILED_STATUS_CODE,
+                status=AsyncAnalysisStatus.SUCCESS,
+                result_files=result_files,
+            )
         else:
-            self._update_analysis_process_resp(pid, resp, status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
-                                               status=AsyncAnalysisStatus.FAILED,
-                                               error_msg="No optimization suggestions, please check your input path.")
+            self._update_analysis_process_resp(
+                pid,
+                resp,
+                status_code=AsyncAnalysisStatus.BAD_REQUEST_STATUS_CODE,
+                status=AsyncAnalysisStatus.FAILED,
+                error_msg="No optimization suggestions, please check your input path.",
+            )
 
     def _stage_computation_analysis(self, profiling_path, stage_step_rank, job_list):
         # 对不同pp stage取min max进行分析
-        logger.info("Steps and ranks to be analyzed of different pipeline parallel stages are %s",
-                    json.dumps(stage_step_rank))
+        logger.info(
+            "Steps and ranks to be analyzed of different pipeline parallel stages are %s", json.dumps(stage_step_rank)
+        )
 
         stages_profiling_path = []
         for stage, step_rank_info in stage_step_rank.items():
@@ -901,19 +998,28 @@ class AnalyzerController:
 
             stages_profiling_path.append(
                 dict(
-                    stage=stage, rank=rank_id, step=step, benchmark_rank=benchmark_rank_id,
+                    stage=stage,
+                    rank=rank_id,
+                    step=step,
+                    benchmark_rank=benchmark_rank_id,
                     benchmark_step=benchmark_step,
                     profiling_path=self._get_profiling_path_by_rank(profiling_path, rank_id),
                     benchmark_profiling_path=self._get_profiling_path_by_rank(profiling_path, benchmark_rank_id),
                     compare_mode=Constant.KERNEL_COMPARE,
-                    step_duration=self.slow_rank_analyzer.get_step_duration(rank_id, step)
+                    step_duration=self.slow_rank_analyzer.get_step_duration(rank_id, step),
                 )
             )
         Interface.add_analyzer(Interface.COMPUTATION, SupportedScopes.STAGE_COMPUTE, PPStageComputationAnalyzer)
         compute_analysis_kwargs = {"stages_profiling_path": stages_profiling_path, "profiling_path": profiling_path}
 
-        job_list.append((Interface.COMPUTATION, SupportedScopes.STAGE_COMPUTE, Interface(**compute_analysis_kwargs),
-                         compute_analysis_kwargs))
+        job_list.append(
+            (
+                Interface.COMPUTATION,
+                SupportedScopes.STAGE_COMPUTE,
+                Interface(**compute_analysis_kwargs),
+                compute_analysis_kwargs,
+            )
+        )
         if not self.kwargs.get("benchmark_profiling_path"):
             logger.info("Enable computation comparison of fast and slow rank/step in different pp stages")
             job_list += self._profiling_comparison(stages_profiling_path)
@@ -921,8 +1027,9 @@ class AnalyzerController:
 
     def _global_computation_analysis(self, profiling_path, global_step_rank, job_list):
         # 不区分stage，对所有卡取Min max进行分析
-        logger.info("Without pipeline parallel stage, steps and ranks to be analyzed are %s",
-                    json.dumps(global_step_rank))
+        logger.info(
+            "Without pipeline parallel stage, steps and ranks to be analyzed are %s", json.dumps(global_step_rank)
+        )
         slow_rank_id = global_step_rank.get("maximum", {}).get("rank_id")
         if slow_rank_id is not None:
             info_msg = f"Maximum computation time for rank {slow_rank_id}"
@@ -942,11 +1049,16 @@ class AnalyzerController:
             info_msg += f" and step {fast_step}"
         logger.info(info_msg)
 
-        kwargs = dict(profiling_path=self._get_profiling_path_by_rank(profiling_path, slow_rank_id),
-                      benchmark_profiling_path=self._get_profiling_path_by_rank(profiling_path, fast_rank_id),
-                      step=slow_step, benchmark_step=fast_step, rank=slow_rank_id, benchmark_rank=fast_rank_id,
-                      compare_mode=Constant.KERNEL_COMPARE,
-                      step_duration=self.slow_rank_analyzer.get_step_duration(slow_rank_id, slow_step))
+        kwargs = dict(
+            profiling_path=self._get_profiling_path_by_rank(profiling_path, slow_rank_id),
+            benchmark_profiling_path=self._get_profiling_path_by_rank(profiling_path, fast_rank_id),
+            step=slow_step,
+            benchmark_step=fast_step,
+            rank=slow_rank_id,
+            benchmark_rank=fast_rank_id,
+            compare_mode=Constant.KERNEL_COMPARE,
+            step_duration=self.slow_rank_analyzer.get_step_duration(slow_rank_id, slow_step),
+        )
 
         job_list += self.computation_analysis(**kwargs)
 
@@ -958,11 +1070,21 @@ class AnalyzerController:
         return job_list
 
     def _stdout_advisor_result(self):
-        tables = ["问题综述", "整网耗时分析", "慢卡分析", "慢链路分析",
-                  "problems", "Overall Summary", "slow rank", "slow link"]
+        tables = [
+            "问题综述",
+            "整网耗时分析",
+            "慢卡分析",
+            "慢链路分析",
+            "problems",
+            "Overall Summary",
+            "slow rank",
+            "slow link",
+        ]
         prefixes = ['Api Compare', 'Kernel Compare']
+
         def should_output(sheet_name):
             return sheet_name in tables or any(sheet_name.startswith(p) for p in prefixes)
+
         optimize_result = OptimizeResult()
         sheet_data = optimize_result.data
         result = {}

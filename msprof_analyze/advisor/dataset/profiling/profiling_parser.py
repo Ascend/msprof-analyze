@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import csv
 import os
@@ -31,6 +32,7 @@ class ProfilingParser:
     """
     profiling
     """
+
     FILE_PATTERN_MSG = ""
     FILE_INFO = ""
 
@@ -99,13 +101,13 @@ class ProfilingParser:
             conn, cursor = DBManager.create_connect_db(db_path, Constant.ANALYSIS)
             # check table existence first if necessary
             if tables_to_check and any(not DBManager.judge_table_exists(cursor, table) for table in tables_to_check):
-                logger.debug(f"Tables not exist: {tables_to_check}")
+                logger.debug("Tables not exist: %s", tables_to_check)
                 return pd.DataFrame()
             # query sql and return dataframe
             data = pd.read_sql(sql, conn)
             return data
         except Exception as e:
-            logger.error(f"File {db_path} read failed error: {e}")
+            logger.error("File %s read failed error: %s", db_path, e)
             return pd.DataFrame()
         finally:
             if conn and cursor:
@@ -119,7 +121,7 @@ class ProfilingParser:
             cols = DBManager.get_table_columns_name(cursor, table)
             return column in cols
         except Exception as e:
-            logger.error(f"Check {column} existence in table {table} error: {e}")
+            logger.error("Check %s existence in table %s error: %s", column, table, e)
             return False
         finally:
             if conn and cursor:

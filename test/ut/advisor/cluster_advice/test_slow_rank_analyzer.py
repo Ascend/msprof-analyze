@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
 from unittest.mock import patch, MagicMock
@@ -103,16 +104,16 @@ class TestSlowRankAnalyzer(unittest.TestCase):
     def test_process_with_significant_differences_then_identify_bottlenecks(self):
         # Test process method with mock data that has significant differences
         self.analyzer.process()
-        
+
         # Verify bottleneck message contains expected content
         self.assertIn("通信", self.analyzer.bottelneck)
         self.assertIn("空闲", self.analyzer.bottelneck)
-        
+
         # Verify specific bottleneck messages
         self.assertIn("集群中的通信有问题", self.analyzer.bottelneck)
         self.assertIn("因为通信时间的最大差距已经达到", self.analyzer.bottelneck)
         self.assertIn("856.207ms", self.analyzer.bottelneck)
-        
+
         self.assertIn("集群中的空闲有问题", self.analyzer.bottelneck)
         self.assertIn("因为空闲时间的最大差距已经达到", self.analyzer.bottelneck)
         self.assertIn("860.347ms", self.analyzer.bottelneck)
@@ -148,16 +149,16 @@ class TestSlowRankAnalyzer(unittest.TestCase):
 
     def test_get_stage_step_rank_with_free_dimension_then_return_stage_rank_info(self):
         # Test with free dimension
-        details = self.analyzer.format_details()
+        _details = self.analyzer.format_details()
         result = self.analyzer.get_stage_step_rank("free(us)")
         # Verify result structure
         self.assertIn("stage-0", result)
         stage_result = result["stage-0"]
-        
+
         # Verify maximum and minimum entries exist
         self.assertIn("maximum", stage_result)
         self.assertIn("minimum", stage_result)
-        
+
         # Verify rank_id and step are present
         self.assertIn("rank_id", stage_result["maximum"])
         self.assertIn("step", stage_result["maximum"])
@@ -192,9 +193,9 @@ class TestSlowRankAnalyzer(unittest.TestCase):
         }
         self.analyzer.step_trace_dict = mock_no_diff
         self.analyzer.format_datas = self.analyzer.format_details()
-        
+
         # Test with compute dimension
         result = self.analyzer.get_stage_step_rank("compute(us)")
-        
+
         # Verify empty result when no significant differences
         self.assertEqual(result, {})

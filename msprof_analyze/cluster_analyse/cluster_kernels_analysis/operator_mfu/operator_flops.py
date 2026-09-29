@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from abc import abstractmethod, ABC
 from enum import Enum
@@ -22,14 +23,12 @@ import numpy as np
 
 class OperatorType(Enum):
     """算子类型枚举"""
+
     MATMUL = "Matmul"
     FLASH_ATTENTION = "FlashAttention"
 
 
-OP_TYPE_MAP = {
-    OperatorType.MATMUL: ["MatMulV2", "MatMulV3"],
-    OperatorType.FLASH_ATTENTION: ["FlashAttentionScore"]
-}
+OP_TYPE_MAP = {OperatorType.MATMUL: ["MatMulV2", "MatMulV3"], OperatorType.FLASH_ATTENTION: ["FlashAttentionScore"]}
 
 
 class DataType(Enum):
@@ -102,7 +101,7 @@ class OperatorFLOPs(ABC):
         data_type = self.input_types[index_list[0]]
         for index in index_list[1:]:
             if self.input_types[index] != data_type:
-                raise ValueError(f"Invalid input types, tensor data types should be same.")
+                raise ValueError("Invalid input types, tensor data types should be same.")
         return self.format_data_type(self.input_types[0])
 
 
@@ -126,7 +125,7 @@ class MatmulFLOPs(OperatorFLOPs):
         elif self._is_input_format_nz():
             m, n, k = self._parse_dims_for_nz_format()
         else:
-            raise ValueError(f"Unknown format for Matmul.")
+            raise ValueError("Unknown format for Matmul.")
         return m * n * k * 2
 
     def _parse_dims_for_nd_format(self):
@@ -138,8 +137,10 @@ class MatmulFLOPs(OperatorFLOPs):
     def _parse_dims_for_nz_format(self):
         m = self.output_shapes[0][1] * self.output_shapes[0][2]
         n = self.output_shapes[0][0] * self.output_shapes[0][3]
-        shape_a_nd = [self.input_shapes[0][1] * self.input_shapes[0][2],
-                      self.input_shapes[0][0] * self.input_shapes[0][3]]
+        shape_a_nd = [
+            self.input_shapes[0][1] * self.input_shapes[0][2],
+            self.input_shapes[0][0] * self.input_shapes[0][3],
+        ]
         k = shape_a_nd[0] if shape_a_nd[0] != m else shape_a_nd[1]
         return m, n, k
 
@@ -150,8 +151,7 @@ class MatmulFLOPs(OperatorFLOPs):
         return self._validate_format(output_dims=4, input_dims=4)
 
     def _validate_format(self, output_dims: int, input_dims: int) -> bool:
-        if not (len(self.output_shapes) == 1 and
-                len(self.output_shapes[0]) == output_dims):
+        if not (len(self.output_shapes) == 1 and len(self.output_shapes[0]) == output_dims):
             return False
 
         if len(self.input_shapes) < max(self.INPUT_TENSOR_INDEX) + 1:
@@ -261,10 +261,7 @@ class FlashAttentionFLOPs(OperatorFLOPs):
 class FLOPsStrategyFactory:
     """FLOPs策略工厂"""
 
-    strategies = {
-        OperatorType.MATMUL: MatmulFLOPs,
-        OperatorType.FLASH_ATTENTION: FlashAttentionFLOPs
-    }
+    strategies = {OperatorType.MATMUL: MatmulFLOPs, OperatorType.FLASH_ATTENTION: FlashAttentionFLOPs}
 
     @classmethod
     def get_strategy(cls, operator_type: OperatorType):

@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 
 from msprof_analyze.advisor.display.prompt.base_prompt import BasePrompt
@@ -20,10 +21,8 @@ from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem
 from msprof_analyze.advisor.result.item import OptimizeRecord
-from msprof_analyze.advisor.common.analyzer_scopes import SupportedScopes
 from msprof_analyze.advisor.display.html.render import HTMLRender
 from msprof_analyze.advisor.utils.utils import convert_to_int_with_exception
-from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 
 class EnvironmentVariableChecker:
@@ -52,7 +51,7 @@ class EnvironmentVariableChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
             "rules",
             language,
-            "environment_variable_info.yaml"
+            "environment_variable_info.yaml",
         )
         return FileManager.read_yaml_file(environment_variable_info_path)
 
@@ -83,13 +82,9 @@ class EnvironmentVariableChecker:
     def make_record(self, result: OptimizeResult):
         if not self.env_suggest_csv:
             return
-        
+
         prompt_class = BasePrompt.get_prompt_class(self.__class__.__name__)
-        optimization_item = OptimizeItem(
-            prompt_class.PROBLEM,
-            prompt_class.DESCRIPTION,
-            [prompt_class.SUGGESTION]
-        )
+        optimization_item = OptimizeItem(prompt_class.PROBLEM, prompt_class.DESCRIPTION, [prompt_class.SUGGESTION])
         result.add(OptimizeRecord(optimization_item))
         result.add_detail(prompt_class.PROBLEM, headers=self.HEADERS)
         for env_suggest in self.env_suggest_csv:
@@ -98,10 +93,12 @@ class EnvironmentVariableChecker:
     def make_render(self, html_render: HTMLRender):
         if not self.env_suggest_html:
             return
-        html_render.render_template(key="overall",
-                                    template_dir="templates",
-                                    template_name="environment_variable.html",
-                                    result={
-                                        "headers": self.HEADERS,
-                                        "data": self.env_suggest_html,
-                                    })
+        html_render.render_template(
+            key="overall",
+            template_dir="templates",
+            template_name="environment_variable.html",
+            result={
+                "headers": self.HEADERS,
+                "data": self.env_suggest_html,
+            },
+        )

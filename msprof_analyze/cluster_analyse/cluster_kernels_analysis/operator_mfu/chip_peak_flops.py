@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import re
@@ -69,19 +70,19 @@ class ChipPeakFLOPSCalculator:
             return Constant.INVALID_RETURN
 
         if data_type not in self.OPS_PER_CYCLE:
-            logger.error(f"Unsupported data type: {data_type}")
+            logger.error("Unsupported data type: %s", data_type)
             return Constant.INVALID_RETURN
 
         if data_type not in self.peak_flops:
             ops_per_cycle = self.OPS_PER_CYCLE[data_type]
             self.peak_flops[data_type] = self.aicore_count * self.aic_frequency * ops_per_cycle * self.MHZ_TO_HZ
-            logger.debug(f"Calculated {data_type} peak: {self.peak_flops[data_type]}")
+            logger.debug("Calculated %s peak: %s", data_type, self.peak_flops[data_type])
 
         return self.peak_flops[data_type]
 
     def _load_chip_info(self, profiler_path):
         if not os.path.exists(profiler_path):
-            logger.error(f"Profiler path does not exist: {profiler_path}")
+            logger.error("Profiler path does not exist: %s", profiler_path)
             return False
         try:
             info_json = self.find_device_info_json(profiler_path)
@@ -97,12 +98,14 @@ class ChipPeakFLOPSCalculator:
             self.aic_frequency = convert_to_float(aic_frequency_str)
 
             if self.aicore_count <= 0 or self.aic_frequency <= 0:
-                logger.error(f"Invalid device parameters: AICore={self.aicore_count}, frequency={self.aic_frequency}")
+                logger.error(
+                    "Invalid device parameters: AICore=%s, frequency=%s", self.aicore_count, self.aic_frequency
+                )
                 return False
 
-            logger.info(f"Device info loaded: AICore count={self.aicore_count}, frequency={self.aic_frequency} MHz")
+            logger.info("Device info loaded: AICore count=%s, frequency=%s MHz", self.aicore_count, self.aic_frequency)
             return True
 
         except Exception as e:
-            logger.error(f"Failed to load device information: {e}")
+            logger.error("Failed to load device information: %s", e)
             return False

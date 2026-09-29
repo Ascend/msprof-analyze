@@ -1,23 +1,22 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-import os
 import unittest
 from unittest.mock import patch
 from msprof_analyze.cluster_analyse.analysis.base_analysis import BaseAnalysis
-from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -92,7 +91,7 @@ class TestBaseAnalysis(unittest.TestCase):
                 Constant.COMM_OP_INFO: {"bytes": 300}
             }
         ]
-        
+
         self.analysis.split_op_by_group()
         p2p_group = tuple({0, 1})
         self.assertIn(p2p_group, self.analysis.comm_ops_struct)
@@ -119,7 +118,7 @@ class TestBaseAnalysis(unittest.TestCase):
                 }
             }
         }
-        
+
         self.analysis.combine_ops_total_info()
         group_data = self.analysis.comm_ops_struct[tuple({0, 1, 2})][1]["AllReduce"]
         self.assertIn("total", group_data)
@@ -130,7 +129,7 @@ class TestBaseAnalysis(unittest.TestCase):
     def test_dump_data_when_comm_ops_struct_no_value(self):
         self.analysis.data_type = Constant.TEXT
         self.analysis.comm_ops_struct = {}
-        
+
         with patch.object(logger, 'warning') as mock_warning:
             self.analysis.dump_data()
             mock_warning.assert_called_once_with("There is no final comm ops data generated.")

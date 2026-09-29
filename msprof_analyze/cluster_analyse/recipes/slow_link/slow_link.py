@@ -1,14 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 from collections import defaultdict
@@ -142,8 +146,9 @@ class SlowLink(BaseRecipeAnalysis):
             # 构造 filteringName
             group_data['opTypeRelatedRanksDataSize'] = group_data.index.map(lambda x: f"{x[0]}{x[2]}_{x[1]}")
             # 将 filteringName 移动到第一列
-            cols = ['opTypeRelatedRanksDataSize'] + [col for col in group_data.columns if
-                                                     col != 'opTypeRelatedRanksDataSize']
+            cols = ['opTypeRelatedRanksDataSize'] + [
+                col for col in group_data.columns if col != 'opTypeRelatedRanksDataSize'
+            ]
             group_data = group_data[cols]
 
             # 重置索引
@@ -180,8 +185,10 @@ class SlowLink(BaseRecipeAnalysis):
 
     def run(self, context):
         if self.top_num <= 0:
-            logger.warning(f"SlowLink: top_num is set to a invalid value, "
-                           f"it will be reset to default value({self.DEFAULT_TOP_NUM}).")
+            logger.warning(
+                "SlowLink: top_num is set to a invalid value, it will be reset to default value(%s).",
+                self.DEFAULT_TOP_NUM,
+            )
             self.top_num = self.DEFAULT_TOP_NUM
         mapper_res = self.mapper_func(context)
         self.merge_func(mapper_res)
@@ -200,17 +207,19 @@ class SlowLink(BaseRecipeAnalysis):
         self.add_helper_file("cluster_display.py")
 
     def save_db(self):
-        self.dump_data(self.slow_link_sum, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_SLOW_LINK_SUM,
-                       index=False)
-        self.dump_data(self.slow_link_ops, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_SLOW_LINK_OPS,
-                       index=False)
+        self.dump_data(
+            self.slow_link_sum, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_SLOW_LINK_SUM, index=False
+        )
+        self.dump_data(
+            self.slow_link_ops, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_SLOW_LINK_OPS, index=False
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         rank_id = data_map.get(Constant.RANK_ID)
         df = SlowLinkExport(profiler_db_path, analysis_class).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
         df.insert(0, "rankId", rank_id)
         return df

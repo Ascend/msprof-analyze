@@ -1,17 +1,19 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+# ruff: noqa: E402
 import importlib
 import numpy as np
 import os
@@ -34,7 +36,7 @@ logger = get_logger()
 
 def acl_check(ret: int, msg: str) -> bool:
     if ret != 0:
-        logger.error(f"{msg}, ret = {ret}")
+        logger.error("%s, ret = %s", msg, ret)
         return False
     return True
 
@@ -134,28 +136,23 @@ class Autofuse:
     def run_single_op(self, op_name, op_data, acl_mgr):
         subgraph = os.path.join(self.subgraph_dir, f"{op_name}_origin_subgraph.air")
         if not os.path.exists(subgraph):
-            logger.warning(f"subgraph not exists: {op_name}")
+            logger.warning("subgraph not exists: %s", op_name)
             return
         # load data
         inputs = [np.load(p) for p in op_data["inputs_data_path"]]
         outputs = [np.load(p) for p in op_data["outputs_data_path"]]
         if not inputs or not outputs:
-            logger.error(f"input/output missing for {op_name}")
+            logger.error("input/output missing for %s", op_name)
             return
         if len(inputs) != len(op_data["inputs_shape"]):
-            logger.error(f"shape mismatch for {op_name}")
+            logger.error("shape mismatch for %s", op_name)
             return
         # mstx
         range_id = mstx.range_start(f"autofuse_{op_name}", acl_mgr.stream)
         try:
-            self.execute_graph(
-                subgraph, inputs,
-                op_data["inputs_shape"],
-                op_data["inputs_dtype"],
-                outputs
-            )
+            self.execute_graph(subgraph, inputs, op_data["inputs_shape"], op_data["inputs_dtype"], outputs)
         except Exception as e:
-            logger.error(f"execute {op_name} failed: {e}")
+            logger.error("execute %s failed: %s", op_name, e)
         finally:
             acl.rt.set_context(acl_mgr.context)
             mstx.range_end(range_id)

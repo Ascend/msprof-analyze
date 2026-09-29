@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import pandas as pd
@@ -75,7 +76,8 @@ class HcclSum(BaseRecipeAnalysis):
             logger.error("Mapper data is None.")
             return
         self.per_rank_stats = pd.concat(
-            describe_duration(df.groupby("OpType")["Duration"]).assign(Rank=df["Rank"][0]) for df in mapper_res)
+            describe_duration(df.groupby("OpType")["Duration"]).assign(Rank=df["Rank"][0]) for df in mapper_res
+        )
         self.per_rank_stats.sort_values(by=["Rank"], inplace=True)
         all_op_data = pd.concat(mapper_res)
         self.all_rank_stats = describe_duration(all_op_data.groupby("OpType")["Duration"])
@@ -92,21 +94,24 @@ class HcclSum(BaseRecipeAnalysis):
 
         grouped_group_name_stats = all_op_data.groupby("GroupName")
         group_name_rank_map = grouped_group_name_stats.apply(
-            lambda x: ';'.join(map(str, x['Rank'].drop_duplicates().sort_index()))).sort_index()
+            lambda x: ';'.join(map(str, x['Rank'].drop_duplicates().sort_index()))
+        ).sort_index()
         self.group_name_map = pd.DataFrame(
             data={
                 "GroupId": [key[-3:] for key in map(double_hash, group_name_rank_map.keys())],
-                "Ranks": group_name_rank_map.values
+                "Ranks": group_name_rank_map.values,
             },
-            index=sorted(grouped_group_name_stats.groups.keys())
+            index=sorted(grouped_group_name_stats.groups.keys()),
         )
         self.group_name_map.index.name = "GroupName"
         self.group_name_map.sort_values("GroupId", inplace=True)
 
     def run(self, context):
         if self.top_num <= 0:
-            logger.warning(f"HcclSum: top_num is set to a invalid value, "
-                           f"it will be reset to default value({self.DEFAULT_TOP_NUM}).")
+            logger.warning(
+                "HcclSum: top_num is set to a invalid value, it will be reset to default value(%s).",
+                self.DEFAULT_TOP_NUM,
+            )
             self.top_num = self.DEFAULT_TOP_NUM
         mapper_res = self.mapper_func(context)
         self.reducer_func(mapper_res)
@@ -136,10 +141,10 @@ class HcclSum(BaseRecipeAnalysis):
                     os.path.join(self.output_path, "all_stats.csv"),
                     os.path.join(self.output_path, "rank_stats.csv"),
                     os.path.join(self.output_path, "top_op_stats.csv"),
-                    os.path.join(self.output_path, "group_name_map.csv")
+                    os.path.join(self.output_path, "group_name_map.csv"),
                 ]
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def save_db(self):
@@ -150,10 +155,14 @@ class HcclSum(BaseRecipeAnalysis):
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": [self.TABLE_ALL_RANK_STATS, self.TABLE_PER_RANK_STATS,
-                           self.TABLE_TOP_OP_STATS, self.TABLE_GROUP_NAME_MAP]
+                "tables": [
+                    self.TABLE_ALL_RANK_STATS,
+                    self.TABLE_PER_RANK_STATS,
+                    self.TABLE_TOP_OP_STATS,
+                    self.TABLE_GROUP_NAME_MAP,
+                ],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def _mapper_func(self, data_map, analysis_class):
@@ -162,7 +171,7 @@ class HcclSum(BaseRecipeAnalysis):
         step_range = data_map.get(Constant.STEP_RANGE)
         df = HcclSumExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
         df["Rank"] = rank_id
         return df

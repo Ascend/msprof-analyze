@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import pandas as pd
 
@@ -31,7 +32,7 @@ class CSVAnalyzer:
         sublist_dict = {}
         # 遍历列表，从每个位置开始，取长度为N的子列表
         for i in range(len(op_type_list) - len_sub_list + 1):
-            sublist = tuple(op_type_list[i:i + len_sub_list])
+            sublist = tuple(op_type_list[i : i + len_sub_list])
             if sublist != expect_sub_list:
                 continue
             # 如果子列表已经在字典中，就增加它的出现次数，否则就初始化为1
@@ -41,20 +42,27 @@ class CSVAnalyzer:
                 # index
                 sublist_dict[sublist][1].append(i)
                 # total duration
-                sublist_dict[sublist][2] += sum(duration_list[i:i + len_sub_list])
+                sublist_dict[sublist][2] += sum(duration_list[i : i + len_sub_list])
                 # duration
-                zip_data = zip(sublist_dict[sublist][3], duration_list[i:i + len_sub_list])
+                zip_data = zip(sublist_dict[sublist][3], duration_list[i : i + len_sub_list])
                 sublist_dict[sublist][3] = [a + b for a, b in zip_data]
             else:
-                sublist_dict[sublist] = [1, [i], sum(duration_list[i:i + len_sub_list]),
-                                         duration_list[i:i + len_sub_list], len_sub_list, start_times[i]]
+                sublist_dict[sublist] = [
+                    1,
+                    [i],
+                    sum(duration_list[i : i + len_sub_list]),
+                    duration_list[i : i + len_sub_list],
+                    len_sub_list,
+                    start_times[i],
+                ]
         # 创建一个空列表，用来存储所有重复的子列表
         repeated_sublists = []
         for sublist, (count, index, duration_sum, op_durations, sublist_len, first_time) in sublist_dict.items():
             pattern_name = Constant.PATTERN_DICT.get(sublist, "unknown")
             op_durations = [round(num, 2) for num in op_durations]
-            repeated_sublists.append([pattern_name, sublist, sublist_len, count,
-                                      duration_sum, op_durations, index, first_time])
+            repeated_sublists.append(
+                [pattern_name, sublist, sublist_len, count, duration_sum, op_durations, index, first_time]
+            )
         if len(sublist_dict) == 0:
             pattern_name = Constant.PATTERN_DICT.get(expect_sub_list, "unknown")
             repeated_sublists.append([pattern_name, expect_sub_list, 0, 0, 0, 0, 0, 0])
@@ -72,9 +80,17 @@ class CSVAnalyzer:
         # 去除末尾的\t分隔符
         start_times = [start_time[:-1] for start_time in start_times]
         result_list = []
-        for pattern in Constant.PATTERN_DICT.keys():
+        for pattern in Constant.PATTERN_DICT:
             result_list.extend(self.find_all_sub_lists(op_type_list, duration_list, start_times, pattern))
         data_frame = pd.DataFrame(result_list)
-        data_frame.columns = ["pattern_name", "pattern", "len", "count", "duration sum(us)", "op durations(us)",
-                              "index", "first_timestamp"]
+        data_frame.columns = [
+            "pattern_name",
+            "pattern",
+            "len",
+            "count",
+            "duration sum(us)",
+            "op durations(us)",
+            "index",
+            "first_timestamp",
+        ]
         return data_frame
