@@ -1,34 +1,75 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.constant import Constant
 
 
 class ProfilingInfo:
-    __slots__ = ['profiling_type', 'other_time', 'lccl_num', 'compute_time', 'communication_not_overlapped',
-                 'wait_time', 'memory_used', 'e2e_time', 'scheduling_time', 'lccl_time', 'minimal_profiling',
-                 'hide_op_details', 'is_level0', 'fa_time_fwd_cube', 'fa_num_fwd_cube', 'fa_time_bwd_cube',
-                 'fa_num_bwd_cube', 'fa_time_fwd_vector', 'fa_num_fwd_vector', 'fa_time_bwd_vector',
-                 'fa_num_bwd_vector',
-                 'conv_time_fwd_cube', 'conv_num_fwd_cube', 'conv_time_bwd_cube', 'conv_num_bwd_cube',
-                 'conv_time_fwd_vector', 'conv_num_fwd_vector', 'conv_time_bwd_vector', 'conv_num_bwd_vector',
-                 'matmul_time_cube', 'matmul_num_cube', 'matmul_time_vector', 'matmul_num_vector',
-                 'page_attention_time', 'page_attention_num', 'vector_time_trans', 'vector_num_trans',
-                 'vector_time_notrans', 'vector_num_notrans', 'sdma_time_tensor_move', 'sdma_num_tensor_move',
-                 'sdma_time_stream', 'sdma_num_stream', 'other_cube_time', 'other_cube_num', 'rdma_bandwidth',
-                 'sdma_bandwidth', 'communication_group_time', 'mc2_time_dict', 'pg_name_dict',
-                 'communication_overlap_time']
+    __slots__ = [
+        'profiling_type',
+        'other_time',
+        'lccl_num',
+        'compute_time',
+        'communication_not_overlapped',
+        'wait_time',
+        'memory_used',
+        'e2e_time',
+        'scheduling_time',
+        'lccl_time',
+        'minimal_profiling',
+        'hide_op_details',
+        'is_level0',
+        'fa_time_fwd_cube',
+        'fa_num_fwd_cube',
+        'fa_time_bwd_cube',
+        'fa_num_bwd_cube',
+        'fa_time_fwd_vector',
+        'fa_num_fwd_vector',
+        'fa_time_bwd_vector',
+        'fa_num_bwd_vector',
+        'conv_time_fwd_cube',
+        'conv_num_fwd_cube',
+        'conv_time_bwd_cube',
+        'conv_num_bwd_cube',
+        'conv_time_fwd_vector',
+        'conv_num_fwd_vector',
+        'conv_time_bwd_vector',
+        'conv_num_bwd_vector',
+        'matmul_time_cube',
+        'matmul_num_cube',
+        'matmul_time_vector',
+        'matmul_num_vector',
+        'page_attention_time',
+        'page_attention_num',
+        'vector_time_trans',
+        'vector_num_trans',
+        'vector_time_notrans',
+        'vector_num_notrans',
+        'sdma_time_tensor_move',
+        'sdma_num_tensor_move',
+        'sdma_time_stream',
+        'sdma_num_stream',
+        'other_cube_time',
+        'other_cube_num',
+        'rdma_bandwidth',
+        'sdma_bandwidth',
+        'communication_group_time',
+        'mc2_time_dict',
+        'pg_name_dict',
+        'communication_overlap_time',
+    ]
     TABLE_NAME = Constant.PERFORMANCE_TABLE
     HEADERS = []
     OVERHEAD = []
@@ -101,27 +142,27 @@ class ProfilingInfo:
 
     @property
     def e2e_time_ms(self):
-        return self.e2e_time * 10 ** 3
+        return self.e2e_time * 10**3
 
     @property
     def compute_time_ms(self):
-        return self.compute_time * 10 ** 3
+        return self.compute_time * 10**3
 
     @property
     def free_time_ms(self):
-        return self.scheduling_time * 10 ** 3
+        return self.scheduling_time * 10**3
 
     @property
     def communication_not_overlapped_ms(self):
-        return self.communication_not_overlapped * 10 ** 3
+        return self.communication_not_overlapped * 10**3
 
     @property
     def wait_time_ms(self):
-        return self.wait_time * 10 ** 3
+        return self.wait_time * 10**3
 
     @property
     def transmit_time_ms(self):
-        return (self.communication_not_overlapped - self.wait_time) * 10 ** 3
+        return (self.communication_not_overlapped - self.wait_time) * 10**3
 
     @property
     def fa_fwd_time(self):
@@ -173,8 +214,9 @@ class ProfilingInfo:
 
     @property
     def cube_time(self):
-        return ((self.matmul_time_cube + self.matmul_time_vector + self.other_cube_time + self.all_mc2_time)
-                / Constant.MILLISECONDS_TO_SECONDS)
+        return (
+            self.matmul_time_cube + self.matmul_time_vector + self.other_cube_time + self.all_mc2_time
+        ) / Constant.MILLISECONDS_TO_SECONDS
 
     @property
     def vec_time(self):
@@ -238,18 +280,29 @@ class ProfilingInfo:
 
     @property
     def all_mc2_time(self):
-        return sum((self.get_mc2_time_by_name(kernel_name) for kernel_name in self.mc2_time_dict.keys()))
+        return sum((self.get_mc2_time_by_name(kernel_name) for kernel_name in self.mc2_time_dict))
 
     def calculate_other_time(self):
-        self.other_time = max(0,
-                              (self.compute_time_ms - self.fa_fwd_time -
-                               self.fa_bwd_time - self.conv_fwd_time -
-                               self.conv_bwd_time - self.mm_total_time -
-                               self.vector_total_time - self.sdma_time_tensor_move - self.all_mc2_time -
-                               self.other_cube_time - self.page_attention_time) / Constant.MILLISECONDS_TO_SECONDS)
+        self.other_time = max(
+            0,
+            (
+                self.compute_time_ms
+                - self.fa_fwd_time
+                - self.fa_bwd_time
+                - self.conv_fwd_time
+                - self.conv_bwd_time
+                - self.mm_total_time
+                - self.vector_total_time
+                - self.sdma_time_tensor_move
+                - self.all_mc2_time
+                - self.other_cube_time
+                - self.page_attention_time
+            )
+            / Constant.MILLISECONDS_TO_SECONDS,
+        )
 
     def calculate_schedule_time(self):
-        self.scheduling_time = (self.e2e_time - self.compute_time - self.lccl_time - self.communication_not_overlapped)
+        self.scheduling_time = self.e2e_time - self.compute_time - self.lccl_time - self.communication_not_overlapped
 
     def update_fa_fwd_cube_info(self, time: float):
         self.fa_time_fwd_cube += time
@@ -358,8 +411,12 @@ class ProfilingInfo:
         self.sdma_bandwidth = bandwidth
 
     def update_mc2_info(self, kernel_name, mc2_time, computing_time, communication_time):
-        default_dict = {Constant.MC2_TIME: 0, Constant.MC2_COMPUTING: 0, Constant.MC2_COMMUNICATION: 0,
-                        Constant.MC2_NUMBER: 0}
+        default_dict = {
+            Constant.MC2_TIME: 0,
+            Constant.MC2_COMPUTING: 0,
+            Constant.MC2_COMMUNICATION: 0,
+            Constant.MC2_NUMBER: 0,
+        }
         self.mc2_time_dict.setdefault(kernel_name, default_dict)[Constant.MC2_TIME] += mc2_time
         self.mc2_time_dict.setdefault(kernel_name, default_dict)[Constant.MC2_COMPUTING] += computing_time
         self.mc2_time_dict.setdefault(kernel_name, default_dict)[Constant.MC2_COMMUNICATION] += communication_time
@@ -392,23 +449,25 @@ class ProfilingInfo:
         self.lccl_time /= Constant.MICROSECONDS_TO_SECONDS
 
     def get_wait_time_by_group(self, group_name: str):
-        return self.communication_group_time.get(group_name, {}).get(Constant.WAIT_TIME, 0) / 10 ** 3
+        return self.communication_group_time.get(group_name, {}).get(Constant.WAIT_TIME, 0) / 10**3
 
     def get_transmit_time_by_group(self, group_name: str):
-        return self.communication_group_time.get(group_name, {}).get(Constant.TRANSMIT_TIME, 0) / 10 ** 3
+        return self.communication_group_time.get(group_name, {}).get(Constant.TRANSMIT_TIME, 0) / 10**3
 
     def get_communication_time_by_group(self, group_name: str):
-        return (self.communication_group_time.get(group_name, {}).get(Constant.WAIT_TIME, 0)
-                + self.communication_group_time.get(group_name, {}).get(Constant.TRANSMIT_TIME, 0)) / 10 ** 3
+        return (
+            self.communication_group_time.get(group_name, {}).get(Constant.WAIT_TIME, 0)
+            + self.communication_group_time.get(group_name, {}).get(Constant.TRANSMIT_TIME, 0)
+        ) / 10**3
 
     def get_mc2_time_by_name(self, kernel_name: str):
-        return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_TIME, 0) / 10 ** 3
+        return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_TIME, 0) / 10**3
 
     def get_mc2_computing_time_by_name(self, kernel_name: str):
-        return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_COMPUTING, 0) / 10 ** 3
+        return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_COMPUTING, 0) / 10**3
 
     def get_mc2_communication_time_by_name(self, kernel_name: str):
-        return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_COMMUNICATION, 0) / 10 ** 3
+        return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_COMMUNICATION, 0) / 10**3
 
     def get_mc2_number_by_name(self, kernel_name: str):
         return self.mc2_time_dict.get(kernel_name, {}).get(Constant.MC2_NUMBER, 0)

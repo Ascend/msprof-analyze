@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 from typing import List
 
@@ -27,7 +28,6 @@ logger = get_logger()
 
 
 class TimelineOpStackFinder:
-
     def __init__(self):
         self.n_processes = get_analyze_processes()
         self._stack_record = []
@@ -53,9 +53,13 @@ class TimelineOpStackFinder:
 
         return Constant.TIMELINE_BACKWARD_NO_STACK_CODE
 
-    def get_api_stack_by_op_name(self, event_dataset: ComputationAnalysisDataset, op_name: List[str] = None,
-                                 task_type: str = None,
-                                 disable_multiprocess=False):
+    def get_api_stack_by_op_name(
+        self,
+        event_dataset: ComputationAnalysisDataset,
+        op_name: List[str] = None,
+        task_type: str = None,
+        disable_multiprocess=False,
+    ):
         """
         :Param event_dataset: dataset of timeline event
         :Param op_name: operator name, e.g. IndexPutV2
@@ -77,9 +81,11 @@ class TimelineOpStackFinder:
             event_num_per_process = int(len(op_name_list) / self.n_processes) + 1
             parallel_analyzer = ParallelJob(
                 self._query_stacks_multiprocess,
-                [[event_dataset, op_name_list[i:i + event_num_per_process], task_type]
-                 for i in range(0, len(op_name_list), event_num_per_process)],
-                job_name="Analyzing operator stacks from timeline"
+                [
+                    [event_dataset, op_name_list[i : i + event_num_per_process], task_type]
+                    for i in range(0, len(op_name_list), event_num_per_process)
+                ],
+                job_name="Analyzing operator stacks from timeline",
             )
             parallel_analyzer.start(self.n_processes)
         self.query_stack(event_dataset)
@@ -103,7 +109,7 @@ class TimelineOpStackFinder:
             else:
                 desc += " all operators"
 
-            suggestion = f"Please use command 'ma-advisor analyze profiling' to analyze operators"
+            suggestion = "Please use command 'ma-advisor analyze profiling' to analyze operators"
         else:
             desc = f"发现以下{len(self._stack_record)}个算子的调用堆栈，"
             if self.op_name and self.task_type:
@@ -115,14 +121,9 @@ class TimelineOpStackFinder:
             else:
                 desc += "包括全部算子"
 
-            suggestion = f"请用命令'ma-advisor analyze profiling'分析算子"
+            suggestion = "请用命令'ma-advisor analyze profiling'分析算子"
 
-
-        optimization_item = OptimizeItem(
-            "Operator stacks",
-            desc,
-            [suggestion]
-        )
+        optimization_item = OptimizeItem("Operator stacks", desc, [suggestion])
         result.add(OptimizeRecord(optimization_item))
 
         record_title = ["Task ID", "op name", "op type", "code stacks"]
@@ -132,7 +133,6 @@ class TimelineOpStackFinder:
             result.add_detail('operator stacks', detail=op_info)
 
     def query_stack(self, event_dataset: ComputationAnalysisDataset):
-
         if not event_dataset.dataset_len:
             return
         _ = event_dataset.parse_data_with_generator(self._query_stack_by_matched_index)
@@ -154,14 +154,16 @@ class TimelineOpStackFinder:
             step4: 在dataset初始化阶段并没有读取全部的stack信息并保存，在后续需要重新遍历获取
         """
         for _, src_op_event in event_dataset.ops_with_task_type.items():
-
             op_task_type = src_op_event.get(Constant.TASK_TYPE)
             if not (src_op_event.name == op_name and op_task_type and op_task_type == task_type):
                 continue
 
             torch_to_npu_key = f"s-{src_op_event.tid}-{src_op_event.ts}"
-            torch_to_npu_event = event_dataset.torch_to_npu.get(torch_to_npu_key) or event_dataset.torch_to_npu.get(
-                f"s-{src_op_event.ts}") or event_dataset.torch_to_npu.get(f"s-{src_op_event.ts.replace('.', '')}")
+            torch_to_npu_event = (
+                event_dataset.torch_to_npu.get(torch_to_npu_key)
+                or event_dataset.torch_to_npu.get(f"s-{src_op_event.ts}")
+                or event_dataset.torch_to_npu.get(f"s-{src_op_event.ts.replace('.', '')}")
+            )
 
             acl_to_npu_event = src_op_event.ts in event_dataset.acl_to_npu
 
@@ -187,7 +189,6 @@ class TimelineOpStackFinder:
             self._task_id_record[dst_op_index].append([task_id, op_name, task_type])
 
     def _query_stacks_multiprocess(self, event_dataset, op_name_list, task_type):
-
         for op_name in op_name_list:
             if task_type is not None:
                 self._get_api_stack_by_op(event_dataset, op_name, task_type)
@@ -212,6 +213,7 @@ class TimelineOpStackFinder:
             self._stack_record.append([*matched_op_info, stack])
 
         for matched_op_info in self._task_id_record.get(Constant.TIMELINE_ACL_TO_NPU_NO_STACK_CODE, []):
-            self._stack_record.append([*matched_op_info,
-                                       Constant.NO_STACK_REASON_MAP.get(Constant.TIMELINE_ACL_TO_NPU_NO_STACK_CODE)])
+            self._stack_record.append(
+                [*matched_op_info, Constant.NO_STACK_REASON_MAP.get(Constant.TIMELINE_ACL_TO_NPU_NO_STACK_CODE)]
+            )
         return None

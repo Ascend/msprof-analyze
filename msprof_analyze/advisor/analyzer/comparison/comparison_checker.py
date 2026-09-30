@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.result.result import OptimizeResult
@@ -32,9 +33,9 @@ class ComparisonChecker:
         Constant.API_COMPARE: "Api compare",
     }
 
-    def __init__(self, profiling_path, benchmark_profiling_path, step=None, benchmark_step=None, rank=None,
-                 benchmark_rank=None):
-
+    def __init__(
+        self, profiling_path, benchmark_profiling_path, step=None, benchmark_step=None, rank=None, benchmark_rank=None
+    ):
         self.profiling_path = profiling_path
         self.benchmark_profiling_path = benchmark_profiling_path
         self.step = ComparisonChecker.get_valid_step(step)
@@ -70,9 +71,13 @@ class ComparisonChecker:
         if ("Api" in compare_mode) and self.benchmark_profiling_path.endswith("ascend_ms"):
             logger.info("The current compare mode %s does not support Mindspore.", compare_mode)
             return
-        compare_interface = ComparisonInterface(self.profiling_path, self.benchmark_profiling_path, self.step,
-                                                self.benchmark_step,
-                                                use_kernel_type=self.compare_mode == Constant.KERNEL_COMPARE)
+        compare_interface = ComparisonInterface(
+            self.profiling_path,
+            self.benchmark_profiling_path,
+            self.step,
+            self.benchmark_step,
+            use_kernel_type=self.compare_mode == Constant.KERNEL_COMPARE,
+        )
         result = compare_interface.compare(self.compare_mode)
         if self.compare_mode == Constant.KERNEL_COMPARE:
             data = result.get(Constant.KERNEL_TYPE_COMPARE, {})
@@ -122,29 +127,30 @@ class ComparisonChecker:
             logger.warning("'%s' not exsits in headers of comparison result, skip render html.", self.DIFF_AVG_RATIO)
             return
         rows = self.format_result.get(self.compare_mode, {}).get("rows", [])
-        sorted_rows = sorted(rows,
-                             key=lambda x: convert_to_float(x[diff_avg_index]) if diff_avg_index < len(x) else -1.0,
-                             reverse=True)
+        sorted_rows = sorted(
+            rows, key=lambda x: convert_to_float(x[diff_avg_index]) if diff_avg_index < len(x) else -1.0, reverse=True
+        )
 
         topk_rows = []
         if sorted_rows:
-            topk_rows = sorted_rows[:self.SHOW_TOPK]
+            topk_rows = sorted_rows[: self.SHOW_TOPK]
 
         if not headers or not topk_rows:
             return
 
         html_desc = self.desc + f". Only show {self.SHOW_TOPK} rows here, see mstt_advisor*.xlsx for details"
 
-        html_render.render_template(key="comparison",
-                                    template_dir="templates",
-                                    template_name="comparison.html",
-                                    sheet_name=self._get_sheet_name(),
-                                    desc=html_desc,
-                                    headers=headers,
-                                    rows=topk_rows)
+        html_render.render_template(
+            key="comparison",
+            template_dir="templates",
+            template_name="comparison.html",
+            sheet_name=self._get_sheet_name(),
+            desc=html_desc,
+            headers=headers,
+            rows=topk_rows,
+        )
 
     def _get_sheet_name(self):
-
         sheet_name = ""
         if self.rank is not None:
             sheet_name += f"Rank{self.rank}"

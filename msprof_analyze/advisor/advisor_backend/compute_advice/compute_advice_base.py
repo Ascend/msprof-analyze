@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from abc import abstractmethod
 from collections import defaultdict
@@ -37,28 +38,35 @@ class ComputeAdviceBase(AdviceBase):
         self.preparse_data = defaultdict(list)
         self.call_stack = False
         self.trace_view_path = ""
+        self.cur_data = None
+        self.cur_bottleneck = None
+        self.cur_advice = None
 
     def path_check(self):
         """
         check whether input path is valid
         """
         if not os.path.exists(self.collection_path):
-            logger.error("Path: {} is not exist.".format(self.collection_path))
+            logger.error("Path: %s is not exist.", self.collection_path)
             return False
-        if os.path.isdir(self.collection_path) and \
-            (self.collection_path.endswith("ascend_pt") or self.collection_path.endswith("ascend_ms")):
-            self.kernel_details_path = os.path.join(self.collection_path, "ASCEND_PROFILER_OUTPUT",
-                                                    "kernel_details.csv")
+        if os.path.isdir(self.collection_path) and (
+            self.collection_path.endswith("ascend_pt") or self.collection_path.endswith("ascend_ms")
+        ):
+            self.kernel_details_path = os.path.join(
+                self.collection_path, "ASCEND_PROFILER_OUTPUT", "kernel_details.csv"
+            )
             if not os.path.exists(self.kernel_details_path):
-                logger.error("kernel_details.csv is not exist in the Path: {}.".format(
-                    os.path.join(self.collection_path, "ASCEND_PROFILER_OUTPUT")))
+                logger.error(
+                    "kernel_details.csv is not exist in the Path: %s.",
+                    os.path.join(self.collection_path, "ASCEND_PROFILER_OUTPUT"),
+                )
                 return False
         elif os.path.isfile(self.collection_path) and os.path.basename(self.collection_path) == "kernel_details.csv":
             self.kernel_details_path = self.collection_path
         else:
             logger.error("Please input ascend_pt or kernel_details.csv")
             return False
-        logger.info("Start to analyse the target file: {}".format(self.kernel_details_path))
+        logger.info("Start to analyse the target file: %s", self.kernel_details_path)
         self.preparse()
         return True
 
@@ -74,8 +82,11 @@ class ComputeAdviceBase(AdviceBase):
         if not os.path.exists(profiler_info_json_path) or not os.path.exists(self.trace_view_path):
             return self.call_stack
         info = FileManager.read_json_file(profiler_info_json_path)
-        if not info.get("config") or not info.get("config").get("common_config") \
-                or not info.get("config").get("common_config").get("with_stack"):
+        if (
+            not info.get("config")
+            or not info.get("config").get("common_config")
+            or not info.get("config").get("common_config").get("with_stack")
+        ):
             return self.call_stack
         activities = info.get("config").get("common_config").get("activities")
         if not activities or "ProfilerActivity.CPU" not in activities:
@@ -100,4 +111,4 @@ class ComputeAdviceBase(AdviceBase):
 
     def preparse(self):
         if self.has_preparse:
-            return
+            pass

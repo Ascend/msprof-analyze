@@ -1,27 +1,27 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0 
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.prof_common.logger import get_logger
 import os
 
-import yaml
 from msprof_analyze.prof_common.constant import Constant
-from msprof_analyze.advisor.common.profiling.ge_info import GeInfo
-from msprof_analyze.advisor.common.profiling.msprof import Msprof, MsprofDB
-from msprof_analyze.advisor.common.profiling.op_summary import OpSummary, OpSummaryDB
-from msprof_analyze.advisor.common.profiling.tasktime import TaskTime
+from msprof_analyze.advisor.common.profiling.ge_info import GeInfo  # noqa: F401
+from msprof_analyze.advisor.common.profiling.msprof import Msprof, MsprofDB  # noqa: F401
+from msprof_analyze.advisor.common.profiling.op_summary import OpSummary, OpSummaryDB  # noqa: F401
+from msprof_analyze.advisor.common.profiling.tasktime import TaskTime  # noqa: F401
 from msprof_analyze.advisor.common.enum_params_parser import EnumParamsParser
 from msprof_analyze.advisor.dataset.dataset import Dataset
 from msprof_analyze.advisor.dataset.profiling.device_info import DeviceInfoParser
@@ -41,7 +41,8 @@ class ProfilingDataset(Dataset):
     def __init__(self, collection_path, data: dict, **kwargs) -> None:
         self.cann_version = kwargs.get(Constant.CANN_VERSION, EnumParamsParser().get_default(Constant.CANN_VERSION))
         self.prof_type = kwargs.get(
-            Constant.PROFILING_TYPE_UNDER_LINE, EnumParamsParser().get_default(Constant.PROFILING_TYPE_UNDER_LINE))
+            Constant.PROFILING_TYPE_UNDER_LINE, EnumParamsParser().get_default(Constant.PROFILING_TYPE_UNDER_LINE)
+        )
         self.patterns = self.parse_pattern()
         self.current_version_pattern = {}
         self._info = None
@@ -63,7 +64,7 @@ class ProfilingDataset(Dataset):
                 file_pattern_list = self.current_version_pattern.get('file_attr').get(item)
                 class_name = self.current_version_pattern.get('class_attr').get(item)
                 if class_name not in self.LEGAL_CLASS_NAME:
-                    logger.error(f"Invalid class name for parse profiling data.")
+                    logger.error("Invalid class name for parse profiling data.")
                     continue
                 data_class = globals()[class_name]
                 if not hasattr(data_class, "file_pattern_list"):
@@ -74,28 +75,27 @@ class ProfilingDataset(Dataset):
                 if is_success:
                     setattr(self, item, data_object)
                 elif current_path:
-                    logger.info("Skip parse %s with file pattern %s from local path %s", 
-                                self.current_version_pattern.get('class_attr').get(item),
-                                file_pattern_list, current_path
+                    logger.info(
+                        "Skip parse %s with file pattern %s from local path %s",
+                        self.current_version_pattern.get('class_attr').get(item),
+                        file_pattern_list,
+                        current_path,
                     )
         else:
-            logger.warning(f"Unsupported arguments : %s to build %s", dirs_pattern, self.__class__.__name__)
+            logger.warning("Unsupported arguments : %s to build %s", dirs_pattern, self.__class__.__name__)
 
     def get_current_data_pattern(self):
         """
         get data pattern by version and data_type
         """
-        for config_dict in self.patterns['versions']:
-            if (config_dict['version'] == self.cann_version and
-                    config_dict['data_type'] == self.data_type):
+        for config_dict in self.patterns['versions']:  # pylint: disable=invalid-sequence-index
+            if config_dict['version'] == self.cann_version and config_dict['data_type'] == self.data_type:
                 return config_dict
         return dict()
 
     def parse_pattern(self, config_path="config/profiling_data_version_config.yaml"):
-
         if not os.path.isabs(config_path):
-            config_path = os.path.join(os.path.dirname(__file__),
-                                     "../", "../", config_path)
+            config_path = os.path.join(os.path.dirname(__file__), "../", "../", config_path)
 
         if not os.path.exists(config_path):
             logger.warning("Skip parse profiling dataset, because %s does not exist.", config_path)
@@ -105,10 +105,6 @@ class ProfilingDataset(Dataset):
 
         return patterns if patterns else []
 
-    def collection_path(self):
-        """collection_path"""
-        return self.collection_path
-    
     def _parse(self):
         self.current_version_pattern = self.get_current_data_pattern()
         info = DeviceInfoParser(self.collection_path)

@@ -1,3 +1,19 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -14,11 +30,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from msprof_analyze.prof_common.logger import get_logger
-from typing import Dict, List, Tuple, Callable, Any, Optional, Union
+from typing import Dict, List, Tuple, Optional, Union
 
 import networkx as nx
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.advisor.common.graph.graph_parser import HostGraphNode, QueryGraphNode
 
 logger = get_logger()
@@ -30,22 +46,23 @@ class Graph:
     """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self,
-                 nodes: Dict[str, Optional[Union[HostGraphNode, QueryGraphNode]]] = None,
-                 edges: List[Tuple[Optional[Union[HostGraphNode, QueryGraphNode]],
-                                   Optional[Union[HostGraphNode, QueryGraphNode]]]] = None,
-                 name: str = None):
+    def __init__(
+        self,
+        nodes: Dict[str, Optional[Union[HostGraphNode, QueryGraphNode]]] = None,
+        edges: List[
+            Tuple[Optional[Union[HostGraphNode, QueryGraphNode]], Optional[Union[HostGraphNode, QueryGraphNode]]]
+        ] = None,
+        name: str = None,
+    ):
         self.name = name
         self.graph = nx.DiGraph(name=name)
         self.nodes = nodes if nodes is not None else {}
-        self.edges = edges if edges is not None else list()
+        self.edges = edges if edges is not None else []
 
     def build(self):
         for _, node in self.nodes.items():
             # add node and mark op_name as tag
-            self.add_node(node,
-                          op_type=node.op_type
-                          )
+            self.add_node(node, op_type=node.op_type)
         for edge in self.edges:
             self.add_edge(*edge)
         return self.graph
@@ -54,8 +71,7 @@ class Graph:
         if not hasattr(self.graph, "nodes"):
             return {"edges": 0, "nodes": 0}
 
-        return {"edges": len(self.graph.edges),
-                "nodes": len(self.graph.nodes)}
+        return {"edges": len(self.graph.edges), "nodes": len(self.graph.nodes)}
 
     def add_node(self, node: HostGraphNode, **kwargs):
         if node is None:
@@ -66,8 +82,7 @@ class Graph:
         if pre_node is None or next_node is None:
             return
 
-        if pre_node not in self.graph or \
-                next_node not in self.graph:
+        if pre_node not in self.graph or next_node not in self.graph:
             logger.error("Nodes between edge should be both exists.")
             return
 

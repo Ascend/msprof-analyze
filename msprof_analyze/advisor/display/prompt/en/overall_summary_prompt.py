@@ -1,24 +1,26 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-class OverallSummaryPrompt(object):
+
+class OverallSummaryPrompt:
     OVERALL_SUMMARY_ANALYZER = "Overall Summary"
     ADVICE_MAP = {
         "Computing Time": "if you want more detailed advice please go to mstt_advisor_*.html",
         "Uncovered Communication Time": "if you want more detailed advice please go to mstt_advisor_*.html",
-        "Free Time": "if you want more detailed advice please go to mstt_advisor_*.html"
+        "Free Time": "if you want more detailed advice please go to mstt_advisor_*.html",
     }
     TIME_NAME_MAP = {
         "Computing Time": "computing",
@@ -29,7 +31,7 @@ class OverallSummaryPrompt(object):
         'Flash Attention Time(Forward)(Num)': 'Flash Attention Time(Forward)',
         'Flash Attention Time(Backward)(Num)': 'Flash Attention Time(Backward)',
         'Other Time': "Other Computing Time",
-        'SDMA Time(Num)': 'SDMA Time'
+        'SDMA Time(Num)': 'SDMA Time',
     }
     PERFORMANCE_TIME_DICT = {
         "Computing Time": "computing_time_ms",
@@ -45,5 +47,5 @@ class OverallSummaryPrompt(object):
         "Free Time": "free_time_ms",
         "    -- SDMA": "sdma_time_ms",
         "    -- Free": "free_ms",
-        "E2E Time": "e2e_time_ms"
+        "E2E Time": "e2e_time_ms",
     }

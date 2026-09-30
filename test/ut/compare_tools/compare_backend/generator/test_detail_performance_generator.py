@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import shutil
@@ -28,7 +29,7 @@ NAMESPACE = 'msprof_analyze.compare_tools.compare_backend'
 
 
 class TestDetailPerformanceGenerator(unittest.TestCase):
-    
+
     def setUp(self):
         """Set up test fixtures before each test method."""
         # Mock args with various comparison options
@@ -45,23 +46,23 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         self.args.disable_module = False
         self.args.disable_details = False
         self.args.use_kernel_type = False
-        
+
         # Mock profiling data dict
         self.profiling_data_dict = {
             Constant.BASE_DATA: MagicMock(),
             Constant.COMPARISON_DATA: MagicMock()
         }
-        
+
         # Setup mock data for base and comparison
         self.setup_mock_profiling_data()
-        
+
         # Create generator instance
         self.generator = DetailPerformanceGenerator(self.profiling_data_dict, self.args)
 
     def tearDown(self):
         if os.path.exists(self.args.output_path):
             shutil.rmtree(self.args.output_path)
-    
+
     def setup_mock_profiling_data(self):
         """
         Setup mock profiling data for testing.
@@ -73,7 +74,7 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         base_data.kernel_details = []
         base_data.python_function_data = [MagicMock()]
         base_data.bwd_tid = 2
-        
+
         # Mock comparison data
         comparison_data = self.profiling_data_dict[Constant.COMPARISON_DATA]
         comparison_data.overall_metrics = MagicMock()
@@ -88,9 +89,9 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         self.args.base_step = None
         self.args.comparison_step = None
-        
+
         generator = DetailPerformanceGenerator(self.profiling_data_dict, self.args)
-        
+
         self.assertEqual(generator._base_step_id, Constant.VOID_STEP)
         self.assertEqual(generator._comparison_step_id, Constant.VOID_STEP)
 
@@ -101,9 +102,9 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         with patch.object(self.generator, 'compare') as mock_compare, \
              patch.object(self.generator, 'generate_view') as mock_generate_view:
-            
+
             self.generator.run()
-            
+
             mock_compare.assert_called_once()
             mock_generate_view.assert_called_once()
 
@@ -131,10 +132,10 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         mock_comparator = MagicMock()
         mock_comparator.generate_data.return_value = {"test": "data"}
-        
+
         with patch.object(self.generator, '_create_comparator', return_value=[mock_comparator]) as mock_create:
             self.generator.compare()
-            
+
             mock_create.assert_called_once()
             mock_comparator.generate_data.assert_called_once()
             self.assertEqual(self.generator._result_data, {"test": "data"})
@@ -147,7 +148,7 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         Test generate_view with result data creates Excel file.
         """
         with patch('os.path.abspath') as mock_abspath, \
-             patch(NAMESPACE + '.generator.detail_performance_generator.logger') as mock_logger, \
+             patch(NAMESPACE + '.generator.detail_performance_generator.logger'), \
              patch(NAMESPACE + '.generator.detail_performance_generator.datetime') as mock_datetime, \
              patch(NAMESPACE + '.generator.detail_performance_generator.ExcelView') as mock_excel_view:
             self.generator._result_data = {"test": "data"}
@@ -171,13 +172,13 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         self.args.enable_profiling_compare = True
         self.args.enable_operator_compare = False
-        
+
         with patch(NAMESPACE + '.generator.detail_performance_generator.OverallMetricsComparator') as mock_overall:
             mock_instance = MagicMock()
             mock_overall.return_value = mock_instance
-            
+
             comparators = self.generator._create_comparator()
-            
+
             mock_overall.assert_called_once()
             self.assertEqual(len(comparators), 1)
             self.assertEqual(comparators[0], mock_instance)
@@ -188,13 +189,13 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         self.args.enable_communication_compare = True
         self.args.enable_operator_compare = False
-        
+
         with patch(NAMESPACE + '.generator.detail_performance_generator.CommunicationComparator') as mock_comm:
             mock_instance = MagicMock()
             mock_comm.return_value = mock_instance
-            
+
             comparators = self.generator._create_comparator()
-            
+
             mock_comm.assert_called_once()
             self.assertEqual(len(comparators), 1)
             self.assertEqual(comparators[0], mock_instance)
@@ -207,26 +208,26 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         self.args.enable_operator_compare = True
         self.args.disable_module = False
-        
+
         mock_module_match.return_value = []
         mock_operator_result = [MagicMock()]
         mock_operator_match.return_value = mock_operator_result
-        
+
         with patch(NAMESPACE + '.generator.detail_performance_generator.OperatorDataPrepare') as mock_prepare, \
              patch(NAMESPACE + '.generator.detail_performance_generator.OperatorStatisticComparator') as mock_stat, \
              patch(NAMESPACE + '.generator.detail_performance_generator.OperatorComparator') as mock_detail:
-            
+
             mock_prepare_instance = MagicMock()
             mock_prepare_instance.get_top_layer_ops.return_value = [MagicMock()]
             mock_prepare.return_value = mock_prepare_instance
-            
+
             mock_stat_instance = MagicMock()
             mock_detail_instance = MagicMock()
             mock_stat.return_value = mock_stat_instance
             mock_detail.return_value = mock_detail_instance
-            
+
             comparators = self.generator._create_comparator()
-            
+
             mock_module_match.assert_called_once()
             mock_operator_match.assert_called_once()
             self.assertEqual(len(comparators), 2)
@@ -238,28 +239,28 @@ class TestDetailPerformanceGenerator(unittest.TestCase):
         """
         self.args.enable_operator_compare = True
         self.args.disable_module = True
-        
-        comparators = self.generator._create_comparator()
-        
+
+        _comparators = self.generator._create_comparator()
+
         mock_module_match.assert_not_called()
 
     def test_create_comparator_with_api_compare_enabled(self):
         """Test _create_comparator with API compare enabled."""
         self.args.enable_api_compare = True
         self.args.enable_operator_compare = False
-        
+
         with patch(NAMESPACE + '.generator.detail_performance_generator.OperatorDataPrepare') as mock_prepare, \
              patch(NAMESPACE + '.generator.detail_performance_generator.ApiCompareComparator') as mock_api:
-            
+
             mock_prepare_instance = MagicMock()
             mock_prepare_instance.get_all_layer_ops.return_value = [MagicMock()]
             mock_prepare.return_value = mock_prepare_instance
-            
+
             mock_api_instance = MagicMock()
             mock_api.return_value = mock_api_instance
-            
+
             comparators = self.generator._create_comparator()
-            
+
             mock_api.assert_called_once()
             self.assertEqual(len(comparators), 1)
 

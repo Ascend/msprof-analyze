@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
 
@@ -44,15 +45,18 @@ class DatabaseService:
         "DDR": "timestampNs",
         "HCCS": "timestampNs",
         "PCIE": "timestampNs",
-        "AICORE_FREQ": "timestampNs"
+        "AICORE_FREQ": "timestampNs",
     }
 
     def __init__(self, db_path, step_range):
         self._db_path = db_path
         self._step_range = step_range
         self._table_info = {}
-        self._param = (self._step_range.get(Constant.START_NS),
-                       self._step_range.get(Constant.END_NS)) if self._step_range else None
+        self._param = (
+            (self._step_range.get(Constant.START_NS), self._step_range.get(Constant.END_NS))
+            if self._step_range
+            else None
+        )
 
     def add_table_for_query(self, table_name: str, columns=None):
         if not isinstance(table_name, str):
@@ -68,7 +72,7 @@ class DatabaseService:
         if not self._table_info or not self._db_path:
             return result_data
         if not os.path.exists(self._db_path):
-            logger.error(f"Db file does not exist: {self._db_path}")
+            logger.error("Db file does not exist: %s", self._db_path)
             return result_data
         try:
             conn, cursor = DBManager.create_connect_db(self._db_path)
@@ -85,14 +89,15 @@ class DatabaseService:
                 columns = [column for column in columns if column in table_columns]
                 columns_str = ",".join(columns)
             if not columns_str:
-                logger.error(f"The fields to be queried in Table {table_name} are invalid.")
+                logger.error("The fields to be queried in Table %s are invalid.", table_name)
                 return result_data
             if table_name in self.TABLE_TS_DICT and self._step_range:
-                where_str = f"where {self.TABLE_TS_DICT.get(table_name)} >= ? " \
-                            f"and {self.TABLE_TS_DICT.get(table_name)} <= ?"
+                where_str = (
+                    f"where {self.TABLE_TS_DICT.get(table_name)} >= ? and {self.TABLE_TS_DICT.get(table_name)} <= ?"
+                )
             else:
                 where_str = ""
-            query_sql = f"select {columns_str} from {table_name} {where_str}"
+            query_sql = f"select {columns_str} from {table_name} {where_str}"  # nosec B608
             try:
                 if self._param is not None and re.search(Constant.SQL_PLACEHOLDER_PATTERN, query_sql):
                     data = pd.read_sql(query_sql, conn, params=self._param)

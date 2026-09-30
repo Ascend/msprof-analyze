@@ -1,15 +1,18 @@
-# Copyright (C) 2025. Huawei Technologies Co., Ltd. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
 from unittest.mock import MagicMock, patch
@@ -30,7 +33,7 @@ class TestOpRule(unittest.TestCase):
     def test_when_initialized_without_params_then_create_empty_rule(self):
         """Test OpRule initialization without parameters"""
         op_rule = OpRule()
-        
+
         self.assertEqual(op_rule.tmp_rule, {})
         self.assertEqual(op_rule.timeline_op_rule_handler, {})
         self.assertEqual(op_rule._rule, {})
@@ -39,13 +42,13 @@ class TestOpRule(unittest.TestCase):
         """Test OpRule initialization with rule parameter"""
         test_rule = {'aten': {'add': [{'torch_npu.fast_gelu': 'gelu'}]}}
         op_rule = OpRule(rule=test_rule)
-        
+
         self.assertEqual(op_rule.tmp_rule, test_rule)
 
     def test_when_initialized_with_handler_then_sets_handler_correctly(self):
         """Test OpRule initialization with timeline_op_rule_handler parameter"""
         op_rule = OpRule(timeline_op_rule_handler=self.mock_timeline_op_rule_handler)
-        
+
         self.assertEqual(op_rule.timeline_op_rule_handler, self.mock_timeline_op_rule_handler)
 
     def test_when_format_rule_with_mixed_values_then_formats_correctly(self):
@@ -94,9 +97,9 @@ class TestOpRule(unittest.TestCase):
                 'addmm': ['mul-mul-add']
             }
         }
-        
+
         result = op_rule.get_final_rules()
-        
+
         expected = [
             {'npu_swiglu': ['(slice)-silu-mul']},
             {'addmm': ['mul-mul-add']}
@@ -107,9 +110,9 @@ class TestOpRule(unittest.TestCase):
         """Test add method with None rules"""
         op_rule = OpRule()
         initial_rule = op_rule.tmp_rule.copy()
-        
+
         op_rule.add('aten', None)
-        
+
         self.assertEqual(op_rule.tmp_rule, initial_rule)
 
     def test_when_add_existing_key_then_updates_existing_entry(self):
@@ -117,9 +120,9 @@ class TestOpRule(unittest.TestCase):
         op_rule = OpRule()
         op_rule._tmp_rule = {'aten': {'torch_npu.npu_gelu': ['(slice)-gelu-mul', '(chunk)-gelu-mul']}}
         add_rules = {'torch_npu.npu_gelu': ['(slice)-mul-gelu', '(chunk)-mul-gelu']}
-        
+
         op_rule.add('aten', add_rules)
-        
+
         expected = ['(slice)-mul-gelu', '(chunk)-mul-gelu']
         self.assertEqual(op_rule.tmp_rule['aten']['torch_npu.npu_gelu'], expected)
 
@@ -135,7 +138,7 @@ class TestOpRule(unittest.TestCase):
         """Test overwrite method with new key logs warning"""
         op_rule = OpRule()
         overwrite_rules = {'api': ['torch.nn.functional.conv2d']}
-        
+
         op_rule.overwrite('aten', overwrite_rules)
         self.assertEqual(op_rule.tmp_rule['aten']['api'], ['torch.nn.functional.conv2d'])
         mock_logger.warning.assert_called_once()
@@ -194,9 +197,9 @@ class TestOpRule(unittest.TestCase):
     def test_when_inherit_unique_id_with_valid_handler_then_inherits_rule(self):
         """Test inherit_unique_id method with valid handler"""
         op_rule = OpRule(timeline_op_rule_handler=self.mock_timeline_op_rule_handler)
-        
+
         op_rule.inherit_unique_id('aten', 2)
-        
+
         expected = {'add': [{'torch_npu.fast_gelu': 'gelu'}]}
         self.assertEqual(op_rule.tmp_rule['aten'], expected)
 

@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import math
 from decimal import Decimal
 
@@ -23,8 +24,18 @@ from msprof_analyze.prof_common.constant import Constant
 
 
 class KernelDetailsBean:
-    __slots__ = ['_data', '_op_type', '_name', '_input_shapes', '_aiv_vec_time', '_aicore_time', '_mac_time',
-                 '_duration', '_start_time', '_step_id']
+    __slots__ = [
+        '_data',
+        '_op_type',
+        '_name',
+        '_input_shapes',
+        '_aiv_vec_time',
+        '_aicore_time',
+        '_mac_time',
+        '_duration',
+        '_start_time',
+        '_step_id',
+    ]
 
     def __init__(self, data: dict):
         self._data = data
@@ -53,19 +64,19 @@ class KernelDetailsBean:
 
     @property
     def aiv_vec_time(self) -> float:
-        if self._aiv_vec_time == "" or self._aiv_vec_time == "N/A":
+        if self._aiv_vec_time in ("", "N/A"):
             return float("nan")
         return convert_to_float(self._aiv_vec_time)
 
     @property
     def aicore_time(self) -> float:
-        if self._aicore_time == "" or self._aicore_time == "N/A":
+        if self._aicore_time in ("", "N/A"):
             return float("nan")
         return convert_to_float(self._aicore_time)
 
     @property
     def mac_time(self) -> float:
-        if self._mac_time == "" or self._mac_time == "N/A":
+        if self._mac_time in ("", "N/A"):
             return float("nan")
         return convert_to_float(self._mac_time)
 
@@ -91,8 +102,9 @@ class KernelDetailsBean:
 
     @property
     def mc2_computing_time(self):
-        return (max(float(self._data.get("aic_mac_time(us)", 0)), float(self._data.get("aic_mte2_time(us)", 0))) +
-                float(self._data.get("aiv_time(us)", 0)))
+        return max(float(self._data.get("aic_mac_time(us)", 0)), float(self._data.get("aic_mte2_time(us)", 0))) + float(
+            self._data.get("aiv_time(us)", 0)
+        )
 
     def is_hide_op_pmu(self):
         if "mac_time(us)" in self._data.keys() or "aiv_vec_time(us)" in self._data.keys():

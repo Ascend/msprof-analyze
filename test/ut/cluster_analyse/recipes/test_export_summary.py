@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
 from unittest.mock import patch
@@ -72,7 +73,7 @@ class TestExportSummary(unittest.TestCase):
              patch.object(recipe, '_save_api_statistic') as mock_save_api, \
              patch.object(recipe, '_save_kernel_details') as mock_save_kernel:
             mock_get_path.side_effect = lambda rank_id: f"/test/path/rank{rank_id}/ASCEND_PROFILER_OUTPUT"
-            
+
             recipe.reducer_func(mapper_res)
 
             self.assertEqual(mock_get_path.call_count, 2)
@@ -89,7 +90,7 @@ class TestExportSummary(unittest.TestCase):
         with patch.object(recipe, '_get_ascend_output_path', return_value=None), \
              patch.object(recipe, '_save_api_statistic') as mock_save_api, \
              patch.object(recipe, '_save_kernel_details') as mock_save_kernel:
-            
+
             recipe.reducer_func(mapper_res)
 
             mock_save_api.assert_not_called()
@@ -97,10 +98,10 @@ class TestExportSummary(unittest.TestCase):
 
     def test_reducer_func_should_handle_empty_mapper_res(self):
         recipe = self._create_recipe()
-        
+
         with patch.object(recipe, '_get_ascend_output_path') as mock_get_path:
             recipe.reducer_func([])
-            
+
             mock_get_path.assert_not_called()
 
     def test_reducer_func_should_handle_none_data(self):
@@ -109,7 +110,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch.object(recipe, '_get_ascend_output_path') as mock_get_path:
             recipe.reducer_func(mapper_res)
-            
+
             mock_get_path.assert_not_called()
 
     def test_reducer_func_should_handle_empty_dataframe(self):
@@ -118,7 +119,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch.object(recipe, '_get_ascend_output_path') as mock_get_path:
             recipe.reducer_func(mapper_res)
-            
+
             mock_get_path.assert_not_called()
 
     def test_save_api_statistic_should_save_when_df_valid(self):
@@ -127,7 +128,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=False), \
              patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_api_statistic(0, df, "/test/output")
 
             mock_create.assert_called_once()
@@ -136,7 +137,7 @@ class TestExportSummary(unittest.TestCase):
         recipe = self._create_recipe()
 
         with patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_api_statistic(0, pd.DataFrame(), "/test/output")
 
             mock_create.assert_not_called()
@@ -145,7 +146,7 @@ class TestExportSummary(unittest.TestCase):
         recipe = self._create_recipe()
 
         with patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_api_statistic(0, None, "/test/output")
 
             mock_create.assert_not_called()
@@ -156,7 +157,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=True), \
              patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_api_statistic(0, df, "/test/output")
 
             mock_create.assert_not_called()
@@ -167,7 +168,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=False), \
              patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_kernel_details(0, df, "/test/output")
 
             mock_create.assert_called_once()
@@ -176,7 +177,7 @@ class TestExportSummary(unittest.TestCase):
         recipe = self._create_recipe()
 
         with patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_kernel_details(0, pd.DataFrame(), "/test/output")
 
             mock_create.assert_not_called()
@@ -187,7 +188,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=True), \
              patch('msprof_analyze.cluster_analyse.recipes.export_summary.export_summary.FileManager.create_csv_from_dataframe') as mock_create:
-            
+
             recipe._save_kernel_details(0, df, "/test/output")
 
             mock_create.assert_not_called()
@@ -197,7 +198,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=True):
             result = recipe._get_ascend_output_path(0)
-            
+
             expected_path = os.path.join("/test/path/rank0", "ASCEND_PROFILER_OUTPUT")
             self.assertEqual(result, expected_path)
 
@@ -206,7 +207,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=False):
             result = recipe._get_ascend_output_path(0)
-            
+
             self.assertIsNone(result)
 
     def test_get_ascend_output_path_should_return_none_when_rank_not_in_data_map(self):
@@ -214,7 +215,7 @@ class TestExportSummary(unittest.TestCase):
 
         with patch('os.path.exists', return_value=True):
             result = recipe._get_ascend_output_path(999)
-            
+
             expected_path = os.path.join("", "ASCEND_PROFILER_OUTPUT")
             self.assertEqual(result, expected_path)
 

@@ -1,42 +1,95 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.constant import Constant
 
 
 class CellFormatType:
-    DEFAULT = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-               'num_format': '#,##0'}  # 数字显示整数，无背景色
-    DEFAULT_FLOAT = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-                     'num_format': '#,##0.00'}  # 保留2位小数，无背景色
-    DEFAULT_RATIO = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter',
-                     'border': True, 'num_format': '0.00%'}  # 百分比显示，保留2位小数，无背景色
-    RED_RATIO = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter',
-                 'border': True, 'num_format': '0.00%', "fg_color": Constant.RED_COLOR}  # 百分比显示，保留2位小数，单元格背景色为红色
-    BOLD_STR = {"font_name": "Arial", 'font_size': 11, 'align': 'left', 'valign': 'vcenter', 'border': True,
-                'bold': True}  # 字符串，无背景色，字体加粗
-    BLUE_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.BLUE_COLOR, 'align': 'left',
-                 'valign': 'vcenter', 'bold': True, 'border': True}  # 蓝色背景，加粗
-    GREEN_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.GREEN_COLOR, 'align': 'left',
-                  'valign': 'vcenter', 'bold': True, 'border': True}  # 绿色背景，加粗
-    YELLOW_BOLD = {"font_name": "Arial", 'font_size': 11, 'fg_color': Constant.YELLOW_COLOR, 'align': 'left',
-                   'valign': 'vcenter', 'bold': True, 'border': True}  # 黄色背景，加粗
+    DEFAULT = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '#,##0',
+    }  # 数字显示整数，无背景色
+    DEFAULT_FLOAT = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '#,##0.00',
+    }  # 保留2位小数，无背景色
+    DEFAULT_RATIO = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '0.00%',
+    }  # 百分比显示，保留2位小数，无背景色
+    RED_RATIO = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'num_format': '0.00%',
+        "fg_color": Constant.RED_COLOR,
+    }  # 百分比显示，保留2位小数，单元格背景色为红色
+    BOLD_STR = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': True,
+        'bold': True,
+    }  # 字符串，无背景色，字体加粗
+    BLUE_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.BLUE_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }  # 蓝色背景，加粗
+    GREEN_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.GREEN_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }  # 绿色背景，加粗
+    YELLOW_BOLD = {
+        "font_name": "Arial",
+        'font_size': 11,
+        'fg_color': Constant.YELLOW_COLOR,
+        'align': 'left',
+        'valign': 'vcenter',
+        'bold': True,
+        'border': True,
+    }  # 黄色背景，加粗
     BLUE_NORMAL = {'fg_color': Constant.BLUE_COLOR}  # 蓝色背景，主要用于行样式
     LIGHT_BLUE_NORMAL = {'fg_color': Constant.LIGHT_BLUE_COLOR}  # 淡蓝色背景，主要用于行样式
 
 
-class ExcelConfig(object):
+class ExcelConfig:
     ORDER = "Order Id"
     OPERATOR_NAME = "Operator Name"
     INPUT_SHAPE = "Input Shape"
@@ -110,7 +163,7 @@ class ExcelConfig(object):
             {"name": KERNEL_DETAILS, "type": CellFormatType.DEFAULT, "width": 20},
             {"name": DEVICE_DURATION, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
             {"name": DIFF_DUR, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
-            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20}
+            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20},
         ],
         Constant.MEMORY_TABLE: [
             {"name": ORDER, "type": CellFormatType.DEFAULT, "width": 10},
@@ -125,7 +178,7 @@ class ExcelConfig(object):
             {"name": MEMORY_DETAILS, "type": CellFormatType.DEFAULT, "width": 20},
             {"name": SIZE, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
             {"name": DIFF_SIZE, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
-            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20}
+            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20},
         ],
         Constant.OPERATOR_TOP_TABLE: [
             {"name": TOP, "type": CellFormatType.DEFAULT, "width": 10},
@@ -135,7 +188,7 @@ class ExcelConfig(object):
             {"name": COMPARISON_DEVICE_DURATION, "type": CellFormatType.DEFAULT_FLOAT, "width": 30},
             {"name": COMPARISON_OPERATOR_NUMBER, "type": CellFormatType.DEFAULT, "width": 30},
             {"name": DIFF_TIME, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
-            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20}
+            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20},
         ],
         Constant.MEMORY_TOP_TABLE: [
             {"name": TOP, "type": CellFormatType.DEFAULT, "width": 10},
@@ -147,7 +200,7 @@ class ExcelConfig(object):
             {"name": COMPARISON_ALLOCATED_MEMORY, "type": CellFormatType.DEFAULT_FLOAT, "width": 33},
             {"name": COMPARISON_OPERATOR_NUMBER, "type": CellFormatType.DEFAULT, "width": 25},
             {"name": DIFF_MEMORY, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
-            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20}
+            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20},
         ],
         Constant.COMMUNICATION_TABLE: [
             {"name": ORDER, "type": CellFormatType.DEFAULT, "width": 10},
@@ -166,7 +219,7 @@ class ExcelConfig(object):
             {"name": MAX_DURATION, "type": CellFormatType.DEFAULT_FLOAT, "width": 17},
             {"name": MIN_DURATION, "type": CellFormatType.DEFAULT_FLOAT, "width": 17},
             {"name": DIFF_DUR, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
-            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20}
+            {"name": DIFF_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 20},
         ],
         Constant.MODULE_TOP_TABLE: [
             {"name": ORDER, "type": CellFormatType.DEFAULT, "width": 10},
@@ -186,7 +239,7 @@ class ExcelConfig(object):
             {"name": DIFF_SELF_TIME, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
             {"name": DIFF_TOTAL_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 15},
             {"name": BASE_CALL_STACK, "type": CellFormatType.DEFAULT, "width": 30},
-            {"name": COMPARISON_CALL_STACK, "type": CellFormatType.DEFAULT, "width": 30}
+            {"name": COMPARISON_CALL_STACK, "type": CellFormatType.DEFAULT, "width": 30},
         ],
         Constant.MODULE_TABLE: [
             {"name": ORDER, "type": CellFormatType.DEFAULT, "width": 10},
@@ -205,7 +258,7 @@ class ExcelConfig(object):
             {"name": DIFF_SELF_TIME_US, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
             {"name": DIFF_TOTAL_RATIO, "type": CellFormatType.DEFAULT_RATIO, "width": 15},
             {"name": BASE_CALL_STACK, "type": CellFormatType.DEFAULT, "width": 30},
-            {"name": COMPARISON_CALL_STACK, "type": CellFormatType.DEFAULT, "width": 30}
+            {"name": COMPARISON_CALL_STACK, "type": CellFormatType.DEFAULT, "width": 30},
         ],
         Constant.OVERALL_METRICS_TABLE: [
             {"name": INDEX, "type": CellFormatType.DEFAULT, "width": 40},
@@ -267,18 +320,21 @@ class ExcelConfig(object):
             {"name": CALLS, "type": CellFormatType.DEFAULT, "width": 20},
             {"name": DIFF_TOTAL_RATIO, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
             {"name": DIFF_AVG_RATIO, "type": CellFormatType.DEFAULT_FLOAT, "width": 20},
-        ]
+        ],
     }
 
     OVERHEAD = {
-        Constant.OPERATOR_TABLE: ["B1:F1", "G1:K1"], Constant.MEMORY_TABLE: ["B1:F1", "G1:K1"],
-        Constant.COMMUNICATION_TABLE: ["B1:H1", "I1:O1"], Constant.OPERATOR_TOP_TABLE: ["C1:D1", "E1:F1"],
-        Constant.MEMORY_TOP_TABLE: ["C1:E1", "F1:H1"], Constant.MODULE_TOP_TABLE: ["F1:I1", "J1:M1"],
+        Constant.OPERATOR_TABLE: ["B1:F1", "G1:K1"],
+        Constant.MEMORY_TABLE: ["B1:F1", "G1:K1"],
+        Constant.COMMUNICATION_TABLE: ["B1:H1", "I1:O1"],
+        Constant.OPERATOR_TOP_TABLE: ["C1:D1", "E1:F1"],
+        Constant.MEMORY_TOP_TABLE: ["C1:E1", "F1:H1"],
+        Constant.MODULE_TOP_TABLE: ["F1:I1", "J1:M1"],
         Constant.MODULE_TABLE: ["E1:H1", "I1:L1"],
         Constant.OVERALL_METRICS_TABLE: ["B1:D1", "E1:G1"],
         Constant.API_TABLE: ["C1:F1", "G1:J1"],
         Constant.KERNEL_TABLE: ["D1:H1", "I1:M1"],
-        Constant.KERNEL_TYPE_TABLE: ["D1:H1", "I1:M1"]
+        Constant.KERNEL_TYPE_TABLE: ["D1:H1", "I1:M1"],
     }
 
     # overall metrics index
@@ -344,5 +400,5 @@ class ExcelConfig(object):
         VECTOR: CellFormatType.LIGHT_BLUE_NORMAL,
         CUBE: CellFormatType.LIGHT_BLUE_NORMAL,
         SDMA_TM: CellFormatType.LIGHT_BLUE_NORMAL,
-        OTHER: CellFormatType.LIGHT_BLUE_NORMAL
+        OTHER: CellFormatType.LIGHT_BLUE_NORMAL,
     }

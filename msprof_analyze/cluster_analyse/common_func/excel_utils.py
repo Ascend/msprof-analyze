@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 from typing import List, Dict, Optional
 
@@ -24,17 +25,13 @@ logger = get_logger()
 
 
 class ExcelUtils:
-    DEFAULT_FORMAT = {
-        'valign': 'vcenter',
-        'border': 1,
-        'font_name': 'Times New Roman'
-    }
+    DEFAULT_FORMAT = {'valign': 'vcenter', 'border': 1, 'font_name': 'Times New Roman'}
     DEFAULT_HEADER_FORMAT = {
         'valign': 'vcenter',
         'bold': True,
         'border': 1,
         'bg_color': '#AFEEEE',
-        'font_name': 'Times New Roman'
+        'font_name': 'Times New Roman',
     }
 
     def __init__(self):
@@ -53,12 +50,14 @@ class ExcelUtils:
         self.df = None
         self._formats_cache = {}
 
-    def create_excel_writer(self,
-                            output_path: str,
-                            file_name: str,
-                            df: pd.DataFrame,
-                            sheet_name: str = 'Sheet1',
-                            format_config: Optional[Dict[str, Dict]] = None) -> None:
+    def create_excel_writer(
+        self,
+        output_path: str,
+        file_name: str,
+        df: pd.DataFrame,
+        sheet_name: str = 'Sheet1',
+        format_config: Optional[Dict[str, Dict]] = None,
+    ) -> None:
         """
         初始化ExcelWriter并写入原始数据
         Args:
@@ -97,7 +96,7 @@ class ExcelUtils:
 
     def set_column_width(self, columns_config: Dict[str, int]):
         if not self.worksheet:
-            raise Exception("Worksheet has not been initialized!")
+            raise RuntimeError("Worksheet has not been initialized!")
 
         for col, width in columns_config.items():
             col_idx = list(columns_config.keys()).index(col)
@@ -105,19 +104,16 @@ class ExcelUtils:
 
     def set_row_height(self, row: int, height: int):
         if not self.worksheet:
-            raise Exception("Worksheet not initialized")
+            raise RuntimeError("Worksheet not initialized")
         self.worksheet.set_row(row, height)
 
     def freeze_panes(self, row: int = 1, col: int = 0):
         if not self.worksheet:
-            raise Exception("Worksheet has not been initialized!")
+            raise RuntimeError("Worksheet has not been initialized!")
         self.worksheet.freeze_panes(row, col)
 
     def merge_duplicate_cells(
-            self,
-            columns_to_merge: List[str],
-            merge_format: Optional[Dict] = None,
-            header_format: Optional[Dict] = None
+        self, columns_to_merge: List[str], merge_format: Optional[Dict] = None, header_format: Optional[Dict] = None
     ):
         """
         合并连续相同值的单元格
@@ -128,7 +124,7 @@ class ExcelUtils:
             header_format: 标题行的格式字典
         """
         if not self.workbook or not self.worksheet:
-            raise Exception("Worksheet has not been initialized!")
+            raise RuntimeError("Worksheet has not been initialized!")
 
         # 设置格式
         merge_fmt = self._get_format(merge_format if merge_format else self.DEFAULT_FORMAT)
@@ -141,7 +137,7 @@ class ExcelUtils:
         # 遍历需要合并的列
         for col in columns_to_merge:
             if col not in self.df.columns:
-                logger.warning(f"Invalid column: {col}, not in dataframe!")
+                logger.warning("Invalid column: %s, not in dataframe!", col)
                 continue
 
             col_idx = self.df.columns.get_loc(col)
@@ -154,25 +150,16 @@ class ExcelUtils:
 
                 if self.df[col].iloc[i] == current_value:
                     continue
-                else:
-                    if current_value is not None and (excel_row - 1) > start_row:
-                        self.worksheet.merge_range(
-                            start_row, col_idx, excel_row - 1, col_idx,
-                            current_value,
-                            merge_fmt
-                        )
-                        merge_count += 1
+                if current_value is not None and (excel_row - 1) > start_row:
+                    self.worksheet.merge_range(start_row, col_idx, excel_row - 1, col_idx, current_value, merge_fmt)
+                    merge_count += 1
 
-                    current_value = self.df[col].iloc[i]
-                    start_row = excel_row
+                current_value = self.df[col].iloc[i]
+                start_row = excel_row
 
             # 处理最后一组连续相同的值
             if current_value is not None and (len(self.df)) > start_row:
-                self.worksheet.merge_range(
-                    start_row, col_idx, len(self.df), col_idx,
-                    current_value,
-                    merge_fmt
-                )
+                self.worksheet.merge_range(start_row, col_idx, len(self.df), col_idx, current_value, merge_fmt)
                 merge_count += 1
 
     def _get_format(self, format_dict: Dict):

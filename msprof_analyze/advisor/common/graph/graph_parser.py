@@ -1,3 +1,19 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -43,7 +59,6 @@ class Tensor:
 
 @dataclass
 class Attr:
-
     def __init__(self):
         super().__init__()
         self.key = str()
@@ -95,6 +110,7 @@ class HostGraphParser:
     """
     Parse graph metadata from text file
     """
+
     def __init__(self, file_path):
         self.buffer = deque(maxlen=100)
         self.line_no = 0
@@ -137,7 +153,6 @@ class HostGraphParser:
             obj.append(value)
 
     def _parse_struct(self, in_file, key, in_obj):
-
         def parse_shape(file, obj):
             obj = self._parse_line(file, obj)
 
@@ -282,17 +297,14 @@ class HostGraphParser:
         if not self.graphs:
             self.nodes = {}
             return
-        self.nodes = {
-            node.op_name: node
-            for graph in self.graphs
-            for node in graph.nodes.values()
-        }
+        self.nodes = {node.op_name: node for graph in self.graphs for node in graph.nodes.values()}
 
 
 class QueryGraphNode:
     """
     Graph Node
     """
+
     _ID = 0
 
     def __init__(self, op_type: str, op_pass: str):
@@ -302,8 +314,7 @@ class QueryGraphNode:
         QueryGraphNode._ID += 1
 
     def __eq__(self, other):
-        return self._op_type == other._op_type and \
-               self._id == other._id
+        return self._op_type == other._op_type and self._id == other._id
 
     def __hash__(self):
         return hash(self._op_type + str(self._id))
@@ -352,7 +363,7 @@ class QueryGraphParser:
     def __init__(self, rule_database_path: str):
         self._fusion_rules: Dict[str, List[Tuple]] = dict()
         self.load_database(rule_database_path)
-        self.num_rules = sum([len(v) for v in self._fusion_rules.values()])
+        self.num_rules = sum(len(v) for v in self._fusion_rules.values())
 
     @property
     def fusion_rules(self):
@@ -371,19 +382,28 @@ class QueryGraphParser:
             nodes[next_node.op_name] = next_node
             if pre_node is None or next_node is None:
                 continue
-            edges.append((pre_node, next_node,))
-        graphs.append((nodes, edges, graph_name,))
+            edges.append(
+                (
+                    pre_node,
+                    next_node,
+                )
+            )
+        graphs.append(
+            (
+                nodes,
+                edges,
+                graph_name,
+            )
+        )
         return graphs
 
     @staticmethod
-    def build_query_graph_v1(graph_name: str,
-                             nodes_list: List[Dict],
-                             edges_list: List[List[str]]) -> List[Tuple]:
+    def build_query_graph_v1(graph_name: str, nodes_list: List[Dict], edges_list: List[List[str]]) -> List[Tuple]:
         graphs = []
         node_index = dict()
         multi_node_list = []
         for index, node in enumerate(nodes_list):
-            (node_name, op_type), = node.items()
+            ((node_name, op_type),) = node.items()
             if isinstance(op_type, str):
                 op_type = [op_type]
             multi_node_list.append([QueryGraphNode(op, graph_name) for op in op_type])
@@ -401,15 +421,17 @@ class QueryGraphParser:
                 pre_node, next_node = edge
                 pre_node_index, next_node_index = node_index.get(pre_node), node_index.get(next_node)
                 sub_edge.append((sub_nodes[pre_node_index], sub_nodes[next_node_index]))
-            sub_graph = (sub_node, sub_edge, sub_graph_name,)
+            sub_graph = (
+                sub_node,
+                sub_edge,
+                sub_graph_name,
+            )
             graphs.append(sub_graph)
         return graphs
 
     def load_database(self, rule_database):
         if not os.path.isabs(rule_database):
-            rule_database = os.path.join(os.path.dirname(__file__),
-                                         "../", "../",
-                                         rule_database)
+            rule_database = os.path.join(os.path.dirname(__file__), "../", "../", rule_database)
 
         if not os.path.exists(rule_database):
             raise FileNotFoundError(f"Path {rule_database} does not exist.")
@@ -424,12 +446,11 @@ class QueryGraphParser:
         for fusion_strategy in fusion_strategy_list:
             if not isinstance(fusion_strategy, dict):
                 continue
-            (fusion_name, strategy), = fusion_strategy.items()
+            ((fusion_name, strategy),) = fusion_strategy.items()
             version = strategy.get("version", 0)
-            if version == 0 or version == "0":
-                self._fusion_rules[fusion_name] = self.build_query_graph_v0(fusion_name,
-                                                                            strategy.get('struct', []))
-            elif version == 1 or version == "1":
-                self._fusion_rules[fusion_name] = self.build_query_graph_v1(fusion_name,
-                                                                            strategy.get('nodes', []),
-                                                                            strategy.get('edges', []))
+            if version in (0, "0"):
+                self._fusion_rules[fusion_name] = self.build_query_graph_v0(fusion_name, strategy.get('struct', []))
+            elif version in (1, "1"):
+                self._fusion_rules[fusion_name] = self.build_query_graph_v1(
+                    fusion_name, strategy.get('nodes', []), strategy.get('edges', [])
+                )

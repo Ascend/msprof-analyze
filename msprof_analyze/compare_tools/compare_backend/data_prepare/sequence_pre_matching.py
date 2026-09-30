@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from collections import deque
 
 from msprof_analyze.compare_tools.compare_backend.utils.name_function import NameFunction
@@ -45,7 +46,7 @@ class SequencePreMatching:
         pre_tid = data_list[0].tid
         part_data_dict = {Constant.IS_BWD: pre_tid == bwd_tid, Constant.OPS: []}
         for op in data_list:
-            if op.tid == pre_tid or (pre_tid != bwd_tid and op.tid != bwd_tid):
+            if op.tid == pre_tid or bwd_tid not in (pre_tid, op.tid):
                 part_data_dict[Constant.OPS].append(op)
             else:
                 split_result.append(part_data_dict)
@@ -85,8 +86,11 @@ class SequencePreMatching:
             result_data.extend(self._match_torch_op([], comparison_data[0].get(Constant.OPS, [])))
             base_index, comparison_index = 0, 1
         while base_index < base_data_len:
-            comparison_ops = [] if comparison_index >= comparison_data_len else comparison_data[
-                comparison_index].get(Constant.OPS, [])
+            comparison_ops = (
+                []
+                if comparison_index >= comparison_data_len
+                else comparison_data[comparison_index].get(Constant.OPS, [])
+            )
             result_data.extend(self._match_torch_op(base_data[base_index].get(Constant.OPS, []), comparison_ops))
             base_index += 1
             comparison_index += 1
@@ -99,8 +103,11 @@ class SequencePreMatching:
         if not base_ops and not comparison_ops:
             return []
         name_func = NameFunction(self._args).get_name_func()
-        op_compare_result = longest_common_subsequence_matching(base_ops, comparison_ops, name_func) \
-            if not self._args.disable_details else self._match_none_subsequence(base_ops, comparison_ops)
+        op_compare_result = (
+            longest_common_subsequence_matching(base_ops, comparison_ops, name_func)
+            if not self._args.disable_details
+            else self._match_none_subsequence(base_ops, comparison_ops)
+        )
         if self._args.max_kernel_num is not None:
             op_compare_result = self._drill_down(op_compare_result, name_func)
         return op_compare_result
@@ -119,11 +126,11 @@ class SequencePreMatching:
             if max(base_op.kernel_num, comparison_op.kernel_num) <= self._args.max_kernel_num:
                 drill_down_result.append(match_data)
                 continue
-            match_list = longest_common_subsequence_matching(base_op.child_nodes,
-                                                             comparison_op.child_nodes,
-                                                             name_func) \
-                if not self._args.disable_details else self._match_none_subsequence(base_op.child_nodes,
-                                                                                    comparison_op.child_nodes)
+            match_list = (
+                longest_common_subsequence_matching(base_op.child_nodes, comparison_op.child_nodes, name_func)
+                if not self._args.disable_details
+                else self._match_none_subsequence(base_op.child_nodes, comparison_op.child_nodes)
+            )
             match_list.reverse()
             op_deque.extend(match_list)
 
@@ -156,6 +163,9 @@ class SequencePreMatching:
         if not base_modules and not comparison_modules:
             return []
         name_func = NameFunction(self._args).get_module_name
-        result = longest_common_subsequence_matching(base_modules, comparison_modules, name_func) \
-            if not self._args.disable_details else self._match_none_subsequence(base_modules, comparison_modules)
+        result = (
+            longest_common_subsequence_matching(base_modules, comparison_modules, name_func)
+            if not self._args.disable_details
+            else self._match_none_subsequence(base_modules, comparison_modules)
+        )
         return result

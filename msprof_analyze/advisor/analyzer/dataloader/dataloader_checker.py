@@ -1,22 +1,22 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
-from msprof_analyze.prof_common.logger import get_logger
-import yaml
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.advisor.dataset.timeline_event_dataset import ScheduleAnalysisDataset
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
@@ -27,9 +27,7 @@ logger = get_logger()
 
 
 class DataloaderChecker:
-
     def __init__(self):
-
         self.dataloader_issues = False
         self.optimization_item = []
         self.desc = ""
@@ -42,16 +40,19 @@ class DataloaderChecker:
         :Param event_dataset: dataset of timeline event
         """
         if not hasattr(event_dataset, "dataloader") or not getattr(event_dataset, "dataloader"):
-            logger.debug("Skip slow dataloader checker, because no dataloader duration larger than %s",
-                         self.dataloader_duration_threshold)
+            logger.debug(
+                "Skip slow dataloader checker, because no dataloader duration larger than %s",
+                self.dataloader_duration_threshold,
+            )
             return
         for event in event_dataset.dataloader:
-
             dataloader_duration = float(event.dur)
             if dataloader_duration < self.dataloader_duration_threshold:
                 continue
-            self.desc = self.desc.format(dataloader_duration=dataloader_duration,
-                                         dataloader_duration_threshold=self.dataloader_duration_threshold)
+            self.desc = self.desc.format(
+                dataloader_duration=dataloader_duration,
+                dataloader_duration_threshold=self.dataloader_duration_threshold,
+            )
             self.dataloader_issues = True
 
             if re.search("singleprocess", event.name.lower()):
@@ -72,13 +73,15 @@ class DataloaderChecker:
         if not self.dataloader_issues:
             return
         priority = kwargs.get("priority")
-        html_render.render_template(key="dataloader",
-                                    template_dir="templates",
-                                    template_name="slow_dataloader.html",
-                                    desc=self.desc,
-                                    suggestions=self.suggestions,
-                                    priority_background_color=priority,
-                                    rank=kwargs.get("rank"))
+        html_render.render_template(
+            key="dataloader",
+            template_dir="templates",
+            template_name="slow_dataloader.html",
+            desc=self.desc,
+            suggestions=self.suggestions,
+            priority_background_color=priority,
+            rank=kwargs.get("rank"),
+        )
 
     def _init_rule(self):
         language = AdditionalArgsManager().language
@@ -86,7 +89,7 @@ class DataloaderChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
             "rules",
             language,
-            "dataloader.yaml"
+            "dataloader.yaml",
         )
         dataloader_rule = FileManager.read_yaml_file(dataloader_rule_path)
 
@@ -95,7 +98,6 @@ class DataloaderChecker:
         self.suggestions = dataloader_rule.get("solutions")
 
     def _reset_suggestions(self, suggestion_pattern_list):
-
         suggestions = []
         for solution in self.suggestions:
             for suggestion_pattern in suggestion_pattern_list:

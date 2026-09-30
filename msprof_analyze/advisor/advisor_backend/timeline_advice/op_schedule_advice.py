@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 from decimal import Decimal
 
@@ -21,10 +22,10 @@ from msprof_analyze.advisor.advisor_backend.timeline_advice.timeline_advice_base
 logger = get_logger()
 
 
-class OpScheduleAdvice(TimelineAdviceBase):
+class OpScheduleAdvice(TimelineAdviceBase):  # pylint: disable=abstract-method
     def __init__(self, collection_path: str):
         super().__init__(collection_path)
-        self.cur_data = list()
+        self.cur_data = []
         self.cur_bottleneck = str()
         self.cur_advice = str()
 
@@ -45,7 +46,7 @@ class OpScheduleAdvice(TimelineAdviceBase):
 
         op_dur = [entry.get("dur", 0) for entry in cpt_data]
         op_free = [0.0] * len(cpt_data)
-        merge_data = list()
+        merge_data = []
         merge_data.extend(cpt_data)
         merge_data.extend(free_data)
         merge_data.sort(key=lambda x: Decimal(x.get("ts")))
@@ -63,12 +64,14 @@ class OpScheduleAdvice(TimelineAdviceBase):
         free_ratio, cpt_ratio, _ = self.get_ratio()
         if free_ratio < 0.2:
             return
-        self.cur_bottleneck = f"NPU Utilication: {round(free_ratio * 100, 2)}%, " \
-                              f"NPU Free Utilization: {round(cpt_ratio * 100, 2)}%."
+        self.cur_bottleneck = (
+            f"NPU Utilication: {round(free_ratio * 100, 2)}%, NPU Free Utilization: {round(cpt_ratio * 100, 2)}%."
+        )
         if len(self.preparse_data[self.PreParseType.SYNCHRONIZE]) > 1:
-            self.cur_advice = \
-                f"Device synchronize {len(self.preparse_data[self.PreParseType.SYNCHRONIZE])} times, " \
+            self.cur_advice = (
+                f"Device synchronize {len(self.preparse_data[self.PreParseType.SYNCHRONIZE])} times, "
                 "try to reduce synchronization statements to alleviate the bottleneck of operator delivery.\n"
+            )
         small_op_num = self.small_op_block(op_free, op_dur)
         small_op_ratio = small_op_num / len(op_dur) if op_dur else 0.0
         if small_op_ratio > Constant.SMALL_OP_NUM_RATIO:
@@ -85,9 +88,9 @@ class OpScheduleAdvice(TimelineAdviceBase):
         cpt_data = self.preparse_data[self.PreParseType.OVERLAP_CPT]
         free_data = self.preparse_data[self.PreParseType.OVERLAP_FREE]
         cmu_data = self.preparse_data[self.PreParseType.OVERLAP_CMU]
-        cpt_time = sum([x.get("dur", 0) for x in cpt_data])
-        free_time = sum([x.get("dur", 0) for x in free_data])
-        cmu_time = sum([x.get("dur", 0) for x in cmu_data])
+        cpt_time = sum(x.get("dur", 0) for x in cpt_data)
+        free_time = sum(x.get("dur", 0) for x in free_data)
+        cmu_time = sum(x.get("dur", 0) for x in cmu_data)
         total_time = cpt_time + free_time + cmu_time
         if total_time > 0.0:
             return (free_time / total_time, cpt_time / total_time, cmu_time / total_time)

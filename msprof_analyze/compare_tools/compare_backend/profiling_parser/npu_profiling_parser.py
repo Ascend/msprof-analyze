@@ -1,27 +1,31 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import sys
 from math import ceil
 
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.kernel_details_bean \
-    import KernelDetailsBean
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.memory_record_bean \
-    import MemoryRecordBean
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.operator_memory_bean \
-    import OperatorMemoryBean
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.kernel_details_bean import (
+    KernelDetailsBean,
+)
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.memory_record_bean import (
+    MemoryRecordBean,
+)
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.operator_memory_bean import (
+    OperatorMemoryBean,
+)
 from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.trace_event_bean import TraceEventBean
 from msprof_analyze.compare_tools.compare_backend.profiling_parser.base_profiling_parser import BaseProfilingParser
 from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.op_stastic_bean import OpStatisticBean
@@ -58,8 +62,15 @@ class NPUProfilingParser(BaseProfilingParser):
         self._hccl_tid_name_dict = {}
         self._c_core_sqe_list = []
         self._c_core_sqe_index = 0
-        if any((self._enable_profiling_compare, self._enable_operator_compare, self._enable_memory_compare,
-                self._enable_api_compare, self._enable_communication_compare)):
+        if any(
+            (
+                self._enable_profiling_compare,
+                self._enable_operator_compare,
+                self._enable_memory_compare,
+                self._enable_api_compare,
+                self._enable_communication_compare,
+            )
+        ):
             self._filter_meta_id()
 
     @staticmethod
@@ -90,13 +101,19 @@ class NPUProfilingParser(BaseProfilingParser):
                     break
                 if uncovered_comm_events[index].end_time < comm_event.end_time:
                     uncovered_comm_range.append(
-                        Event(max(comm_event.start_time, uncovered_comm_events[index].start_time),
-                              uncovered_comm_events[index].end_time))
+                        Event(
+                            max(comm_event.start_time, uncovered_comm_events[index].start_time),
+                            uncovered_comm_events[index].end_time,
+                        )
+                    )
                     index += 1
                     continue
                 uncovered_comm_range.append(
-                    Event(max(comm_event.start_time, uncovered_comm_events[index].start_time),
-                          min(comm_event.end_time, uncovered_comm_events[index].end_time)))
+                    Event(
+                        max(comm_event.start_time, uncovered_comm_events[index].start_time),
+                        min(comm_event.end_time, uncovered_comm_events[index].end_time),
+                    )
+                )
                 break
         return uncovered_comm_range
 
@@ -166,7 +183,8 @@ class NPUProfilingParser(BaseProfilingParser):
             if not op_statistics:
                 return
             self._result_data.update_kernel_details(
-                {f"{kernel.kernel_type}-{kernel.core_type}": kernel for kernel in op_statistics})
+                {f"{kernel.kernel_type}-{kernel.core_type}": kernel for kernel in op_statistics}
+            )
             return
 
         kernel_details = self._read_csv_data(self._kernel_detail_path, KernelDetailsBean)
@@ -176,15 +194,18 @@ class NPUProfilingParser(BaseProfilingParser):
         for kernel in kernel_details:
             if kernel.is_invalid_op_type():
                 continue
-            if self._step_id != Constant.VOID_STEP and kernel.step_id != self._step_id:
+            if self._step_id not in (Constant.VOID_STEP, kernel.step_id):
                 continue
             input_shapes = kernel.input_shapes if kernel.input_shapes else 'N/A'
             kernels_dict.setdefault(kernel.op_type, {}).setdefault(input_shapes, []).append(
-                [kernel.name, kernel.duration])
+                [kernel.name, kernel.duration]
+            )
         if not kernels_dict:
             if self._step_id != Constant.VOID_STEP:
-                msg = f"There is no kernel details information for step {self._step_id}," \
-                      " please check whether the data contains this step."
+                msg = (
+                    f"There is no kernel details information for step {self._step_id},"
+                    " please check whether the data contains this step."
+                )
                 raise RuntimeError(msg)
             else:
                 logger.warning("Failed to enable enable_kernel_compare,kernel_details.csv lacks duration.")
@@ -204,16 +225,24 @@ class NPUProfilingParser(BaseProfilingParser):
                 matched_corr_id = self.__match_dequeue_data(data.allocation_time)
                 if matched_corr_id == Constant.INVALID_VALUE:
                     continue
-                self._result_data.update_memory_list({Constant.SIZE: data.size,
-                                                      Constant.TS: self._enqueue_dict.get(matched_corr_id, 0),
-                                                      Constant.NAME: data.name,
-                                                      Constant.ALLOCATION_TIME: data.allocation_time,
-                                                      Constant.RELEASE_TIME: data.release_time})
+                self._result_data.update_memory_list(
+                    {
+                        Constant.SIZE: data.size,
+                        Constant.TS: self._enqueue_dict.get(matched_corr_id, 0),
+                        Constant.NAME: data.name,
+                        Constant.ALLOCATION_TIME: data.allocation_time,
+                        Constant.RELEASE_TIME: data.release_time,
+                    }
+                )
             else:
-                self._result_data.update_memory_list({Constant.SIZE: data.size,
-                                                      Constant.TS: data.allocation_time,
-                                                      Constant.ALLOCATION_TIME: data.allocation_time,
-                                                      Constant.RELEASE_TIME: data.release_time})
+                self._result_data.update_memory_list(
+                    {
+                        Constant.SIZE: data.size,
+                        Constant.TS: data.allocation_time,
+                        Constant.ALLOCATION_TIME: data.allocation_time,
+                        Constant.RELEASE_TIME: data.release_time,
+                    }
+                )
 
     def _update_kernel_dict(self):
         kernel_details = []
@@ -235,8 +264,11 @@ class NPUProfilingParser(BaseProfilingParser):
                 left = mid
             else:
                 right = mid - 1
-        return self._dequeue_data[left].corr_id if self._dequeue_data[left].start_time <= ts_time <= \
-                                                   self._dequeue_data[left].end_time else Constant.INVALID_VALUE
+        return (
+            self._dequeue_data[left].corr_id
+            if self._dequeue_data[left].start_time <= ts_time <= self._dequeue_data[left].end_time
+            else Constant.INVALID_VALUE
+        )
 
     def _update_bandwidth(self):
         if self._path_level == Constant.TRACE_PATH:
@@ -252,6 +284,7 @@ class NPUProfilingParser(BaseProfilingParser):
         if not communication_json:
             logger.warning("The communication.json file is empty.")
             return
+        rdma_bandwidth = sdma_bandwidth = 0
         for _, group_dict in communication_json.items():
             step_dict = group_dict.get("collective", {})
             total_op_info = step_dict.get("Total Op Info", {})
@@ -297,19 +330,23 @@ class NPUProfilingParser(BaseProfilingParser):
             if index == len(comm_tid_list) - 1:
                 continue
             for index_2 in range(index + 1, len(comm_tid_list)):
-                comm_op_events_1 = list(filter(lambda x: x.tid == comm_tid, self._comm_list))
+                comm_op_events_1 = list(filter(lambda x: x.tid == comm_tid, self._comm_list))  # pylint: disable=cell-var-from-loop
                 comm_op_events_1.sort(key=lambda x: x.start_time)
-                uncovered_comm_op_events_1 = self.__calculate_uncovered_comm_range(comm_op_events_1,
-                                                                                   uncovered_communication_events)
-                comm_op_events_2 = list(filter(lambda x: x.tid == comm_tid_list[index_2], self._comm_list))
+                uncovered_comm_op_events_1 = self.__calculate_uncovered_comm_range(
+                    comm_op_events_1, uncovered_communication_events
+                )
+                comm_op_events_2 = list(filter(lambda x: x.tid == comm_tid_list[index_2], self._comm_list))  # pylint: disable=cell-var-from-loop
                 comm_op_events_2.sort(key=lambda x: x.start_time)
-                uncovered_comm_op_events_2 = self.__calculate_uncovered_comm_range(comm_op_events_2,
-                                                                                   uncovered_communication_events)
-                overlap_time = self.__calculate_overlap_time_with_uncovered_communication(uncovered_comm_op_events_1,
-                                                                                          uncovered_comm_op_events_2)
+                uncovered_comm_op_events_2 = self.__calculate_uncovered_comm_range(
+                    comm_op_events_2, uncovered_communication_events
+                )
+                overlap_time = self.__calculate_overlap_time_with_uncovered_communication(
+                    uncovered_comm_op_events_1, uncovered_comm_op_events_2
+                )
                 if overlap_time:
-                    comm_overlap_time_dict[(self._hccl_tid_name_dict.get(comm_tid), self._hccl_tid_name_dict.get(
-                        comm_tid_list[index_2]))] = overlap_time / Constant.MILLISECONDS_TO_MICROSECONDS
+                    comm_overlap_time_dict[
+                        (self._hccl_tid_name_dict.get(comm_tid), self._hccl_tid_name_dict.get(comm_tid_list[index_2]))
+                    ] = overlap_time / Constant.MILLISECONDS_TO_MICROSECONDS
         self._result_data.overall_metrics.update_communication_overlap_time(comm_overlap_time_dict)
 
     def __add_communication_wait_time(self):
@@ -346,14 +383,17 @@ class NPUProfilingParser(BaseProfilingParser):
                     min_wait_time = notify_wait_time
                     min_wait_tid = tid
             notify_wait_events = notify_wait_task_group_by_tid.get(min_wait_tid, [])
-            communication_op_events = list(filter(lambda x: x.tid == comm_tid, self._comm_list))
-            wait_time = self.__calculate_overlap_time_with_uncovered_communication(uncovered_communication_events,
-                                                                                   notify_wait_events)
+            communication_op_events = list(filter(lambda x: x.tid == comm_tid, self._comm_list))  # pylint: disable=cell-var-from-loop
+            wait_time = self.__calculate_overlap_time_with_uncovered_communication(
+                uncovered_communication_events, notify_wait_events
+            )
             uncovered_communication_time = self.__calculate_overlap_time_with_uncovered_communication(
-                uncovered_communication_events, communication_op_events)
+                uncovered_communication_events, communication_op_events
+            )
             group_comm_time_dict[self._hccl_tid_name_dict.get(comm_tid)] = {
                 Constant.WAIT_TIME: wait_time,
-                Constant.TRANSMIT_TIME: uncovered_communication_time - wait_time}
+                Constant.TRANSMIT_TIME: uncovered_communication_time - wait_time,
+            }
         self._result_data.overall_metrics.update_communication_group_time(group_comm_time_dict)
 
     def _picking_hccl_event(self, event: TraceEventBean):
@@ -481,7 +521,8 @@ class NPUProfilingParser(BaseProfilingParser):
         flow_dict_new = self._get_flow_time_dict()
         ordered_computing_events = sorted(
             ((flow_dict_new.get(kernel.start_time, 0), kernel) for kernel in kernel_details if not kernel.is_invalid()),
-            key=lambda x: x[0])
+            key=lambda x: x[0],
+        )
         self._c_core_sqe_list = list(filter(lambda x: x.is_c_core_sqe(), self._all_kernels.values()))
         self._c_core_sqe_list.sort(key=lambda x: x.start_time)
         for flow_start_time, event in ordered_computing_events:
@@ -499,7 +540,7 @@ class NPUProfilingParser(BaseProfilingParser):
             logger.error('Load memory info failed.')
             return
         if memory_record:
-            memory_used = max([memory.total_reserved_mb for memory in memory_record]) / 1024
+            memory_used = max(memory.total_reserved_mb for memory in memory_record) / 1024
             self._result_data.overall_metrics.set_memory_used(memory_used)
 
     def __add_overlap_analysis_time(self):

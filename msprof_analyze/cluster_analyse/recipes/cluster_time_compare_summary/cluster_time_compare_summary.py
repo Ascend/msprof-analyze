@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 
@@ -47,10 +48,14 @@ class ClusterTimeCompareSummary(BaseRecipeAnalysis):
 
     def __init__(self, params):
         super().__init__(params)
-        self.db_path = os.path.join(self._collection_dir, Constant.CLUSTER_ANALYSIS_OUTPUT,
-                                    Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
-        self.base_db_path = os.path.join(self._extra_args.get(self.BP, ""), Constant.CLUSTER_ANALYSIS_OUTPUT,
-                                         Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
+        self.db_path = os.path.join(
+            self._collection_dir, Constant.CLUSTER_ANALYSIS_OUTPUT, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER
+        )
+        self.base_db_path = os.path.join(
+            self._extra_args.get(self.BP, ""),
+            Constant.CLUSTER_ANALYSIS_OUTPUT,
+            Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+        )
         self.compare_result = pd.DataFrame()
 
     @property
@@ -60,13 +65,14 @@ class ClusterTimeCompareSummary(BaseRecipeAnalysis):
     @classmethod
     def add_parser_argument(cls, parser):
         BaseRecipeAnalysis.add_parser_argument(parser)
-        parser.add_argument('--bp', type=PathManager.expanduser_for_argumentparser, default="",
-                            help="base profiling data path")
+        parser.add_argument(
+            '--bp', type=PathManager.expanduser_for_argumentparser, default="", help="base profiling data path"
+        )
 
     def run(self, context=None):
         logger.info("ClusterTimeCompareSummary init.")
         if not self.check_params_is_valid():
-            logger.warning(f"Invalid params, skip ClusterTimeCompareSummary")
+            logger.warning("Invalid params, skip ClusterTimeCompareSummary")
             return
         self.get_compare_data()
         self.save_db()
@@ -82,13 +88,13 @@ class ClusterTimeCompareSummary(BaseRecipeAnalysis):
         try:
             PathManager.check_input_directory_path(base_path)  # 校验目录
         except (RuntimeError, FileNotFoundError):
-            logger.error(f"{base_path} is not valid.")
+            logger.error("%s is not valid.", base_path)
             return False
         if not DBManager.check_tables_in_db(self.db_path, Constant.TABLE_CLUSTER_TIME_SUMMARY):
-            logger.error(f"{Constant.TABLE_CLUSTER_TIME_SUMMARY} in {self.db_path} does not exist.")
+            logger.error("%s in %s does not exist.", Constant.TABLE_CLUSTER_TIME_SUMMARY, self.db_path)
             return False
         if not DBManager.check_tables_in_db(self.base_db_path, Constant.TABLE_CLUSTER_TIME_SUMMARY):
-            logger.error(f"{Constant.TABLE_CLUSTER_TIME_SUMMARY} in {self.base_db_path} does not exist.")
+            logger.error("%s in %s does not exist.", Constant.TABLE_CLUSTER_TIME_SUMMARY, self.base_db_path)
             return False
         return True
 
@@ -104,9 +110,10 @@ class ClusterTimeCompareSummary(BaseRecipeAnalysis):
             if self._step_id in step_ids and self._step_id in base_step_ids:
                 cluster_time_summary_df = cluster_time_summary_df[cluster_time_summary_df['step'] == self._step_id]
                 base_cluster_time_summary_df = base_cluster_time_summary_df[
-                    base_cluster_time_summary_df['step'] == self._step_id]
+                    base_cluster_time_summary_df['step'] == self._step_id
+                ]
             else:
-                logger.error(f"Invalid step_id, not coexisting in {step_ids} or {base_step_ids}")
+                logger.error("Invalid step_id, not coexisting in %s or %s", step_ids, base_step_ids)
                 return
         # merge and compare
         index_cols = ["rank", "step"]
@@ -120,28 +127,33 @@ class ClusterTimeCompareSummary(BaseRecipeAnalysis):
             base_col = f"{col}Base"
             diff_col = f"{col}Diff"
             if base_col not in merged_df or col not in merged_df:
-                logger.warning(f"Column {col} missing in clusterTimeSummary tables.")
+                logger.warning("Column %s missing in clusterTimeSummary tables.", col)
                 continue
             merged_df[diff_col] = merged_df[col] - merged_df[base_col]
             columns_order.extend([col, base_col, diff_col])
         self.compare_result = merged_df[columns_order].dropna()
         if len(self.compare_result) < len(current_df):
-            logger.warning(f"Dropped {len(current_df) - len(self.compare_result)} rows due to unmatched rank-step")
+            logger.warning("Dropped %s rows due to unmatched rank-step", len(current_df) - len(self.compare_result))
 
     def save_db(self):
         if self.compare_result.empty:
-            logger.warning(f"No valid compare data, skip save_db for ClusterTimeCompareSummary")
+            logger.warning("No valid compare data, skip save_db for ClusterTimeCompareSummary")
             return
-        self.dump_data(self.compare_result, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.TABLE_CLUSTER_TIME_COMPARE_SUMMARY, index=False)
+        self.dump_data(
+            self.compare_result,
+            Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+            self.TABLE_CLUSTER_TIME_COMPARE_SUMMARY,
+            index=False,
+        )
 
     def _query_cluster_time_summary(self, db_path):
         database_service_for_db = DatabaseService(db_path, {})
-        database_service_for_db.add_table_for_query(Constant.TABLE_CLUSTER_TIME_SUMMARY,
-                                                    self.CLUSTER_TIME_SUMMARY_COLUMNS)
+        database_service_for_db.add_table_for_query(
+            Constant.TABLE_CLUSTER_TIME_SUMMARY, self.CLUSTER_TIME_SUMMARY_COLUMNS
+        )
         result_dict = database_service_for_db.query_data()
         df = result_dict.get(Constant.TABLE_CLUSTER_TIME_SUMMARY)
         if df is None or df.empty:
-            logger.warning(f"There is no {Constant.TABLE_CLUSTER_TIME_SUMMARY} data in {db_path}.")
+            logger.warning("There is no %s data in %s.", Constant.TABLE_CLUSTER_TIME_SUMMARY, db_path)
             return pd.DataFrame()
         return df

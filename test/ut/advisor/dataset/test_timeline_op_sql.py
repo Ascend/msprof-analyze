@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import unittest
 from unittest.mock import patch, MagicMock
@@ -86,7 +87,7 @@ class TestTimelineDBHelper(unittest.TestCase):
         self.db_helper.conn = MagicMock()
         self.db_helper.curs = MagicMock()
         self.db_helper.check_table_exist = MagicMock(return_value=True)
-        
+
         expected_df = pd.DataFrame({
             'name': ['test_api'],
             'ts': [1000.0],
@@ -95,7 +96,7 @@ class TestTimelineDBHelper(unittest.TestCase):
         })
         mock_read_sql.return_value = expected_df
         result = self.db_helper.query_timeline_event(TimelineEventType.FRAMEWORK_API)
-        
+
         self.assertIsNotNone(result)
         self.assertIsInstance(result, pd.DataFrame)
         pd.testing.assert_frame_equal(result, expected_df)
@@ -119,10 +120,10 @@ class TestTimelineDBHelper(unittest.TestCase):
         self.db_helper.conn = MagicMock()
         self.db_helper.curs = MagicMock()
         self.db_helper.check_table_exist = MagicMock(return_value=True)
-        
+
         mock_read_sql.side_effect = Exception("SQL Error")
         result = self.db_helper.query_timeline_event(TimelineEventType.FRAMEWORK_API)
-        
+
         self.assertIsNone(result)
         self.assertIsNone(self.db_helper.event_data_map[TimelineEventType.FRAMEWORK_API])
         mock_read_sql.assert_called_once_with(TimelineEventDBSQL.QUERY_PYTORCH_API_SQL, self.db_helper.conn)

@@ -1,17 +1,18 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 
@@ -53,7 +54,7 @@ class ApiStatisticExport(BaseStatsExport):
 
 COMPUTE_INFO_SQL = """
 WITH compute_info AS (
-    SELECT 
+    SELECT
         (SELECT value FROM STRING_IDS WHERE id = t.name) AS op_name,
         t.globalTaskId,
         {block_dim_state}
@@ -66,7 +67,7 @@ WITH compute_info AS (
         (SELECT value FROM STRING_IDS WHERE id = t.outputFormats) AS output_formats,
         (SELECT value FROM STRING_IDS WHERE id = t.outputDataTypes) AS output_data_types
         {op_state}
-    FROM 
+    FROM
         COMPUTE_TASK_INFO t
 )
 SELECT
@@ -79,9 +80,9 @@ SELECT
     task.streamId as stream_id,
     task.contextId as context_id,
     task.taskId as task_id
-FROM 
+FROM
     compute_info
-JOIN 
+JOIN
     TASK as task ON compute_info.globalTaskId = task.globalTaskId;
 """
 
@@ -100,25 +101,25 @@ JOIN STRING_IDS AS str ON str.id = pmu.name
 
 COMMUNICATION_INFO_SQL = """
 WITH comm_info AS (
-    SELECT 
+    SELECT
         (SELECT value FROM STRING_IDS WHERE id = c.opName) AS op_name,
         (SELECT value FROM STRING_IDS WHERE id = c.opType) AS op_type,
         startNs as task_start_time,
         endNs as task_end_time,
         endNs - startNs as task_duration,
         connectionId
-    FROM 
+    FROM
         COMMUNICATION_OP c
 )
-SELECT 
+SELECT
     comm.*,
     t.deviceId as device_id,
     t.modelId as model_id,
     'COMMUNICATION' as task_type
-FROM 
+FROM
     comm_info comm
 JOIN (
-    SELECT 
+    SELECT
         connectionId,
         deviceId,
         modelId
@@ -141,7 +142,7 @@ SELECT
     task.streamId as stream_id,
     task.contextId as context_id,
     task.taskId as task_id
-FROM COMMUNICATION_SCHEDULE_TASK_INFO as CSTI 
+FROM COMMUNICATION_SCHEDULE_TASK_INFO as CSTI
 JOIN TASK as task ON task.globalTaskId = CSTI.globalTaskId
 """
 
@@ -161,23 +162,24 @@ class KernelDetailsExport:
                 logger.error("db path is None.")
                 return None
             if not os.path.exists(self._db_path):
-                logger.error(f"Db file does not exist: {self._db_path}")
+                logger.error("Db file does not exist: %s", self._db_path)
                 return None
 
             compute_df = self._export_compute_task()
             communication_df = self._execute_sql(COMMUNICATION_INFO_SQL, [Constant.TABLE_COMMUNICATION_OP])
-            comm_schedule_df = self._execute_sql(COMMUNICATION_SCHEDULE_SQL,
-                                                 [Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO])
+            comm_schedule_df = self._execute_sql(
+                COMMUNICATION_SCHEDULE_SQL, [Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO]
+            )
 
             if compute_df.empty and communication_df.empty and comm_schedule_df.empty:
-                logger.warning(f"No compute and communication operators in db: {self._db_path}")
+                logger.warning("No compute and communication operators in db: %s", self._db_path)
                 return None
 
             total_df = self._post_process([compute_df, communication_df, comm_schedule_df])
             return total_df
 
         except Exception as e:
-            logger.error(f"File {self._db_path} read failed error: {e}")
+            logger.error("File %s read failed error: %s", self._db_path, e)
             return None
 
     def _export_compute_task(self):
@@ -199,10 +201,7 @@ class KernelDetailsExport:
             t.mixBlockDim AS mix_block_dim,
             """
 
-        comp_info_sql = COMPUTE_INFO_SQL.format(
-            op_state=op_state,
-            block_dim_state=block_dim_state
-        )
+        comp_info_sql = COMPUTE_INFO_SQL.format(op_state=op_state, block_dim_state=block_dim_state)
 
         basic_df = self._execute_sql(comp_info_sql, [Constant.TABLE_COMPUTE_TASK_INFO])
         pmu_df = self._execute_sql(PMU_SQL, [Constant.TABLE_TASK_PMU_INFO])
@@ -211,10 +210,7 @@ class KernelDetailsExport:
             return basic_df
 
         pivoted_pmu_df = pmu_df.pivot_table(
-            index='globalTaskId',
-            columns='name',
-            values='value',
-            aggfunc='first'
+            index='globalTaskId', columns='name', values='value', aggfunc='first'
         ).reset_index()
 
         compute_df = basic_df.merge(pivoted_pmu_df, on='globalTaskId', how='left').fillna(0)
@@ -232,14 +228,15 @@ class KernelDetailsExport:
         for col in time_cols:
             total_df[col] = total_df[col].apply(lambda x: x / 1000 if x != 'N/A' else x)
 
-        total_df = total_df.rename(columns={'aiv_total_time': 'aiv_time', 'aic_total_time': 'aicore_time'},
-                                   errors='ignore')
+        total_df = total_df.rename(
+            columns={'aiv_total_time': 'aiv_time', 'aic_total_time': 'aicore_time'}, errors='ignore'
+        )
         total_df = total_df.drop(columns=['task_end_time', 'globalTaskId', 'connectionId'], errors='ignore')
         return total_df
 
     def _check_table_column_exists(self, table_name, column_name):
         if not os.path.exists(self._db_path):
-            logger.error(f"Db file does not exist: {self._db_path}")
+            logger.error("Db file does not exist: %s", self._db_path)
             return False
         conn, cursor = DBManager.create_connect_db(self._db_path, Constant.ANALYSIS)
         if not conn:
@@ -257,7 +254,7 @@ class KernelDetailsExport:
 
     def _execute_sql(self, query, required_tables=None):
         if not os.path.exists(self._db_path):
-            logger.error(f"Db file does not exist: {self._db_path}")
+            logger.error("Db file does not exist: %s", self._db_path)
             return pd.DataFrame()
         conn, cursor = DBManager.create_connect_db(self._db_path, Constant.ANALYSIS)
         if not conn:
@@ -265,15 +262,15 @@ class KernelDetailsExport:
         try:
             if required_tables:
                 for table in required_tables:
-                    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+                    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")  # nosec B608
                     if not cursor.fetchone():
-                        logger.warning(f"Table {table} not found in {self._db_path}")
+                        logger.warning("Table %s not found in %s", table, self._db_path)
                         return pd.DataFrame()
 
             data = pd.read_sql(query, conn)
             return data
         except Exception as e:
-            logger.error(f"Failed to execute SQL: {e}")
+            logger.error("Failed to execute SQL: %s", e)
             return pd.DataFrame()
         finally:
             DBManager.destroy_db_connect(conn, cursor)

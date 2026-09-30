@@ -1,18 +1,20 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from msprof_analyze.compare_tools.compare_backend.comparator.overall_performance_comparator \
                         import OverallPerformanceComparator
 from msprof_analyze.prof_common.constant import Constant
@@ -119,7 +121,7 @@ class TestOverallPerformanceComparator(unittest.TestCase):
     def test_compare_normal_case(self):
         comparator = OverallPerformanceComparator(self.origin_data, self.mock_bean)
         comparator._compare()
- 
+
         expected_headers = [
             '', 'Cube Time(Num)', 'Vector Time(Num)', 'Conv Time(Forward)(Num)',
             'Flash Attention Time(Forward)(Num)', 'Other Time', 'Computing Time',
@@ -138,7 +140,7 @@ class TestOverallPerformanceComparator(unittest.TestCase):
         self.comp_profiling_info.fa_time_fwd = 0.0
         self.base_profiling_info.rdma_bandwidth = 0.0
         self.comp_profiling_info.rdma_bandwidth = 0.0
-        
+
         comparator = OverallPerformanceComparator(self.origin_data, self.mock_bean)
         comparator._compare()
         self.assertNotIn('Conv Time(Forward)(Num)', comparator._headers)
@@ -150,12 +152,12 @@ class TestOverallPerformanceComparator(unittest.TestCase):
         self.base_profiling_info.conv_num_bwd = 15
         self.comp_profiling_info.conv_time_bwd = 2.3
         self.comp_profiling_info.conv_num_bwd = 14
-        
+
         self.base_profiling_info.fa_time_bwd = 1.2
         self.base_profiling_info.fa_num_bwd = 8
         self.comp_profiling_info.fa_time_bwd = 1.1
         self.comp_profiling_info.fa_num_bwd = 7
-        
+
         comparator = OverallPerformanceComparator(self.origin_data, self.mock_bean)
         comparator._compare()
         self.assertIn('Conv Time(Backward)(Num)', comparator._headers)

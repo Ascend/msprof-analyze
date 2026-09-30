@@ -1,24 +1,23 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import importlib
 import inspect
-import sys
 
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
-from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
@@ -34,15 +33,13 @@ def get_class_from_name(analysis_name: str):
     try:
         module = importlib.import_module(analysis_path)
     except Exception as e:
-        logger.error(f"{analysis_path} not find:{e}")
+        logger.error("%s not find:%s", analysis_path, e)
         return module
 
     specific_analysis = [
-        (name, cls)
-        for name, cls in inspect.getmembers(module, is_analysis_class)
-        if cls.__module__ == analysis_path
+        (name, cls) for name, cls in inspect.getmembers(module, is_analysis_class) if cls.__module__ == analysis_path
     ]
     if not specific_analysis:
-        logger.error(f"{analysis_name} not found.")
+        logger.error("%s not found.", analysis_name)
         return None
     return specific_analysis[0]

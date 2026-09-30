@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from multiprocessing import Value, Lock
 
@@ -40,9 +41,9 @@ def format_columns(df: pd.DataFrame):
             "sum": "SumNs",
             "std": "StdNs",
             "mean": "MeanNs",
-            "count": "Count"
+            "count": "Count",
         },
-        axis="columns"
+        axis="columns",
     )
 
     stats_cols = ["Count", "MeanNs", "StdNs", "MinNs", "Q1Ns", "MedianNs", "Q3Ns", "MaxNs", "SumNs"]
@@ -69,13 +70,14 @@ def stdev(df, aggregated):
     instance = aggregated["totalCount"].loc[df.name]
     var_sum = np.dot(df["totalCount"] - 1, df["stdev"] ** 2)
     deviation = df["averageNs"] - aggregated["averageNs"].loc[df.name]
-    dev_sum = np.dot(df["totalCount"], deviation ** 2)
+    dev_sum = np.dot(df["totalCount"], deviation**2)
     return np.sqrt((var_sum + dev_sum) / (instance - 1)) if (instance - 1) else 0
 
 
 def convert_unit(df: pd.DataFrame, src_unit, dst_unit, factor):
     df.loc[:, df.columns.str.endswith(src_unit)] = df.loc[:, df.columns.str.endswith(src_unit)].apply(
-        lambda x: x / factor)
+        lambda x: x / factor
+    )
     df = df.rename(columns=lambda x: x.replace(src_unit, "".join(["(", dst_unit, ")"])))
     return df
 
@@ -95,7 +97,7 @@ def double_hash(data):
         hash_values[0] = (hash_values[0] * prime[0] + ord(d)) & uint32_max
         hash_values[1] = (hash_values[1] * prime[1] + ord(d)) & uint32_max
 
-    return ((hash_values[0] << uint32_bits) | hash_values[1])
+    return (hash_values[0] << uint32_bits) | hash_values[1]
 
 
 def ensure_numeric_columns(df, columns, target_type='int64'):
@@ -138,7 +140,7 @@ def detect_outliers_z_score(data, threshold=3):
     return has_outliers
 
 
-class UnionFind(object):
+class UnionFind:
     """Disjoint Set Union"""
 
     @classmethod
@@ -146,7 +148,7 @@ class UnionFind(object):
         result = set()
         for s in args:
             if not isinstance(s, set):
-                logger.warning(f"All arguments must be sets, got {type(s).__name__}")
+                logger.warning("All arguments must be sets, got %s", type(s).__name__)
                 return set()
             result |= s
         return result

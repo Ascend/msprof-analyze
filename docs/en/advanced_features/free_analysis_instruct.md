@@ -86,5 +86,5 @@ The following table describes fields in this CSV file.
 | End Time(us) | End timestamp (`TEXT` type) of the idle period (μs)|
 | Duration(us) | Duration (`REAL` type) of the idle period (μs)|
 | Pytorch Idle Time(us) | Idle time (`REAL` type) at the PyTorch layer (μs)|
-| Cann Idle Time(us) | Idle time (`REAL` type) at the CANN layer (μs)|
+| CANN Idle Time(us) | Idle time (`REAL` type) at the CANN layer (μs)|
 | Reason | Analysis result (`TEXT` type)|

@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
 import shlex
@@ -64,7 +65,9 @@ class MsprofDataPreprocessor(DataPreprocessor):
             escaped_dir = shlex.quote(dir_name)
             info_json_file = self._find_info_json_file(dir_name)
             if not info_json_file:
-                logger.error(f"Profiling data in not completed, please check the info.json file in the path {dir_name}")
+                logger.error(
+                    "Profiling data in not completed, please check the info.json file in the path %s", dir_name
+                )
                 continue
 
             if self._check_db_type(dir_name):
@@ -73,13 +76,20 @@ class MsprofDataPreprocessor(DataPreprocessor):
                 if os.path.exists(os.path.join(dir_name, "analyze")):
                     self.data_type.add(Constant.TEXT)
                 else:
-                    logger.error(f"The profiling data has not been fully parsed.  You can parse it by executing "
-                                 f"the following command: msprof --analyze=on --output={escaped_dir}")
+                    logger.error(
+                        "The profiling data has not been fully parsed.  You can parse it by executing "
+                        "the following command: msprof --analyze=on --output=%s",
+                        escaped_dir,
+                    )
                     continue
             else:
-                logger.error(f"The profiling data has not been fully parsed.  You can parse it by executing "
-                             f"the following command: msprof --export=on --output={escaped_dir}; "
-                             f"msprof --analyze=on --output={escaped_dir}")
+                logger.error(
+                    "The profiling data has not been fully parsed.  You can parse it by executing "
+                    "the following command: msprof --export=on --output=%s; "
+                    "msprof --analyze=on --output=%s",
+                    escaped_dir,
+                    escaped_dir,
+                )
                 continue
             info_json = FileManager.read_json_file(info_json_file)
             rank_id = info_json.get("rank_id")
@@ -116,5 +126,3 @@ class MsprofDataPreprocessor(DataPreprocessor):
                 if re.match(self.INFO_JSON_PATTERN, device_file):
                     return os.path.join(dir_name, file_name, device_file)
         return None
-
-

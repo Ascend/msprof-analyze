@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 from msprof_analyze.advisor.dataset.communication.communication_dataset import CommunicationDataset
@@ -21,7 +22,6 @@ from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.advisor.utils.utils import convert_to_float
-from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 logger = get_logger()
 
@@ -58,15 +58,16 @@ class Statistic:
                 self.abnormal_duration += info.get('Transit Time(ms)', 0)
             self.count += 1
 
-    def adapt(self, dst_headers: list, src_headers, datas: list):
+    def adapt(self, dst_headers: list, src_headers, data_list: list):
         if not self.issue:
             return False
         dst_headers.extend(src_headers)
-        datas.extend([self.count, self.abnormal_count, self.abnormal_ratio, self.abnormal_duration])
+        data_list.extend([self.count, self.abnormal_count, self.abnormal_ratio, self.abnormal_duration])
         self.desc = self.desc.format(
             abnormal_ratio=f"{round(self.abnormal_ratio, 4):.2%}",
             min_size=self.min_size,
-            abnormal_time=round(self.abnormal_duration, 4))
+            abnormal_time=round(self.abnormal_duration, 4),
+        )
         return True
 
 
@@ -122,14 +123,16 @@ class PacketChecker:
 
     def make_render(self, html_render, add_render_list=True, **kwargs):
         priority = kwargs.get("priority")
-        return html_render.render_template(key="communication",
-                                           template_dir="templates",
-                                           template_name="packet_analysis.html",
-                                           desc=self.desc,
-                                           solutions=self.solutions,
-                                           headers=self.headers,
-                                           data=self.small_packet_detail,
-                                           priority_background_color=priority)
+        return html_render.render_template(
+            key="communication",
+            template_dir="templates",
+            template_name="packet_analysis.html",
+            desc=self.desc,
+            solutions=self.solutions,
+            headers=self.headers,
+            data=self.small_packet_detail,
+            priority_background_color=priority,
+        )
 
     def _init_rule(self):
         language = AdditionalArgsManager().language
@@ -137,7 +140,7 @@ class PacketChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "packet.yaml"
+            "packet.yaml",
         )
 
         syncbn_rule = FileManager.read_yaml_file(syncbn_rule_path)

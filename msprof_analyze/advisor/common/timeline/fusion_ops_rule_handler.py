@@ -1,4 +1,18 @@
-#  Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import copy
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -106,26 +120,32 @@ class TimelineOpRuleHandler:
 
         # 若该unique_id规则在timeline_fusion_ops.yaml中没有相应的规则, 生成该id规则，置为空
         if self._all_origin_timeline_op_rule_dict.get(specified_unique_id) is None:
-            logger.warning("The specified version %s does not exist in the rule library. "
-                           "Ensure that the corresponding rule is configured in the YAML file. "
-                           "The version %s is left blank.",
-                           specified_unique_id,
-                           specified_unique_id)
+            logger.warning(
+                "The specified version %s does not exist in the rule library. "
+                "Ensure that the corresponding rule is configured in the YAML file. "
+                "The version %s is left blank.",
+                specified_unique_id,
+                specified_unique_id,
+            )
             self.add_empty_timeline_op_rule(specified_unique_id)
             return
 
         # 若该unique_id规则已经生成，则无需再次生成
         if specified_unique_id in self._exist_timeline_op_rule_unique_id_list:
-            logger.warning("The rule has been generated and does not need to be generated again. "
-                           "Check whether unique id %s in the YAML file is duplicate.",
-                           specified_unique_id)
+            logger.warning(
+                "The rule has been generated and does not need to be generated again. "
+                "Check whether unique id %s in the YAML file is duplicate.",
+                specified_unique_id,
+            )
             return
 
         # 若kid_id_list不为空，且间接继承自身，则尝试生成空规则用于继承
         if kid_id_list and self._is_duplicated_element_in_lists(specified_unique_id, kid_id_list):
-            logger.warning("It cannot be inherited indirectly. Ensure that the corresponding rules are correctly "
-                           "configured in the YAML file and leave Version %s blank.",
-                           specified_unique_id)
+            logger.warning(
+                "It cannot be inherited indirectly. Ensure that the corresponding rules are correctly "
+                "configured in the YAML file and leave Version %s blank.",
+                specified_unique_id,
+            )
             self.add_empty_timeline_op_rule(specified_unique_id)
             return
 
@@ -135,27 +155,39 @@ class TimelineOpRuleHandler:
 
             global_inherit_id = rule_dic.get("inherit_unique_id")
             if global_inherit_id and global_inherit_id not in self._exist_timeline_op_rule_unique_id_list:
-                logger.debug("The rule of version %s global inherit the rule of version %s",
-                             specified_unique_id, global_inherit_id)
+                logger.debug(
+                    "The rule of version %s global inherit the rule of version %s",
+                    specified_unique_id,
+                    global_inherit_id,
+                )
                 self.generate_specified_timeline_op_rule(global_inherit_id, kid_id_list)
 
             # 若局部继承的规则未生成, 生成该规则
             local_inherit_id_list = self._get_local_inherit_id_list(rule_dic.get("operator_rules"))
             if local_inherit_id_list:
-                logger.debug("The rule of version %s local inherit the rule of version %s",
-                             specified_unique_id, local_inherit_id_list)
-                self.generate_specified_list_timeline_op_rule(specified_unique_id_list=local_inherit_id_list,
-                                                              kid_id_list=kid_id_list)
+                logger.debug(
+                    "The rule of version %s local inherit the rule of version %s",
+                    specified_unique_id,
+                    local_inherit_id_list,
+                )
+                self.generate_specified_list_timeline_op_rule(
+                    specified_unique_id_list=local_inherit_id_list, kid_id_list=kid_id_list
+                )
             logger.debug("Start to generate rule of version %s", specified_unique_id)
             # 实现全局继承与局部继承
-            temp_rule = OpRule(timeline_op_rule_handler=self,
-                               rule=self._all_tmp_timeline_op_rule.get(global_inherit_id))
+            temp_rule = OpRule(
+                timeline_op_rule_handler=self, rule=self._all_tmp_timeline_op_rule.get(global_inherit_id)
+            )
             temp_rule.merge(rule_dic.get("operator_rules"))
             # 将生成的规则归档保存
             self.add_new_timeline_op_rule(specified_unique_id, temp_rule.tmp_rule)
             return
-        logger.error("Failed to generate the rule whose unique_id is %s. Ensure that the rule is configured in "
-                     "the YAML file and the version %s is empty.", specified_unique_id, specified_unique_id)
+        logger.error(
+            "Failed to generate the rule whose unique_id is %s. Ensure that the rule is configured in "
+            "the YAML file and the version %s is empty.",
+            specified_unique_id,
+            specified_unique_id,
+        )
         self.add_empty_timeline_op_rule(specified_unique_id)
 
     def generate_all_timeline_op_rule(self):
@@ -178,14 +210,19 @@ class TimelineOpRuleHandler:
 
     def get_tmp_timeline_op_rule_with_unique_id(self, unique_id):
         if unique_id not in self._exist_timeline_op_rule_unique_id_list:
-            logger.error("The specified unique_id does not exist in the rule library. Ensure that the "
-                         "corresponding rule is configured in the YAML file and the version %s is empty."
-                         "If the value of unique_id is a negative number, the version may not be supported.",
-                         unique_id)
+            logger.error(
+                "The specified unique_id does not exist in the rule library. Ensure that the "
+                "corresponding rule is configured in the YAML file and the version %s is empty."
+                "If the value of unique_id is a negative number, the version may not be supported.",
+                unique_id,
+            )
             self.add_empty_timeline_op_rule(unique_id)
         if unique_id < 0:
-            logger.error("Advise to use a positive integer as the unique id of rules. "
-                         "Negative numbers: %s are not recommended to use as unique id. "
-                         "If specified invalid unique id: %s is used, an empty rule is returned by default.",
-                         unique_id, Constant.TIMELINE_FUSION_OPS_INVALID_UNIQUE_ID)
+            logger.error(
+                "Advise to use a positive integer as the unique id of rules. "
+                "Negative numbers: %s are not recommended to use as unique id. "
+                "If specified invalid unique id: %s is used, an empty rule is returned by default.",
+                unique_id,
+                Constant.TIMELINE_FUSION_OPS_INVALID_UNIQUE_ID,
+            )
         return self._all_tmp_timeline_op_rule.get(unique_id)

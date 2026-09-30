@@ -1,16 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import unittest
 from unittest.mock import MagicMock, patch
 from msprof_analyze.compare_tools.compare_backend.comparator.kernel_compare_comparator import KernelCompareComparator
@@ -31,7 +33,7 @@ class TestKernelCompareComparator(unittest.TestCase):
                 "shape3": [("op4", 40.0)]
             }
         }
-        
+
         self.comparison_kernels = {
             "type1": {
                 "shape1": [("op1", 15.0), ("op2", 25.0)],
@@ -42,7 +44,7 @@ class TestKernelCompareComparator(unittest.TestCase):
                 "shape5": [("op6", 60.0)]
             }
         }
-        
+
         self.origin_data = {
             Constant.BASE_DATA: self.base_kernels,
             Constant.COMPARISON_DATA: self.comparison_kernels
@@ -55,7 +57,7 @@ class TestKernelCompareComparator(unittest.TestCase):
                 "shape2": [("op3", 30.0)]
             }
         }
-        
+
         result = KernelCompareComparator._aggregated_kernel_by_type_and_shape(test_kernels)
 
         self.assertEqual(len(result), 2)
@@ -87,13 +89,13 @@ class TestKernelCompareComparator(unittest.TestCase):
     def test_compare_bean_creation_parameters(self, mock_update_order_id):
         comparator = KernelCompareComparator(self.origin_data, self.mock_bean)
         call_args_list = []
-        
+
         def mock_bean_side_effect(*args, **kwargs):
             call_args_list.append(args)
             mock_instance = MagicMock()
             mock_instance.row = {"test": "row_data"}
             return mock_instance
-        
+
         self.mock_bean.side_effect = mock_bean_side_effect
         comparator._compare()
         self.assertEqual(len(call_args_list), 5)

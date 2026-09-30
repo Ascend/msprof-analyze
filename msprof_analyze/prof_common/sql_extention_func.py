@@ -1,23 +1,23 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import numpy as np
 
 
 class Median:
-
     def __init__(self) -> None:
         self.data = []
 
@@ -29,7 +29,6 @@ class Median:
 
 
 class LowerQuartile:
-
     def __init__(self) -> None:
         self.data = []
 
@@ -41,7 +40,6 @@ class LowerQuartile:
 
 
 class UpperQuartile:
-
     def __init__(self) -> None:
         self.data = []
 
@@ -50,10 +48,9 @@ class UpperQuartile:
 
     def finalize(self):
         return np.quantile(self.data, 0.75)
-    
+
 
 class StandardDeviation:
-
     def __init__(self) -> None:
         self.data = []
 
@@ -69,5 +66,5 @@ SqlExtentionAggregateFunc = [
     ('median', 1, Median),
     ('lower_quartile', 1, LowerQuartile),
     ('upper_quartile', 1, UpperQuartile),
-    ('stdev', 1, StandardDeviation)
+    ('stdev', 1, StandardDeviation),
 ]

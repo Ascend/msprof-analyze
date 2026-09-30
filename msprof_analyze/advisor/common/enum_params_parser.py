@@ -1,3 +1,19 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -26,7 +42,7 @@ logger = get_logger()
 
 
 @singleton
-class EnumParamsParser():
+class EnumParamsParser:
     # 枚举变量抽象成yaml文件，统一管理，便于第三方服务对接advisor时调用当前类查询所有枚举变量参数的默认值和可选值
 
     ARGUMENTS = "arguments"
@@ -40,8 +56,9 @@ class EnumParamsParser():
     BOOLEAN_TYPE = "boolean"
 
     def __init__(self):
-        enum_params_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config",
-                                        "enum_parameters.yaml")
+        enum_params_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "enum_parameters.yaml"
+        )
         self.enum_params = FileManager.read_yaml_file(enum_params_path)
         self._set_value()
 
@@ -90,9 +107,7 @@ class EnumParamsParser():
         return default_value
 
     def _set_value(self):
-
         for key in self.get_keys():
-
             if not hasattr(self, key):
                 setattr(self, str(key), AdvisorDict())
 

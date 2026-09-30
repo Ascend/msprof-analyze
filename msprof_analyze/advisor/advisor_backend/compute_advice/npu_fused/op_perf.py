@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import functools
 from typing import Dict
 from msprof_analyze.prof_common.logger import get_logger
@@ -91,15 +92,15 @@ class OpPerf:
         self.aiv_mte3_ratio = op_row.get("aiv_mte3_ratio")
         self.aiv_icache_miss_rate = op_row.get("aiv_icache_miss_rate")
         self.cube_utilization = op_row.get("cube_utilization( %)")
-    
+
     @staticmethod
     def get_dtype_size(dtype_str: str):
         return Constant.DTYPE_SIZE_MAP.get(dtype_str.lower(), 0)
-    
+
     @staticmethod
     def get_element_count(shape: list):
         return functools.reduce(lambda x, y: int(x) * int(y), shape)
-    
+
     @staticmethod
     def shape_to_tuple(shape_str: str) -> tuple:
         if not isinstance(shape_str, str):
@@ -116,7 +117,7 @@ class OpPerf:
             elements = tuple(int(element) if "" != element else 0 for element in elements)
             shape_result.append(elements)
         return tuple(shape_result)
-    
+
     @staticmethod
     def dtype_to_tuple(dtypes_str: str) -> tuple:
         if not isinstance(dtypes_str, str):
@@ -127,10 +128,10 @@ class OpPerf:
             return []
         pairs = split_dtypes.split(';')
         return tuple(pairs)
-    
+
     def get_mac_ratio(self):
         return self.aic_mac_ratio
-    
+
     def get_size(self, shapes_str, dtypes_str):
         shapes = self.shape_to_tuple(shapes_str)
         dtypes = self.dtype_to_tuple(dtypes_str)
@@ -146,7 +147,7 @@ class OpPerf:
             dtype_size = self.get_dtype_size(dtypes[index])
             all_size += element_count * dtype_size
         return all_size
-    
+
     def get_calc_size(self):
         # input and output bytes (MB)
         if not self.input_shapes or not self.output_shapes:
@@ -155,17 +156,21 @@ class OpPerf:
         intput_size = self.get_size(self.input_shapes, self.input_data_types)
         output_size = self.get_size(self.output_shapes, self.output_data_types)
         return (intput_size + output_size) / (Constant.BYTE_UNIT_TRANS * Constant.BYTE_UNIT_TRANS)
-    
+
     def get_throughput(self):
         # throughput bytes (GB/s)
         if not self.task_duration or abs(self.task_duration) < 1e-6:
             logger.error("There is no task_duration, do not assess vector op performance.")
             return 0
-        return (self.row[Constant.TITLE.SIZE] /
-                Constant.BYTE_UNIT_TRANS / self.task_duration * Constant.UNIT_TRANS * Constant.UNIT_TRANS)
-    
+        return (
+            self.row[Constant.TITLE.SIZE]
+            / Constant.BYTE_UNIT_TRANS
+            / self.task_duration
+            * Constant.UNIT_TRANS
+            * Constant.UNIT_TRANS
+        )
+
     def get_perf_color(self):
-        row = self.row
         return PerfColor.WHITE
 
     def update(self):

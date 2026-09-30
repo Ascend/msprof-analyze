@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 from multiprocessing import Manager
 
@@ -28,7 +29,6 @@ logger = get_logger()
 
 
 class PPStageComputationAnalyzer(BaseAnalyzer):
-
     def __init__(self, collection_path, **kwargs):
         super().__init__(collection_path, **kwargs)
         self.collection_path = collection_path
@@ -44,15 +44,16 @@ class PPStageComputationAnalyzer(BaseAnalyzer):
             sheet_name = f"{prefix} {sheet_name}"
         return sheet_name
 
-    def optimize(self, stages_profiling_path, **kwargs):
+    def optimize(self, stages_profiling_path, **kwargs):  # pylint: disable=arguments-differ
         pp_stage_processes = min(get_analyze_processes(), len(stages_profiling_path))
         if pp_stage_processes <= 1:
             for stage_profiling_path in stages_profiling_path:
                 self._optimize(**stage_profiling_path)
         else:
             logger.info("Start to parallel analysis of pp stages, number of processes is %s", pp_stage_processes)
-            parallel_stage_analysis_job = ParallelJob(self._optimize, stages_profiling_path,
-                                                      "Computation analysis of Pipeline parallel stages")
+            parallel_stage_analysis_job = ParallelJob(
+                self._optimize, stages_profiling_path, "Computation analysis of Pipeline parallel stages"
+            )
             parallel_stage_analysis_job.start(pp_stage_processes)
             self._merge_multiprocess_result()
 
@@ -61,11 +62,13 @@ class PPStageComputationAnalyzer(BaseAnalyzer):
         return self.result
 
     def make_render(self):
-        HTMLRender().render_template(key="computation",
-                                     template_dir="templates",
-                                     template_name="pp_stage_computation_analysis.html",
-                                     stages_rendered_html=list(self._stages_rendered_html),
-                                     priority_background_color=PriorityBackgroundColor.high)
+        HTMLRender().render_template(
+            key="computation",
+            template_dir="templates",
+            template_name="pp_stage_computation_analysis.html",
+            stages_rendered_html=list(self._stages_rendered_html),
+            priority_background_color=PriorityBackgroundColor.high,
+        )
 
     def get_priority(self, max_mem_op_dur=None):
         pass
@@ -76,9 +79,11 @@ class PPStageComputationAnalyzer(BaseAnalyzer):
 
         # stage 并行分析时，避免调用本身，即SupportedScopes.STAGE_COMPUTE
         scopes = Interface.get_scope(Interface.COMPUTATION)
-        stage_analyzer_list = [Interface.get_analyzer(Interface.COMPUTATION, scope)
-                               for scope in scopes
-                               if scope != SupportedScopes.STAGE_COMPUTE]
+        stage_analyzer_list = [
+            Interface.get_analyzer(Interface.COMPUTATION, scope)
+            for scope in scopes
+            if scope != SupportedScopes.STAGE_COMPUTE
+        ]
 
         for analyzer_cls in stage_analyzer_list:
             analyzer = analyzer_cls(collection_path=profiling_path, **kwargs)
