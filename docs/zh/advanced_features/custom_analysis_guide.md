@@ -44,7 +44,7 @@
       ```python
       def _mapper_func(self, data_map, analysis_class):
           """
-          Extract the profiling data required for cluster analysis from each device, and then aggregate the 
+          Extract the profiling data required for cluster analysis from each device, and then aggregate the
           results from each device to be processed by a reduce function.
           Params:
               data_map: eg. {"RANK_ID": 1, "profiler_db_path": "xxxx/ascend_pytorch_profiler_1.db"}
@@ -67,18 +67,18 @@
 
       使用样例：
 
-      ```Python
+      ```python
       service = DatabaseService(profiler_db_path)
-      service.add_table_for_query("ENUM_HCCL_DATA_TYPE", ["id", "name"])  # 第一个参数：表名；第二个参数：字段列表，默认为None，当不填写时表明select *
+      service.add_table_for_query("ENUM_HCCL_DATA_TYPE", ["id", "name"])  # 第一个参数：表名；第二个参数：字段列表，默认为None，当不填写时表示select *
       service.add_table_for_query("STRING_IDS", ["id", "value"])  #可以添加多个表
       df_dict = service.query_data()  # 将配置的所有表按序查询，以dict形式返回，key为表名，value为数据库查询结果dataframe数据类型
       ```
 
    2. 维护在msprof_analyze/prof_exports目录下，新建一个py文件，需继承自BaseStatsExport（注：新增之前可以看现有的是否可用，避免重复）。如下示例：
 
-      ```Python
+      ```python
       from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
-      
+
       QUERY = """
       SELECT
           NAME_IDS.value AS "OpName",
@@ -97,21 +97,21 @@
           STRING_IDS AS GROUP_NAME_IDS
           ON GROUP_NAME_IDS.id = COMMUNICATION_OP.groupName
           """
-      
-      
+
+
       class HcclSumExport(BaseStatsExport):
           def __init__(self, db_path, recipe_name):
               super().__init__(db_path, recipe_name)
               self._query = QUERY
       ```
-      
+
       使用样例：df = HcclSumExport(profiler_db_path, analysis_class).read_export_db()，返回的数据类型是dataframe。
 
-4. 分析规则增加拓展参数。
+4. 分析规则增加扩展参数。
 
    实现函数add_parser_argument，样例如下：
 
-   ```Python
+   ```python
    @classmethod
    def add_parser_argument(cls, parser):
        parser.add_argument("--top_num", type=str, help="Duration cost top count", default=cls.DEFAULT_TOP_NUM)
@@ -119,13 +119,13 @@
 
    从self._extra_args里获取对应的扩展参数：
 
-   ```Python
+   ```python
    def __init__(self, params):
        super().__init__(params)
        top_num = self._extra_args.get(self.TOP_NUM, self.DEFAULT_TOP_NUM)
        self.top_num = int(top_num) if isinstance(top_num, str) and top_num.isdigit() else self.DEFAULT_TOP_NUM
    ```
-   
+
 5. 执行自定义分析规则命令。
 
    ```bash

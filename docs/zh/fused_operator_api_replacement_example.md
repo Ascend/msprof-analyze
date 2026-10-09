@@ -40,7 +40,7 @@ optimizer = torch_npu.optim.NpuFusedAdamW(
 
 ### 2.1 optimizer.clip_grad_norm_fused_
 
-在替换为npu亲和梯度裁剪API之前，请确保代码中已使用npu亲和优化器。
+在替换为NPU亲和梯度裁剪API之前，请确保代码中已使用npu亲和优化器。
 
 torch原生代码示例如下：
 

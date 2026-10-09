@@ -24,7 +24,7 @@ msprof-analyze 已内置 [devcontainer](https://containers.dev/) 开发环境配
 
 | 环境 | 要求 |
 |------|------|
-| PC | VS Code，安装 Dev Containers 插件 和 Remote-SSH 插件 |
+| PC | VS Code，安装 Dev Containers 插件和 Remote-SSH 插件 |
 | Linux 服务器 | Docker 服务运行中 |
 
 **使用步骤：**

@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-`cluster_analyse` 是面向集群场景的分析工具，基础功能涵盖通信域的迭代内耗时分析、通信时间分析和通信矩阵分析，可用于定位慢卡、慢节点及慢链路问题。 生成的交付件推荐在 `MindStudio Insight` 中可视化查看，典型应用场景有：
+`cluster_analyse` 是面向集群场景的分析工具，基础功能涵盖通信域的迭代内耗时分析、通信时间分析和通信矩阵分析，可用于定位慢卡、慢节点及慢链路问题。生成的交付件推荐在 `MindStudio Insight` 中可视化查看，典型应用场景有：
 
 - **判断是否存在慢卡或负载不均衡**：对比各 rank 或 stage 的计算时间、通信时间、空闲时间。如果同类时间差异超过 5%，可进一步排查慢卡或通信瓶颈。
 - **判断是否存在慢链路或带宽异常**：查看 rank 间的链路类型（LOCAL/HCCS/PCIE/RDMA）和传输带宽。同一类链路间的带宽应基本持平，差异明显时可定位到具体慢链路。
@@ -167,7 +167,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 | 交付件                              | 输入格式 | 主要用途 / 说明                                              |
 | :---------------------------------- | :------- | :----------------------------------------------------------- |
-| `cluster_analysis.db`               | db       | 包含导入 MindStudio Insight 进行可视化分析，适合大规模集群数据。 |
+| `cluster_analysis.db`               | db       | 包含导入 MindStudio Insight 进行可视化分析的数据，适合大规模集群数据场景。 |
 | `cluster_step_trace_time.csv`       | text     | 集群迭代耗时拆解信息，包括 rank/stage 维度耗时，用于辅助判断慢卡、负载不均衡等问题。 |
 | `cluster_communication.json`        | text     | 集群通信算子耗时明细。                                       |
 | `cluster_communication_matrix.json` | text     | 集群通信矩阵，包括 rank 间链路类型、带宽和传输时间。         |

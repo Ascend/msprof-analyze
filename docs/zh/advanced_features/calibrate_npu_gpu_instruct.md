@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-NPU 和 GPU 性能数据拆解比对（ `calibrate_npu_gpu` ）是 msprof-analyze 提供的用于自动对比 NPU 和 GPU 的性能数据，帮助用户进行跨平台的性能校准和瓶颈分析的功能。
+NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 提供的用于自动对比 NPU 和 GPU 的性能数据，帮助用户进行跨平台的性能校准和瓶颈分析的功能。
 
 该功能支持：
 

@@ -80,9 +80,9 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 
 | 分析能力                      | 介绍          | 文档链接 |
 |---------------------------|-------------|---|
-| compute_op_sum            | device侧运行的计算类算子汇总。 | - |
+| compute_op_sum            | Device侧运行的计算类算子汇总。 | - |
 | freq_analysis             | 识别AI Core是否存在空闲（频率为800MHz）、异常（频率不为1800MHz或800MHz）的情况并给出分析结果。 | - |
-| ep_load_balance           | moe负载信息汇总分析。 | - |
+| ep_load_balance           | MoE负载信息汇总分析。 | - |
 | computational_op_masking  | 提供集群训练过程中不同算子耗时的掩盖计算，帮助用户找到性能瓶颈。 | [集群算子掩盖线性度分析](./computational_op_masking_instruct.md) |
 | operator_mfu              | 基于采集侧记录的算子 FLOPs 和 Device 侧 kernel 耗时，计算 kernel 级和 module 级算力利用率。 | [算子 MFU 分析](./operator_mfu_instruct.md) |
 
@@ -129,7 +129,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | --------------------- | -------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | --profiling_path或-d  | 必选     | 性能数据汇集目录。未配置-o参数时，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。                                                                                                                                 |
 | --output_path或-o     | 可选     | 自定义输出路径，运行分析脚本之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。                                                                                                                                           |
-| --mode或-m            | 可选     | 分析能力选项，取值详见[分析能力参数](#511-分析能力参数)表。                                                                                  |
+| --mode或-m            | 必选     | 分析能力选项，取值详见[分析能力参数](#511-分析能力参数)表。                                                                                  |
 | --export_type         | 可选     | 输出文件类型。取值为db（.db格式文件）、notebook（Jupyter Notebook文件）、text（泛指json/csv/excel等文本格式文件），默认值为db。                                                                                                                               |
 | --force               | 可选     | 强制执行，用户对force行为负责，配置后可强制跳过如下情况：<br/>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br/>&#8226; csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。<br/>&#8226; 指定的目录、文件的读写权限，忽略权限判断直接执行。<br/>配置该参数表示开启强制执行，默认未配置表示关闭。 |
 | --parallel_mode       | 可选     | 设置收集多卡、多节点db数据时的并发方式。取值为concurrent（使用concurrent.futures进程池实现并发）。                                                                                                                                       |
@@ -144,5 +144,5 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
 | --step_id             | 可选 | 性能数据Step ID，配置后对该Step的性能数据进行分析。需配置性能数据中实际存在的Step ID，默认未配置，表示全量分析。配置示例：--step_id=1。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
 | --top_num             | 可选     | 设置TopN耗时的通信算子的数量，默认值为15，配置示例：--top_num 20。 | `hccl_sum` |
-| --exclude_op_name    | 可选     | 控制compute_op_name结果是否包含op_name，示例：--exclude_op_name，后面不需要跟参数。 | `compute_op_sum` |
+| --exclude_op_name    | 可选     | 控制compute_op_sum结果是否包含op_name，示例：--exclude_op_name，后面不需要跟参数。 | `compute_op_sum` |
 | --bp                 | 可选     | 要对比的标杆集群数据，示例：--bp {bp_cluster_profiling_path}，表示profiling_path和bp_cluster_profiling_path的数据进行对比。 | `cluster_time_compare_summary` |

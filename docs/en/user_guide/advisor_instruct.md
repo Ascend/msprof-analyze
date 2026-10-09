@@ -419,7 +419,7 @@ An example of **Synchronize Stream Issues** is shown below. Modify the correspon
 
 ![schedule_2](../figures/schedule_2.png)
 
-For details about the `ASCEND_LAUNCH_BLOCKING` environment variable shown in the preceding figure, see [`ASCEND_LAUNCH_BLOCKING`](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md).
+For details about the `ASCEND_LAUNCH_BLOCKING` environment variable shown in the preceding figure, see [`ASCEND_LAUNCH_BLOCKING`](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/api/environment_variable/ASCEND_LAUNCH_BLOCKING.md).
 
 An example of **Operator Dispatch Issues** is shown below. Add the following code at the beginning of the execution script to eliminate `aclopCompile`:
 
