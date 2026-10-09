@@ -16,7 +16,7 @@ B列： Type，主要分两种，rank和stage，和后面的index强相关，可
 
 C列：Index，与type相关，表示卡号。
 
-D列：Computing， 此列统计计算时间。
+D列：Computing，此列统计计算时间。
 
 E列：Communication(Not Overlapped)，此列统计未被掩盖的通信耗时。
 
@@ -34,13 +34,13 @@ K列：Communication（Not Overlapped and Exclude Receive），指剔除receive�
 
 L列：Preparing，指迭代开始到首个计算或通信算子运行的时间。
 
-M列：DP Index，指集群数据按照并行策略切分后所属DP组的索引， 如果没有采集则不显示。
+M列：DP Index，指集群数据按照并行策略切分后所属DP组的索引，如果没有采集则不显示。
 
 N列：PP Index，指集群数据按照并行策略切分后所属PP组的索引，如果没有采集则不显示。
 
 O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引，如果没有采集则不显示。
 
-**Tips**：先筛选B列type为stage， 看stage间是否有问题，再筛选B列type为rank，看rank是否有问题，根据以下几点排查。
+**Tips**：先筛选B列type为stage，看stage间是否有问题，再筛选B列type为rank，看rank是否有问题，根据以下几点排查。
 
 * 根据Computing的时间差异判断是否有慢卡，或者有负载不均衡的现象。
 
@@ -70,7 +70,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 **Tips**：可以根据rank互联的带宽以及链路类型，判断是否有慢链路的问题。
 
 - LOCAL是片内拷贝，速度最高。
-- HCCS或PCIE是节点内片间拷贝，速度居中。
+- HCCS或PCIe是节点内片间拷贝，速度居中。
 - RDMA是节点间拷贝，速度最低。
 
 ## 3. cluster_communication.json
@@ -176,7 +176,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | medNs          | REAL    | 耗时的50%分位数                    |
 | Q3Ns           | REAL    | 耗时的75%分位数                    |
 | minNs          | REAL    | 耗时的最小值                       |
-| maxNs          | REAL    | 耗时的最大值                       | 
+| maxNs          | REAL    | 耗时的最大值                       |
 | stdev          | REAL    | 耗时的标准差                       |
 | minRank        | TEXT    | minNs对应的rank的集合              |
 | maxRank        | TEXT    | maxNs对应的rank的集合              |
@@ -226,7 +226,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | Q1Ns     | REAL    | 耗时的25%分位数 |
 | MedianNs | REAL    | 耗时的50%分位数 |
 | Q3Ns     | REAL    | 耗时的75%分位数 |
-| MaxNs    | REAL    | 耗时的最大值    | 
+| MaxNs    | REAL    | 耗时的最大值    |
 | SumNs    | REAL    | 耗时的总和      |
 
 ### 6.2 HcclPerRankStats
@@ -247,7 +247,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | Q1Ns     | REAL    | 耗时的25%分位数 |
 | MedianNs | REAL    | 耗时的50%分位数 |
 | Q3Ns     | REAL    | 耗时的75%分位数 |
-| MaxNs    | REAL    | 耗时的最大值    | 
+| MaxNs    | REAL    | 耗时的最大值    |
 | SumNs    | REAL    | 耗时的总和      |
 | Rank     | INTEGER | rank_id        |
 
@@ -283,12 +283,12 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | Q1Ns     | REAL    | 耗时的25%分位数 |
 | MedianNs | REAL    | 耗时的50%分位数 |
 | Q3Ns     | REAL    | 耗时的75%分位数 |
-| MaxNs    | REAL    | 耗时的最大值    | 
+| MaxNs    | REAL    | 耗时的最大值    |
 | SumNs    | REAL    | 耗时的总和      |
 | MinRank  | INTEGER | 该通信算子耗时最小的rank |
 | MaxRank  | INTEGER | 该通信算子耗时最大的rank |
 
-## 7. mstx_sum 
+## 7. mstx_sum
 
 设置-m mstx_sum时，会生成以下表。
 
@@ -318,7 +318,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-基于db格式的集群性能数据，分析mstx打点数据的cann层耗时（不区分rank）。
+基于db格式的集群性能数据，分析mstx打点数据的CANN层耗时（不区分rank）。
 
 格式：
 
@@ -362,7 +362,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-基于db格式的集群性能数据，针对每个rank的打点数据，以Rank，StepId分组，对mstx打点的耗时进行统计分析。
+基于db格式的集群性能数据，针对每个rank的打点数据，以Rank、StepId分组，对mstx打点的耗时进行统计分析。
 
 格式：
 
@@ -389,11 +389,11 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 | 字段名 | 类型 | 含义                                                                |
 | ------ | ---- |-------------------------------------------------------------------|
-| type       | TEXT | 算子类型，包含collective和p2p, 其中算子名包含"send"，"recv"，"receive"的算子被认为是p2p   |
+| type       | TEXT | 算子类型，包含collective和p2p，其中算子名包含"send"、"recv"、"receive"的算子被认为是p2p   |
 | rank_set   | TEXT | 通信域内包含的rank（global rank）                                          |
 | group_name | TEXT | 通信域的hash值，可映射成group_id                                            |
 | group_id   | TEXT | HCCL内部定义的通信域名字，例如：{ip_address}%enp67s0f5_60000_0_1708156014257149 |
-| pg_name    | TEXT | 业务定义的通信域名字，例如："dp"，"dp_cp"，"mp"等等                                 |
+| pg_name    | TEXT | 业务定义的通信域名字，例如："dp"、"dp_cp"、"mp"等等                                 |
 
 ## 9. cluster_time_summary
 
@@ -423,8 +423,8 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | communicationWaitStageTime               | REAL | 通信等待总耗时 |
 | communicationTransmitStageTime           | REAL | 通信传输总耗时 |
 | memory         | REAL    | 异步拷贝的总耗时 |
-| memoryNotOverlapComputationCommunication | REAL | 不被计算和通信掩盖的异步拷贝的总耗时 | 
-| taskLaunchDelayAvgTime                   | REAL | 下发耗时，指所有task从host侧api的开始时间到device侧task的开始时间的平均耗时 |
+| memoryNotOverlapComputationCommunication | REAL | 不被计算和通信掩盖的异步拷贝的总耗时 |
+| taskLaunchDelayAvgTime                   | REAL | 下发耗时，指所有task从host侧API的开始时间到device侧task的开始时间的平均耗时 |
 
 ## 10. cluster_time_compare_summary
 
@@ -455,11 +455,11 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-基于db格式的集群性能数据，分析aicore frequency，提供NPU降频一键检测能力。频率分为三种情况：
+基于db格式的集群性能数据，分析aicoreFrequency，提供NPU降频一键检测能力。频率分为三种情况：
 
 * 正常情况下，应当稳定在1800MHz；
 * 当NPU空闲时间较长时，设备会自动降频，会掉到800MHz；
-* 当NPU因为各种原因，出现降频现象时，除了1800MHz，800MHz，还会出现其他异常频率。
+* 当NPU因为各种原因，出现降频现象时，除了1800MHz、800MHz，还会出现其他异常频率。
 
 设置-m freq_analysis时，如果发生降频，会生成以下表。
 
@@ -480,7 +480,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-对应第三种情况：当NPU因为各种原因，出现降频现象时，除了1800MHz，800MHz，还会出现其他异常频率。
+对应第三种情况：当NPU因为各种原因，出现降频现象时，除了1800MHz、800MHz，还会出现其他异常频率。
 
 格式：
 
@@ -493,7 +493,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-集群训练场景下，MOE负载不均指的是，在分布式环境下，不同的专家模型处理的任务量不均衡，导致某些专家过载（处理过多任务），而其他专家闲置。这种负载不均会降低系统的整体效率，甚至可能导致性能瓶颈。
+集群训练场景下，MoE负载不均指的是，在分布式环境下，不同的专家模型处理的任务量不均衡，导致某些专家过载（处理过多任务），而其他专家闲置。这种负载不均会降低系统的整体效率，甚至可能导致性能瓶颈。
 
 设置-m ep_load_balance时，会生成以下表。
 
@@ -508,7 +508,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | 字段名 | 类型 | 含义 |
 | ------ | ---- | ---- |
 | rank               | INTEGER | global rank |
-| epRanks            | TEXT    | 同一个ep(Expert Parallelism)的rank集合，例如0,1 |
+| epRanks            | TEXT    | 同一个EP(Expert Parallelism)的rank集合，例如0,1 |
 | inputShapesSummary | INTEGER | 该rank的GroupedMatmul算子的inputshapes的第一个维度的总和 |
 
 ### 12.2 TopEPTokensInfo
@@ -572,7 +572,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 | Q1Ns      | REAL    | 耗时的25%分位数      |
 | MedianNs  | REAL    | 耗时的50%分位数      |
 | Q3Ns      | REAL    | 耗时的75%分位数      |
-| MaxNs     | REAL    | 耗时的最大值         | 
+| MaxNs     | REAL    | 耗时的最大值         |
 | SumNs     | REAL    | 耗时的总和          |
 | MinRank   | INTEGER | 该通信算子耗时最小的rank |
 | MaxRank   | INTEGER | 该通信算子耗时最大的rank |
@@ -585,7 +585,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 结果：
 
-会在集群数据的ascend_pytorch_profiler_{rank_id}.db的COMMUNICATION_OP表中新增一列opConnectionId。 根据这个opConnectionId可以把不同rank的P2P算子连线。
+会在集群数据的ascend_pytorch_profiler_{rank_id}.db的COMMUNICATION_OP表中新增一列opConnectionId。根据这个opConnectionId可以把不同rank的P2P算子连线。
 
 ## 16. pp_chart
 
@@ -668,11 +668,11 @@ prof.add_metadata('pp_info', json.dumps(
 - 数据解析模式为compute_op_sum时生成，保存在cluster_analysis_output/ComputeOpSum目录下。
 
   可使用jupyter notebook工具或MindStudio Insight工具打开，主要展示集群计算算子耗时分析（将集群所有计算算子进行汇总并以图表展示），集群Rank计算算子耗时分析（将每个Rank的计算算子进行各自汇总）。
-  
+
 - 数据解析模式为hccl_sum时生成，保存在cluster_analysis_output/HcclSum目录下。
 
   可使用jupyter notebook工具或MindStudio Insight工具打开，主要展示集群通信算子耗时分析（将集群所有通信算子进行汇总并以图表展示），集群Rank通信算子耗时分析（将每个Rank的通信算子进行各自汇总）、Top通信算子信息展示。
-  
+
 - 数据解析模式为mstx_sum时生成，保存在cluster_analysis_output/MstxSum目录下。
 
   可使用jupyter notebook工具或MindStudio Insight工具打开，主要展示集群场景mstx打点信息，分为框架侧、CANN侧和Device侧三部分的打点信息。

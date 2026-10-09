@@ -237,7 +237,7 @@ export_type = Db
 
 ### 4.1 功能说明
 
-性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，打印输出总体指标，帮助用户定界劣化的方向。
+性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，打印输出总体指标，帮助用户界定劣化的方向。
 
 性能比对工具支持使用**命令行**和**脚本**两种方式执行性能数据比对操作，这两种方式均支持**通用参数**和**算子性能比对特有参数**。
 
@@ -303,7 +303,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 | 参数 | 可选/必选 | 说明 |
 | --- | --- | --- |
-| `--gpu_flow_cat` | 可选 | 配置GPU trace中CPU侧算子与device kernel的连线标识，当GPU的Device Duration(us)均为0时设置。使用chrome://tracing打开GPU的json，右上角Flow events找到连线标识，将标识配置进该参数。使用示例：`--gpu_flow_cat=async_gpu`。 |
+| `--gpu_flow_cat` | 可选 | 配置GPU trace中CPU侧算子与device kernel的连线标识，当GPU的Device Duration(us)均为0时设置。使用chrome://tracing打开GPU的json，在右上角Flow events找到连线标识，将标识配置进该参数。使用示例：`--gpu_flow_cat=async_gpu`。 |
 | `--use_input_shape` | 可选 | 开启算子精准匹配，默认关闭。使用示例：`--use_input_shape`。 |
 | `--max_kernel_num` | 可选 | 设置CPU侧算子下发的最大kernel数量，当超过设定值时工具会自动往下找子算子，直至满足条件。默认仅比对最上层算子，粒度较粗；若想要更细粒度的算子比对，可设置该参数，参数值需大于3，最小可配置为4，参数值设置越小，比对粒度越细。使用示例：`--max_kernel_num=10`。 |
 | `--op_name_map` | 可选 | 设置GPU与NPU等价的算子名称的映射关系，以字典形式存入。使用示例：`--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`。 |
@@ -355,7 +355,7 @@ python performance_compare.py ./benchmark_profiling_path ./profiling_path --outp
 
 一般情况下compare功能按照默认配置的算子进行比对，若用户需要对特定算子的性能进行比对和分析，可以通过在[compare_config.ini](../../../msprof_analyze/compare_tools/compare_backend/compare_config/compare_config.ini)文件中配置需要比对的算子名的识别关键词，之后再执行比对操作（msprof-analyze compare），比对结果在结果文件performance_comparison_result_{timestamp}.xlsx中呈现。
 
-配置算子名的识别关键词为算子名称中的一部分，代表只要算子名称中包含该关键词，那么该算子会进行比对。
+配置算子名的识别关键词为算子名称中的一部分，表示只要算子名称中包含该关键词，那么该算子会进行比对。
 
 配置格式如下，算子名识别关键词之间用逗号隔开且名称为英文全小写：
 
@@ -542,7 +542,7 @@ ModuleCompare字段说明：
 
 可通过以下方式找出性能劣化点：
 
-1. 查看ModuleCompareStatistic页，找出耗时差距TOP的模块。筛选`Operator Name`字段为`[ TOTAL ]`，将模块总体情况按照`Device Self Time(ms)`字段逆序，可识别出耗时差距TOP的模块。恢复数据，可按照`Order Id`字段升序。
+1. 查看ModuleCompareStatistic页，找出耗时差距TOP的模块。筛选`Operator Name`字段为`[ TOTAL ]`，将模块总体情况按照`Device Self Time(ms)`字段逆序，可识别出耗时差距TOP的模块。恢复数据的默认排序，可按照`Order Id`字段升序。
 2. 查看ModuleCompare页，查找耗时差距TOP模块下的劣化算子。
 3. 通过调用栈找到对应的代码行。
 
