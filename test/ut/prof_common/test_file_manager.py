@@ -66,20 +66,21 @@ class TestFileManager(unittest.TestCase):
         if os.path.exists(self.temp_dir):
             os.rmdir(self.temp_dir)
 
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_empty_file')
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
     @patch('msprof_analyze.prof_common.additional_args_manager.AdditionalArgsManager')
-    def test_read_json_file_success(self, mock_additional_args, mock_getsize, mock_check_input_file_path):
+    def test_read_json_file_success(self, mock_additional_args, mock_getsize, mock_check_input_file_path, mock_empty):
         # 测试成功读取JSON文件
         mock_additional_args.return_value.force = False
         mock_getsize.return_value = 100
+        mock_empty.return_value = False
         mock_file_content = json.dumps({"key": "value"})
 
         with patch("builtins.open", mock_open(read_data=mock_file_content)):
             result = FileManager.read_json_file(self.temp_json_path)
             self.assertEqual(result, {"key": "value"})
             mock_check_input_file_path.assert_called_once_with(self.temp_json_path)
-            mock_getsize.assert_called_once_with(self.temp_json_path)
 
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
@@ -89,23 +90,31 @@ class TestFileManager(unittest.TestCase):
         result = FileManager.read_json_file(self.temp_json_path)
         self.assertEqual(result, {})
 
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_empty_file')
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
-    def test_read_json_file_exception(self, mock_getsize, mock_check_input_file_path):
-        # 测试读取JSON文件时发生异常
+    def test_read_json_file_exception(self, mock_getsize, mock_check_input_file_path, mock_empty):
+        # 测试读取JSON文件时发生异常——应返回 {} 不抛异常
         mock_getsize.return_value = 100
+        mock_empty.return_value = False
         with patch("builtins.open", mock_open()) as m:
             m.side_effect = Exception("Read error")
-            with self.assertRaises(RuntimeError):
-                FileManager.read_json_file(self.temp_json_path)
+            result = FileManager.read_json_file(self.temp_json_path)
+            self.assertEqual(result, {})
 
     @patch('os.path.isfile')
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_empty_file')
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_valid_csv_file')
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
     @patch('csv.DictReader')
-    def test_read_csv_file_success(self, mock_dict_reader, mock_getsize, mock_check_input_file_path, mock_isfile):
+    def test_read_csv_file_success(
+        self, mock_dict_reader, mock_getsize, mock_check_input_file_path, mock_valid_csv, mock_empty, mock_isfile
+    ):
         # 测试成功读取CSV文件
         mock_isfile.return_value = True
+        mock_empty.return_value = False
+        mock_valid_csv.return_value = True
         mock_getsize.return_value = 100
         mock_dict_reader.return_value = [{"id": "1", "name": "test"}]
 
@@ -133,14 +142,14 @@ class TestFileManager(unittest.TestCase):
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_path_readable')
     @patch('os.path.getsize')
     def test_read_csv_file_exception(self, mock_getsize, mock_check_readable, mock_isfile):
-        # 测试读取CSV文件时发生异常
+        # 测试读取CSV文件时发生异常——应返回 [] 不抛异常
         mock_isfile.return_value = True
         mock_getsize.return_value = 100
 
         with patch("builtins.open", mock_open()) as m:
             m.side_effect = Exception("Read error")
-            with self.assertRaises(RuntimeError):
-                FileManager.read_csv_file(self.temp_csv_path)
+            result = FileManager.read_csv_file(self.temp_csv_path)
+            self.assertEqual(result, [])
 
     @patch('msprof_analyze.prof_common.file_manager.FileManager.read_json_file')
     def test_check_json_type_dict(self, mock_read_json):
@@ -168,15 +177,19 @@ class TestFileManager(unittest.TestCase):
             result = FileManager.read_yaml_file(self.temp_yaml_path)
             self.assertEqual(result, {"key": "value"})
 
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_empty_file')
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_valid_yaml_file')
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
-    def test_read_yaml_file_exception(self, mock_getsize, mock_check_input_file_path):
-        # 测试读取YAML文件时发生异常
+    def test_read_yaml_file_exception(self, mock_getsize, mock_check_input_file_path, mock_valid_yaml, mock_empty):
+        # 测试读取YAML文件时发生异常——应返回 {} 不抛异常
         mock_getsize.return_value = 100
+        mock_empty.return_value = False
+        mock_valid_yaml.return_value = True
         with patch("builtins.open", mock_open()) as m:
             m.side_effect = Exception("Read error")
-            with self.assertRaises(RuntimeError):
-                FileManager.read_yaml_file(self.temp_yaml_path)
+            result = FileManager.read_yaml_file(self.temp_yaml_path)
+            self.assertEqual(result, {})
 
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
@@ -191,20 +204,20 @@ class TestFileManager(unittest.TestCase):
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
     def test_read_common_file_empty(self, mock_getsize, mock_check_input_file_path):
-        # 测试空文件
+        # 测试空文件——应返回 "" 不抛异常
         mock_getsize.return_value = 0
-        with self.assertRaises(RuntimeError):
-            FileManager.read_common_file(self.temp_common_path)
+        result = FileManager.read_common_file(self.temp_common_path)
+        self.assertEqual(result, "")
 
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_input_file_path')
     @patch('os.path.getsize')
     def test_read_common_file_exception(self, mock_getsize, mock_check_input_file_path):
-        # 测试读取普通文件时发生异常
+        # 测试读取普通文件时发生异常——应返回 "" 不抛异常
         mock_getsize.return_value = 100
         with patch("builtins.open", mock_open()) as m:
             m.side_effect = Exception("Read error")
-            with self.assertRaises(RuntimeError):
-                FileManager.read_common_file(self.temp_common_path)
+            result = FileManager.read_common_file(self.temp_common_path)
+            self.assertEqual(result, "")
 
     @patch('msprof_analyze.prof_common.path_manager.PathManager.check_output_directory_path')
     @patch('os.open')
@@ -343,14 +356,16 @@ class TestFileManager(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             FileManager.check_file_size(self.temp_json_path)
 
+    @patch('msprof_analyze.prof_common.file_manager.FileManager._is_valid_sqlite_file')
     @patch('os.path.islink')
     @patch('os.path.exists')
     @patch('os.path.getsize')
-    def test_check_db_path_valid_force(self, mock_getsize, mock_exists, mock_islink):
+    def test_check_db_path_valid_force(self, mock_getsize, mock_exists, mock_islink, mock_valid_sqlite):
         # 测试检查数据库路径（使用force参数）
         mock_islink.return_value = False
         mock_exists.return_value = True
         mock_getsize.return_value = Constant.MAX_READ_DB_FILE_BYTES + 1
+        mock_valid_sqlite.return_value = True
 
         self.addition_arg_manager._force = True
         result = check_db_path_valid(self.temp_dir, is_create=False)

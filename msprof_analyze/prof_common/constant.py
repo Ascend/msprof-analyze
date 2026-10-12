@@ -116,6 +116,10 @@ class Constant:
     # file suffix
     JSON_SUFFIX = ".json"
     CSV_SUFFIX = ".csv"
+    YAML_SUFFIX = ".yaml"
+    YML_SUFFIX = ".yml"
+    DB_SUFFIX = ".db"
+    SQLITE_SUFFIX = ".sqlite"
 
     # result files type
     TEXT = "text"
