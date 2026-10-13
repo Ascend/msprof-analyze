@@ -84,15 +84,6 @@ msprof-analyze
 
 ## 🤝 致谢
 
-本工具由华为公司的下列部门联合贡献：
+本工具由华为技术有限公司与开发者联合贡献。
 
-- 昇腾计算 MindStudio 开发部
-- 华为云昇腾云服务
-- 昇腾计算生态使能部
-- 2012 网络实验室
-
-感谢来自社区的每一个 PR，欢迎贡献 `msprof-analyze`。
-
-## 关于MindStudio团队
-
-华为 MindStudio 全流程开发工具链团队致力于提供端到端的昇腾 AI 应用开发解决方案，使能开发者高效完成训练开发、推理开发和算子开发。更多信息请访问 [昇腾社区](https://www.hiascend.com/developer/software/mindstudio) 和 [昇腾论坛](https://www.hiascend.com/forum/)。
+感谢来自社区的每一个PR，欢迎贡献！
