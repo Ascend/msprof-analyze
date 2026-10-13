@@ -12,7 +12,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
 
 **环境准备**
 
-- 硬件环境请参见《[昇腾产品形态说明](https://www.hiascend.com/document/detail/zh/AscendFAQ/ProduTech/productform/hardwaredesc_0001.html)》。
+- 硬件环境请参见《[昇腾产品形态说明](https://www.hiascend.com/document/detail/zh/Glossary/productform/hardwaredesc_0001.html)》。
 
 - 软件环境请参见[CANN快速安装](https://www.hiascend.com/zh/cann/download)安装配套版本的CANN Toolkit开发套件包和ops算子包并配置CANN环境变量。
 
