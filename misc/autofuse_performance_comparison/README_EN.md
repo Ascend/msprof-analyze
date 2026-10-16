@@ -19,7 +19,7 @@ Only the TensorFlow framework is supported.
 - Run the build script:
 
     ```shell
-    git clone https://gitcode.com/Ascend/msprof-analyze -b master
+    git clone https://gitcode.com/Ascend/msprof-analyze -b 26.2.0
     cd msprof-analyze
     # Install dependencies
     pip install -r requirements.txt
@@ -121,7 +121,7 @@ The output results of GE automatic fusion performance comparison are presented i
 | Duration(us) | Execution duration of the fused operator (μs) |
 | Duration Diff Ratio | Ratio of the execution duration of the fused operator to the total execution duration of the original operators, in percentage |
 
-For details about other table columns, see the field descriptions when `aic_metrics` is set to `PipeUtilization` in the [op_summary](https://gitcode.com/Ascend/msprof/blob/master/docs/en/user_guide/profile_data_file_references.md#op_summary-operator-details).
+For details about other table columns, see the field descriptions when `aic_metrics` is set to `PipeUtilization` in the [op_summary](https://gitcode.com/Ascend/msprof/blob/26.2.0/docs/en/user_guide/profile_data_file_references.md#op_summary-operator-details).
 
 **Output Analysis**
 

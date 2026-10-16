@@ -12,15 +12,15 @@ Idle time cause analysis (`free_analysis`) provides automated analysis of signif
 
 **Environment Setup**
 
-Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](../install_guide/msprof-analyze_install_guide.md).
+Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installation Guide](../install_guide/msprof-analyze_install_guide.md).
 
 **Data Preparation**
 
-`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Preparations](./README.md#2-preparations).
+`msprof-analyze` requires an input directory containing the collected profile data. For instructions on how to collect such data, see [Data Preparation](./README.md#2-preparations).
 
-## 3. Function
+## 3. Idle Time Cause Analysis
 
-**Description**
+**Function**
 
 Analyzes the collected cluster data by using the `free_analysis` feature of the `msprof-analyze` tool to identify the longest idle period and its root cause in each rank.
 
@@ -32,11 +32,11 @@ msprof-analyze -m free_analysis -d <cluster_data> [-o <output_path>] [--export_t
 
 **Command-line Options**
 
-| Option| Required (Yes/No)| Description                                    |
+| Option| Mandatory (Yes/No)| Description                                    |
 | ---- | --------- |----------------------------------------|
-| -m   | Yes     | Specifies the analysis feature. Set it to `free_analysis` to enable idle time cause analysis.        |
-| -d   | Yes     | Specifies the parent directory of the cluster profile data files.                          |
-| -o   | No     | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`.                |
+| -m   | Yes     | Specifies the analysis mode to execute. Set it to `free_analysis` to enable idle time cause analysis.        |
+| -d   | Yes     | Specifies the cluster profile data directory.                          |
+| -o   | No     | Specifies the output directory. The default value is the directory specified by the `-d` option.                |
 | --export_type | No| Specifies the output file type. The value can be `db` (default) or `text`.             |
 | --top_num | No| Specifies the number of top idle periods to output for each rank (sorted by duration). The default value is `10`.|
 
@@ -52,18 +52,18 @@ msprof-analyze -m free_analysis -d ./xxx/cluster_data -o ./xxx/output_path --top
 
 **Output Description**
 
-* When `--export_type` is set to `db`, a `cluster_analysis_output/cluster_analysis.db` file is generated in the output path. The `FreeAnalysis` table is generated within this file.
-* When `--export_type` is set to `text`, the `cluster_analysis_output/FreeAnalysis/free_analysis.csv` file is generated in the output directory.
+* When `--export_type` is set to `db`, a `cluster_analysis.db` file is generated in the output path specified by the `-o` option. The analysis results are stored in the `FreeAnalysis` table within this database.
+* When `--export_type` is set to `text`, the `cluster_analysis_output/FreeAnalysis/free_analysis.csv` file is generated in the output directory specified by the `-o` option.
 
 For details, see [Output File Description](#4-output-file-description).
 
 ## 4. Output File Description
 
-### 4.1 `FreeAnalysis`
+### 4.1 FreeAnalysis Table
 
 ![Output results](../figures/free_analysis.png)
 
-The following table describes fields in this table.
+Table field description
 
 | Field| Description                                        |
 | ---- |--------------------------------------------|
@@ -75,9 +75,9 @@ The following table describes fields in this table.
 | cannIdleTime(us) | Idle time (`REAL` type) at the CANN layer (μs) (may be `0` or `NULL` when no data exists) |
 | reason | Analysis result (`TEXT` type)                      |
 
-### 4.2 `free_analysis.csv`
+**free_analysis.csv**  
 
-The following table describes fields in this CSV file.
+CSV field description
 
 | Field| Description|
 | ---- | ---- |

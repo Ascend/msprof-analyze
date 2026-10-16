@@ -29,7 +29,7 @@ Exports operator information from collected cluster profile data. This process g
 **Syntax**
 
 ```bash
-msprof-analyze cluster -m export_summary -d <cluster_data> 
+msprof-analyze cluster -m export_summary -d <cluster_data>
 ```
 
 **Command-line Options** 
@@ -46,7 +46,7 @@ For details about more options, see [Command-line Options and Parameters](./READ
 Export cluster operator information.
 
 ```bash
-msprof-analyze cluster -m export_summary -d ./xxx/cluster_data 
+msprof-analyze cluster -m export_summary -d ./xxx/cluster_data
 ```
 
 **Output Description** 

@@ -30,14 +30,14 @@ msprof-analyze -m computational_op_masking [--export_type <export_type>] [--step
 
 **Command-line Options** 
 
-| Option            | Required (Yes/No)| Description                                                    |
-|-------------------|------|--------------------------------------------------------------------------------------|
-| -m                | Yes  | Specifies the analysis feature. Set it to `computational_op_masking` to enable fine-grained breakdown of cluster profile data.         |
-| --export_type     | No   | Specifies the output file format. Currently, only the `db` format is supported.    |
-| --step_id         | No   | Specifies the step ID for which results will be saved. If not specified, results for all steps are output by default.                                                |
-| --parallel_types  | No   | Specifies the extent to which communication operators are overlapped by compute operators across different parallelism modes. For example, "edp,dp;dp;edp" represents [('edp','dp'), ('dp',), ('edp',)].|
-| -d                | Yes  | Specifies the parent directory of the cluster profile data files.                                               |
-| -o                | No   | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`.              |
+| Option | Required (Yes/No) | Description |
+|--------|-------------------|-------------|
+| -m | Yes | Specifies the analysis feature. Set it to `computational_op_masking` to enable fine-grained breakdown of cluster profile data. |
+| --export_type | No | Specifies the output file format. Currently, only the `db` format is supported. |
+| --step_id | No | Specifies the step ID for which results will be saved. If not specified, results for all steps are output by default. |
+| --parallel_types | No | Specifies the extent to which communication operators are overlapped by compute operators across different parallelism modes. For example, "edp,dp;dp;edp" represents [('edp','dp'), ('dp',), ('edp',)]. |
+| -d | Yes | Specifies the parent directory of the cluster profile data files. |
+| -o | No | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
@@ -57,16 +57,16 @@ The `cluster_analysis_output/cluster_analysis.db` file is generated under the di
 
 The following table describes fields in the `ComputationalOperatorMaskingLinearity` table.
 
-| Field                             | Type   | Description                                                    |
-| ------------------------------------- | ------- | -------------------------------------------------------- |
-| stepId                                | INTEGER | Iteration ID                                                |
-| parallelType                          | TEXT    | Operator parallel mode                                          |
-| stepStartTime                         | INTEGER | Step start time                                          |
-| stepEndTime                           | INTEGER | Step end time                                          |
-| totalCommunicationOperatorTime        | INTEGER | Total communication operator duration within a step                                      |
-| timeRatioOfStepCommunicationOperator  | REAL    | Ratio of total communication operator duration to total step duration                    |
-| totalTimeWithoutCommunicationBlackout | INTEGER | Total overlap duration of communication operators by compute operators within a step                  |
-| ratioOfUnmaskedCommunication          | REAL    | Ratio of total overlap duration of communication operators by compute operators to total step duration|
+| Field | Type | Description |
+|-------|------|-------------|
+| stepId | INTEGER | Iteration ID |
+| parallelType | TEXT | Operator parallel mode |
+| stepStartTime | INTEGER | Step start time |
+| stepEndTime | INTEGER | Step end time |
+| totalCommunicationOperatorTime | INTEGER | Total communication operator duration within a step |
+| timeRatioOfStepCommunicationOperator | REAL | Ratio of total communication operator duration to total step duration |
+| totalTimeWithoutCommunicationBlackout | INTEGER | Duration of communication operators not overlapped by compute operators within a step |
+| ratioOfUnmaskedCommunication | REAL | Ratio of the duration of communication operators not overlapped by compute operators to the total step duration |
 
 Time-related fields in the preceding table are in microseconds (μs).
 

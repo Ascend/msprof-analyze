@@ -41,12 +41,14 @@ Install the `msprof-analyze` tool. For details, see the [msprof-analyze Installa
 
 **Data Preparation**
 
-`msprof-analyze` requires an input directory containing the collected profile data files. The input path can be a cluster profile data path or a single-rank profile data path. For details about how to collect profile data, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md) or the [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/en/menu/mindspore_profiler_user_guide.md).
+`msprof-analyze` requires an input directory containing the collected profile data files. The input path can be a cluster profile data path or a single-rank profile data path. For details about how to collect profile data, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md) or the [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/en/menu/mindspore_profiler_user_guide.md).
 
 **Constraints**
 
 - CANN versions earlier than 8.0RC1 support only the analysis of text-format files. CANN 8.0RC1 and later versions support analysis of collected profile data in both `text` and `db` formats.
-- For CCU scenarios on the Ascend 950 products, the `slow rank`, `slow link`, and `communication` analysis features do not provide meaningful results because communication matrix data and communication operator bandwidth data cannot be collected.
+<!-- npu="950" id1 -->
+- For CCU scenarios on the 950PR&950DT products, the `slow rank`, `slow link`, and `communication` analysis features do not provide meaningful results because communication matrix data and communication operator bandwidth data cannot be collected.
+<!-- end id1 -->
 
 ## 4. Feature Introduction (`advisor` Command-line Mode)
 
@@ -126,7 +128,7 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 | `--force` | No | Forces `advisor` to run. When specified, the following checks are skipped: ownership check (allowing execution even if the current user is not the owner of the specified directory or files) and file size check (allowing execution even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB). Specifying this option enables forced execution. If not specified, forced execution is disabled by default. |
 | `-l` `--language` | No | Specifies the language of the analysis results. Valid values: `cn` (Chinese, default) or `en` (English). |
 | `--debug` | No | Enables detailed stack trace information when a tool error occurs. Specifying this option enables debug mode. If not specified, debug mode is disabled by default. |
-| `-h`, `-H` `--help` | No | Displays help information for the subcommands and options of the current command. |
+| `-h` or `--help` | No | Displays help information for the subcommands and options of the current command. |
 
 #### 4.3.3 Environment and Version configuration
 
@@ -224,7 +226,7 @@ The following figure shows an example of **Environment Variable Issues** in the 
 
 ![env\_var.png](../figures/env_var.png)
 
-For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/900/maintenref/envvar/envref_07_0031.html).
+For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html).
 
 The following figures show examples of the **Overall Summary** analysis in a single-rank scenario without a benchmark.
 
@@ -333,7 +335,7 @@ The following figures are some examples.
 
 ![AI\_Core\_Performance\_Analysis](../figures/AI_Core_Performance_analysis.png)
 
-For details about the `torch_npu.npu.set_compile_mode` API shown in the preceding figure, see [`torch_npu.npu.set_compile_mode`](https://gitcode.com/Ascend/op-plugin/blob/master/docs/en/custom_APIs/torch_npu-npu/(beta)torch_npu-npu-set_compile_mode.md). For an AICPU operator replacement example, see [AICPU Operator Replacement Examples](../aicpu_operator_replacement_example.md).
+For details about the `torch_npu.npu.set_compile_mode` API shown in the preceding figure, see [`torch_npu.npu.set_compile_mode`](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/en/custom_APIs/torch_npu-npu/(beta)torch_npu-npu-set_compile_mode.md). For an AICPU operator replacement example, see [AICPU Operator Replacement Examples](../aicpu_operator_replacement_example.md).
 
 When pipeline parallelism (PP) is used, the **computation** module analyzes the issues by stage. Each stage represents a pipeline partition. For example, ranks 0–7 belong to `stage-0`, and ranks 8–15 belong to `stage-1`.
 
@@ -419,7 +421,7 @@ An example of **Synchronize Stream Issues** is shown below. Modify the correspon
 
 ![schedule_2](../figures/schedule_2.png)
 
-For details about the `ASCEND_LAUNCH_BLOCKING` environment variable shown in the preceding figure, see [`ASCEND_LAUNCH_BLOCKING`](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/api/environment_variable/ASCEND_LAUNCH_BLOCKING.md).
+For details about the `ASCEND_LAUNCH_BLOCKING` environment variable shown in the preceding figure, see [`ASCEND_LAUNCH_BLOCKING`](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md).
 
 An example of **Operator Dispatch Issues** is shown below. Add the following code at the beginning of the execution script to eliminate `aclopCompile`:
 
@@ -428,7 +430,7 @@ torch_npu.npu.set_compile_mode(jit_compile=False);
 torch_npu.npu.config.allow_internal_format = False
 ```
 
-For details about the APIs, see [`torch_npu.npu.set_compile_mode`](https://gitcode.com/Ascend/op-plugin/blob/master/docs/en/custom_APIs/torch_npu-npu/(beta)torch_npu-npu-set_compile_mode.md) and [`torch_npu.npu.config.allow_internal_format`](https://gitcode.com/Ascend/op-plugin/blob/master/docs/en/custom_APIs/torch_npu-npu/(beta)torch_npu-npu-config-allow_internal_format.md).
+For details about the APIs, see [`torch_npu.npu.set_compile_mode`](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/en/custom_APIs/torch_npu-npu/(beta)torch_npu-npu-set_compile_mode.md) and [`torch_npu.npu.config.allow_internal_format`](https://gitcode.com/Ascend/op-plugin/blob/26.2.0/docs/en/custom_APIs/torch_npu-npu/(beta)torch_npu-npu-config-allow_internal_format.md).
 
 ![Input image description](../figures/schedule_1.png)
 
@@ -457,7 +459,7 @@ The `pin_memory` (memory locking) and `num_workers` (number of data loading subp
 
 The Jupyter Notebook mode of `advisor` is used to interactively view the profile data analysis process and analysis results in a Notebook.
 
-Before using Jupyter Notebook mode, prepare the profile data collected using Ascend PyTorch Profiler. For details about how to collect profile data, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
+Before using Jupyter Notebook mode, prepare the profile data collected using Ascend PyTorch Profiler. For details about how to collect profile data, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
 
 > Jupyter Notebook mode supplements command-line mode and is not part of the main command-line workflow. Jupyter Notebook mode is not supported for MindSpore scenarios.
 
@@ -474,12 +476,12 @@ pip install jupyter notebook
 **Downloading the `msprof-analyze` Source Code**
 
 ```bash
-git clone https://gitcode.com/Ascend/msprof-analyze -b master
+git clone https://gitcode.com/Ascend/msprof-analyze -b 26.2.0
 ```
 
 **Preparing Profile Data**
 
-`advisor` requires a directory containing the collected profile data. For details about how to collect profile data, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
+`advisor` requires a directory containing the collected profile data. For details about how to collect profile data, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
 
 **Constraints**
 
