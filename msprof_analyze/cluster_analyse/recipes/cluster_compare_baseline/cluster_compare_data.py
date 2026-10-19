@@ -29,6 +29,15 @@ logger = get_logger()
 
 
 class ClusterCompareDataMixin:
+    """
+    数据归类 Mixin。
+
+    注意：本 Mixin 的 _analyze_data_by_step 依赖组合类提供的 step_columns /
+    parallel_types 等属性；用户可见的报告文案由组合类（如
+    ClusterCompareReportMixin）负责输出，本 Mixin 不直接输出用户可见文案，
+    仅记录 debug 日志。
+    """
+
     def _get_step_df(self, data_map):
         if not data_map:
             return pd.DataFrame(), None
@@ -91,6 +100,10 @@ class ClusterCompareDataMixin:
     def _analyze_data_by_step(self, data_map, analysis_class, target_step_id: int = None):
         """
         分析单个数据源，按 step 返回结果
+
+        返回的每个 step 结果包含四阶段归类数据（forward_ret /
+        forward_backward_ret / backward_gradient_ret / backward_optimizer_ret），
+        不再携带全量 communication 数据；调用方如需全量通信数据请自行获取。
         """
         step_df, profiler_db_path = self._get_step_df(data_map)
         step_range = data_map.get(Constant.STEP_RANGE) if data_map else None
@@ -109,7 +122,11 @@ class ClusterCompareDataMixin:
         if communication_df is None or communication_df.empty:
             logger.warning("There is no TABLE_COMMUNICATION_OP data in %s.", profiler_db_path)
             return {}
-        communication_df["group_rank"] = communication_df.sort_values(["startNs"]).groupby("parallelType").cumcount()
+
+        # 循环外一次性按 startNs 排序，循环内用 searchsorted 切分本 step 数据，
+        # 避免每个 step 都对全表做布尔过滤 + sort_values。
+        communication_df = communication_df.sort_values("startNs").reset_index(drop=True)
+        start_ns_arr = communication_df["startNs"].to_numpy()
 
         group_info_df = ParallelGroupInfoExport(profiler_db_path, analysis_class, step_range).read_export_db()
         group_info_df = group_info_df if group_info_df is not None else pd.DataFrame()
@@ -127,64 +144,71 @@ class ClusterCompareDataMixin:
             end_time = step_row["endNs"]
             step_id = step_row["id"]
 
+            if end_time - start_time == 0:
+                continue
+
+            # 先按 startNs 二分定位候选区间，再按 endNs 上界精确过滤本 step 数据
+            left = start_ns_arr.searchsorted(start_time, side="left")
+            right = start_ns_arr.searchsorted(end_time, side="right")
+            candidate = communication_df.iloc[left:right]
+            df = candidate[candidate["endNs"] <= end_time].copy()
+            # communication_df 已按 startNs 有序，切片后仍有序，无需再次排序
+            df = df.reset_index(drop=True)
+
+            if df.empty:
+                continue
+
             analyse_ret = {
                 "start_time": start_time,
                 "end_time": end_time,
                 "max_dp_rank": max_dp_rank,
                 "max_dp_cp_rank": max_dp_cp_rank,
                 "max_ep_dp_rank": max_ep_dp_rank,
-                "communication": communication_df,
                 "forward_ret": pd.DataFrame(),
                 "forward_backward_ret": pd.DataFrame(),
                 "backward_gradient_ret": pd.DataFrame(),
                 "backward_optimizer_ret": pd.DataFrame(),
             }
 
-            if end_time - start_time == 0:
-                continue
+            logger.debug("========== Step %s ==========", step_id)
 
-            df = communication_df[
-                (communication_df["startNs"] >= start_time) & (communication_df["endNs"] <= end_time)
-            ].copy()
-            df = df.sort_values(["startNs"]).reset_index(drop=True)
-            df["group_rank"] = df.groupby("parallelType").cumcount()
-
-            if df.empty:
-                continue
-
-            self._record_text(f"========== Step {step_id} ==========")
-
-            tp_allReduce = df[(df["parallelType"] == "tp") & (df["opType"].str.contains("allReduce"))]
+            tp_allReduce = df[
+                (df["parallelType"] == "tp")
+                & (df["opType"].str.contains("allReduce", na=False, regex=False))
+            ]
             if not tp_allReduce.empty:
                 tp_allReduce_start = tp_allReduce["startNs"].min()
-                self._record_text(f"第一个TP broadcast结束时间: {tp_allReduce_start}")
+                logger.debug("第一个TP broadcast结束时间: %s", tp_allReduce_start)
 
                 result1 = df[
                     (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                    & (df["opType"].str.contains("allGather"))
+                    & (df["opType"].str.contains("allGather", na=False, regex=False))
                     & (df["endNs"] < tp_allReduce_start)
                 ].copy()
 
                 if not result1.empty:
                     analyse_ret["forward_ret"] = result1
-                    self._record_text(f"需求1结果: {len(result1)} 个")
-                else:
-                    self._record_text(f"需求1结果: {len(result1)} 个")
+                logger.debug("需求1结果: %s 个", len(result1))
             else:
-                self._record_text("需求1: 没有找到TP broadcast")
+                logger.debug("需求1: 没有找到TP broadcast")
 
-            tp_reference_end = -1
+            tp_reference_end = None
             tp_allreduce = df[
-                (df["parallelType"] == "tp") & (df["count"] > 100) & (df["opType"].str.contains("allReduce", na=False))
+                (df["parallelType"] == "tp")
+                & (df["count"] > 100)
+                & (df["opType"].str.contains("allReduce", na=False, regex=False))
             ]
-            last_allreduce_idx = tp_allreduce.index[-1] if not tp_allreduce.empty else -1
+            last_allreduce_idx = tp_allreduce.index[-1] if not tp_allreduce.empty else None
 
-            if last_allreduce_idx != -1:
+            if last_allreduce_idx is not None:
                 prev_data = df.loc[: last_allreduce_idx - 1]
                 tp_non_allreduce = prev_data[
-                    (prev_data["parallelType"] == "tp") & (~prev_data["opType"].str.contains("allReduce", na=False))
+                    (prev_data["parallelType"] == "tp")
+                    & (~prev_data["opType"].str.contains("allReduce", na=False, regex=False))
                 ]
-                # 确定参考时间
+                # 若最后一个大 allReduce 之前没有非 allReduce 算子，
+                # 退化为取该 allReduce 自身 startNs 作为参考边界。
+                # 注意：与 PR 描述"前一个算子的 start 时间"口径存在差异，保留原行为。
                 tp_reference_end = (
                     tp_non_allreduce.iloc[-1]["startNs"]
                     if not tp_non_allreduce.empty
@@ -192,7 +216,7 @@ class ClusterCompareDataMixin:
                 )
                 dp_ep_reduce_scatter = df[
                     (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                    & (df["opType"].str.contains("reduceScatter"))
+                    & (df["opType"].str.contains("reduceScatter", na=False, regex=False))
                     & (df["startNs"] > tp_reference_end)
                     & (df["endNs"] < end_time)
                 ].copy()
@@ -200,29 +224,31 @@ class ClusterCompareDataMixin:
                 if not dp_ep_reduce_scatter.empty:
                     dp_ep_reduce_scatter = dp_ep_reduce_scatter.sort_values("startNs")
                     first_start = dp_ep_reduce_scatter.iloc[0]["startNs"]
-                    self._record_text(f"第一个符合条件的reduce_scatter开始时间: {first_start}")
+                    logger.debug("第一个符合条件的reduce_scatter开始时间: %s", first_start)
 
+                    # 补齐 endNs < end_time 上界，与 result1/2/4 口径一致，避免跨 step 边界计数
                     result3 = df[
                         (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                        & (df["opType"].str.contains("reduceScatter"))
+                        & (df["opType"].str.contains("reduceScatter", na=False, regex=False))
                         & (df["startNs"] >= first_start)
+                        & (df["endNs"] < end_time)
                     ].copy()
 
                     if not result3.empty:
                         analyse_ret["backward_gradient_ret"] = result3
-                        self._record_text(f"需求3结果: {len(result3)} 个")
-                    else:
-                        self._record_text(f"需求3结果: {len(result3)} 个")
+                    logger.debug("需求3结果: %s 个", len(result3))
                 else:
-                    self._record_text("需求3: 没有找到TP结束后仍在通信的reduce_scatter")
+                    logger.debug("需求3: 没有找到TP结束后仍在通信的reduce_scatter")
             else:
-                self._record_text("TP域没有找到allReduce算子")
+                logger.debug("TP域没有找到allReduce算子")
 
-            if tp_reference_end != -1:
+            if tp_reference_end is not None:
                 result4 = df[
                     (
-                        ((df["parallelType"].isin(["dp_cp", "ep_dp"])) & (df["opType"].str.contains("allGather")))
-                        | ((df["parallelType"] == "dp") & (df["opType"].str.contains("allReduce")))
+                        ((df["parallelType"].isin(["dp_cp", "ep_dp"]))
+                         & (df["opType"].str.contains("allGather", na=False, regex=False)))
+                        | ((df["parallelType"] == "dp")
+                           & (df["opType"].str.contains("allReduce", na=False, regex=False)))
                     )
                     & (df["startNs"] > tp_reference_end)
                     & (df["endNs"] < end_time)
@@ -230,43 +256,34 @@ class ClusterCompareDataMixin:
 
                 if not result4.empty:
                     analyse_ret["backward_optimizer_ret"] = result4
-                    self._record_text(f"需求4结果: {len(result4)} 个")
-                else:
-                    self._record_text(f"需求4结果: {len(result4)} 个")
+                logger.debug("需求4结果: %s 个", len(result4))
             else:
-                self._record_text("需求4: 没有找到TP域对应的allReduce算子事件")
+                logger.debug("需求4: 没有找到TP域对应的allReduce算子事件")
 
             if not result1.empty:
                 forward_end = result1["endNs"].max()
-
-                backward_starts = []
-                if not result3.empty:
-                    backward_starts.append(result3["startNs"].min())
-                if not result4.empty:
-                    backward_starts.append(result4["startNs"].min())
-
-                if tp_reference_end != -1:
-                    self._record_text(f"需求2区间: Forward结束={forward_end}, Backward开始={tp_reference_end}")
+                if tp_reference_end is not None:
+                    logger.debug("需求2区间: Forward结束=%s, Backward开始=%s", forward_end, tp_reference_end)
 
                     result2 = df[
                         (
                             (
                                 (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                                & (df["opType"].str.contains("allGather|reduceScatter"))
+                                & (df["opType"].str.contains(
+                                    "allGather|reduceScatter", na=False, regex=False))
                             )
-                            | ((df["parallelType"] == "dp") & (df["opType"].str.contains("allReduce")))
+                            | ((df["parallelType"] == "dp")
+                               & (df["opType"].str.contains("allReduce", na=False, regex=False)))
                         )
                         & ((df["startNs"] > forward_end) & (df["endNs"] < tp_reference_end))
                     ].copy()
 
                     if not result2.empty:
                         analyse_ret["forward_backward_ret"] = result2
-                        self._record_text(f"需求2结果: {len(result2)} 个")
-                    else:
-                        self._record_text(f"需求2结果: {len(result2)} 个")
+                    logger.debug("需求2结果: %s 个", len(result2))
                 else:
-                    self._record_text("需求2: 没有找到TP域对应的allReduce算子事件")
+                    logger.debug("需求2: 没有找到TP域对应的allReduce算子事件")
             else:
-                self._record_text("需求2: 无法确定Forward结束边界，因为需求1结果为空")
+                logger.debug("需求2: 无法确定Forward结束边界，因为需求1结果为空")
             dict_ret[step_id] = analyse_ret
         return dict_ret
