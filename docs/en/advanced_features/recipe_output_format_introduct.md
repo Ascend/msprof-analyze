@@ -70,7 +70,7 @@ Open the JSON file using VS Code or a JSON viewer and search for `Total`. There 
 **Tips**: You can identify slow link issues based on the rank interconnection bandwidth and the link type.
 
 - `LOCAL`: represents on-chip copy, which provides the highest speed.
-- `HCCS` or `PCIE`: represents intra-node inter-chip copy, which provides medium speed.
+- `HCCS` or `PCIe`: represents intra-node inter-chip copy, which provides medium speed.
 - `RDMA`: represents inter-node copy, which provides the lowest speed.
 
 ## 3. `cluster_communication.json`
@@ -90,19 +90,19 @@ Provides statistical analysis of computation duration for all ranks, grouped by 
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| OpType   | TEXT    | Computation operator type                          |
-| TaskType | TEXT    | Accelerator type for operator execution                   |
-| Count    | INTEGER | Number of operators grouped by `OpType` and `TaskType`|
-| MeanNs   | REAL    | Average duration                          |
-| StdNs    | REAL    | Standard deviation of the duration                          |
-| MinNs    | REAL    | Minimum duration                          |
-| Q1Ns     | REAL    | 25th percentile of duration                       |
-| MedianNs | REAL    | 50th percentile of duration                       |
-| Q3Ns     | REAL    | 75th percentile of duration                       |
-| MaxNs    | REAL    | Maximum duration                          |
-| SumNs    | REAL    | Total duration                            |
+| Field | Type | Description |
+|-------|------|-------------|
+| OpType | TEXT | Computation operator type |
+| TaskType | TEXT | Accelerator type for operator execution |
+| Count | INTEGER | Number of operators grouped by `OpType` and `TaskType` |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
 
 ### 4.2 `ComputeOpPerRankStatsByOpType`
 
@@ -112,19 +112,19 @@ Provides statistical analysis of computation duration for each rank, grouped by 
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| OpType   | TEXT    | Computation operator type                          |
-| TaskType | TEXT    | Accelerator type for operator execution                   |
-| Count    | INTEGER | Number of operators grouped by `OpType` and `TaskType`|
-| MeanNs   | REAL    | Average duration                          |
-| StdNs    | REAL    | Standard deviation of the duration                          |
-| MinNs    | REAL    | Minimum duration                          |
-| Q1Ns     | REAL    | 25th percentile of duration                       |
-| MedianNs | REAL    | 50th percentile of duration                       |
-| Q3Ns     | REAL    | 75th percentile of duration                       |
-| MaxNs    | REAL    | Maximum duration                          |
-| SumNs    | REAL    | Total duration                            |
+| Field | Type | Description |
+|-------|------|-------------|
+| OpType | TEXT | Computation operator type |
+| TaskType | TEXT | Accelerator type for operator execution |
+| Count | INTEGER | Number of operators grouped by `OpType` and `TaskType` |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
 | Rank     | INTEGER | Rank ID                              |
 
 ### 4.3 `ComputeOpPerRankStatsByOpName`
@@ -136,22 +136,22 @@ It provides a statistical analysis of computation duration for each rank, groupe
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| OpName      | TEXT    | Computation operator name                          |
-| OpType      | TEXT    | Computation operator type                          |
-| TaskType    | TEXT    | Accelerator type for operator execution                   |
-| InputShapes | TEXT    | Input shape of the operator                        |
-| Count       | INTEGER | Number of operators in this group                    |
-| MeanNs      | REAL    | Average duration                          |
-| StdNs       | REAL    | Standard deviation of the duration                          |
-| MinNs       | REAL    | Minimum duration                          |
-| Q1Ns        | REAL    | 25th percentile of duration                       |
-| MedianNs    | REAL    | 50th percentile of duration                       |
-| Q3Ns        | REAL    | 75th percentile of duration                       |
-| MaxNs       | REAL    | Maximum duration                          |
-| SumNs       | REAL    | Total duration                            |
-| Rank        | INTEGER | Rank ID                              |
+| Field | Type | Description |
+|-------|------|-------------|
+| OpName | TEXT | Computation operator name |
+| OpType | TEXT | Computation operator type |
+| TaskType | TEXT | Accelerator type for operator execution |
+| InputShapes | TEXT | Input shape of the operator |
+| Count | INTEGER | Number of operators in this group |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
+| Rank | INTEGER | Rank ID |
 
 ## 5. `cann_api_sum`
 
@@ -165,21 +165,21 @@ Provides statistical analysis of the duration of each unique API across all rank
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| name           | TEXT    | API name                          |
-| timeRatio      | REAL    | Percentage of the duration of the API relative to the total duration of all APIs|
-| totalTimeNs    | INTEGER | Total duration of the API                   |
-| totalCount     | INTEGER | Number of APIs                     |
-| averageNs      | REAL    | Average duration                      |
-| Q1Ns           | REAL    | 25th percentile of duration                   |
-| medNs          | REAL    | 50th percentile of duration                   |
-| Q3Ns           | REAL    | 75th percentile of duration                   |
-| minNs          | REAL    | Minimum duration                      |
-| maxNs          | REAL    | Maximum duration                      | 
-| stdev          | REAL    | Standard deviation of the duration                      |
-| minRank        | TEXT    | A set of ranks corresponding to `minNs`             |
-| maxRank        | TEXT    | A set of ranks corresponding to `maxNs`             |
+| Field | Type | Description |
+|-------|------|-------------|
+| name | TEXT | API name |
+| timeRatio | REAL | Percentage of the duration of the API relative to the total duration of all APIs |
+| totalTimeNs | INTEGER | Total duration of the API |
+| totalCount | INTEGER | Number of APIs |
+| averageNs | REAL | Average duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| medNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| minNs | REAL | Minimum duration |
+| maxNs | REAL | Maximum duration |
+| stdev | REAL | Standard deviation of the duration |
+| minRank | TEXT | A set of ranks corresponding to `minNs` |
+| maxRank | TEXT | A set of ranks corresponding to `maxNs` |
 
 ### 5.2 `CannApiSumRank`
 
@@ -189,20 +189,20 @@ Provides statistical analysis of the duration of each unique API on each rank. T
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| name          | TEXT    | API name           |
-| durationRatio | REAL    | Percentage of the duration of the API relative to the total duration of all APIs on the rank|
-| totalTimeNs   | INTEGER | Total duration of the API       |
-| totalCount    | INTEGER | Number of APIs         |
-| averageNs     | REAL    | Average duration      |
-| minNs         | REAL    | Minimum duration      |
-| Q1Ns          | REAL    | 25th percentile of duration   |
-| medNs         | REAL    | 50th percentile of duration   |
-| Q3Ns          | REAL    | 75th percentile of duration   |
-| maxNs         | REAL    | Maximum duration      |
-| stdev         | REAL    | Standard deviation of the duration      |
-| rank          | INTEGER | Rank ID          |
+| Field | Type | Description |
+|-------|------|-------------|
+| name | TEXT | API name |
+| durationRatio | REAL | Percentage of the duration of the API relative to the total duration of all APIs on the rank |
+| totalTimeNs | INTEGER | Total duration of the API |
+| totalCount | INTEGER | Number of APIs |
+| averageNs | REAL | Average duration |
+| minNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| medNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| maxNs | REAL | Maximum duration |
+| stdev | REAL | Standard deviation of the duration |
+| rank | INTEGER | Rank ID |
 
 ## 6. `hccl_sum`
 
@@ -216,18 +216,18 @@ Provides statistical analysis of the duration of each communication operator typ
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| OpType   | TEXT    | Communication operator type   |
-| Count    | INTEGER | Count          |
-| MeanNs   | REAL    | Average duration   |
-| StdNs    | REAL    | Standard deviation of the duration   |
-| MinNs    | REAL    | Minimum duration   |
-| Q1Ns     | REAL    | 25th percentile of duration|
-| MedianNs | REAL    | 50th percentile of duration|
-| Q3Ns     | REAL    | 75th percentile of duration|
-| MaxNs    | REAL    | Maximum duration   | 
-| SumNs    | REAL    | Total duration     |
+| Field | Type | Description |
+|-------|------|-------------|
+| OpType | TEXT | Communication operator type |
+| Count | INTEGER | Count |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
 
 ### 6.2 `HcclPerRankStats`
 
@@ -237,18 +237,18 @@ Provides statistical analysis of the duration of each communication operator typ
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| OpType   | TEXT    | Communication operator type   |
-| Count    | INTEGER | Count          |
-| MeanNs   | REAL    | Average duration   |
-| StdNs    | REAL    | Standard deviation of the duration   |
-| MinNs    | REAL    | Minimum duration   |
-| Q1Ns     | REAL    | 25th percentile of duration|
-| MedianNs | REAL    | 50th percentile of duration|
-| Q3Ns     | REAL    | 75th percentile of duration|
-| MaxNs    | REAL    | Maximum duration   | 
-| SumNs    | REAL    | Total duration     |
+| Field | Type | Description |
+|-------|------|-------------|
+| OpType | TEXT | Communication operator type |
+| Count | INTEGER | Count |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
 | Rank     | INTEGER | Rank ID       |
 
 ### 6.3 `HcclGroupNameMap`
@@ -259,11 +259,11 @@ Provides a mapping of ranks contained within each communication group.
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| GroupName | TEXT | Communication group, such as `{ip_address}%enp67s0f5_60000_0_1708156014257149`|
-| GroupId   | TEXT | Last three digits of the hash value of the communication group|
-| Ranks     | TEXT | All ranks within the communication group|
+| Field | Type | Description |
+|-------|------|-------------|
+| GroupName | TEXT | Communication group, such as `{ip_address}%enp67s0f5_60000_0_1708156014257149` |
+| GroupId | TEXT | Last three digits of the hash value of the communication group |
+| Ranks | TEXT | All ranks within the communication group |
 
 ### 6.4 `HcclTopOpStats`
 
@@ -273,20 +273,20 @@ Provides an analysis of the computation duration for all communication operators
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| OpName   | TEXT    | Communication operator name, such as `hcom_allReduce__606_0_1`|
-| Count    | INTEGER | Count          |
-| MeanNs   | REAL    | Average duration   |
-| StdNs    | REAL    | Standard deviation of the duration   |
-| MinNs    | REAL    | Minimum duration   |
-| Q1Ns     | REAL    | 25th percentile of duration|
-| MedianNs | REAL    | 50th percentile of duration|
-| Q3Ns     | REAL    | 75th percentile of duration|
-| MaxNs    | REAL    | Maximum duration   | 
-| SumNs    | REAL    | Total duration     |
-| MinRank  | INTEGER | Rank with the minimum duration for the communication operator|
-| MaxRank  | INTEGER | Rank with the maximum duration for the communication operator|
+| Field | Type | Description |
+|-------|------|-------------|
+| OpName | TEXT | Communication operator name, such as `hcom_allReduce__606_0_1` |
+| Count | INTEGER | Count |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
+| MinRank | INTEGER | Rank with the minimum duration for the communication operator |
+| MaxRank | INTEGER | Rank with the maximum duration for the communication operator |
 
 ## 7. `mstx_sum`
 
@@ -300,19 +300,19 @@ Provides statistical analysis of the framework-side duration of MSTX instrumenta
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| Name     | TEXT    | Information carried by the MSTX instrumentation data|
-| Count    | INTEGER | Number of instrumentation events grouped by `Name` within the iteration|
-| MeanNs   | REAL    | Average duration|
-| StdNs    | REAL    | Standard deviation of the duration|
-| MinNs    | REAL    | Minimum duration|
-| Q1Ns     | REAL    | 25th percentile of duration|
-| MedianNs | REAL    | 50th percentile of duration|
-| Q3Ns     | REAL    | 75th percentile of duration|
-| MaxNs    | REAL    | Maximum duration|
-| SumNs    | REAL    | Total duration|
-| StepId   | INTEGER | Iteration ID|
+| Field | Type | Description |
+|-------|------|-------------|
+| Name | TEXT | Information carried by the MSTX instrumentation data |
+| Count | INTEGER | Number of instrumentation events grouped by `Name` within the iteration |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
+| StepId | INTEGER | Iteration ID |
 
 ### 7.2 `MSTXAllCannStats`
 
@@ -322,19 +322,19 @@ Provides statistical analysis of the CANN-layer duration of MSTX instrumentation
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| Name     | TEXT    | Information carried by the MSTX instrumentation data|
-| Count    | INTEGER | Number of instrumentation events grouped by `Name` within the iteration|
-| MeanNs   | REAL    | Average duration|
-| StdNs    | REAL    | Standard deviation of the duration|
-| MinNs    | REAL    | Minimum duration|
-| Q1Ns     | REAL    | 25th percentile of duration|
-| MedianNs | REAL    | 50th percentile of duration|
-| Q3Ns     | REAL    | 75th percentile of duration|
-| MaxNs    | REAL    | Maximum duration|
-| SumNs    | REAL    | Total duration|
-| StepId   | INTEGER | Iteration ID|
+| Field | Type | Description |
+|-------|------|-------------|
+| Name | TEXT | Information carried by the MSTX instrumentation data |
+| Count | INTEGER | Number of instrumentation events grouped by `Name` within the iteration |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
+| StepId | INTEGER | Iteration ID |
 
 ### 7.3 `MSTXAllDeviceStats`
 
@@ -344,19 +344,19 @@ Provides statistical analysis of the device-side duration of MSTX instrumentatio
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| Name     | TEXT    | Information carried by the MSTX instrumentation data|
-| Count    | INTEGER | Number of instrumentation events grouped by `Name` within the iteration|
-| MeanNs   | REAL    | Average duration|
-| StdNs    | REAL    | Standard deviation of the duration|
-| MinNs    | REAL    | Minimum duration|
-| Q1Ns     | REAL    | 25th percentile of duration|
-| MedianNs | REAL    | 50th percentile of duration|
-| Q3Ns     | REAL    | 75th percentile of duration|
-| MaxNs    | REAL    | Maximum duration|
-| SumNs    | REAL    | Total duration|
-| StepId   | INTEGER | Iteration ID|
+| Field | Type | Description |
+|-------|------|-------------|
+| Name | TEXT | Information carried by the MSTX instrumentation data |
+| Count | INTEGER | Number of instrumentation events grouped by `Name` within the iteration |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
+| StepId | INTEGER | Iteration ID |
 
 ### 7.4 `MSTXMarkStats`
 
@@ -366,14 +366,14 @@ Provides statistical analysis of the duration of MSTX instrumentation for each r
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| Name                | TEXT    | Information carried by the MSTX instrumentation data|
-| FrameworkDurationNs | REAL    | Framework-side duration|
-| CannDurationNs      | REAL    | CANN layer duration|
-| DeviceDurationNs    | REAL    | Device-side duration|
-| Rank                | INTEGER | global rank |
-| StepId              | INTEGER | Iteration ID|
+| Field | Type | Description |
+|-------|------|-------------|
+| Name | TEXT | Information carried by the MSTX instrumentation data |
+| FrameworkDurationNs | REAL | Framework-side duration |
+| CannDurationNs | REAL | CANN layer duration |
+| DeviceDurationNs | REAL | Device-side duration |
+| Rank | INTEGER | global rank |
+| StepId | INTEGER | Iteration ID |
 
 ## 8. `communication_group_map`
 
@@ -387,13 +387,13 @@ Provides the mapping between communication groups and parallel strategies based 
 
 Table fields
 
-| Field| Type| Description                                                               |
-| ------ | ---- |-------------------------------------------------------------------|
-| type       | TEXT | Operator type (`collective` or `p2p`). Operators with names containing `send`, `recv`, or `receive` are classified as `p2p`.  |
-| rank_set   | TEXT | A set of ranks (global ranks) within the communication group.                                         |
-| group_name | TEXT | Hash value of the communication group, which maps to `group_id`.                                           |
-| group_id   | TEXT | Communication group name defined within HCCL, such as `{ip_address}%enp67s0f5_60000_0_1708156014257149`|
-| pg_name    | TEXT | Service-defined communication group name (such as `dp`, `dp_cp`, and `mp`).                                |
+| Field | Type | Description |
+|-------|------|-------------|
+| type | TEXT | Operator type (`collective` or `p2p`). Operators with names containing `send`, `recv`, or `receive` are classified as `p2p`. |
+| rank_set | TEXT | A set of ranks (global ranks) within the communication group. |
+| group_name | TEXT | Hash value of the communication group, which maps to `group_id`. |
+| group_id | TEXT | Communication group name defined within HCCL, such as `{ip_address}%enp67s0f5_60000_0_1708156014257149` |
+| pg_name | TEXT | Service-defined communication group name (such as `dp`, `dp_cp`, and `mp`). |
 
 ## 9. `cluster_time_summary`
 
@@ -408,22 +408,23 @@ Description:
 Provides statistical analysis of cluster duration for all ranks to facilitate performance issue identification. This analysis is based on cluster profile data in `db` format.
 
 Table fields (time unit: μs)
+**The time unit in the following table is μs.**
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| rank           | INTEGER | global rank |
-| step           | INTEGER | Iteration ID|
-| stepTime       | REAL    | Total iteration duration|
-| computation    | REAL    | Total computation duration|
-| communicationNotOverlapComputation       | REAL | Communication duration not overlapped by computation|
-| communicationOverlapComputation          | REAL | Duration of the overlap between computation and communication|
-| communication  | REAL    | Total communication duration|
-| free           | REAL    | Idle time (total duration when the device is neither communicating nor computing, excluding asynchronous memory copy)|
-| communicationWaitStageTime               | REAL | Total communication wait duration|
-| communicationTransmitStageTime           | REAL | Total communication transmission duration|
-| memory         | REAL    | Total asynchronous memory copy duration|
-| memoryNotOverlapComputationCommunication | REAL | Total duration of asynchronous memory copy not overlapped by computation or communication| 
-| taskLaunchDelayAvgTime                   | REAL | Delivery duration (average duration from the start of the host-side API to the start of the device-side task)|
+| Field | Type | Description |
+|-------|------|-------------|
+| rank | INTEGER | global rank |
+| step | INTEGER | Iteration ID |
+| stepTime | REAL | Total iteration duration |
+| computation | REAL | Total computation duration |
+| communicationNotOverlapComputation | REAL | Communication duration not overlapped by computation |
+| communicationOverlapComputation | REAL | Duration of the overlap between computation and communication |
+| communication | REAL | Total communication duration |
+| free | REAL | Idle time (total duration when the device is neither communicating nor computing, excluding asynchronous memory copy) |
+| communicationWaitStageTime | REAL | Total communication wait duration |
+| communicationTransmitStageTime | REAL | Total communication transmission duration |
+| memory | REAL | Total asynchronous memory copy duration |
+| memoryNotOverlapComputationCommunication | REAL | Total duration of asynchronous memory copy not overlapped by computation or communication |
+| taskLaunchDelayAvgTime | REAL | Delivery duration (average duration from the start of the host-side API to the start of the device-side task) |
 
 ## 10. `cluster_time_compare_summary`
 
@@ -436,18 +437,19 @@ Note: This analysis feature requires the `cluster_time_summary` results. Both cl
 Description: Provides a comparison between the current cluster and the benchmark cluster. For example, `computationDiff` indicates the difference in computation time between the current cluster and the benchmark cluster. A positive `computationDiff` value indicates the current cluster computation time exceeds that of the benchmark cluster, while a negative value indicates the opposite.
 
 Table fields (time unit: μs)
+**The time unit in the following table is μs.**
 
-| Field         | Type| Description|
-|--------------| ---- | ---- |
-| rank         | INTEGER | global rank |
-| step         | INTEGER | Iteration ID|
-| stepTime     | REAL    | Iteration duration for current cluster data|
-| stepTimeBase | REAL    | Iteration duration for benchmark cluster data|
-| stepTimeDiff | REAL    | Difference in iteration duration|
-|......|-|Some fields omitted (for the `ClusterTimeSummary` table, current cluster data, benchmark cluster data, and the difference between the two are displayed)|
-| taskLaunchDelayAvgTime     | REAL | Delivery duration for current cluster data|
-| taskLaunchDelayAvgTimeBase   | REAL | Delivery duration for benchmark cluster data|
-| taskLaunchDelayAvgTimeDiff | REAL | Difference in delivery duration|
+| Field | Type | Description |
+|-------|------|-------------|
+| rank | INTEGER | global rank |
+| step | INTEGER | Iteration ID |
+| stepTime | REAL | Iteration duration for current cluster data |
+| stepTimeBase | REAL | Iteration duration for benchmark cluster data |
+| stepTimeDiff | REAL | Difference in iteration duration |
+| ...... | - | Some fields omitted (for the `ClusterTimeSummary` table, current cluster data, benchmark cluster data, and the difference between the two are displayed) |
+| taskLaunchDelayAvgTime | REAL | Delivery duration for current cluster data |
+| taskLaunchDelayAvgTimeBase | REAL | Delivery duration for benchmark cluster data |
+| taskLaunchDelayAvgTimeDiff | REAL | Difference in delivery duration |
 
 ## 11. `freq_analysis`
 
@@ -469,10 +471,10 @@ Idle state: When the NPU is idle for an extended period, the device automaticall
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| rankId          | INTEGER | global rank |
-| aicoreFrequency | TEXT    | [800, 1800] |
+| Field | Type | Description |
+|-------|------|-------------|
+| rankId | INTEGER | global rank |
+| aicoreFrequency | TEXT | [800, 1800] |
 
 ### 11.2 `AbnormalFrequencyRanks`
 
@@ -482,10 +484,10 @@ Abnormal reduction: When NPU frequency reduction occurs due to other factors, ab
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| rankId          | INTEGER | global rank |
-| aicoreFrequency | TEXT    | List of frequencies in abnormal reduction scenarios, such as [800, 1150, 1450, 1800]|
+| Field | Type | Description |
+|-------|------|-------------|
+| rankId | INTEGER | global rank |
+| aicoreFrequency | TEXT | List of frequencies in abnormal reduction scenarios, such as [800, 1150, 1450, 1800] |
 
 ## 12. `ep_load_balance`
 
@@ -503,11 +505,11 @@ Provides `GroupedMatmul` operator shape analysis. This analysis is based on clus
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| rank               | INTEGER | global rank |
-| epRanks            | TEXT    | A set of ranks within the same Expert Parallelism (EP) group, such as [rank0,rank1]|
-| inputShapesSummary | INTEGER | Sum of the first dimension of all `input_shapes` for the `GroupedMatmul` operator on this rank|
+| Field | Type | Description |
+|-------|------|-------------|
+| rank | INTEGER | global rank |
+| epRanks | TEXT | A set of ranks within the same Expert Parallelism (EP) group, such as [rank0,rank1] |
+| inputShapesSummary | INTEGER | Sum of the first dimension of all `input_shapes` for the `GroupedMatmul` operator on this rank |
 
 ### 12.2 `TopEPTokensInfo`
 
@@ -517,10 +519,10 @@ Provides information about EP groups with load imbalance.
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| epRanks    | TEXT    | A set of ranks within the EP group with load imbalance, such as [rank0, rank1]|
-| tokensDiff | INTEGER | Difference between the maximum and minimum values within the same EP group|
+| Field | Type | Description |
+|-------|------|-------------|
+| epRanks | TEXT | A set of ranks within the EP group with load imbalance, such as [rank0, rank1] |
+| tokensDiff | INTEGER | Difference between the maximum and minimum values within the same EP group |
 
 ## 13. `mstx2commop`
 
@@ -544,10 +546,10 @@ Provides slow rank analysis based on cluster profile data in `db` format.
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| rankId          | INTEGER | Slow rank   |
-| slowAffectCount | INTEGER | Number of communications affected by this rank|
+| Field | Type | Description |
+|-------|------|-------------|
+| rankId | INTEGER | Slow rank |
+| slowAffectCount | INTEGER | Number of communications affected by this rank |
 
 ### 14.2 `SlowOpStats`
 
@@ -557,23 +559,23 @@ Provides communication operator statistics corresponding to slow rank bottleneck
 
 Table fields
 
-| Field      | Type| Description            |
-|-----------| ---- |----------------|
-| SlowRank  | TEXT    | Slow rank ID      |
-| OpName    | TEXT    | Communication operator name         |
-| GroupName | TEXT    | Communication group name         |
-| Timestamp | TEXT    | Communication operator timestamp       |
-| Count     | INTEGER | Count            |
-| MeanNs    | REAL    | Average duration        |
-| StdNs     | REAL    | Standard deviation of the duration        |
-| MinNs     | REAL    | Minimum duration        |
-| Q1Ns      | REAL    | 25th percentile of duration     |
-| MedianNs  | REAL    | 50th percentile of duration     |
-| Q3Ns      | REAL    | 75th percentile of duration     |
-| MaxNs     | REAL    | Maximum duration        | 
-| SumNs     | REAL    | Total duration         |
-| MinRank   | INTEGER | Rank with the minimum duration for the communication operator|
-| MaxRank   | INTEGER | Rank with the maximum duration for the communication operator|
+| Field | Type | Description |
+|-------|------|-------------|
+| SlowRank | TEXT | Slow rank ID |
+| OpName | TEXT | Communication operator name |
+| GroupName | TEXT | Communication group name |
+| Timestamp | TEXT | Communication operator timestamp |
+| Count | INTEGER | Count |
+| MeanNs | REAL | Average duration |
+| StdNs | REAL | Standard deviation of the duration |
+| MinNs | REAL | Minimum duration |
+| Q1Ns | REAL | 25th percentile of duration |
+| MedianNs | REAL | 50th percentile of duration |
+| Q3Ns | REAL | 75th percentile of duration |
+| MaxNs | REAL | Maximum duration |
+| SumNs | REAL | Total duration |
+| MinRank | INTEGER | Rank with the minimum duration for the communication operator |
+| MaxRank | INTEGER | Rank with the maximum duration for the communication operator |
 
 ## 15. `p2p_pairing`
 
@@ -599,7 +601,7 @@ def step_wrapper(func, msg: str):
     def wrapper(*args, **kwargs):
         new_msg = {"name": msg}
         if msg == "forward_step_with_model_graph" and kwargs.get("extra_block_kwargs") is not None:
-            new_msg["name"] = "forward_backward_overlaping"
+            new_msg["name"] = "forward_backward_overlapping"
         if "current_microbatch" in kwargs:
             new_msg["current_microbatch"] = kwargs["current_microbatch"]
         if msg == "WeightGradStore_pop" and len(WeightGradStore.cache) == 0:
@@ -640,12 +642,12 @@ Provides a table for visualized display. This table is generated by processing t
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| name    | TEXT    | Forward and backward propagation information|
-| startNs | INTEGER | Start time on the device|
-| endNs   | INTEGER | End time on the device|
-| type    | INTEGER | Type (different types are displayed in different colors)|
+| Field | Type | Description |
+|-------|------|-------------|
+| name | TEXT | Forward and backward propagation information |
+| startNs | INTEGER | Start time on the device |
+| endNs | INTEGER | End time on the device |
+| type | INTEGER | Type (different types are displayed in different colors) |
 
 ### 16.3 Communication
 
@@ -666,11 +668,11 @@ Records communication group information. It is generated by parsing `analysis.db
 - Generated when the analysis feature is set to `compute_op_sum` and stored in the `cluster_analysis_output/ComputeOpSum` directory.
 
   Open this file using Jupyter Notebook or MindStudio Insight to view cluster computation operator duration analysis results (summarizing all cluster computation operators in charts) and cluster rank computation operator duration analysis results (summarizing computation operators for each rank).
-  
+
 - Generated when the analysis feature is set to `hccl_sum` and stored in the `cluster_analysis_output/HcclSum` directory.
 
   Open this file using Jupyter Notebook or MindStudio Insight to view cluster communication operator duration analysis results (summarizing all cluster communication operators in charts), cluster rank communication operator duration analysis results (summarizing communication operators for each rank), and top communication operator information.
-  
+
 - Generated when the analysis feature is set to `mstx_sum` and stored in the `cluster_analysis_output/MstxSum` directory.
 
   Open this file using Jupyter Notebook or MindStudio Insight to view MSTX instrumentation information for cluster scenarios across framework, CANN, and device sides.
@@ -691,14 +693,14 @@ Provides the API statistics of each rank based on the cluster profile data in `d
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| API Name | TEXT | API name|
-| Count | INTEGER | Call count|
-| Total Time(us) | REAL | Total duration (μs)|
-| Avg Time(us) | REAL | Average duration (μs)|
-| Min Time(us) | REAL | Minimum duration (μs)|
-| Max Time(us) | REAL | Maximum duration (μs)|
+| Field | Type | Description |
+|-------|------|-------------|
+| API Name | TEXT | API name |
+| Count | INTEGER | Call count |
+| Total Time(us) | REAL | Total duration (μs) |
+| Avg Time(us) | REAL | Average duration (μs) |
+| Min Time(us) | REAL | Minimum duration (μs) |
+| Max Time(us) | REAL | Maximum duration (μs) |
 
 ### 17.2 `kernel_details.csv`
 
@@ -708,14 +710,14 @@ Provides the kernel details of each rank based on the cluster profile data in `d
 
 Table fields
 
-| Field| Type| Description|
-| ------ | ---- | ---- |
-| op_name | TEXT | Operator name|
-| op_type | TEXT | Operator type|
-| task_type | TEXT | Task type|
-| task_duration | REAL | Task duration (μs)|
-| input_shapes | TEXT | Input shape|
-| output_shapes | TEXT | Output shape|
-| block_dim | TEXT | Block dimension|
-| input_data_types | TEXT | Input data type|
-| output_data_types | TEXT | Output data type|
+| Field | Type | Description |
+|-------|------|-------------|
+| op_name | TEXT | Operator name |
+| op_type | TEXT | Operator type |
+| task_type | TEXT | Task type |
+| task_duration | REAL | Task duration (μs) |
+| input_shapes | TEXT | Input shape |
+| output_shapes | TEXT | Output shape |
+| block_dim | TEXT | Block dimension |
+| input_data_types | TEXT | Input data type |
+| output_data_types | TEXT | Output data type |

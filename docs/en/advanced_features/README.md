@@ -8,8 +8,8 @@ This chapter summarizes the advanced analysis features of `msprof-analyze` for c
 
 The following two types of cluster data are supported:
 
-* DB-format cluster data collected by Ascend PyTorch Profiler. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
-* Lightweight cluster DB data collected by msMonitor. For details, see [msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/en/quick_start/msmonitor_quick_start.md).
+* DB-format cluster data collected by Ascend PyTorch Profiler. For details, see [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
+* Lightweight cluster DB data collected by msMonitor. For details, see [msMonitor](https://gitcode.com/Ascend/msmonitor/blob/26.2.0/docs/en/quick_start/msmonitor_quick_start.md).
 
 When using Ascend PyTorch Profiler, you must collect or parse `db`-format results offline. Example:
 
@@ -88,9 +88,11 @@ For details about the output deliverables of `msprof-analyze` features, see the 
 
 ##### 5.1.1.3 Communication
 
+<!-- npu="950" id1 -->
 > [!NOTE]
 >
-> For CCU scenarios on the Ascend 950 products, the `communication_time_sum` and `communication_matrix_sum` analysis features are not meaningful because communication matrix and communication operator bandwidth data are not supported for collection.
+> For CCU scenarios on the 950PR&950DT products, the `communication_time_sum` and `communication_matrix_sum` analysis features are not meaningful because communication matrix and communication operator bandwidth data are not supported for collection.
+<!-- end id1 -->
 
 | Analysis Feature | Description | Document Link |
 | --- | --- | --- |
@@ -127,20 +129,20 @@ The following table primarily describes the input, output, format, execution, an
 | --- | --- | --- |
 | `--profiling_path` or `-d` | Yes | Specifies the directory containing the collected performance data. If `-o` is not configured, running the analysis script automatically creates a `cluster_analysis_output` folder in this directory to save the analysis data. |
 | `--output_path` or `-o` | No | Specifies a custom output path. Running the analysis script automatically creates a `cluster_analysis_output` folder in this directory to save the analysis data. |
-| `--mode` or `-m` | No | Specifies the analysis feature. For supported values, see the [Analysis Features](#511-analysis-features) tables. |
+| `--mode` or `-m` | Yes | Specifies the analysis feature. For supported values, see the [Analysis Features](#511-analysis-features) tables. |
 | `--export_type` | No | Specifies the output file type. Valid values are `db` (a `.db` file), `notebook` (a Jupyter Notebook file), and `text` (text-based formats such as JSON, CSV, and Excel). The default value is `db`. |
 | `--force` | No | Enables forced execution. The user assumes responsibility for the force action. When configured, this option forcibly skips the following checks:<br/>&#8226; If the specified directory or file is not owned by the current user, the ownership check is ignored and execution proceeds.<br/>&#8226; If a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB, the file size check is ignored and execution proceeds.<br/>&#8226; Read and write permission checks for the specified directory or file are ignored and execution proceeds.<br/>Configuring this parameter enables forced execution. It is disabled by default. |
 | `--parallel_mode` | No | Sets the concurrency mode for collecting multi-rank and multi-node DB data. Set it to `concurrent` to use a `concurrent.futures` process pool for concurrent execution. |
-| `-v`, `-V`, or `--version` | No | Displays the version number. |
-| `-h`, `-H`, or `--help` | No | Displays help information. |
+| `--version` or `-V` | No | Displays the version number. |
+| `--help` or `-H` | No | Displays help information. |
 | `auto-completion` | No | Enables automatic completion. After this parameter is configured, you can press **Tab** to automatically complete all sub-parameters of the `msprof-analyze` tool in the current view. |
 
 #### 5.1.3 Basic Analysis Feature Options
 
-| Option | Required (Yes/No) | Description |
-| --- | --- | --- |
-| `--rank_list` | No | Analyzes data for specified ranks. The default value is `all`, indicating that data for all ranks is analyzed. Configure this parameter based on the actual rank IDs of the ranks. The value must be an integer greater than or equal to `0`. If a specified value exceeds the rank IDs actually used for training, only data for valid rank IDs is parsed. For example, if the current environment has rank IDs `0` to `7` but the actual training uses ranks `0` to `3`, and `--rank_list` is configured as `0,3,4` or `10`, only the data for ranks `0` and `3` is parsed. Example: `--rank_list 0,1,2`.<br/>**This parameter can be used only when the corresponding analysis feature supports it. Currently, it is supported when the analysis feature is set to `cann_api_sum`, `compute_op_sum`, `hccl_sum`, or `mstx_sum`.** |
-| `--step_id` | No | Specifies the performance data Step ID for analysis. The performance data for the specified Step ID is analyzed. The specified Step ID must exist in the performance data. If not configured, all data is analyzed by default. Example: `--step_id=1`.<br/>**This parameter can be used only when the corresponding analysis feature supports it. Currently, it is supported when the analysis feature is set to `cann_api_sum`, `compute_op_sum`, `hccl_sum`, or `mstx_sum`.** |
-| `--top_num` | No | Sets the number of top-N time-consuming communication operators. The default value is `15`. Example: `--top_num 20`.<br/>**This parameter can be configured only when `-m` is set to `hccl_sum`.** |
-| `--exclude_op_name` | No | Controls whether `op_name` is included in the `compute_op_name` results. Example: `--exclude_op_name`; no argument is required after it.<br/>**This parameter can be configured only when `-m` is set to `compute_op_sum`.** |
-| `--bp` | No | Specifies the benchmark cluster data to be compared. Example: `--bp {bp_cluster_profiling_path}` compares the data in `profiling_path` with the data in `bp_cluster_profiling_path`.<br/>**This parameter can be configured only when `-m` is set to `cluster_time_compare_summary`.** |
+| Option | Required (Yes/No) | Description | Applicable Scope |
+| --- | --- | --- | --- |
+| `--rank_list` | No | Analyzes data for specified ranks. The default value is `all`, indicating that data for all ranks is analyzed. Configure this parameter based on the actual rank IDs of the ranks. The value must be an integer greater than or equal to `0`. If a specified value exceeds the rank IDs actually used for training, only data for valid rank IDs is parsed. For example, if the current environment has rank IDs `0` to `7` but the actual training uses ranks `0` to `3`, and `--rank_list` is configured as `0,3,4` or `10`, only the data for ranks `0` and `3` is parsed. Example: `--rank_list 0,1,2`. | `cann_api_sum`, `compute_op_sum`, `hccl_sum`, `mstx_sum` |
+| `--step_id` | No | Specifies the performance data Step ID for analysis. The performance data for the specified Step ID is analyzed. The specified Step ID must exist in the performance data. If not configured, all data is analyzed by default. Example: `--step_id=1`. | `cann_api_sum`, `compute_op_sum`, `hccl_sum`, `mstx_sum` |
+| `--top_num` | No | Sets the number of top-N time-consuming communication operators. The default value is `15`. Example: `--top_num 20`. | `hccl_sum` |
+| `--exclude_op_name` | No | Controls whether `op_name` is included in the `compute_op_name` results. Example: `--exclude_op_name`; no argument is required after it. | `compute_op_sum` |
+| `--bp` | No | Specifies the benchmark cluster data to be compared. Example: `--bp {bp_cluster_profiling_path}` compares the data in `profiling_path` with the data in `bp_cluster_profiling_path`. | `cluster_time_compare_summary` |

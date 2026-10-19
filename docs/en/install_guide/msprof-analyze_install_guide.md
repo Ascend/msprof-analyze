@@ -13,7 +13,7 @@ This tool supports three installation methods: [online installation](#21-online-
 ### 2.1 Online Installation
 
 ```shell
-pip install msprof-analyze==26.1.0
+pip install msprof-analyze
 ```
 
 Use `pip install msprof-analyze==version_number` to install a specific version of the package. Use the CANN version corresponding to the tool used to collect the profile data.
@@ -25,7 +25,7 @@ The `pip` command automatically installs the latest package and its required dep
 If the following information is displayed, the tool is installed successfully:
 
 ```bash
-Successfully installed msprof-analyze-26.1.0
+Successfully installed msprof-analyze-{version}
 ```
 
 ### 2.2 Offline Installation
@@ -70,41 +70,55 @@ Successfully installed msprof-analyze-26.1.0
 
 ### 2.3 Source Installation
 
-1. Install the dependencies.
+To use the latest code features or modify the source code to enhance functions, download the repository source code, compile and package the tool, and complete the installation.
 
-   Install `wheel` before building from source.
+#### 2.3.1 Environment Setup
 
-   ```bash
-   pip3 install wheel
-   ```
+Source code compilation uniformly uses the MindStudio standard build environment.
 
-2. Download the source code.
+- For daily development or use of released images, see [MindStudio Tool Development Environment Installation Guide](https://gitcode.com/Ascend/msot/blob/26.2.0/docs/en/common/dev_env_setup.md).
+- When reproducing the environment from a base OS or performing source build verification or unit test verification, see [MindStudio Unified Build Image Creation Guide](https://gitcode.com/Ascend/msot/blob/26.2.0/docs/en/common/docker_image_build_guide.md), and build the environment image on site from the openEuler base image.
 
-   ```bash
-   git clone https://gitcode.com/Ascend/msprof-analyze -b master
-   ```
+The subsequent source compilation and unit test commands in this document must be executed in the container of the specified image or the on-site built environment image. The CANN package version, GCC version, and Python version are defined by the unified image creation guide; this repository does not maintain them separately.
 
-3. Build the WHL package.
+After the image is built, use the `ctr_in.py` command provided in Chapter 7 of the unified image creation guide to start and enter the container in an interactive terminal. Do not create a container using the ordinary `docker run` command, and do not use `docker exec <container_name> bash -c '<command>'` as a substitute for the interactive environment; otherwise, Python, GCC, and CANN environment initialization may be skipped.
 
-   > [!NOTE]
-   >
-   > When installing the following dependencies, use newer software package versions that meet the requirements. Monitor and patch existing vulnerabilities, especially disclosed high-risk vulnerabilities with a CVSS score greater than 7.
+After entering the interactive container shell opened by `ctr_in.py`, run the following command to clone this repository:
 
-   ```bash
-   cd msprof-analyze
-   pip3 install -r requirements.txt && python3 setup.py bdist_wheel
-   ```
+```bash
+cd ~
+git clone https://gitcode.com/Ascend/msprof-analyze.git -b 26.2.0
+```
 
-   After the command is executed, the profiling tool WHL package `msprof_analyze-{version}-py3-none-any.whl` is generated in the `dist` directory.
+#### 2.3.2 Build
 
-4. Install the tool.
+In the same interactive container shell opened by `ctr_in.py`, run the following command in the repository root directory to automatically download dependencies and build:
 
-   Run the following command to install the profiling tool:
+```bash
+cd ~/msprof-analyze
+python3 build.py
+```
 
-   ```bash
-   cd dist
-   pip3 install ./msprof_analyze-{version}-py3-none-any.whl
-   ```
+After a successful build, the installation package is generated in the `artifacts/` directory.
+
+#### 2.3.3 Run Unit Tests (Optional)
+
+This step is not required for installation. To verify basic code functionality, run unit tests:
+
+```bash
+cd ~/msprof-analyze
+python3 build.py test
+```
+
+If the command returns 0 and all test cases pass, the unit tests pass.
+
+#### 2.3.4 Installation
+
+Run the following command to install the profiling tool:
+
+```bash
+pip3 install ./msprof_analyze-{version}-py3-none-any.whl
+```
 
 ## 3. Verifying the Installation
 
@@ -120,7 +134,7 @@ If `msprof-analyze --help` indicates that the command does not exist, verify tha
 
 ## 4. Uninstallation
 
-Run the following command to uninstall `msprof-analyze`:
+Run the following command to uninstall the `msprof-analyze` tool:
 
 ```bash
 pip uninstall msprof-analyze
@@ -134,6 +148,6 @@ Successfully uninstalled msprof-analyze-{version}
 
 ## 5. Upgrade
 
-The `msprof-analyze` tool does not support direct upgrades. You must first [uninstall](#4-uninstallation) the tool and then [reinstall](#2-installation-methods) it.
+The `msprof-analyze` tool does not support direct upgrades. You must first complete [uninstallation](#4-uninstallation) and then [reinstall](#2-installation-methods) it.
 
-You can run the `msprof-analyze --version` command to view the version information in the current environment and then select the version to upgrade to. When upgrading the version, pay attention to the version compatibility requirements. For details, see the [Release Notes](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/master/release_notes_en.md).
+You can run the `msprof-analyze --version` command to view the version information in the current environment and then select the version to upgrade to. When upgrading, pay attention to version compatibility. For details, see [Release Notes](https://gitcode.com/Ascend/release-management/blob/master/MindStudio/26.2.0/release_notes_en.md).

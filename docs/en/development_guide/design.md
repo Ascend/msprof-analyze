@@ -101,8 +101,8 @@ Constraints: None
 
  | Product Type | Supported |
  | --- | --- |
- | Atlas A3 training products/inference products | Yes |
- | Atlas A2 training products/inference products | Yes |
+ | Atlas A3 products | Yes |
+ | Atlas A2 products | Yes |
 
 ### 2.3.2 Technical Restrictions
 
@@ -279,9 +279,9 @@ _The specific scope of sensitive data depends on the application scenario of the
 
 ##### 2. Sensitive operation check
 
-_(1) Lifecycle dimension_
-_For identified sensitive data, identify its lifecycle, covering the processes of generation, use, transmission, persistence, and destruction, to avoid unintentional omissions in subsequent risk identification._
-_(2) High-risk processes_
+_(1) Lifecycle dimension_  
+_For identified sensitive data, identify its lifecycle, covering the processes of generation, use, transmission, persistence, and destruction, to avoid unintentional omissions in subsequent risk identification._  
+_(2) High-risk processes_  
 _Identify whether high-risk processes exist during the handling of sensitive data. Typical high-risk processes include printing, command output, storage, hard-coding, and the use of insecure algorithms. From an information processing perspective, these high-risk processes are prone to security vulnerabilities when handling sensitive data and require detailed inspection. All identified sensitive data items must be checked. The sensitive data check matrix is as follows:_
 
 For example, in a typical web system, the check results of the identified sensitive data (administrator account and password) in its lifecycle are as follows:

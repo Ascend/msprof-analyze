@@ -4,7 +4,7 @@
 
 Custom analysis rules are developed based on the analysis of profile data within `analysis.db` and `ascend_pytorch_profiler_{rank_id}.db` files. Similar to the implementation of parameters such as `cann_api_sum`, `compute_op_sum`, and `hccl_sum`, these rules allow you to define custom logic for profile data analysis.
 
-## 2. Procedure
+## 2. Procedure for Developing Custom Analysis Rules
 
 Perform the following steps:
 
@@ -28,7 +28,7 @@ Perform the following steps:
            logger.error("Unknown export type.")
    ```
 
-   1. `mapper_func` function: queries multi-rank data and merges the results. Since data processing for each rank in a cluster is identical, the context is used to process profile data in parallel and assemble the results in sequence. You only need to implement the `self._mapper_func` function for single-rank data processing.
+   1. `mapper_func` function: queries multi-rank data and merges the results. Since data processing for each rank in a cluster is identical, the context is used to process profile data in parallel and assemble the results in sequence. You only need to implement the `self._mapper_func` function for single-rank data data processing.
 
       ```python
       def mapper_func(self, context):
@@ -44,7 +44,7 @@ Perform the following steps:
       ```python
       def _mapper_func(self, data_map, analysis_class):
           """
-          Extract the profiling data required for cluster analysis from each device, and then aggregate the 
+          Extract the profiling data required for cluster analysis from each device, and then aggregate the
           results from each device to be processed by a reduce function.
           Params:
               data_map: eg. {"RANK_ID": 1, "profiler_db_path": "xxxx/ascend_pytorch_profiler_1.db"}
@@ -67,18 +67,18 @@ Perform the following steps:
 
       Example:
 
-      ```Python
+      ```python
       service = DatabaseService(profiler_db_path)
-      service.add_table_for_query("ENUM_HCCL_DATA_TYPE", ["id", "name"])  # First argument: table name; second argument: field list. By default, no field is specified and SELECT * is executed to query all fields.
+      service.add_table_for_query("ENUM_HCCL_DATA_TYPE", ["id", "name"])  # First parameter: table name. Second parameter: field list. The default value is None, which indicates select *.
       service.add_table_for_query("STRING_IDS", ["id", "value"])  # Multiple tables can be added.
       df_dict = service.query_data() # Queries all specified tables in sequence and returns a dict (key: table name; value: DataFrame-type query result).
       ```
 
    2. Create a new .py file in the `msprof_analyze/prof_exports` directory. The class must inherit from `BaseStatsExport`. To avoid duplication, check if an existing file meets your needs before creating a new one. The sample code is as follows:
 
-      ```Python
+      ```python
       from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
-      
+
       QUERY = """
       SELECT
           NAME_IDS.value AS "OpName",
@@ -97,21 +97,21 @@ Perform the following steps:
           STRING_IDS AS GROUP_NAME_IDS
           ON GROUP_NAME_IDS.id = COMMUNICATION_OP.groupName
           """
-      
-      
+
+
       class HcclSumExport(BaseStatsExport):
           def __init__(self, db_path, recipe_name):
               super().__init__(db_path, recipe_name)
               self._query = QUERY
       ```
-      
+
       Example: `df = HcclSumExport(profiler_db_path, analysis_class).read_export_db()`. The returned data type is `DataFrame`.
 
 4. Add extended parameters to analysis rules.
 
    Implement the `add_parser_argument` function. Example:
 
-   ```Python
+   ```python
    @classmethod
    def add_parser_argument(cls, parser):
        parser.add_argument("--top_num", type=str, help="Duration cost top count", default=cls.DEFAULT_TOP_NUM)
@@ -119,13 +119,13 @@ Perform the following steps:
 
    Obtain the corresponding extended parameters from `self._extra_args`:
 
-   ```Python
+   ```python
    def __init__(self, params):
        super().__init__(params)
        top_num = self._extra_args.get(self.TOP_NUM, self.DEFAULT_TOP_NUM)
        self.top_num = int(top_num) if isinstance(top_num, str) and top_num.isdigit() else self.DEFAULT_TOP_NUM
    ```
-   
+
 5. Run the custom analysis rule command.
 
    ```bash

@@ -123,8 +123,8 @@ Collection code example 1 (recommended): use `schedule` to control when data is 
 
 ```python
 with torch.profiler.profile(
-        profile_memory=True,  # Enables memory profile data collection
-        record_shapes=True,  # Enables operator input shape collection
+        profile_memory=True,  # Switch for memory data collection.
+        record_shapes=True,  # Switch for operator input shape collection.
         schedule=torch.profiler.schedule(wait=10, warmup=0, active=1, repeat=1),
         on_trace_ready=torch.profiler.tensorboard_trace_handler("./result_dir")
 ) as prof:
@@ -137,8 +137,8 @@ Collection code example 2: manually control `start`/`stop`.
 
 ```python
 prof = torch.profiler.profile(
-    profile_memory=True,
-    record_shapes=True,
+    profile_memory=True,  # Switch for memory data collection.
+    record_shapes=True,  # Switch for operator input shape collection.
     on_trace_ready=torch.profiler.tensorboard_trace_handler("./result_dir"))
 for step in range(step_number):
     if step == 11:
@@ -150,14 +150,14 @@ for step in range(step_number):
 
 The directory structure of the PyTorch Profiler collection results is as follows:
 
-```text
+```Python
 |- pytorch_profiling
     |- *.pt.trace.json
 ```
 
 ##### 3.2.1.2 Collecting NPU Profile Data
 
-Use Ascend PyTorch Profiler to collect NPU profile data. The collection parameter configuration is basically the same as that for GPU profile data. You only need to replace `torch.profiler` with `torch_npu.profiler` in the GPU profile data collection code. For details, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
+Use Ascend PyTorch Profiler to collect NPU profile data. The collection parameter configuration is basically the same as that for GPU profile data. You only need to replace `torch.profiler` with `torch_npu.profiler` in the GPU profile data collection code. For details, see the [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md).
 
 **Collection result directory structure**
 
@@ -165,7 +165,7 @@ Depending on the value of the `export_type` parameter, the tool outputs result d
 
 `export_type = Text`
 
-```text
+```bash
 |- ascend_pytorch_profiling
     |- *_ascend_pt
         |- ASCEND_PROFILER_OUTPUT
@@ -179,7 +179,7 @@ Depending on the value of the `export_type` parameter, the tool outputs result d
 
 `export_type = Db`
 
-```text
+```bash
 |- ascend_pytorch_profiling
     |- *_ascend_pt
         |- ASCEND_PROFILER_OUTPUT
@@ -201,13 +201,13 @@ Currently, the MindSpore scenario supports only the following two types of perfo
 1. Comparison between MindSpore NPU profile data and PyTorch GPU profile data.
 2. Comparison between profile data from different versions of a MindSpore training project on NPUs.
 
-Profile data collection: When using the MindSpore Profiler to collect NPU profile data, you are advised to collect or parse profile data for only a single step. For details, see the [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/en/menu/mindspore_profiler_user_guide.md).
+Profile data collection: When using the MindSpore Profiler to collect NPU profile data, you are advised to collect or parse profile data for only a single step. For details, see the [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/en/menu/mindspore_profiler_user_guide.md).
 
 Collection result directory structure: Depending on the value of the `export_type` parameter, the tool outputs result directories in two formats:
 
 Method 1: `export_type = Text`
 
-```text
+```bash
 |- profiler/{rank-*}_{timestamps}_ascend_ms
    |- ASCEND_PROFILER_OUTPUT
       |- kernel_details.csv
@@ -217,7 +217,7 @@ Method 1: `export_type = Text`
 
 Method 2: `export_type = Db`
 
-```text
+```bash
 |- profiler/{rank-*}_{timestamps}_ascend_ms
    |- ASCEND_PROFILER_OUTPUT
       |- analysis.db
@@ -284,7 +284,7 @@ If none of the comparison switches is specified, the tool **enables all** suppor
 If you are interested in only a specific type of issue, you can enable the corresponding switch as required. Once any comparison switch is specified, the tool performs only the comparisons enabled by the specified switches. Example:
 
 ```bash
-# Configure --enable_profiling_compare to enable only overall performance comparison.
+# Configure the --enable_profiling_compare parameter to enable only overall performance comparison.
 msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --output_path=./result_dir --enable_profiling_compare
 ```
 
@@ -323,7 +323,7 @@ Supported when `--enable_kernel_compare` is specified.
 | --- | --- | --- | --- | --- |
 | `--force` | No | Forcibly executes `compare`. When specified, the following checks can be forcibly skipped: if the specified directory or file is not owned by the current user, ignore the ownership check and proceed with execution; if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB, ignore the file size check and proceed with execution; if the read or write permissions of the specified directory or file do not meet the validation requirements, ignore the permission check and proceed with execution. Specifying this parameter enables forced execution; if it is not specified, forced execution is disabled. | Yes | Yes |
 | `--debug` | No | Enables DEBUG-level information in the logs when the tool reports an error, to facilitate troubleshooting. Specifying this parameter enables debug mode; if it is not specified, debug mode is disabled. | Yes | Yes |
-| `-h`, `-H`, `--help` | No | Displays help information about the subcommands or related parameters of the current command. | Yes | Yes |
+| `-h` or `--help` | No | Displays help information about the subcommands or related parameters of the current command. | Yes | Yes |
 
 ### 4.4 Usage Examples
 
@@ -339,9 +339,9 @@ msprof-analyze compare \
 **Script**
 
 ```bash
-# Download the msprof-analyze repository locally and go to the compare_tools directory.
+# Download the msprof-analyze source repository and go to the compare_tools directory under it.
 cd msprof_analyze/compare_tools
-# Run the basic comparison command.
+# Run the simplest comparison command.
 python performance_compare.py ./benchmark_profiling_path ./profiling_path --output_path=./output_path
 ```
 
@@ -454,9 +454,9 @@ with torch_npu.profiler.profile(
         schedule=torch_npu.profiler.schedule(wait=1, warmup=1, active=1, repeat=1, skip_first=10),
         on_trace_ready=torch_npu.profiler.tensorboard_trace_handler("./result"),
 ) as prof:
-    for step in range(steps):
-        train_one_step()
-        prof.step()
+        for step in range(steps):
+            train_one_step()
+            prof.step()
 ```
 
 Configure `activities` to collect only NPU data, without configuring `experimental_config` or other optional switches.

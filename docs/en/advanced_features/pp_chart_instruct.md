@@ -59,7 +59,7 @@ If you require only the PP chart, set the `profiler_level` parameter to `Level_n
                new_msg["name"] = "forward_backward_overlapping"
            if "current_microbatch" in kwargs:
                new_msg["current_microbatch"] = kwargs["current_microbatch"]
-           if msg == "WeightGradStore_pop" and len(WeightGradStore.cache) == 0:
+           if msg == "WeightGradStore.pop" and len(WeightGradStore.cache) == 0:
                mstx_state_step_range_id = None
            else:
                mstx_state_step_range_id = torch_npu.npu.mstx.range_start(str(new_msg), torch_npu.npu.current_stream())
@@ -88,7 +88,7 @@ If you require only the PP chart, set the `profiler_level` parameter to `Level_n
            'microbatch_num': 10,
        }
    ))
-   # Calculate the value of microbatch_num using the following formula: microbatch_num = global_batch_size // micro_batch_size // data_parallel_size
+   # Calculate microbatch_num based on the formula: microbatch_num = global_batch_size // micro_batch_size // data_parallel_size.
    ```
 
    If `MindSpeed-LLM` is used, add the metadata code after `prof.add_metadata_json('distributed_args'...)` in `mindspeed-llm/training/training.py`, as shown in the following example:
@@ -160,7 +160,7 @@ For details about the output files, see [Output File Description](#4-output-file
 | endNs   | End time (`INTEGER` type) of the forward or backward task on the device|
 | type    | Type (`INTEGER` type) used to display different colors|
 
-You do not need to focus on the specific meanings of these fields. The data can be displayed directly using MindStudio Insight. For details about the installation and operation of this tool, see [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight/blob/master/docs/en/user_guide/overview.md).
+You do not need to focus on the specific meanings of these fields. The data can be displayed directly using MindStudio Insight. For details about the installation and operation of this tool, see [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight/blob/26.2.0/docs/en/user_guide/overview.md).
 
 Import the analyzed profile data into MindStudio Insight, click **Generate** on the **Summary** page, and configure the parameters as shown in the following figure.
 

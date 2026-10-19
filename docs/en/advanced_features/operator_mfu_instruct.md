@@ -54,7 +54,6 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    )
    ```
 
-   > [!NOTE]
    > 
    > - `with_flops=True` enables FLOPs calculation on the collection side.
    > - `mstx=True` enables MSTX event collection. In the current collection-side implementation, automatic FLOPs recording also depends on the legacy `msprof_tx=True` parameter, so the example sets both `mstx=True` and `msprof_tx=True`.

@@ -20,10 +20,10 @@ The current cluster analysis capability supports the following four types of pro
 
 | Collection Tool | Supported Result Type | Collection Guide |
 | --- | --- | --- |
-| msProf | db | [MindStudio Profiler](https://gitcode.com/Ascend/msprof/blob/master/docs/en/quick_start/msprof_quick_start.md) |
-| Ascend PyTorch Profiler | text, db | [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md) |
-| MindSpore Profiler | text, db | [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/en/menu/mindspore_profiler_user_guide.md) |
-| msMonitor | db | [MindStudio Monitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/en/quick_start/msmonitor_quick_start.md) |
+| msProf | db | [MindStudio Profiler](https://gitcode.com/Ascend/msprof/blob/26.2.0/docs/en/quick_start/msprof_quick_start.md) |
+| Ascend PyTorch Profiler | text, db | [Ascend PyTorch Profiler](https://gitcode.com/Ascend/pytorch/blob/v2.14.0-26.2.0/docs/en/developer_notes/ascend_pytorch_profiler_user_guide.md) |
+| MindSpore Profiler | text, db | [MindSpore Profiler](https://gitcode.com/Ascend/docs/blob/master/MindStudio/26.2.0/en/menu/mindspore_profiler_user_guide.md) |
+| msMonitor | db | [MindStudio Monitor](https://gitcode.com/Ascend/msmonitor/blob/26.2.0/docs/en/quick_start/msmonitor_quick_start.md) |
 
 The following sections use Ascend PyTorch Profiler as an example to describe the input data requirements.
 
@@ -97,9 +97,11 @@ profiling_data/
     └── profiler_info_*.json
 ```
 
+<!-- npu="950" id1 -->
 ### 2.4 Constraints
 
-For CCU scenarios on Ascend 950 products, the communication-related analysis features do not provide meaningful results because communication matrix and communication operator bandwidth data cannot be collected.
+For CCU scenarios on 950PR&950DT products, the communication-related analysis features do not provide meaningful results because communication matrix and communication operator bandwidth data cannot be collected.
+<!-- end id1 -->
 
 ## 3. Feature Introduction
 
@@ -182,16 +184,16 @@ The `cluster_analysis_output` directory is generated under the output path. For 
 
 **Recommended viewing tool**
 
-You are advised to use MindStudio Insight to import the generated `cluster_analysis_output` folder for visualization, as shown in the following figures. For details about how to use the tool, see the [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight/blob/master/docs/en/user_guide/overview.md).
+You are advised to use MindStudio Insight to import the generated `cluster_analysis_output` folder for visualization, as shown in the following figures. For details about how to use the tool, see the [MindStudio Insight User Guide](https://gitcode.com/Ascend/msinsight/blob/26.2.0/docs/en/user_guide/overview.md).
 
 ![img](../figures/cluster_summary.png)
     <div style="text-align: center;">
-    **Figure 1** Cluster computation/communication overview
+    Figure 1 Cluster computation/communication overview
     </div>
 
 ![img](../figures/cluster_communication_matrix.png)
     <div style="text-align: center;">
-    **Figure 2** Cluster communication matrix
+    Figure 2 Cluster communication matrix
     </div>
 
 ### 4.3 Fields in Deliverables
