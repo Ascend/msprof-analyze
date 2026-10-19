@@ -173,8 +173,7 @@ class ClusterCompareDataMixin:
             logger.debug("========== Step %s ==========", step_id)
 
             tp_allReduce = df[
-                (df["parallelType"] == "tp")
-                & (df["opType"].str.contains("allReduce", na=False, regex=False))
+                (df["parallelType"] == "tp") & (df["opType"].str.contains("allReduce", na=False, regex=False))
             ]
             if not tp_allReduce.empty:
                 tp_allReduce_start = tp_allReduce["startNs"].min()
@@ -245,10 +244,14 @@ class ClusterCompareDataMixin:
             if tp_reference_end is not None:
                 result4 = df[
                     (
-                        ((df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                         & (df["opType"].str.contains("allGather", na=False, regex=False)))
-                        | ((df["parallelType"] == "dp")
-                           & (df["opType"].str.contains("allReduce", na=False, regex=False)))
+                        (
+                            (df["parallelType"].isin(["dp_cp", "ep_dp"]))
+                            & (df["opType"].str.contains("allGather", na=False, regex=False))
+                        )
+                        | (
+                            (df["parallelType"] == "dp")
+                            & (df["opType"].str.contains("allReduce", na=False, regex=False))
+                        )
                     )
                     & (df["startNs"] > tp_reference_end)
                     & (df["endNs"] < end_time)
@@ -269,11 +272,12 @@ class ClusterCompareDataMixin:
                         (
                             (
                                 (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                                & (df["opType"].str.contains(
-                                    "allGather|reduceScatter", na=False, regex=False))
+                                & (df["opType"].str.contains("allGather|reduceScatter", na=False, regex=False))
                             )
-                            | ((df["parallelType"] == "dp")
-                               & (df["opType"].str.contains("allReduce", na=False, regex=False)))
+                            | (
+                                (df["parallelType"] == "dp")
+                                & (df["opType"].str.contains("allReduce", na=False, regex=False))
+                            )
                         )
                         & ((df["startNs"] > forward_end) & (df["endNs"] < tp_reference_end))
                     ].copy()
