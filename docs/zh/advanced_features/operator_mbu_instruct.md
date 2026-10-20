@@ -63,7 +63,8 @@ msprof-analyze -m operator_mbu -d <profiling_path> [-o <output_path>] [--export_
 | -d | 必选 | 集群性能数据文件父目录路径。 |
 | -o | 可选 | 分析结果输出路径，默认输出在 `-d` 参数指定的目录下。 |
 | --export_type | 可选 | 分析结果导出类型，可取 `db` 或 `text`，默认为 `db`。设置为 `db` 时结果写入 `cluster_analysis.db`；设置为 `text` 时生成 `MBU.csv`。 |
-| --chip_peak_bandwidth | 可选 | 芯片理论 HBM 峰值带宽，单位 GB/s，用于计算 MBU。不传时仅输出访存字节与实测带宽，MBU 列留空。 |
+| --chip_peak_bandwidth | 可选 | 芯片理论 HBM 峰值带宽，单位 GB/s，必须为有限正数，非法值报错。不传时仅输出访存字节与实测带宽，MBU 列留空。 |
+| --step_id | 可选 | 仅分析所选迭代时间范围内开始的 kernel，起止边界均包含；不传时分析全部迭代。 |
 
 更多参数详细介绍请参见 msprof-analyze 的[参数说明](./README.md#51-参数说明)。
 
@@ -125,13 +126,15 @@ msprof-analyze 会在 `-o` 参数指定路径下生成 `cluster_analysis_output`
 
 ### 5.2 访存字节口径
 
-`operator_mbu` 采用标准 MBU 口径，即一次 kernel 访问的 HBM 读写总流量：
+`operator_mbu` 按输入/输出张量字节之和估算一次 kernel 的访存量：
 
 ```text
 access_bytes = Σ输入张量字节 + Σ输出张量字节
 ```
 
-每个张量的字节数由其 shape 元素个数乘以数据类型字节数得到，即 `prod(shape) * dtype_size(dtype)`。其中 `dtype_size` 按数据类型映射到每元素字节数（如 `FLOAT`/`FLOAT32` 为 4 字节，`FLOAT16`/`BF16` 为 2 字节，`INT8`/`FP8` 为 1 字节，`INT64`/`DOUBLE` 为 8 字节）；无法识别的数据类型默认按 FP16（2 字节）处理。含动态/非法维度（小于等于 0，如动态 shape 记为 -1）的张量会被跳过，避免负字节。
+每个张量的字节数由其 shape 元素个数乘以数据类型字节数得到，即 `prod(shape) * dtype_size(dtype)`。其中 `dtype_size` 按数据类型映射到每元素字节数（如 `FLOAT`/`FLOAT32` 为 4 字节，`FLOAT16`/`BF16` 为 2 字节，`INT8`/`FP8`/`HIFLOAT8`/`FLOAT8_E4M3FN`/`FLOAT8_E5M2` 为 1 字节，`INT64`/`DOUBLE` 为 8 字节）。`INT4`/`UINT4` 按每元素 4 bit、每个张量向上取整到完整字节估算。支持 `DT_` 前缀；缺失或未知 dtype 仍按 FP16（2 字节）回退，未知类型会记录告警并缓存查询结果以减少重复告警，回退值可能使结果偏高或偏低。
+
+**shape 限制：** 含动态/非法维度（小于等于 0，如 -1）、空 shape 或解析失败的张量均跳过。当前输入格式不能区分空 shape 是标量、缺失信息还是空分隔段，因此暂不将空 shape 按标量的一个元素计算。一个 kernel 中只累加可解析的张量，跳过部分张量可能低估访存字节及 MBU；全部跳过时该 kernel 不输出。遇到这些情况应补充有效 shape 后重新分析，不应将部分张量的结果视为完整访存量。
 
 ### 5.3 MBU
 
@@ -142,7 +145,7 @@ achieved_bandwidth = access_bytes / (kernelDuration(ns) * 1e-9)
 mbu = achieved_bandwidth / chipPeakBandwidth
 ```
 
-其中 `chipPeakBandwidth` 来自 `--chip_peak_bandwidth` 参数（GB/s，内部换算为 Byte/s 参与计算）。输出结果中的实测带宽与芯片峰值带宽均以 GB/s 输出，MBU 比值为无量纲。当 kernel 时长或访存字节非法（小于等于 0）时，该 kernel 不计入结果；解析侧按 `kernel_ts` 和 `kernel_end` 对重复 kernel 去重。未传入 `--chip_peak_bandwidth` 时，MBU 与 Chip Peak Bandwidth 列留空，仅输出访存字节与实测带宽。
+其中 `chipPeakBandwidth` 来自 `--chip_peak_bandwidth` 参数（GB/s，内部换算为 Byte/s 参与计算）。输出结果中的实测带宽与芯片峰值带宽均以 GB/s 输出，MBU 比值为无量纲。当 kernel 时长或访存字节非法（小于等于 0）时，该 kernel 不计入结果；解析侧仅去除完全重复的查询记录，保留 `globalTaskId` 不同的并发任务。未传入 `--chip_peak_bandwidth` 时，MBU 与 Chip Peak Bandwidth 列留空，仅输出访存字节与实测带宽。计算阶段保留原始精度，输出时带宽保留两位小数、MBU 保留四位小数。
 
 ## 6. 当前支持的算子
 
@@ -153,4 +156,4 @@ mbu = achieved_bandwidth / chipPeakBandwidth
 | GroupedMatmul | `GroupedMatmul`、`GroupedMatMul` |
 
 > [!NOTE]
-> Matmul 与 FlashAttention 的访存字节可由 kernel 记录的输入/输出张量直接求和得到（FlashAttention 的 N² 中间 score 矩阵不落 HBM，因此通用求和即为真实 HBM 流量）。GroupedMatmul 的访存字节口径取决于采集侧记录分组 shape 的方式（整段拼接张量 vs 逐组重复），建议结合含该算子的真实 Profiling 数据校验后再作为最终口径。
+> Matmul 与 FlashAttention 按 kernel 记录的输入/输出张量字节求和估算，不代表硬件实测 HBM 流量。GroupedMatmul 的访存字节口径取决于采集侧记录分组 shape 的方式（整段拼接张量 vs 逐组重复），建议结合含该算子的真实 Profiling 数据校验后再作为最终口径。

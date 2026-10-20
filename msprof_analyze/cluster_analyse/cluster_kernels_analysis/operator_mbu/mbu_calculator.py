@@ -13,15 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from math import isfinite
+
 import numpy as np
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mbu.operator_bytes import compute_access_bytes
-from msprof_analyze.prof_exports.mbu_export import KernelBytesExport
+from msprof_analyze.prof_exports.mbu_export import KernelBytesExport, TARGET_OP_TYPES
 from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_columns
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
-from msprof_analyze.prof_common.utils import convert_to_float
 
 logger = get_logger()
 
@@ -36,13 +37,16 @@ class MBUCalculator:
     峰值带宽由调用方（CLI 参数）传入；缺省时只输出访存字节与实测带宽，MBU 留空。
     """
 
-    # Device 侧 opType 与关键算子族的对应关系（与 issue 要求的 3 类算子一致）。
-    TARGET_OP_TYPES = {
-        "MatMulV2",
-        "MatMulV3",
-        "FlashAttentionScore",
-        "GroupedMatmul",
-        "GroupedMatMul",
+    TARGET_OP_TYPES = TARGET_OP_TYPES
+    REQUIRED_COLUMNS = {
+        "type",
+        "kernel_ts",
+        "kernel_end",
+        "task_duration",
+        "input_shapes",
+        "input_types",
+        "output_shapes",
+        "output_types",
     }
 
     OUTPUT_COLUMNS = [
@@ -61,11 +65,18 @@ class MBUCalculator:
 
     def __init__(self, data_map, peak_bandwidth_gb=None, analysis_class=""):
         self.profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
+        self.step_range = data_map.get(Constant.STEP_RANGE)
         self.analysis_class = analysis_class
-        # peak_bandwidth_gb 单位为 GB/s，内部统一换算为 Byte/s；
-        # 入参可能来自 CLI 等外部输入（如字符串 "1600"），先做数值转换，无法转换或非正数视为未提供。
-        peak = convert_to_float(peak_bandwidth_gb) if peak_bandwidth_gb is not None else 0
-        self.peak_bandwidth = peak * GB_TO_BYTES if peak > 0 else None
+        # 仅未提供参数时留空；非法值不能静默退化为不计算 MBU。
+        self.peak_bandwidth = None
+        if peak_bandwidth_gb is not None:
+            try:
+                peak = float(peak_bandwidth_gb) * GB_TO_BYTES
+            except (TypeError, ValueError, OverflowError) as err:
+                raise ValueError("chip_peak_bandwidth must be a finite positive number.") from err
+            if not isfinite(peak) or peak <= 0:
+                raise ValueError("chip_peak_bandwidth must be a finite positive number.")
+            self.peak_bandwidth = peak
 
     def run(self):
         logger.info("Start MBU calculation.")
@@ -74,8 +85,9 @@ class MBUCalculator:
             logger.warning("No kernel shape data found. Skip MBU calculation.")
             return pd.DataFrame()
 
-        if "type" not in kernel_df.columns:
-            logger.error("Kernel data missing opType column. Skip MBU calculation.")
+        missing_columns = self.REQUIRED_COLUMNS.difference(kernel_df.columns)
+        if missing_columns:
+            logger.error("Kernel data missing required columns: %s. Skip MBU calculation.", sorted(missing_columns))
             return pd.DataFrame()
 
         # 按 opType 圈定关键算子（Matmul / FlashAttention / GroupedMatmul）。
@@ -89,15 +101,10 @@ class MBUCalculator:
         if df.empty:
             return pd.DataFrame()
 
-        df["access_bytes"] = df.apply(
-            lambda row: compute_access_bytes(
-                row.get("input_shapes", ""),
-                row.get("input_types", ""),
-                row.get("output_shapes", ""),
-                row.get("output_types", ""),
-            ),
-            axis=1,
-        )
+        df["access_bytes"] = [
+            compute_access_bytes(*values)
+            for values in zip(df["input_shapes"], df["input_types"], df["output_shapes"], df["output_types"])
+        ]
         df = df[df["access_bytes"] > 0]
         if df.empty:
             return pd.DataFrame()
@@ -108,27 +115,27 @@ class MBUCalculator:
 
         if self.peak_bandwidth:
             df["chip_peak_bandwidth"] = self.peak_bandwidth
-            df["mbu"] = (df["achieved_bandwidth"] / self.peak_bandwidth).round(4)
+            df["mbu"] = df["achieved_bandwidth"] / self.peak_bandwidth
         else:
             # 未提供峰值带宽时，MBU 无法计算，留空（仅输出访存字节与实测带宽）。
             logger.warning("chip_peak_bandwidth not provided; MBU left empty, only bandwidth reported.")
             df["chip_peak_bandwidth"] = np.nan
             df["mbu"] = np.nan
 
-        # 同一 kernel 时间段唯一，按 (kernel_ts, kernel_end) 去重避免重复计数。
-        df = df.drop_duplicates(subset=["kernel_ts", "kernel_end"]).reset_index(drop=True)
+        # 仅去除完全重复的查询记录，保留 globalTaskId 不同的并发任务。
+        df = df.drop_duplicates().reset_index(drop=True)
         logger.info("MBU calculation finished, result rows: %s", len(df))
         # reindex 按固定列输出，查询结果缺失的列补空值，避免 KeyError。
         return df.reindex(columns=self.OUTPUT_COLUMNS)
 
     def _query_kernel_bytes(self):
         """查询 kernel 的 opType、输入/输出 shape 与 dtype、以及 kernel 时长。"""
-        export = KernelBytesExport(self.profiler_db_path, self.analysis_class)
+        export = KernelBytesExport(self.profiler_db_path, self.analysis_class, self.step_range)
         df = export.read_export_db()
         if df is None or df.empty:
             return None
         # shape 与 dtype 列的取值可能带引号，统一剥离后再参与访存字节计算。
         for column_name in ["input_shapes", "output_shapes", "input_types", "output_types"]:
             if column_name in df.columns:
-                df[column_name] = df[column_name].astype(str).str.strip('"\'')
+                df[column_name] = df[column_name].fillna("").astype(str).str.strip('"\'')
         return df

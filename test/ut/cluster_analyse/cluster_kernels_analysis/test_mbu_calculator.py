@@ -34,15 +34,16 @@ class TestMBUCalculator(unittest.TestCase):
         mock_export.read_export_db.return_value = df
         return patch(self.NAMESPACE + "KernelBytesExport", return_value=mock_export)
 
-    def test_init_non_positive_peak_then_none(self):
-        self.assertIsNone(self._calc(0).peak_bandwidth)
+    def test_init_peak_validation(self):
         self.assertIsNone(self._calc(None).peak_bandwidth)
         self.assertEqual(self._calc(1000).peak_bandwidth, 1000 * 1e9)
+        for peak in (0, -1, float("nan"), float("inf"), "not_a_number", 1e308):
+            with self.subTest(peak=peak), self.assertRaisesRegex(ValueError, "chip_peak_bandwidth"):
+                self._calc(peak)
 
     def test_init_string_peak_then_converted(self):
         # CLI 等外部输入可能传入字符串形式的峰值带宽，应正常转换而非类型比较异常
         self.assertEqual(self._calc("1600").peak_bandwidth, 1600 * 1e9)
-        self.assertIsNone(self._calc("not_a_number").peak_bandwidth)
 
     def test_run_when_no_kernel_data_then_empty(self):
         calc = self._calc(1000)
@@ -196,7 +197,7 @@ class TestMBUCalculator(unittest.TestCase):
         self.assertEqual(48, res.iloc[0]["access_bytes"])
 
     def test_run_missing_columns_then_no_keyerror(self):
-        # 查询结果缺少 kernel_name/output_shapes/output_types 等列时，不应抛 KeyError，缺失列补空值
+        # kernel_name 是可选展示列，缺失时补空值；计算依赖列则必须存在。
         calc = self._calc(1000)
         df = pd.DataFrame(
             [
@@ -207,6 +208,8 @@ class TestMBUCalculator(unittest.TestCase):
                     "task_duration": 10,
                     "input_shapes": "2,3",
                     "input_types": "FLOAT16",
+                    "output_shapes": "",
+                    "output_types": "",
                 }
             ]
         )
@@ -224,7 +227,61 @@ class TestMBUCalculator(unittest.TestCase):
         mock_export.read_export_db.return_value = pd.DataFrame()
         with patch(self.NAMESPACE + "KernelBytesExport", return_value=mock_export) as mock_cls:
             calc._query_kernel_bytes()
-        mock_cls.assert_called_once_with("dummy", "operator_mbu")
+        mock_cls.assert_called_once_with("dummy", "operator_mbu", None)
+
+    @staticmethod
+    def _kernel_row():
+        return {
+            "globalTaskId": 1,
+            "kernel_name": "mm",
+            "type": "MatMulV2",
+            "kernel_ts": 10,
+            "kernel_end": 20,
+            "task_duration": 10,
+            "input_shapes": "2,3",
+            "input_types": "FLOAT16",
+            "output_shapes": "2,3",
+            "output_types": "FLOAT16",
+        }
+
+    def test_missing_required_columns_are_reported(self):
+        for column in MBUCalculator.REQUIRED_COLUMNS:
+            row = self._kernel_row()
+            del row[column]
+            with self.subTest(column=column), self._patch_export(pd.DataFrame([row])):
+                with patch(self.NAMESPACE + "logger") as log:
+                    self.assertTrue(self._calc().run().empty)
+                self.assertIn(column, log.error.call_args.args[1])
+
+    def test_duplicates_preserve_distinct_concurrent_tasks(self):
+        row = self._kernel_row()
+        rows = [row, row.copy(), dict(row, globalTaskId=2), dict(row, globalTaskId=3, kernel_name="other")]
+        with self._patch_export(pd.DataFrame(rows)):
+            result = self._calc().run()
+        self.assertEqual(result["kernel_name"].tolist(), ["mm", "mm", "other"])
+        self.assertEqual(result.index.tolist(), [0, 1, 2])
+        self.assertTrue(result["mbu"].isna().all())
+
+    def test_null_shapes_and_types_do_not_become_strings(self):
+        row = dict(self._kernel_row(), input_shapes=None, input_types=None)
+        with self._patch_export(pd.DataFrame([row])):
+            result = self._calc().run()
+        self.assertEqual(result.iloc[0]["input_shapes"], "")
+        self.assertEqual(result.iloc[0]["access_bytes"], 12)
+
+    def test_calculation_keeps_precision_before_export(self):
+        with self._patch_export(pd.DataFrame([self._kernel_row()])):
+            result = self._calc(777).run()
+        self.assertAlmostEqual(result.iloc[0]["mbu"], 24 / (10 * 1e-9) / (777 * 1e9), places=12)
+
+    def test_step_range_is_forwarded(self):
+        step_range = {Constant.START_NS: 10, Constant.END_NS: 20}
+        calc = MBUCalculator(
+            {Constant.PROFILER_DB_PATH: "dummy", Constant.STEP_RANGE: step_range}, analysis_class="operator_mbu"
+        )
+        with self._patch_export(pd.DataFrame()) as mock_cls:
+            calc.run()
+        mock_cls.assert_called_once_with("dummy", "operator_mbu", step_range)
 
 
 if __name__ == "__main__":

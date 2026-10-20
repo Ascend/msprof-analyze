@@ -14,38 +14,32 @@
 # limitations under the License.
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
+from msprof_analyze.prof_exports.mfu_export import QUERY_KERNEL_SHAPES_TEMPLATE
+from msprof_analyze.prof_common.constant import Constant
 
 
-QUERY_KERNEL_BYTES = """
-    WITH compute_info AS (
-        SELECT
-            (SELECT value FROM STRING_IDS WHERE id = t.name) AS kernel_name,
-            t.globalTaskId,
-            (SELECT value FROM STRING_IDS WHERE id = t.opType) AS type,
-            (SELECT value FROM STRING_IDS WHERE id = t.inputShapes) AS input_shapes,
-            (SELECT value FROM STRING_IDS WHERE id = t.inputDataTypes) AS input_types,
-            (SELECT value FROM STRING_IDS WHERE id = t.outputShapes) AS output_shapes,
-            (SELECT value FROM STRING_IDS WHERE id = t.outputDataTypes) AS output_types
-        FROM
-            COMPUTE_TASK_INFO t
-    )
-    SELECT
-        compute_info.*,
-        task.startNs as kernel_ts,
-        task.endNs as kernel_end,
-        task.endNs - task.startNs as task_duration
-    FROM
-        compute_info
-    JOIN
-        TASK as task ON compute_info.globalTaskId = task.globalTaskId
-    ORDER BY task.startNs;
-"""
+# Issue #29 限定 Matmul / FlashAttention / GroupedMatmul 三类算子。
+# 新增已验证的 Device opType 时更新此清单及中英文支持列表；SQL 和计算层共同使用。
+TARGET_OP_TYPES = ("MatMulV2", "MatMulV3", "FlashAttentionScore", "GroupedMatmul", "GroupedMatMul")
+OP_TYPE_PARAMS = tuple(f"op_type_{index}" for index in range(len(TARGET_OP_TYPES)))
+
+QUERY_KERNEL_BYTES = QUERY_KERNEL_SHAPES_TEMPLATE.format(
+    extra_columns=",\n            (SELECT value FROM STRING_IDS WHERE id = t.outputDataTypes) AS output_types",
+    where_clause=(
+        "WHERE task.startNs >= ? AND task.startNs <= ? "
+        f"AND compute_info.type IN ({', '.join('?' for _ in TARGET_OP_TYPES)})"
+    ),
+)
 
 
 class KernelBytesExport(BaseStatsExport):
-    def __init__(self, db_path, recipe_name):
-        super().__init__(db_path, recipe_name, param_dict=None)
+    def __init__(self, db_path, recipe_name, step_range=None):
+        params = {Constant.START_NS: 0, Constant.END_NS: Constant.MAX_INTEGER}
+        if step_range is not None:
+            params.update(step_range)
+        params.update(zip(OP_TYPE_PARAMS, TARGET_OP_TYPES))
+        super().__init__(db_path, recipe_name, param_dict=params)
         self._query = QUERY_KERNEL_BYTES
 
     def get_param_order(self):
-        return []
+        return [Constant.START_NS, Constant.END_NS, *OP_TYPE_PARAMS]

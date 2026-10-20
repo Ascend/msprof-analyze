@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+from unittest.mock import patch
 
 from msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mbu.operator_bytes import (
     dtype_size,
@@ -42,6 +43,20 @@ class TestOperatorBytes(unittest.TestCase):
         # 带引号的取值应剥离后再查表，不应回退默认值
         self.assertEqual(dtype_size('"FLOAT"'), 4)
         self.assertEqual(dtype_size("'INT64'"), 8)
+
+    def test_low_precision_types_and_packed_tensor_bytes(self):
+        for dtype in ("FLOAT8_E4M3FN", "DT_FLOAT8_E5M2"):
+            self.assertEqual(dtype_size(dtype), 1)
+        self.assertEqual(dtype_size("DT_INT4"), 0.5)
+        self.assertEqual(dtype_size("UINT4"), 0.5)
+        self.assertEqual(compute_access_bytes("3;4", "INT4;UINT4", "3", "INT4"), 6)
+
+    def test_unknown_dtype_warning_is_cached(self):
+        dtype_size.cache_clear()
+        with patch("msprof_analyze.cluster_analyse.cluster_kernels_analysis.operator_mbu.operator_bytes.logger") as log:
+            self.assertEqual(dtype_size("UNKNOWN"), 2)
+            self.assertEqual(dtype_size("UNKNOWN"), 2)
+        log.warning.assert_called_once()
 
     def test_parse_shapes_with_empty_segment(self):
         self.assertEqual(parse_shapes("1,2;3,4;"), [[1, 2], [3, 4], []])

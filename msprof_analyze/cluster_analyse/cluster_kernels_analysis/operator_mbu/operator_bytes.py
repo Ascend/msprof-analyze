@@ -13,8 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from math import prod
+from functools import lru_cache
+from math import ceil, prod
 from typing import List
+
+from msprof_analyze.prof_common.logger import get_logger
+
+logger = get_logger()
 
 DEFAULT_DTYPE_BYTES = 2  # 无法识别时按 FP16 处理
 DT_PREFIX = "DT_"  # 采集侧数据类型可能带 DT_ 前缀（如 DT_FLOAT16），查表前统一剥离
@@ -40,10 +45,15 @@ DTYPE_BYTES = {
     "FLOAT64": 8,
     "FP8": 1,
     "HIFLOAT8": 1,
+    "FLOAT8_E4M3FN": 1,
+    "FLOAT8_E5M2": 1,
+    "INT4": 0.5,
+    "UINT4": 0.5,
 }
 
 
-def dtype_size(dtype: str) -> int:
+@lru_cache(maxsize=128)
+def dtype_size(dtype: str) -> float:
     """返回 dtype 每个元素的字节数，未知类型按 FP16(2 字节) 处理。
 
     兼容带引号的取值与 DT_ 前缀变体（如 DT_FLOAT16 与 FLOAT16 等价）。
@@ -53,6 +63,8 @@ def dtype_size(dtype: str) -> int:
     key = dtype.strip().strip("\"'").upper()
     if key not in DTYPE_BYTES and key.startswith(DT_PREFIX):
         key = key[len(DT_PREFIX) :]
+    if key not in DTYPE_BYTES:
+        logger.warning("Unknown tensor dtype %s; using 2 bytes per element.", key)
     return DTYPE_BYTES.get(key, DEFAULT_DTYPE_BYTES)
 
 
@@ -91,7 +103,8 @@ def _tensor_group_bytes(shapes: List[List[int]], types: List[str]) -> int:
         if not shape or any(dim <= 0 for dim in shape):
             continue
         dtype = types[idx] if idx < len(types) else ""
-        total += prod(shape) * dtype_size(dtype)
+        # 子字节类型按每个张量向上取整到完整字节。
+        total += ceil(prod(shape) * dtype_size(dtype))
     return total
 
 
