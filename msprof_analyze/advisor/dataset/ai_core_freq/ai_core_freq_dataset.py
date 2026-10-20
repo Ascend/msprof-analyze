@@ -1,19 +1,19 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-import json
 from msprof_analyze.prof_common.logger import get_logger
 import math
 
@@ -27,17 +27,16 @@ logger = get_logger()
 
 
 class AICoreFreqDataset:
-
     def __init__(self, collection_path, data: dict, build_dataset=True, **kwargs) -> None:
-
         self._profiler_step = []
         self._ai_core_ops = []
         self._ai_core_freq: [TimelineEvent] = []
         self._previous_freq_index = -1
 
         self.timeline_dir = collection_path
-        self.timeline_data_list = get_file_path_from_directory(collection_path,
-                                                               lambda file: file.endswith("trace_view.json"))
+        self.timeline_data_list = get_file_path_from_directory(
+            collection_path, lambda file: file.endswith("trace_view.json")
+        )
 
         self.step = kwargs.get("step")
         self.op_freq = {}
@@ -72,14 +71,14 @@ class AICoreFreqDataset:
         return cls.__module__.rsplit('.', maxsplit=1)[-1]
 
     def parse(self):
-
         if len(self.timeline_data_list) == 0:
             logger.warning("Please ensure trace_view.json in %s, skip timeline analysis.", self.timeline_dir)
             return False
 
         if len(self.timeline_data_list) > 1:
-            logger.warning("Found multiple trace_view.json in %s, load the file of device 0 for analysis.",
-                           self.timeline_dir)
+            logger.warning(
+                "Found multiple trace_view.json in %s, load the file of device 0 for analysis.", self.timeline_dir
+            )
 
         _ = parse_json_with_generator(sorted(self.timeline_data_list)[0], self._add_event)
 
@@ -143,15 +142,13 @@ class AICoreFreqDataset:
                     op_freq_list.append(convert_to_float(freq_event.args.MHz))
                     freq_index += 1
                     continue
-                elif convert_to_float(freq_event.ts) < op_end_time:
+                if convert_to_float(freq_event.ts) < op_end_time:
                     if op_event.name not in self.op_freq:
                         self.op_freq[op_event.name] = {"count": 0, "dur": 0, "freq_list": []}
                     self.op_freq[op_event.name]["count"] += 1
                     self.op_freq[op_event.name]["dur"] += convert_to_float(op_event.dur)
                     op_freq_list.append(convert_to_float(freq_event.args.MHz))
                     self.op_freq[op_event.name]["freq_list"].append(min(op_freq_list))
-                    break
-                else:
-                    break
+                break
 
             op_index += 1

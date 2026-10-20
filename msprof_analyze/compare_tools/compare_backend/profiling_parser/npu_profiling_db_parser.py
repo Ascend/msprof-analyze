@@ -1,32 +1,36 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.db_manager import DBManager
 from msprof_analyze.compare_tools.compare_backend.profiling_parser.base_profiling_parser import ProfilingResult
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.framework_api_bean import \
-    FrameworkApiBean
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.kernel_bean import \
-    KernelBean
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.hccl_op_bean import \
-    HcclOpBean
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.hccl_task_bean import \
-    HcclTaskBean
-from msprof_analyze.compare_tools.compare_backend.profiling_parser.overall_metrics_parser import \
-    OverallMetricsParser
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.framework_api_bean import (
+    FrameworkApiBean,
+)
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.kernel_bean import (
+    KernelBean,
+)
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.hccl_op_bean import (
+    HcclOpBean,
+)
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.db_data_bean.hccl_task_bean import (
+    HcclTaskBean,
+)
+from msprof_analyze.compare_tools.compare_backend.profiling_parser.overall_metrics_parser import OverallMetricsParser
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.op_stastic_bean import OpStatisticBean
 
@@ -38,24 +42,24 @@ logger = get_logger()
 class NPUProfilingDbParser:
     MEMORY_B_TO_KB = 1024
     pytorch_api_sql = """
-    SELECT 
+    SELECT
         PYTORCH_API.startNs AS "startNs",
         PYTORCH_API.endNs AS "endNs",
         PYTORCH_API.connectionId AS "connectionId",
         STRING_IDS.value AS "name",
         SHAPES.value AS "inputShapes",
         CONNECTION_IDS.connectionId AS "cann_connectionId"
-    FROM 
-        PYTORCH_API 
-    LEFT JOIN 
+    FROM
+        PYTORCH_API
+    LEFT JOIN
         CONNECTION_IDS ON PYTORCH_API.connectionId=CONNECTION_IDS.id
-    LEFT JOIN 
-        STRING_IDS ON PYTORCH_API.name=STRING_IDS.id 
-    LEFT JOIN 
-        STRING_IDS AS SHAPES ON PYTORCH_API.inputShapes=SHAPES.id 
-    LEFT JOIN 
+    LEFT JOIN
+        STRING_IDS ON PYTORCH_API.name=STRING_IDS.id
+    LEFT JOIN
+        STRING_IDS AS SHAPES ON PYTORCH_API.inputShapes=SHAPES.id
+    LEFT JOIN
         ENUM_API_TYPE ON PYTORCH_API.type=ENUM_API_TYPE.id
-    WHERE 
+    WHERE
         ENUM_API_TYPE.name=? {}
     """
 
@@ -80,7 +84,7 @@ class NPUProfilingDbParser:
         try:
             DBManager.destroy_db_connect(self.conn, self.cursor)
         except Exception:
-            logger.warning(f"Failed to release database connection in NPUProfilingDbParser.")
+            logger.warning("Failed to release database connection in NPUProfilingDbParser.")
 
     def load_data(self) -> ProfilingResult:
         self._prepare_data()
@@ -132,11 +136,19 @@ class NPUProfilingDbParser:
     def _query_torch_op_data(self):
         if not DBManager.judge_table_exists(self.cursor, Constant.TABLE_PYTORCH_API):
             return
-        if any((self._enable_memory_compare, self._enable_operator_compare, self._enable_profiling_compare,
-                self._enable_api_compare)):
-            sql = self.pytorch_api_sql.format(
-                "AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?") if len(self.step_range) == 2 else \
-                self.pytorch_api_sql.format("")
+        if any(
+            (
+                self._enable_memory_compare,
+                self._enable_operator_compare,
+                self._enable_profiling_compare,
+                self._enable_api_compare,
+            )
+        ):
+            sql = (
+                self.pytorch_api_sql.format("AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?")
+                if len(self.step_range) == 2
+                else self.pytorch_api_sql.format("")
+            )
             param = ('op', self.step_range[0], self.step_range[1]) if len(self.step_range) == 2 else ('op',)
             all_data = DBManager.fetch_all_data(self.cursor, sql, param=param)
             for data in all_data:
@@ -145,8 +157,14 @@ class NPUProfilingDbParser:
     def _query_compute_op_data(self):
         if not DBManager.judge_table_exists(self.cursor, Constant.TABLE_COMPUTE_TASK_INFO):
             return
-        if any((self._enable_operator_compare, self._args.max_kernel_num, self._enable_profiling_compare,
-                self._enable_kernel_compare)):
+        if any(
+            (
+                self._enable_operator_compare,
+                self._args.max_kernel_num,
+                self._enable_profiling_compare,
+                self._enable_kernel_compare,
+            )
+        ):
             sql = """
             SELECT
                 NAME_IDS.value AS "OpName",
@@ -198,7 +216,8 @@ class NPUProfilingDbParser:
                     else:
                         input_shapes = data_bean.input_shapes if data_bean.input_shapes else 'N/A'
                         kernels_dict.setdefault(data_bean.op_type, {}).setdefault(input_shapes, []).append(
-                            [data_bean.name, data_bean.dur])
+                            [data_bean.name, data_bean.dur]
+                        )
                 if self._enable_profiling_compare:
                     self.compute_op_data.append(data_bean)
             if kernels_dict:
@@ -206,13 +225,16 @@ class NPUProfilingDbParser:
                     kernel_data = {}
                     for (op_type, core_type), dur_list in kernels_dict.items():
                         kernel_data[f"{op_type}-{core_type}"] = OpStatisticBean(
-                            {"OP Type": op_type,
-                             "Core Type": core_type,
-                             "Total Time(us)": sum(dur_list),
-                             "Avg Time(us)": sum(dur_list) / len(dur_list) if dur_list else 0,
-                             "Max Time(us)": max(dur_list) if dur_list else 0,
-                             "Min Time(us)": min(dur_list) if dur_list else 0,
-                             "Count": len(dur_list)})
+                            {
+                                "OP Type": op_type,
+                                "Core Type": core_type,
+                                "Total Time(us)": sum(dur_list),
+                                "Avg Time(us)": sum(dur_list) / len(dur_list) if dur_list else 0,
+                                "Max Time(us)": max(dur_list) if dur_list else 0,
+                                "Min Time(us)": min(dur_list) if dur_list else 0,
+                                "Count": len(dur_list),
+                            }
+                        )
                     self.result_data.update_kernel_details(kernel_data)
                 else:
                     self.result_data.update_kernel_details(kernels_dict)
@@ -244,8 +266,11 @@ class NPUProfilingDbParser:
                 ON GROUP_NAME_IDS.id == COMMUNICATION_OP.groupName
             {}
             """
-            sql = sql.format("WHERE COMMUNICATION_OP.startNs>=? AND COMMUNICATION_OP.startNs<=?") \
-                if self.step_range else sql.format("")
+            sql = (
+                sql.format("WHERE COMMUNICATION_OP.startNs>=? AND COMMUNICATION_OP.startNs<=?")
+                if self.step_range
+                else sql.format("")
+            )
             if self.step_range:
                 all_data = DBManager.fetch_all_data(self.cursor, sql, param=self.step_range)
             else:
@@ -290,30 +315,36 @@ class NPUProfilingDbParser:
             return
         if self._enable_memory_compare:
             sql = """
-            SELECT  
+            SELECT
                 STRING_IDS.value AS "opName",
                 OP_MEMORY.size AS "size",
                 OP_MEMORY.allocationTime AS "allocationTime",
                 OP_MEMORY.releaseTime AS "releaseTime",
                 OP_MEMORY.duration AS "duration"
-            FROM 
-                OP_MEMORY 
-            LEFT JOIN 
+            FROM
+                OP_MEMORY
+            LEFT JOIN
                 STRING_IDS
                 ON OP_MEMORY.name == STRING_IDS.id
             {}
             """
-            sql = sql.format(
-                "WHERE OP_MEMORY.releaseTime>=? AND OP_MEMORY.allocationTime<=? ORDER BY OP_MEMORY.releaseTime") \
-                if self.step_range else sql.format("ORDER BY OP_MEMORY.releaseTime")
+            sql = (
+                sql.format(
+                    "WHERE OP_MEMORY.releaseTime>=? AND OP_MEMORY.allocationTime<=? ORDER BY OP_MEMORY.releaseTime"
+                )
+                if self.step_range
+                else sql.format("ORDER BY OP_MEMORY.releaseTime")
+            )
             if self.step_range:
                 memory_data = DBManager.fetch_all_data(self.cursor, sql, param=self.step_range)
             else:
                 memory_data = DBManager.fetch_all_data(self.cursor, sql)
 
-            sql = self.pytorch_api_sql.format(
-                "AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?") if len(self.step_range) == 2 else \
-                self.pytorch_api_sql.format("")
+            sql = (
+                self.pytorch_api_sql.format("AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?")
+                if len(self.step_range) == 2
+                else self.pytorch_api_sql.format("")
+            )
             param = ('queue', self.step_range[0], self.step_range[1]) if len(self.step_range) == 2 else ('queue',)
             task_queue_data = DBManager.fetch_all_data(self.cursor, sql, param=param)
             queue_dict = {}
@@ -329,8 +360,12 @@ class NPUProfilingDbParser:
                 dequeue_data = data.get("dequeue")
                 if enqueue_data and dequeue_data:
                     task_queue_data.append(
-                        {Constant.TS: enqueue_data.get("startNs"), Constant.START_NS: dequeue_data.get("startNs"),
-                         Constant.END_NS: dequeue_data.get("endNs")})
+                        {
+                            Constant.TS: enqueue_data.get("startNs"),
+                            Constant.START_NS: dequeue_data.get("startNs"),
+                            Constant.END_NS: dequeue_data.get("endNs"),
+                        }
+                    )
             task_queue_data.sort(key=lambda x: x.get(Constant.START_NS))
 
             self._update_memory_data(memory_data, task_queue_data)
@@ -348,25 +383,34 @@ class NPUProfilingDbParser:
                     if allocation_time > task_queue.get(Constant.END_NS):
                         task_queue_index += 1
                         continue
-                    self.result_data.update_memory_list({Constant.SIZE: op_memory.get("size", 0) /
-                                                                        self.MEMORY_B_TO_KB,
-                                                         Constant.TS: task_queue.get(Constant.TS) / Constant.NS_TO_US,
-                                                         Constant.ALLOCATION_TIME: allocation_time / Constant.NS_TO_US,
-                                                         Constant.RELEASE_TIME: release_time / Constant.NS_TO_US})
+                    self.result_data.update_memory_list(
+                        {
+                            Constant.SIZE: op_memory.get("size", 0) / self.MEMORY_B_TO_KB,
+                            Constant.TS: task_queue.get(Constant.TS) / Constant.NS_TO_US,
+                            Constant.ALLOCATION_TIME: allocation_time / Constant.NS_TO_US,
+                            Constant.RELEASE_TIME: release_time / Constant.NS_TO_US,
+                        }
+                    )
                     break
             else:
-                self.result_data.update_memory_list({Constant.SIZE: op_memory.get("size", 0) / self.MEMORY_B_TO_KB,
-                                                     Constant.TS: allocation_time / Constant.NS_TO_US,
-                                                     Constant.ALLOCATION_TIME: allocation_time / Constant.NS_TO_US,
-                                                     Constant.RELEASE_TIME: release_time / Constant.NS_TO_US})
+                self.result_data.update_memory_list(
+                    {
+                        Constant.SIZE: op_memory.get("size", 0) / self.MEMORY_B_TO_KB,
+                        Constant.TS: allocation_time / Constant.NS_TO_US,
+                        Constant.ALLOCATION_TIME: allocation_time / Constant.NS_TO_US,
+                        Constant.RELEASE_TIME: release_time / Constant.NS_TO_US,
+                    }
+                )
 
     def _query_python_function_data(self):
         if not DBManager.judge_table_exists(self.cursor, Constant.TABLE_PYTORCH_API):
             return
         if self._enable_operator_compare:
-            sql = self.pytorch_api_sql.format(
-                "AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?") if len(self.step_range) == 2 else \
-                self.pytorch_api_sql.format("")
+            sql = (
+                self.pytorch_api_sql.format("AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?")
+                if len(self.step_range) == 2
+                else self.pytorch_api_sql.format("")
+            )
             param = ('trace', self.step_range[0], self.step_range[1]) if len(self.step_range) == 2 else ('trace',)
             all_data = DBManager.fetch_all_data(self.cursor, sql, param=param)
             for data in all_data:
@@ -383,33 +427,39 @@ class NPUProfilingDbParser:
         sql = """
         SELECT T.connectionId, T.startNs
         FROM (
-            SELECT 
+            SELECT
                 CONNECTION_IDS.connectionId AS "connectionId",
                 COUNT(0) AS "cnt",
                 GROUP_CONCAT(PYTORCH_API.startNs) AS "startNs"
-            FROM 
+            FROM
                 PYTORCH_API
-            LEFT JOIN 
-                CONNECTION_IDS 
-            ON 
+            LEFT JOIN
+                CONNECTION_IDS
+            ON
                 PYTORCH_API.connectionId == CONNECTION_IDS.id
-            WHERE 
+            WHERE
                 PYTORCH_API.connectionId IS NOT NULL {}
-            GROUP BY 
+            GROUP BY
                 CONNECTION_IDS.connectionId
         ) T WHERE T.cnt == 2
         """
         if self._enable_operator_compare:
-            sql = sql.format(
-                "AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?") if self.step_range else sql.format("")
+            sql = (
+                sql.format("AND PYTORCH_API.startNs>=? AND PYTORCH_API.startNs<=?")
+                if self.step_range
+                else sql.format("")
+            )
             if self.step_range:
                 all_data = DBManager.fetch_all_data(self.cursor, sql, param=self.step_range)
             else:
                 all_data = DBManager.fetch_all_data(self.cursor, sql)
             fwdbwd_dict = {}
             for data in all_data:
-                start_time_list = [convert_to_decimal(start_ns) / Constant.NS_TO_US
-                                   for start_ns in data.get("startNs").split(",")]
-                fwdbwd_dict[data.get("connectionId")] = {"start": Event(min(start_time_list)),
-                                                         "end": Event(max(start_time_list))}
+                start_time_list = [
+                    convert_to_decimal(start_ns) / Constant.NS_TO_US for start_ns in data.get("startNs").split(",")
+                ]
+                fwdbwd_dict[data.get("connectionId")] = {
+                    "start": Event(min(start_time_list)),
+                    "end": Event(max(start_time_list)),
+                }
             self.result_data.update_fwdbwd_dict_data(fwdbwd_dict)

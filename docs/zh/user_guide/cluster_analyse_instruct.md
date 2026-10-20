@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-`cluster_analyse` 是面向集群场景的分析工具，基础功能涵盖通信域的迭代内耗时分析、通信时间分析和通信矩阵分析，可用于定位慢卡、慢节点及慢链路问题。 生成的交付件推荐在 `MindStudio Insight` 中可视化查看，典型应用场景有：
+`cluster_analyse` 是面向集群场景的分析工具，基础功能涵盖通信域的迭代内耗时分析、通信时间分析和通信矩阵分析，可用于定位慢卡、慢节点及慢链路问题。生成的交付件推荐在 `MindStudio Insight` 中可视化查看，典型应用场景有：
 
 - **判断是否存在慢卡或负载不均衡**：对比各 rank 或 stage 的计算时间、通信时间、空闲时间。如果同类时间差异超过 5%，可进一步排查慢卡或通信瓶颈。
 - **判断是否存在慢链路或带宽异常**：查看 rank 间的链路类型（LOCAL/HCCS/PCIE/RDMA）和传输带宽。同一类链路间的带宽应基本持平，差异明显时可定位到具体慢链路。
@@ -21,8 +21,8 @@
 | 采集工具 | 支持的结果类型 | 采集指南                                                                                                                                          |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------|
 | msProf | db | 《[模型调优工具](https://gitcode.com/Ascend/msprof/blob/master/docs/zh/quick_start/msprof_quick_start.md)》                                                                                                 |
-| Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》 |
-| MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》 |
+| Ascend PyTorch Profiler | text、db | 《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》 |
+| MindSpore Profiler | text、db | 《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》 |
 | msMonitor | db | 《[msMonitor](https://gitcode.com/Ascend/msmonitor/blob/master/docs/zh/quick_start/msmonitor_quick_start.md)》                                                                              |
 
 下面以 Ascend PyTorch Profiler 为例说明输入数据要求。
@@ -97,9 +97,11 @@ profiling_data/
     └── profiler_info_*.json
 ```
 
+<!-- npu="950" id1 -->
 ### 2.4 约束
 
-Ascend 950 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
+Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具通信相关的分析功能不具有参考意义。
+<!-- end id1 -->
 
 ## 3. 功能介绍
 
@@ -165,7 +167,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 | 交付件                              | 输入格式 | 主要用途 / 说明                                              |
 | :---------------------------------- | :------- | :----------------------------------------------------------- |
-| `cluster_analysis.db`               | db       | 包含导入 MindStudio Insight 进行可视化分析，适合大规模集群数据。 |
+| `cluster_analysis.db`               | db       | 包含导入 MindStudio Insight 进行可视化分析的数据，适合大规模集群数据场景。 |
 | `cluster_step_trace_time.csv`       | text     | 集群迭代耗时拆解信息，包括 rank/stage 维度耗时，用于辅助判断慢卡、负载不均衡等问题。 |
 | `cluster_communication.json`        | text     | 集群通信算子耗时明细。                                       |
 | `cluster_communication_matrix.json` | text     | 集群通信矩阵，包括 rank 间链路类型、带宽和传输时间。         |
@@ -192,7 +194,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 ![img](../figures/cluster_communication_matrix.png)
     <div style="text-align: center;">
     图2 集群通信矩阵可视化呈现
-    </div>    
+    </div>
 
 ### 4.3 交付件字段说明
 
@@ -212,7 +214,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 | Free | Device 侧既不在通信也不在计算的空闲时间，可能来自 SDMA 拷贝、host bound 或等待。 |
 | Stage | PP 并行时有效，表示除 receive 算子时间外的 stage 时间。 |
 | Bubble | Receive 时间总和。 |
-| Communication(Not Overlapped and Exclude Receive) | 剔除 receive 算子后，未被计算掩盖的通信时间。 |
+| Communication(Not Overlapped and Exclude Receive) | 剔除 receive 算子后，未被计算掩盖的通信耗时。 |
 | Preparing | 迭代开始到首个计算或通信算子运行前的准备时间。 |
 | DP Index | 数据按照并行策略切分后所属 DP 组的索引，未采集则不显示。 |
 | PP Index | 数据按照并行策略切分后所属 PP 组的索引，未采集则不显示。 |
@@ -253,7 +255,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 该文件记录通信域信息。`collective` 表示集合通信域，`P2P` 表示点对点通信域。需要确认通信域包含哪些 rank，或需要理解通信算子和通信域的对应关系时，可结合 `cluster_communication.json` 使用。
 
-#### 4.3.5 cluster_analysis.db 
+#### 4.3.5 cluster_analysis.db
 
 db 格式性能数据解析后生成的集群分析数据库，用于支撑 MindStudio Insight 可视化展示，也可用于后续数据库分析。集群分析生成表如下：
 
@@ -268,14 +270,14 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 不同采集工具、采集级别、`--mode` 取值和原始 profiling 数据完整度会影响实际生成的表。若某类原始数据缺失，对应表可能不会生成。
 
-##### 4.3.5.1 `ClusterBaseInfo` 
+##### 4.3.5.1 `ClusterBaseInfo`
 
 | 字段 | 说明 |
 | --- | --- |
 | `key` | 基础信息名称，例如分布式参数。 |
 | `value` | 基础信息内容，通常为序列化后的字符串。 |
 
-##### 4.3.5.2 `ClusterStepTraceTime` 
+##### 4.3.5.2 `ClusterStepTraceTime`
 
 | 字段 | 说明 |
 | --- | --- |
@@ -289,7 +291,7 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | `free` | Device 侧空闲时间，单位 ms。 |
 | `stage` | PP 并行场景下的 stage 时间，单位 ms。 |
 | `bubble` | Receive 时间总和，单位 ms。 |
-| `communication_not_overlapped_and_exclude_receive` | 剔除 receive 算子后，未被计算掩盖的通信时间，单位 ms。 |
+| `communication_not_overlapped_and_exclude_receive` | 剔除 receive 算子后，未被计算掩盖的通信耗时，单位 ms。 |
 | `preparing` | 迭代开始到首个计算或通信算子运行前的准备时间，单位 ms。 |
 | `dp_index` | 所属 DP 组索引，未采集则为空或默认值。 |
 | `pp_index` | 所属 PP 组索引，未采集则为空或默认值。 |

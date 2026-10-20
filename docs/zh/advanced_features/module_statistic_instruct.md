@@ -5,7 +5,7 @@
 性能数据模型结构拆解（module_statistic）提供了针对PyTorch模型自动解析模型层级结构的分析功能，帮助精准定位性能瓶颈，为模型优化提供关键洞察。该功能提供：
 
 * 模型结构拆解：自动提取并展示模型的层次化结构，以及模型中的算子调用顺序。
-* 算子与Kernel映射：框架层算子下与NPU上执行Kernel的映射关系。
+* 算子与Kernel映射：框架层算子与NPU上执行Kernel的映射关系。
 * 性能分析：精确统计并输出Device侧Kernel的执行耗时。
 
 ## 2. 使用前准备
@@ -61,7 +61,7 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 
 ## 4. 输出结果文件说明
 
-输出结果体现模型层级，算子调用顺序，NPU上执行的Kernel以及统计时间。
+输出结果体现模型层级、算子调用顺序、NPU上执行的Kernel以及统计时间。
 
 **ModuleStatistic表**
 

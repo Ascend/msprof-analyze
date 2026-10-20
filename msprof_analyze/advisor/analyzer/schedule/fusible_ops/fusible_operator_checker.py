@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import List
@@ -68,28 +69,33 @@ class FusibleOperatorChecker:
         self.suggestions = []
         self._init_rule()
         self.headers = [
-            "start index", "end index", "total time(us)", "execution time(us)", "mte time(us)", "occurrences",
-            "mte bound", "host bound"
+            "start index",
+            "end index",
+            "total time(us)",
+            "execution time(us)",
+            "mte time(us)",
+            "occurrences",
+            "mte bound",
+            "host bound",
         ]
         self.index_dict: OrderedDict = OrderedDict()
         self.host_details = []
         self.mte_details = []
 
-    @staticmethod
     def make_render(self, html_render, add_render_list=True, **kwargs):
         return
 
     @staticmethod
     def get_mte_time(task: OpInfo):
-        return max(convert_to_float_with_warning(task.aic_mte2_time),
-                   convert_to_float_with_warning(task.aiv_mte2_time)) + max(
-            convert_to_float_with_warning(task.aic_fixpipe_time),
-            convert_to_float_with_warning(task.aiv_mte3_time))
+        return max(
+            convert_to_float_with_warning(task.aic_mte2_time), convert_to_float_with_warning(task.aiv_mte2_time)
+        ) + max(convert_to_float_with_warning(task.aic_fixpipe_time), convert_to_float_with_warning(task.aiv_mte3_time))
 
     @staticmethod
     def check_hccl(task: OpInfo):
-        return (task.task_type in ["COMMUNICATION", "HCCL"] or
-                any(task.op_name.lower().startswith(item) for item in ["hcom", "lccl", "lcoc"]))
+        return task.task_type in ["COMMUNICATION", "HCCL"] or any(
+            task.op_name.lower().startswith(item) for item in ["hcom", "lccl", "lcoc"]
+        )
 
     @staticmethod
     def check_aicpu(task: OpInfo):
@@ -97,8 +103,11 @@ class FusibleOperatorChecker:
 
     @staticmethod
     def calculate_total_time(pre_timestamp, timestamp, duration):
-        total_time = (convert_to_float_with_warning(timestamp) + convert_to_float_with_warning(duration) -
-                      convert_to_float_with_warning(pre_timestamp))
+        total_time = (
+            convert_to_float_with_warning(timestamp)
+            + convert_to_float_with_warning(duration)
+            - convert_to_float_with_warning(pre_timestamp)
+        )
         if not total_time:
             logger.warning("Total duration is zero.")
             return 0, False
@@ -109,8 +118,9 @@ class FusibleOperatorChecker:
             return
         tasks = profiling_dataset.op_summary.op_list
         result_dict = OrderedDict()
-        self.step_duration, _ = self.calculate_total_time(tasks[0].task_start_time, tasks[-1].task_start_time,
-                                                             tasks[-1].task_duration)
+        self.step_duration, _ = self.calculate_total_time(
+            tasks[0].task_start_time, tasks[-1].task_start_time, tasks[-1].task_duration
+        )
         length = len(profiling_dataset.op_summary.op_list)
         for index, task in enumerate(tasks):
             if self.check_hccl(task) or self.check_aicpu(task):
@@ -138,8 +148,11 @@ class FusibleOperatorChecker:
                 result = result_dict.get(key, (0, 0, 0, 0, False, False))
                 result_dict[key] = (
                     result[self._TOTAL_TIME_INDEX] + total_time,
-                    result[self._NPU_TIME_INDEX] + duration, result[self._MTE_TIME_INDEX] + mte_time,
-                    result[self._COUNT_INDEX] + 1, mte_flag, host_flag
+                    result[self._NPU_TIME_INDEX] + duration,
+                    result[self._MTE_TIME_INDEX] + mte_time,
+                    result[self._COUNT_INDEX] + 1,
+                    mte_flag,
+                    host_flag,
                 )
                 if key not in self.index_dict:
                     self.index_dict[key] = (index, i + index)
@@ -163,15 +176,23 @@ class FusibleOperatorChecker:
             if self.check_sequence_num(detail) and (self.check_sequence_ratio(detail) or detail[self._MTE_FLAG_INDEX]):
                 if not base_sequence:
                     record_task_name = task_name
-                elif task_name.startswith(base_sequence) and detail[self._TOTAL_TIME_INDEX] > \
-                        result_dict[record_task_name][self._TOTAL_TIME_INDEX]:
+                elif (
+                    task_name.startswith(base_sequence)
+                    and detail[self._TOTAL_TIME_INDEX] > result_dict[record_task_name][self._TOTAL_TIME_INDEX]
+                ):
                     record_task_name = task_name
                 else:
                     result[record_task_name] = result_dict[record_task_name]
                     record_task_name = task_name
                 base_sequence = task_name
-        if task_name not in result and self.check_sequence_num(detail) and self.check_bound(detail):
-            result[task_name] = result_dict[task_name]
+            last_task_name, last_detail = task_name, detail
+        if (
+            result_dict
+            and last_task_name not in result
+            and self.check_sequence_num(last_detail)
+            and self.check_bound(last_detail)
+        ):
+            result[last_task_name] = result_dict[last_task_name]
         wall_duration = 0
         npu_time = 0
         host_time = 0
@@ -190,17 +211,27 @@ class FusibleOperatorChecker:
                 self.add_detail(task_name, self.host_details, detail)
         if result:
             self.fusion_issues = True
-            self.desc = self.desc.format(count=len(self.mte_details + self.host_details),
-                                         wall_duration=round(wall_duration / Constant.US_TO_MS, 3),
-                                         npu_time=round(npu_time / Constant.US_TO_MS, 3),
-                                         host_threshold=round(host_time / wall_duration, 3),
-                                         mte_threshold=round(mte_time / wall_duration, 3))
+            self.desc = self.desc.format(
+                count=len(self.mte_details + self.host_details),
+                wall_duration=round(wall_duration / Constant.US_TO_MS, 3),
+                npu_time=round(npu_time / Constant.US_TO_MS, 3),
+                host_threshold=round(host_time / wall_duration, 3),
+                mte_threshold=round(mte_time / wall_duration, 3),
+            )
 
     def add_detail(self, task_name: str, details: List, detail: List):
-        details.append([
-            self.index_dict.get(task_name, (0, 0))[0], self.index_dict.get(task_name, (0, 0))[1],
-            round(detail[0], 2), round(detail[1], 2), round(detail[2], 2), detail[3], detail[4], detail[5]
-        ])
+        details.append(
+            [
+                self.index_dict.get(task_name, (0, 0))[0],
+                self.index_dict.get(task_name, (0, 0))[1],
+                round(detail[0], 2),
+                round(detail[1], 2),
+                round(detail[2], 2),
+                detail[3],
+                detail[4],
+                detail[5],
+            ]
+        )
 
     def generate_key(self, task):
         return self._SPLITTER.join([task.op_name, task.input_shapes, task.output_shapes])
@@ -226,14 +257,16 @@ class FusibleOperatorChecker:
             return False
         tasks = profiling_dataset.op_summary.op_list
         task = tasks[0]
-        step_duration, flag = self.calculate_total_time(tasks[0].task_start_time, tasks[-1].task_start_time,
-                                                        tasks[-1].task_duration)
+        step_duration, flag = self.calculate_total_time(
+            tasks[0].task_start_time, tasks[-1].task_start_time, tasks[-1].task_duration
+        )
         if not flag:
             return False
         for item in ["aic_mte2_time", "aiv_mte2_time", "aic_fixpipe_time", "aiv_mte3_time", "task_type"]:
             if not hasattr(task, item):
-                logger.warning("kenel_details.csv(op_summary.csv) not contain %s, skip operator sequence analysis.",
-                               item)
+                logger.warning(
+                    "kenel_details.csv(op_summary.csv) not contain %s, skip operator sequence analysis.", item
+                )
                 return False
         return True
 
@@ -263,7 +296,7 @@ class FusibleOperatorChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "fusible_operator.yaml"
+            "fusible_operator.yaml",
         )
 
         fusion_rule = FileManager.read_yaml_file(contention_rule_path)

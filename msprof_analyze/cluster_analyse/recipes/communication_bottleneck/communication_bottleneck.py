@@ -1,28 +1,35 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
-import json
 
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
-from msprof_analyze.prof_exports.communication_bottleneck_export import CannTaskExport, PytorchTaskExport, \
-    DeviceMemoryTaskExport, ComputeTaskExport, CommunicationTaskExport, AllDeviceNodeLaunchPytorchTaskExport, \
-    TargetCommunicationOpWithNameExport, CommunicationOpExport
+from msprof_analyze.prof_exports.communication_bottleneck_export import (
+    CannTaskExport,
+    PytorchTaskExport,
+    DeviceMemoryTaskExport,
+    ComputeTaskExport,
+    CommunicationTaskExport,
+    AllDeviceNodeLaunchPytorchTaskExport,
+    TargetCommunicationOpWithNameExport,
+    CommunicationOpExport,
+)
 from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.utils import convert_ns_to_us_str, convert_ns_to_us
 
@@ -60,7 +67,7 @@ class BottleneckReason:
         self.slow_rank_id = None
         self.fast_rank_id = None
         self.reason = None  # 原因描述
-    
+
     def to_dict(self):
         return {
             "startTime(us)": convert_ns_to_us_str(self.start_ns),
@@ -69,17 +76,16 @@ class BottleneckReason:
             "communicationOp": self.comm_name,
             "slowRankId": self.slow_rank_id,
             "fastRankId": self.fast_rank_id,
-            "reason": self.reason
+            "reason": self.reason,
         }
 
 
 class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
-
     # Database and file names
     TABLE_DB_NAME = "CommunicationBottleneck"
     EVENT_SUMMARY_FILE = "communication_bottleneck.csv"
     CONFIG_FILE_NAME = "config.json"
-    
+
     # Default configuration values
     DEFAULT_SLOW_NPU_HAPPEN_THRESHOLD = 0.05
     DEFAULT_DIFF_WAITING_TIME_THRESHOLD = 100000  # 100us
@@ -116,75 +122,78 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
     @staticmethod
     def compute_diff_from_fast_and_slow_npu(slow_info_df, fast_info_df, clock_shift, shift_threshold):
         if slow_info_df is None or slow_info_df.empty or fast_info_df is None or fast_info_df.empty:
-            return pd.DataFrame(
-                columns=["start_ns", "duration", "task_name", "diff_start_ns", "diff_duration"]
-            ), True
-        
+            return pd.DataFrame(columns=["start_ns", "duration", "task_name", "diff_start_ns", "diff_duration"]), True
+
         sorted_slow_df = slow_info_df.sort_values(by=["start_ns"], ascending=False)
         sorted_fast_df = fast_info_df.sort_values(by=["start_ns"], ascending=False)
-        
+
         fast_tasks_list = sorted_fast_df.to_dict('records')
         slow_tasks_list = sorted_slow_df.to_dict('records')
-        
+
         # Process slow tasks and find matching fast tasks
         records = []
         is_unaligned = True
         fast_idx = 0
-        
+
         for slow_task in slow_tasks_list:
             task_name = slow_task["task_name"]
-            
+
             for i in range(fast_idx, len(fast_tasks_list)):
                 if fast_tasks_list[i]["task_name"] == task_name:
                     fast_task = fast_tasks_list[i]
                     fast_idx = i + 1
-                    
+
                     diff_start_ns = int(slow_task["start_ns"]) - int(fast_task["start_ns"]) + clock_shift
                     diff_duration = slow_task["duration"] - fast_task["duration"]
-                    
-                    records.append({
-                        "start_ns": int(slow_task["start_ns"]),
-                        "duration": int(slow_task["duration"]),
-                        "task_name": task_name,
-                        "diff_start_ns": diff_start_ns,
-                        "diff_duration": diff_duration
-                    })
-                    
+
+                    records.append(
+                        {
+                            "start_ns": int(slow_task["start_ns"]),
+                            "duration": int(slow_task["duration"]),
+                            "task_name": task_name,
+                            "diff_start_ns": diff_start_ns,
+                            "diff_duration": diff_duration,
+                        }
+                    )
+
                     # Check alignment
                     if diff_start_ns < shift_threshold:
                         is_unaligned = False
                         break
-                    
+
                     break
-            
+
             if not is_unaligned:
                 break
-        
+
         if records:
             device_task_record_df = pd.DataFrame(records)
         else:
             device_task_record_df = pd.DataFrame(
                 columns=["start_ns", "duration", "task_name", "diff_start_ns", "diff_duration"]
             )
-        
-        return device_task_record_df, is_unaligned
 
+        return device_task_record_df, is_unaligned
 
     def parse_config(self):
         config_path = os.path.join(os.path.dirname(__file__), self.CONFIG_FILE_NAME)
         json_config = FileManager.read_json_file(config_path)
-        self.slow_npu_happen_threshold = json_config.get(
-            'threshold', {}).get('slow_npu_happen', self.DEFAULT_SLOW_NPU_HAPPEN_THRESHOLD)
-        self.diff_waiting_time_threshold = json_config.get(
-            'threshold', {}).get('diff_waiting_time', self.DEFAULT_DIFF_WAITING_TIME_THRESHOLD)
-        self.start_ns_shifted_threshold = json_config.get(
-            'threshold', {}).get('start_ns_shifted', self.DEFAULT_START_NS_SHIFTED_THRESHOLD)
-        self.device_bound_proportion_threshold = json_config.get(
-            'threshold', {}).get('device_bound_proportion', self.DEFAULT_DEVICE_BOUND_PROPORTION_THRESHOLD)
+        self.slow_npu_happen_threshold = json_config.get('threshold', {}).get(
+            'slow_npu_happen', self.DEFAULT_SLOW_NPU_HAPPEN_THRESHOLD
+        )
+        self.diff_waiting_time_threshold = json_config.get('threshold', {}).get(
+            'diff_waiting_time', self.DEFAULT_DIFF_WAITING_TIME_THRESHOLD
+        )
+        self.start_ns_shifted_threshold = json_config.get('threshold', {}).get(
+            'start_ns_shifted', self.DEFAULT_START_NS_SHIFTED_THRESHOLD
+        )
+        self.device_bound_proportion_threshold = json_config.get('threshold', {}).get(
+            'device_bound_proportion', self.DEFAULT_DEVICE_BOUND_PROPORTION_THRESHOLD
+        )
 
     def run(self, context):
         if self.target_rank_id not in self._data_map.keys():
-            logger.error(f"Target rank_id {self.target_rank_id} not found in profiling path.")
+            logger.error("Target rank_id %s not found in profiling path.", self.target_rank_id)
             return
         comm_df = self.obtain_top_communication_ops(self.target_rank_id)
         self.comm_reasons = self.locate_anomaly_reasons(context, comm_df)
@@ -194,7 +203,7 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
         elif self._export_type == Constant.TEXT:
             self.save_csv()
         else:
-            logger.error(f"Unknown export type: {self._export_type}")
+            logger.error("Unknown export type: %s", self._export_type)
 
     def get_rank_profile_db_path(self, rank_id: int):
         return os.path.join(self._data_map[rank_id], Constant.SINGLE_OUTPUT, f"ascend_pytorch_profiler_{rank_id}.db")
@@ -203,9 +212,9 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
         target_profile_db_path = self.get_rank_profile_db_path(rank_id)
         step_range = self._get_step_range(target_profile_db_path)
         comm_df = CommunicationOpExport(target_profile_db_path, self._recipe_name, step_range).read_export_db()
-        
+
         if comm_df is None or comm_df.empty:
-            logger.warning(f"No communication time data found for rank {rank_id}.")
+            logger.warning("No communication time data found for rank %s.", rank_id)
             return None
         return comm_df.head(self.max_analysis_num)
 
@@ -238,33 +247,37 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
         concat_df = pd.concat(valid_res, ignore_index=True).sort_values(by=["duration"], ascending=False)
         quick_npu_info = concat_df.iloc[0]
         slow_npu_info = concat_df.iloc[-1]
-        
+
         # Check if time difference is small
         time_diff_ratio = (quick_npu_info["duration"] - slow_npu_info["duration"]) / quick_npu_info["duration"]
         if time_diff_ratio < self.slow_npu_happen_threshold:
-            reason.reason = (f"[Completed] No slow NPU detected: execution time difference is less than "
-                             f"{self.slow_npu_happen_threshold}%")
+            reason.reason = (
+                f"[Completed] No slow NPU detected: execution time difference is less than "
+                f"{self.slow_npu_happen_threshold}%"
+            )
             return reason
-        
+
         # Calculate clock shift and analyze slow NPU
         clock_shift = quick_npu_info["end_ns"] - slow_npu_info["end_ns"]
         reason.slow_rank_id = slow_npu_info["rank_id"]
         reason.fast_rank_id = quick_npu_info["rank_id"]
-        
+
         # 分析慢NPU，结果会更新到reason实例中
-        self.analyze_slow_npu(reason, clock_shift, quick_npu_info["start_ns"], slow_npu_info["start_ns"],
-                             slow_npu_info["end_ns"])
-        
+        self.analyze_slow_npu(
+            reason, clock_shift, quick_npu_info["start_ns"], slow_npu_info["start_ns"], slow_npu_info["end_ns"]
+        )
+
         return reason
 
     def query_device_task_before_time(self, rank_id, start_ns, end_ns):
         profile_db_path = self.get_rank_profile_db_path(rank_id)
         query_params = {Constant.START_NS: start_ns, Constant.END_NS: end_ns}
         computing_task_df = ComputeTaskExport(profile_db_path, self._recipe_name, query_params).read_export_db()
-        communication_task_df = (CommunicationTaskExport(profile_db_path, self._recipe_name, query_params).
-                                 read_export_db())
+        communication_task_df = CommunicationTaskExport(
+            profile_db_path, self._recipe_name, query_params
+        ).read_export_db()
         memory_task_df = DeviceMemoryTaskExport(profile_db_path, self._recipe_name, query_params).read_export_db()
-        
+
         # Merge and sort device task dataframes
         dataframes = []
         if computing_task_df is not None and not computing_task_df.empty:
@@ -273,10 +286,10 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
             dataframes.append(communication_task_df)
         if memory_task_df is not None and not memory_task_df.empty:
             dataframes.append(memory_task_df)
-        
+
         if not dataframes:
             return None
-        
+
         merged_df = pd.concat(dataframes, ignore_index=True)
         return merged_df.sort_values(by=["start_ns"], ascending=False)
 
@@ -286,7 +299,7 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
 
         pytorch_task_df = PytorchTaskExport(profile_db_path, self._recipe_name, param_dict).read_export_db()
         cann_task_df = CannTaskExport(profile_db_path, self._recipe_name, param_dict).read_export_db()
-        
+
         return pytorch_task_df, cann_task_df
 
     def analyze_slow_npu(self, reason, clock_shift, fast_start_ns, slow_start_ns, slow_end_ns):
@@ -294,7 +307,7 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
         if not has_data:
             reason.reason = "[Failed] Insufficient data for analyzing slow NPU bottleneck"
             return
-        
+
         if bottleneck == "Device":
             self._analyze_device_bound(reason, fast_start_ns, slow_start_ns, clock_shift)
         else:
@@ -336,17 +349,20 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
 
         # Get all device node@launch tasks
         query_params = {Constant.START_NS: str(start_ns), Constant.END_NS: str(end_ns)}
-        slow_task_df = AllDeviceNodeLaunchPytorchTaskExport(slow_profile_db_path,
-                                                            self._recipe_name, query_params).read_export_db()
+        slow_task_df = AllDeviceNodeLaunchPytorchTaskExport(
+            slow_profile_db_path, self._recipe_name, query_params
+        ).read_export_db()
 
         if slow_task_df is None or slow_task_df.empty:
             return None, False
 
         # Calculate waiting times using vectorized operations
-        host_waiting_time = (slow_task_df["cann_start_ns"].astype("int64") -
-                             slow_task_df["pytorch_end_ns"].astype("int64"))
-        device_waiting_time = (slow_task_df["device_start_ns"].astype("int64") -
-                               slow_task_df["cann_end_ns"].astype("int64"))
+        host_waiting_time = slow_task_df["cann_start_ns"].astype("int64") - slow_task_df["pytorch_end_ns"].astype(
+            "int64"
+        )
+        device_waiting_time = slow_task_df["device_start_ns"].astype("int64") - slow_task_df["cann_end_ns"].astype(
+            "int64"
+        )
         diff_waiting_time = device_waiting_time - host_waiting_time
 
         device_problem_cnt = (diff_waiting_time > self.diff_waiting_time_threshold).sum()
@@ -355,12 +371,12 @@ class CommunicatonBottleneckAnalysis(BaseRecipeAnalysis):
 
         return "Device" if is_device_bound else "Host", True
 
-
     def _analyze_device_bound(self, reason, fast_start_ns, slow_start_ns, clock_shift):
         slow_task_before_df = self.query_device_task_before_time(reason.slow_rank_id, 0, slow_start_ns)
         fast_task_before_df = self.query_device_task_before_time(reason.fast_rank_id, 0, fast_start_ns)
-        device_summary = self._build_task_diff_summary(slow_task_before_df, fast_task_before_df,
-                                                       clock_shift, level="Device")
+        device_summary = self._build_task_diff_summary(
+            slow_task_before_df, fast_task_before_df, clock_shift, level="Device"
+        )
         if not device_summary:
             reason.reason = "[Device-bound] Tasks are not aligned between slow and fast NPU from the beginning"
             return

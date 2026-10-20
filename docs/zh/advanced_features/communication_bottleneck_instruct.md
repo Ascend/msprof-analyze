@@ -123,5 +123,5 @@ CSV文件列名如下：
 | Duration(us)     | 目标卡上通信算子的持续时间，REAL类型，单位为us。 |
 | Communication Op | 通信算子的名称，TEXT类型。                 |
 | Slow Rank ID     | 慢卡卡号，INTEGER类型，当存在慢卡时有效。                  |
-| Fast Rank ID     | 快卡卡号，INTEGER类型，当存在慢卡时有效。                  |
+| Fast Rank ID     | 快卡卡号，INTEGER类型，当存在快卡时有效。                  |
 | Reason           | 分析结果，TEXT类型，文本描述形式。             |

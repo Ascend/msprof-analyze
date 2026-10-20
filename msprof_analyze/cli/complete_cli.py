@@ -1,35 +1,34 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import click
 
-from msprof_analyze.advisor.utils.tools import CONTEXT_SETTINGS
+from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.cli.unified_cli import UnifiedCommand, help_callback
 
 
-@click.command(context_settings=CONTEXT_SETTINGS,
-               short_help='Auto complete ma-advisor command in terminal, support "bash(default)/zsh/fish".')
+@click.command(
+    context_settings=Constant.CONTEXT_SETTINGS,
+    cls=UnifiedCommand,
+    short_help='Auto complete ma-advisor command in terminal, support "bash(default)/zsh/fish".',
+    examples='#print bash auto complete command to terminal\nmsprof-analyze auto-completion Bash',
+)
+@click.option("-H", is_flag=True, expose_value=False, hidden=True, callback=help_callback)
 @click.argument('shell_type', nargs=1, default="Bash", type=click.Choice(["Bash", "Zsh", "Fish"], case_sensitive=False))
 def auto_complete_cli(shell_type):
-    """
-    Auto complete ma-advisor command in terminal.
-
-    Example:
-
-    \b
-    # print bash auto complete command to terminal
-    msprof-analyze auto-completion Bash
-    """
+    """Auto complete ma-advisor command in terminal."""
     click.echo("Tips: please paste following shell command to your terminal to activate auto completion.\n")
     if shell_type.lower() == "bash":
         bash_str = 'eval "$(_MSPROF_ANALYZE_COMPLETE=bash_source msprof-analyze)"'

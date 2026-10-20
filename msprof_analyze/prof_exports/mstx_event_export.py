@@ -1,19 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-import re
-import pandas as pd
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
 from msprof_analyze.prof_common.constant import Constant
@@ -37,7 +36,7 @@ FROM
 LEFT JOIN
     STRING_IDS AS MSG_IDS
     ON MSTX_EVENTS.message = MSG_IDS.id
-WHERE 
+WHERE
     MSTX_EVENTS.eventType = 3 AND MSTX_EVENTS.startNs >= ? AND MSTX_EVENTS.startNs <= ?
 ORDER BY
     MSTX_EVENTS.startNs
@@ -45,13 +44,11 @@ ORDER BY
 
 
 class MstxMarkExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name, step_range):
         super().__init__(db_path, recipe_name, step_range)
         self._query = self.get_query_statement()
 
     def get_query_statement(self):
-
         has_pytorch_api = DBManager.judge_table_exists(self._db_path, "PYTORCH_API")
         has_task = DBManager.judge_table_exists(self._db_path, "TASK")
 
@@ -60,7 +57,9 @@ class MstxMarkExport(BaseStatsExport):
         framework_start_ts = "0"
 
         if has_pytorch_api:
-            with_clause = f"""
+            with_clause = (
+                ""  # nosec B608
+                """
                 WITH
                     FRAMEWORK_API AS (
                 SELECT
@@ -73,6 +72,7 @@ class MstxMarkExport(BaseStatsExport):
                 ON PYTORCH_API.connectionId = CONNECTION_IDS.id
             )
             """
+            )
             framework_join = "LEFT JOIN FRAMEWORK_API ON MSTX_EVENTS.connectionId = FRAMEWORK_API.connectionId"
             framework_start_ts = "FRAMEWORK_API.startNs"
 
@@ -119,7 +119,6 @@ ORDER BY
 
 
 class MstxRangeExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name, param_dict):
         super().__init__(db_path, recipe_name, param_dict)
         self.set_query()
@@ -146,4 +145,3 @@ class MstxRangeExport(BaseStatsExport):
 
     def get_param_order(self):
         return [Constant.START_NS, Constant.END_NS]
-

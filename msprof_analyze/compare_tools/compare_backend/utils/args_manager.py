@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os.path
 import re
 
@@ -101,17 +102,20 @@ class ArgsManager:
 
     @classmethod
     def check_profiling_path(cls, path_dict: dict):
-        path_list = [path_dict.get(Constant.PROFILING_PATH, "")] if path_dict.get(
-            Constant.PROFILING_TYPE) == Constant.GPU else [
-            path_dict.get(Constant.PROFILING_PATH, ""),
-            path_dict.get(Constant.TRACE_PATH, ""),
-            path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""),
-            path_dict.get(Constant.INFO_JSON_PATH, ""),
-            os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "operator_memory.csv"),
-            os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "memory_record.csv"),
-            os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "kernel_details.csv"),
-            os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "communication.json")
-        ]
+        path_list = (
+            [path_dict.get(Constant.PROFILING_PATH, "")]
+            if path_dict.get(Constant.PROFILING_TYPE) == Constant.GPU
+            else [
+                path_dict.get(Constant.PROFILING_PATH, ""),
+                path_dict.get(Constant.TRACE_PATH, ""),
+                path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""),
+                path_dict.get(Constant.INFO_JSON_PATH, ""),
+                os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "operator_memory.csv"),
+                os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "memory_record.csv"),
+                os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "kernel_details.csv"),
+                os.path.join(path_dict.get(Constant.ASCEND_OUTPUT_PATH, ""), "communication.json"),
+            ]
+        )
         for path in path_list:
             if path and os.path.exists(path):
                 if os.path.isfile(path):
@@ -136,14 +140,16 @@ class ArgsManager:
             if extension == ".json":
                 json_type = FileManager.check_json_type(file_path)
                 return {
-                    Constant.PROFILING_TYPE: json_type, Constant.PROFILING_PATH: file_path,
-                    Constant.TRACE_PATH: file_path
+                    Constant.PROFILING_TYPE: json_type,
+                    Constant.PROFILING_PATH: file_path,
+                    Constant.TRACE_PATH: file_path,
                 }
             elif extension == ".db":
                 if shot_name.startswith(("ascend_pytorch_profiler", "ascend_mindspore_profiler", "msmonitor")):
                     return {
-                        Constant.PROFILING_TYPE: Constant.NPU, Constant.PROFILING_PATH: file_path,
-                        Constant.PROFILER_DB_PATH: file_path
+                        Constant.PROFILING_TYPE: Constant.NPU,
+                        Constant.PROFILING_PATH: file_path,
+                        Constant.PROFILER_DB_PATH: file_path,
                     }
             else:
                 msg = f"Invalid profiling path suffix: {file_path}"
@@ -160,20 +166,35 @@ class ArgsManager:
         profiler_output = ascend_output if os.path.isdir(ascend_output) else file_path
         sub_dirs = os.listdir(profiler_output)
         for sub_dir in sub_dirs:
-            if (sub_dir.startswith(("ascend_pytorch_profiler", "ascend_mindspore_profiler", "msmonitor"))
-                    and sub_dir.endswith(".db")):
+            if sub_dir.startswith(
+                ("ascend_pytorch_profiler", "ascend_mindspore_profiler", "msmonitor")
+            ) and sub_dir.endswith(".db"):
                 db_path = os.path.join(profiler_output, sub_dir)
-                path_dict.update({Constant.PROFILING_TYPE: Constant.NPU, Constant.PROFILING_PATH: file_path,
-                                  Constant.PROFILER_DB_PATH: db_path, Constant.ASCEND_OUTPUT_PATH: profiler_output})
+                path_dict.update(
+                    {
+                        Constant.PROFILING_TYPE: Constant.NPU,
+                        Constant.PROFILING_PATH: file_path,
+                        Constant.PROFILER_DB_PATH: db_path,
+                        Constant.ASCEND_OUTPUT_PATH: profiler_output,
+                    }
+                )
                 return path_dict
 
         json_path = os.path.join(profiler_output, "trace_view.json")
         if not os.path.isfile(json_path):
-            msg = (f"The data is not collected by PyTorch or Mindspore mode or the data is not parsed. "
-                   f"Invalid profiling path: {profiler_output}")
+            msg = (
+                f"The data is not collected by PyTorch or Mindspore mode or the data is not parsed. "
+                f"Invalid profiling path: {profiler_output}"
+            )
             raise RuntimeError(msg)
-        path_dict.update({Constant.PROFILING_TYPE: Constant.NPU, Constant.PROFILING_PATH: file_path,
-                          Constant.TRACE_PATH: json_path, Constant.ASCEND_OUTPUT_PATH: profiler_output})
+        path_dict.update(
+            {
+                Constant.PROFILING_TYPE: Constant.NPU,
+                Constant.PROFILING_PATH: file_path,
+                Constant.TRACE_PATH: json_path,
+                Constant.ASCEND_OUTPUT_PATH: profiler_output,
+            }
+        )
         return path_dict
 
     def get_step_args_with_validating(self):
@@ -194,21 +215,31 @@ class ArgsManager:
             raise RuntimeError(msg)
         if not isinstance(self._args.op_name_map, dict):
             raise RuntimeError(
-                "Invalid param, --op_name_map must be dict, for example: --op_name_map={'name1':'name2'}")
+                "Invalid param, --op_name_map must be dict, for example: --op_name_map={'name1':'name2'}"
+            )
         op_names = list(self._args.op_name_map.keys()) + list(self._args.op_name_map.values())
         if any(not isinstance(op_name, str) for op_name in op_names):
             raise RuntimeError("Invalid param, key/value in --op_name_map must be string")
         if any(len(op_name) > Constant.MAX_OP_NAME_LEN for op_name in op_names):
-            msg = f"Invalid param, the length of key/value in --op_name_map exceeded the maximum value" \
-                  f" {Constant.MAX_OP_NAME_LEN}"
+            msg = (
+                f"Invalid param, the length of key/value in --op_name_map exceeded the maximum value"
+                f" {Constant.MAX_OP_NAME_LEN}"
+            )
             raise RuntimeError(msg)
         if self._args.gpu_flow_cat and len(self._args.gpu_flow_cat) > Constant.MAX_FLOW_CAT_LEN:
             msg = f"Invalid param, --gpu_flow_cat exceeded the maximum value {Constant.MAX_FLOW_CAT_LEN}"
             raise RuntimeError(msg)
 
-        if not any([self._args.enable_profiling_compare, self._args.enable_operator_compare,
-                    self._args.enable_memory_compare, self._args.enable_communication_compare,
-                    self._args.enable_api_compare, self._args.enable_kernel_compare]):
+        if not any(
+            [
+                self._args.enable_profiling_compare,
+                self._args.enable_operator_compare,
+                self._args.enable_memory_compare,
+                self._args.enable_communication_compare,
+                self._args.enable_api_compare,
+                self._args.enable_kernel_compare,
+            ]
+        ):
             self._args.enable_profiling_compare = True
             self._args.enable_operator_compare = True
             self._args.enable_memory_compare = True
@@ -216,13 +247,16 @@ class ArgsManager:
             self._args.enable_api_compare = True
             self._args.enable_kernel_compare = True
         if not self._args.enable_kernel_compare and self._args.use_kernel_type:
-            logger.warning("The use_kernel_type parameter is invalid because it only takes effect "
-                           "when enable_kernel_compare is enabled.")
+            logger.warning(
+                "The use_kernel_type parameter is invalid because it only takes effect "
+                "when enable_kernel_compare is enabled."
+            )
         self.get_step_args_with_validating()
         self._base_path_dict = self.parse_profiling_path(PathManager.get_realpath(self._args.base_profiling_path))
         self.check_profiling_path(self._base_path_dict)
         self._comparison_path_dict = self.parse_profiling_path(
-            PathManager.get_realpath(self._args.comparison_profiling_path))
+            PathManager.get_realpath(self._args.comparison_profiling_path)
+        )
         self.check_profiling_path(self._comparison_path_dict)
         if self._args.output_path:
             self.check_output_path(PathManager.get_realpath(self._args.output_path))

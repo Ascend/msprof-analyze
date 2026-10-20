@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
@@ -22,60 +23,59 @@ logger = get_logger()
 
 QUERY_COMPUTE_TASK = """
     WITH task_connections AS (
-        SELECT 
+        SELECT
             str.value AS name,
             task.startNs,
             task.endNs,
             conn.id AS api_conn_id
-        FROM 
+        FROM
             {compute_table} AS compute
-        LEFT JOIN 
+        LEFT JOIN
             TASK task ON compute.globalTaskId = task.globalTaskId
-        LEFT JOIN 
+        LEFT JOIN
             STRING_IDS str ON str.id = compute.name
-        LEFT JOIN 
+        LEFT JOIN
             CONNECTION_IDS conn ON conn.connectionId = task.connectionId
     )"""
 
 QUERY_COMMUNICATION_TASK = """
     WITH task_connections AS (
-        SELECT 
+        SELECT
             str.value AS name,
             comm.startNs,
             comm.endNs,
             conn.id AS api_conn_id
-        FROM 
+        FROM
             COMMUNICATION_OP AS comm
-        JOIN 
+        JOIN
             STRING_IDS str ON str.id = comm.opType
-        JOIN 
+        JOIN
             CONNECTION_IDS conn ON conn.connectionId = comm.connectionId
     )"""
 
 
 QUERY_TASK_LINK_PYTORCH_API = """
-    SELECT 
+    SELECT
         tc.name as kernel_name,
         tc.startNs as kernel_ts,
         tc.endNs as kernel_end,
         api_str.value AS op_name,
         api.startNs as op_ts,
         api.endNs as op_end
-    FROM 
+    FROM
         task_connections tc
-    JOIN 
+    JOIN
         PYTORCH_API api ON tc.api_conn_id = api.connectionId
-    JOIN 
+    JOIN
         STRING_IDS api_str ON api.name = api_str.id
     ORDER BY op_ts, kernel_ts
 """
 
 
-
 QUERY_MSTX_RANGE_WITH_DOMAIN = """
     SELECT
         mstx.startNs,
-        mstx.endNs, 
+        mstx.endNs,
         str_name.value AS name
     FROM
         MSTX_EVENTS mstx
@@ -89,7 +89,7 @@ QUERY_MSTX_RANGE_WITH_DOMAIN = """
 """
 
 QUEYR_FWD_BWD_FLOW = """
-    SELECT 
+    SELECT
         c.connectionId as connectionId,
         fwd_ids.value as fwd_name,
         fwd_pa.startNs as fwd_ts,
@@ -98,11 +98,11 @@ QUEYR_FWD_BWD_FLOW = """
         bwd_pa.startNs as bwd_ts,
         bwd_pa.endNs as bwd_end
     FROM (
-        SELECT 
+        SELECT
             connectionId,
             MIN(id) as min_id,
             MAX(id) as max_id
-        FROM CONNECTION_IDS 
+        FROM CONNECTION_IDS
         GROUP BY connectionId
         HAVING COUNT(*) > 1
     ) c
@@ -116,7 +116,6 @@ QUEYR_FWD_BWD_FLOW = """
 
 
 class FrameworkOpToKernelExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name, table_name):
         super().__init__(db_path, recipe_name, param_dict=None)
         if table_name in [Constant.TABLE_COMPUTE_TASK_INFO, Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO]:
@@ -124,14 +123,13 @@ class FrameworkOpToKernelExport(BaseStatsExport):
         elif table_name == Constant.TABLE_COMMUNICATION_OP:
             self._query = QUERY_COMMUNICATION_TASK + QUERY_TASK_LINK_PYTORCH_API
         else:
-            logger.error(f"FrameworkOpToKernelExport not support {table_name}")
+            logger.error("FrameworkOpToKernelExport not support %s", table_name)
 
     def get_param_order(self):
         return []
 
 
 class ModuleMstxRangeExport(BaseStatsExport):
-
     def __init__(self, db_path, recipe_name):
         super().__init__(db_path, recipe_name, param_dict=None)
         self._query = QUERY_MSTX_RANGE_WITH_DOMAIN

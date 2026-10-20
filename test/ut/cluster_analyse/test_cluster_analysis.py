@@ -1,22 +1,22 @@
-# Copyright (c) 2025-2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import shutil
 import sys
-import tempfile
 import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
@@ -153,7 +153,7 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         test data pytorch only
         """
         with patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # mock ProfDataAllocate
             mock_allocator_instance = MagicMock()
             mock_allocator_instance.allocate_prof_data.return_value = True
@@ -182,7 +182,7 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         test data mindspore only
         """
         with patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # mock ProfDataAllocate
             mock_allocator_instance = MagicMock()
             mock_allocator_instance.allocate_prof_data.return_value = True
@@ -211,7 +211,7 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         test data msprof only
         """
         with patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # mock ProfDataAllocate
             mock_allocator_instance = MagicMock()
             mock_allocator_instance.allocate_prof_data.return_value = True
@@ -240,7 +240,7 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         test data both-frameworks error
         """
         with patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # mock ProfDataAllocate to return False (simulating both frameworks error)
             mock_allocator_instance = MagicMock()
             mock_allocator_instance.allocate_prof_data.return_value = False
@@ -264,11 +264,11 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         with patch(NAMESPACE + '.cluster_analysis.PathManager') as mock_path_manager, \
              patch(NAMESPACE + '.cluster_analysis.logger') as mock_logger, \
              patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # Mock path manager checks
             mock_path_manager.check_input_directory_path.return_value = None
             mock_path_manager.check_path_owner_consistent.return_value = None
-            
+
             # Mock ProfDataAllocate to return empty data
             mock_allocator_instance = MagicMock()
             mock_allocator_instance.allocate_prof_data.return_value = True
@@ -276,16 +276,16 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             mock_allocator_instance.data_type = "db"
             mock_allocator_instance.prof_type = Constant.PYTORCH
             mock_allocator.return_value = mock_allocator_instance
-            
+
             params = {
                 Constant.PROFILING_PATH: self.profiling_path,
                 Constant.MODE: "all",
                 Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.output_path
             }
-            
+
             interface = Interface(params)
             interface.run()
-            
+
             # Verify warning log for no data
             mock_logger.warning.assert_called_with("Can not get rank info or profiling data.")
 
@@ -296,7 +296,7 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         with patch(NAMESPACE + '.cluster_analysis.PathManager') as mock_path_manager, \
              patch(NAMESPACE + '.cluster_analysis.logger') as mock_logger, \
              patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # Mock path manager checks
             mock_path_manager.check_input_directory_path.return_value = None
             mock_path_manager.check_path_owner_consistent.return_value = None
@@ -327,11 +327,11 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
         test Interface.run method with db communication mode
         """
         with patch(NAMESPACE + '.cluster_analysis.PathManager') as mock_path_manager, \
-             patch(NAMESPACE + '.cluster_analysis.logger') as mock_logger, \
+             patch(NAMESPACE + '.cluster_analysis.logger'), \
              patch(NAMESPACE + '.cluster_analysis.AnalysisFacade') as mock_analysis_facade, \
              patch(NAMESPACE + '.cluster_analysis.FileManager') as mock_file_manager, \
              patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # Mock path manager checks
             mock_path_manager.check_input_directory_path.return_value = None
             mock_path_manager.check_path_owner_consistent.return_value = None
@@ -364,22 +364,25 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             # Verify analysis facade is called
             mock_analysis_facade.assert_called()
             mock_analysis_facade_instance.cluster_analyze.assert_called()
+            mock_file_manager.create_output_dir.assert_called_once_with(
+                mock_path_manager.get_realpath.return_value, is_overwrite=True
+            )
 
     def test_run_with_all_mode(self):
         """
         test Interface.run method with 'all' mode
         """
         with patch(NAMESPACE + '.cluster_analysis.PathManager') as mock_path_manager, \
-             patch(NAMESPACE + '.cluster_analysis.logger') as mock_logger, \
+             patch(NAMESPACE + '.cluster_analysis.logger'), \
              patch(NAMESPACE + '.cluster_analysis.AnalysisFacade') as mock_analysis_facade, \
              patch(NAMESPACE + '.cluster_analysis.FileManager') as mock_file_manager, \
              patch(NAMESPACE + '.cluster_analysis.ProfDataAllocate') as mock_allocator:
-            
+
             # Mock path manager checks
             mock_path_manager.check_input_directory_path.return_value = None
             mock_path_manager.check_path_owner_consistent.return_value = None
             mock_path_manager.check_path_writeable.return_value = None
-            
+
             # Mock ProfDataAllocate
             mock_allocator_instance = MagicMock()
             mock_allocator_instance.allocate_prof_data.return_value = True
@@ -387,7 +390,7 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             mock_allocator_instance.data_type = "db"
             mock_allocator_instance.prof_type = Constant.PYTORCH
             mock_allocator.return_value = mock_allocator_instance
-            
+
             # Mock file manager
             mock_file_manager.create_output_dir.return_value = None
 
@@ -400,13 +403,16 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
                 Constant.MODE: "all",
                 Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.output_path
             }
-            
+
             interface = Interface(params)
             interface.run()
-            
+
             # Verify analysis facade
             mock_analysis_facade.assert_called()
             mock_analysis_facade_instance.cluster_analyze.assert_called()
+            mock_file_manager.create_output_dir.assert_called_once_with(
+                mock_path_manager.get_realpath.return_value, is_overwrite=True
+            )
 
     def test_run_with_text_comm_mode_generates_comm_data(self):
         """
@@ -451,3 +457,6 @@ class TestClusterAnalyseClusterAnalysis(unittest.TestCase):
             mock_comm_group_instance.generate.assert_called_once()
             mock_analysis_facade.assert_called_once()
             mock_analysis_facade_instance.cluster_analyze.assert_called_once()
+            mock_file_manager.create_output_dir.assert_called_once_with(
+                mock_path_manager.get_realpath.return_value, is_overwrite=False
+            )

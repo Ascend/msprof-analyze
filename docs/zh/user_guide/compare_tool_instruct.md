@@ -157,7 +157,7 @@ PyTorch Profiler采集结果数据目录结构如下：
 
 ##### 3.2.1.2 NPU性能数据采集
 
-通过Ascend PyTorch Profiler工具采集NPU的性能数据，采集参数配置与GPU基本一致，只需将GPU的性能数据采集代码中torch.profiler替换成torch_npu.profiler，参考链接：《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+通过Ascend PyTorch Profiler工具采集NPU的性能数据，采集参数配置与GPU基本一致，只需将GPU的性能数据采集代码中torch.profiler替换成torch_npu.profiler，参考链接：《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 **采集结果目录结构**
 
@@ -191,17 +191,17 @@ export_type = Db
 ```
 
 > [!NOTE]
-> 
+>
 > 格式选择说明：两种格式可选择任意一种进行性能比对。若同一目录中同时包含以上两类文件，则优先使用Db格式（export_type = Db）的结果进行比对。
 
 #### 3.2.2 MindSpore框架性能数据采集
 
-当前MindSpore场景仅支持以下两种性能数据比对：  
+当前MindSpore场景仅支持以下两种性能数据比对：
 
-1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对； 
+1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对；
 2. MindSpore训练工程在NPU上、不同版本之间的性能数据比对。
 
-性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
 
 采集结果目录结构：根据`export_type`参数设置的不同，工具会输出两种格式的结果目录：
 
@@ -225,7 +225,7 @@ export_type = Db
 ```
 
 > [!NOTE]
-> 
+>
 > 两种格式可选择任意一种进行性能比对。若同一目录中同时包含以上两类文件，则优先使用Db格式（export_type = Db）的结果进行比对。
 
 性能比对时需指定的目录层级：需将采集结果路径指定到以下任意一个层级：
@@ -237,7 +237,7 @@ export_type = Db
 
 ### 4.1 功能说明
 
-性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，打印输出总体指标，帮助用户定界劣化的方向。
+性能比对工具将总体性能拆解为训练耗时和内存占用，其中训练耗时可拆分为算子（包括nn.Module）、通信、调度三个维度，打印输出总体指标，帮助用户界定劣化的方向。
 
 性能比对工具支持使用**命令行**和**脚本**两种方式执行性能数据比对操作，这两种方式均支持**通用参数**和**算子性能比对特有参数**。
 
@@ -291,10 +291,10 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 | 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
 | `--enable_profiling_compare` | 可选 | 开启总体性能比对。 | 是 | 是 |
-| `--enable_operator_compare` | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见**5.4 算子比对高级参数**。 | 是 | 否 |
+| `--enable_operator_compare` | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见[算子比对高级参数](#434-算子比对高级参数)。 | 是 | 否 |
 | `--enable_communication_compare` | 可选 | 开启通信性能比对。 | 是 | 是 |
 | `--enable_memory_compare` | 可选 | 开启算子内存比对。该开关较耗时，建议只采集一个step的性能数据。 | 是 | 否 |
-| `--enable_kernel_compare` | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见**5.5 kernel比对高级参数**。 | 是 | 是 |
+| `--enable_kernel_compare` | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见[kernel比对高级参数](#435-kernel比对高级参数)。 | 是 | 是 |
 | `--enable_api_compare` | 可选 | 开启API性能比对。需要使用性能数据中的trace_view.json文件。 | 是 | 否 |
 
 #### 4.3.4 算子比对高级参数
@@ -303,7 +303,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 | 参数 | 可选/必选 | 说明 |
 | --- | --- | --- |
-| `--gpu_flow_cat` | 可选 | 配置GPU trace中CPU侧算子与device kernel的连线标识，当GPU的Device Duration(us)均为0时设置。使用chrome://tracing打开GPU的json，右上角Flow events找到连线标识，将标识配置进该参数。使用示例：`--gpu_flow_cat=async_gpu`。 |
+| `--gpu_flow_cat` | 可选 | 配置GPU trace中CPU侧算子与device kernel的连线标识，当GPU的Device Duration(us)均为0时设置。使用chrome://tracing打开GPU的json，在右上角Flow events找到连线标识，将标识配置进该参数。使用示例：`--gpu_flow_cat=async_gpu`。 |
 | `--use_input_shape` | 可选 | 开启算子精准匹配，默认关闭。使用示例：`--use_input_shape`。 |
 | `--max_kernel_num` | 可选 | 设置CPU侧算子下发的最大kernel数量，当超过设定值时工具会自动往下找子算子，直至满足条件。默认仅比对最上层算子，粒度较粗；若想要更细粒度的算子比对，可设置该参数，参数值需大于3，最小可配置为4，参数值设置越小，比对粒度越细。使用示例：`--max_kernel_num=10`。 |
 | `--op_name_map` | 可选 | 设置GPU与NPU等价的算子名称的映射关系，以字典形式存入。使用示例：`--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`。 |
@@ -323,7 +323,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 | --- | --- | --- | --- | --- |
 | `--force` | 可选 | 强制执行compare。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行；csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 | 是 | 是 |
 | `--debug` | 可选 | 工具执行报错时可打开此开关，日志将输出DEBUG级别信息，便于定位问题。配置该参数表示开启Debug，默认未配置表示关闭。 | 是 | 是 |
-| `-h`、`-H`、`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
+| `-h`或`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
 
 ### 4.4 使用示例
 
@@ -355,7 +355,7 @@ python performance_compare.py ./benchmark_profiling_path ./profiling_path --outp
 
 一般情况下compare功能按照默认配置的算子进行比对，若用户需要对特定算子的性能进行比对和分析，可以通过在[compare_config.ini](../../../msprof_analyze/compare_tools/compare_backend/compare_config/compare_config.ini)文件中配置需要比对的算子名的识别关键词，之后再执行比对操作（msprof-analyze compare），比对结果在结果文件performance_comparison_result_{timestamp}.xlsx中呈现。
 
-配置算子名的识别关键词为算子名称中的一部分，代表只要算子名称中包含该关键词，那么该算子会进行比对。
+配置算子名的识别关键词为算子名称中的一部分，表示只要算子名称中包含该关键词，那么该算子会进行比对。
 
 配置格式如下，算子名识别关键词之间用逗号隔开且名称为英文全小写：
 
@@ -542,7 +542,7 @@ ModuleCompare字段说明：
 
 可通过以下方式找出性能劣化点：
 
-1. 查看ModuleCompareStatistic页，找出耗时差距TOP的模块。筛选`Operator Name`字段为`[ TOTAL ]`，将模块总体情况按照`Device Self Time(ms)`字段逆序，可识别出耗时差距TOP的模块。恢复数据，可按照`Order Id`字段升序。
+1. 查看ModuleCompareStatistic页，找出耗时差距TOP的模块。筛选`Operator Name`字段为`[ TOTAL ]`，将模块总体情况按照`Device Self Time(ms)`字段逆序，可识别出耗时差距TOP的模块。恢复数据的默认排序，可按照`Order Id`字段升序。
 2. 查看ModuleCompare页，查找耗时差距TOP模块下的劣化算子。
 3. 通过调用栈找到对应的代码行。
 
@@ -609,23 +609,23 @@ API比对结果在performance_comparison_result_*.xlsx中ApiCompare页呈现。
 
 ## 7. 常见问题FAQ
 
-**Q：只想快速知道性能差异来自哪里，应该看哪个结果？**  
+**Q：只想快速知道性能差异来自哪里，应该看哪个结果？**
 A：先看终端总体性能打印和`OverallMetrics`。`OverallMetrics`会把差异拆成计算、通信、调度和E2E等耗时方向；内存使用`Mem Usage`可能出现在终端总体性能打印中，算子级内存差异看`MemoryCompareStatistic`和`MemoryCompare`。
 
-**Q：采集了多个step，为什么结果不稳定？**  
+**Q：采集了多个step，为什么结果不稳定？**
 A：工具默认会比对所有可用性能数据，可能同时包含预热、稳定训练和偶发抖动阶段。建议只采集一个step；如需固定分析某个step，请同时配置`--base_step`和`--comparison_step`。
 
-**Q：Text格式和Db格式都能比对吗？**  
+**Q：Text格式和Db格式都能比对吗？**
 A：两种格式可选择任意一种进行性能比对。若同一目录中同时包含Text和Db格式文件，则优先使用Db格式结果进行比对。
 
-**Q：为什么设置了某个`--enable_*`开关后，其他结果没有输出？**  
+**Q：为什么设置了某个`--enable_*`开关后，其他结果没有输出？**
 A：只要设置了任意比对开关，工具就按照已设置的开关执行。若所有比对开关均不设置，工具默认开启全部支持的性能比对能力。
 
-**Q：为什么没有明细Sheet？**  
+**Q：为什么没有明细Sheet？**
 A：如果配置了`--disable_details`，工具会隐藏明细比对，只进行统计级比对，因此`OperatorCompare`、`ModuleCompare`、`MemoryCompare`等明细Sheet可能不会输出。
 
-**Q：GPU数据里Device Duration(us)都是0怎么办？**  
+**Q：GPU数据里Device Duration(us)都是0怎么办？**
 A：可配置`--gpu_flow_cat`。使用chrome://tracing打开GPU的json，在右上角Flow events找到CPU侧算子与device kernel的连线标识，并将该标识配置进参数。
 
-**Q：NPU与NPU比对时kernel结果太大或比对较慢怎么办？**  
+**Q：NPU与NPU比对时kernel结果太大或比对较慢怎么办？**
 A：可配置`--use_kernel_type`，使用op_statistic.csv进行比对，输出简化结果并减少比对时间。

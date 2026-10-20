@@ -1,19 +1,19 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import pandas as pd
 import numpy as np
@@ -22,10 +22,13 @@ from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
 
+
 class Comparator:
-    def __init__(self, df_gpu: pd.DataFrame,
-                 df_npu: pd.DataFrame,
-                 ):
+    def __init__(
+        self,
+        df_gpu: pd.DataFrame,
+        df_npu: pd.DataFrame,
+    ):
         self.df_gpu = df_gpu
         self.df_npu = df_npu
 
@@ -75,19 +78,14 @@ class Comparator:
         df_gpu = df_gpu.rename(columns=gpu_rename_map)
         df_npu = df_npu.rename(columns=npu_rename_map)
 
-        df_merged = pd.merge(
-            df_gpu,
-            df_npu,
-            on=merge_keys,
-            how='outer'
-        )
+        df_merged = pd.merge(df_gpu, df_npu, on=merge_keys, how='outer')
 
         split_keys = df_merged['match_key'].str.rsplit('/', n=1, expand=True)
 
         for prefix in ['(GPU) ', '(NPU) ']:
             col_parent = f'{prefix}Parent Module'
             col_module = f'{prefix}Module'
-            
+
             if col_parent not in df_merged.columns:
                 df_merged[col_parent] = np.nan
             if col_module not in df_merged.columns:
@@ -95,26 +93,26 @@ class Comparator:
 
             df_merged[col_parent] = df_merged[col_parent].fillna(split_keys[0])
             df_merged[col_module] = df_merged[col_module].fillna(split_keys[1])
-        
+
         df_merged.drop(columns=['row_id'], inplace=True)
 
         # 计算耗时占比：Duration / sum(Duration)，增加非零防护
         gpu_total_sum = df_merged['(GPU) Total Kernel Duration(us)'].sum()
         npu_total_sum = df_merged['(NPU) Total Kernel Duration(us)'].sum()
         df_merged['(GPU) Total Kernel Duration(%)'] = np.where(
-            gpu_total_sum != 0,
-            df_merged['(GPU) Total Kernel Duration(us)'] / gpu_total_sum * 100,
-            np.nan
+            gpu_total_sum != 0, df_merged['(GPU) Total Kernel Duration(us)'] / gpu_total_sum * 100, np.nan
         )
         df_merged['(NPU) Total Kernel Duration(%)'] = np.where(
-            npu_total_sum != 0,
-            df_merged['(NPU) Total Kernel Duration(us)'] / npu_total_sum * 100,
-            np.nan
+            npu_total_sum != 0, df_merged['(NPU) Total Kernel Duration(us)'] / npu_total_sum * 100, np.nan
         )
 
         # 格式化百分比显示
-        df_merged['(GPU) Total Kernel Duration(%)'] = df_merged['(GPU) Total Kernel Duration(%)'].apply(lambda x: f"{x:.2f}%" if pd.notna(x) else ' ')
-        df_merged['(NPU) Total Kernel Duration(%)'] = df_merged['(NPU) Total Kernel Duration(%)'].apply(lambda x: f"{x:.2f}%" if pd.notna(x) else ' ')
+        df_merged['(GPU) Total Kernel Duration(%)'] = df_merged['(GPU) Total Kernel Duration(%)'].apply(
+            lambda x: f"{x:.2f}%" if pd.notna(x) else ' '
+        )
+        df_merged['(NPU) Total Kernel Duration(%)'] = df_merged['(NPU) Total Kernel Duration(%)'].apply(
+            lambda x: f"{x:.2f}%" if pd.notna(x) else ' '
+        )
 
         # 计算 Module 层级的耗时比率：NPU / GPU
         gpu_module_sum = df_gpu.groupby('match_key')['(GPU) Total Kernel Duration(us)'].sum()
@@ -129,15 +127,26 @@ class Comparator:
         # 映射回 merged dataframe
         df_merged['(NPU/GPU) Module Time Ratio'] = df_merged['match_key'].map(module_ratio)
         df_merged['(NPU-GPU,us) Module Time Diff'] = df_merged['match_key'].map(module_diff)
-        df_merged['(NPU/GPU) Module Time Ratio'] = df_merged['(NPU/GPU) Module Time Ratio'].apply(lambda x: f"{x:.2f}" if pd.notna(x) else ' ')
+        df_merged['(NPU/GPU) Module Time Ratio'] = df_merged['(NPU/GPU) Module Time Ratio'].apply(
+            lambda x: f"{x:.2f}" if pd.notna(x) else ' '
+        )
 
         match_cols = ['(GPU) Parent Module', '(GPU) Module', '(NPU) Parent Module', '(NPU) Module', 'Match Type']
         cols = match_cols + [
-            '(NPU) Op Name', '(NPU) Op Count', '(NPU) Kernel List',
-            '(NPU) Total Kernel Duration(us)', '(NPU) Total Kernel Duration(%)', '(NPU) Avg Kernel Duration(us)',
-            '(GPU) Op Name', '(GPU) Op Count', '(GPU) Kernel List',
-            '(GPU) Total Kernel Duration(us)', '(GPU) Total Kernel Duration(%)', '(GPU) Avg Kernel Duration(us)',
-            '(NPU/GPU) Module Time Ratio', '(NPU-GPU,us) Module Time Diff'
+            '(NPU) Op Name',
+            '(NPU) Op Count',
+            '(NPU) Kernel List',
+            '(NPU) Total Kernel Duration(us)',
+            '(NPU) Total Kernel Duration(%)',
+            '(NPU) Avg Kernel Duration(us)',
+            '(GPU) Op Name',
+            '(GPU) Op Count',
+            '(GPU) Kernel List',
+            '(GPU) Total Kernel Duration(us)',
+            '(GPU) Total Kernel Duration(%)',
+            '(GPU) Avg Kernel Duration(us)',
+            '(NPU/GPU) Module Time Ratio',
+            '(NPU-GPU,us) Module Time Diff',
         ]
         final_cols = [c for c in cols if c in df_merged.columns]
 
@@ -146,9 +155,13 @@ class Comparator:
                 df_merged[c] = np.nan
         df_merged = df_merged.fillna(' ')
 
-        df_merged_final = df_merged[final_cols].sort_values(
-            ['(GPU) Parent Module', '(NPU-GPU,us) Module Time Diff', '(GPU) Total Kernel Duration(us)'],
-            ascending=[True, False, False]
-        ).reset_index(drop=True)
+        df_merged_final = (
+            df_merged[final_cols]
+            .sort_values(
+                ['(GPU) Parent Module', '(NPU-GPU,us) Module Time Diff', '(GPU) Total Kernel Duration(us)'],
+                ascending=[True, False, False],
+            )
+            .reset_index(drop=True)
+        )
 
         return df_merged_final

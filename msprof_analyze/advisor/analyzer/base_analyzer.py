@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 from functools import wraps
@@ -52,7 +53,8 @@ class BaseAnalyzer(VersionControl, metaclass=ABCMeta):
         self.output_path = kwargs.get("output_path", None)
         self.cann_version = kwargs.get(Constant.CANN_VERSION, EnumParamsParser().get_default(Constant.CANN_VERSION))
         self.profiling_type = self.identify_profiling_type(
-            EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE))
+            EnumParamsParser().get_options(Constant.PROFILING_TYPE_UNDER_LINE)
+        )
         self.profiling_version = self.identify_profiling_version()
         self.html_render = HTMLRender()
         self.dataset_list: Dict[str, List[Dataset]] = {}
@@ -81,7 +83,6 @@ class BaseAnalyzer(VersionControl, metaclass=ABCMeta):
         """
 
         def decorate(func):
-
             @wraps(func)
             def wrapper(self, **kwargs):
                 data = self.dataset_list
@@ -122,16 +123,22 @@ class BaseAnalyzer(VersionControl, metaclass=ABCMeta):
                         profiling_type = [elem for elem in profiling_type_list if Constant.MINDSPORE in elem][0]
                         is_found_type = True
                         break
-                    elif direction.endswith(ASCEND_PT):
+                    if direction.endswith(ASCEND_PT):
                         profiling_type = [elem for elem in profiling_type_list if Constant.PYTORCH in elem][0]
                         is_found_type = True
                         break
                 if is_found_type:
                     break
-        if self.kwargs.get(Constant.PROFILING_TYPE_UNDER_LINE) and self.kwargs.get(
-                Constant.PROFILING_TYPE_UNDER_LINE) != profiling_type:
-            logger.warning("%s The input profiling type %s is inconsistent with the actual profiling type %s.",
-                           self.__class__.__name__, self.kwargs.get(Constant.PROFILING_TYPE_UNDER_LINE), profiling_type)
+        if (
+            self.kwargs.get(Constant.PROFILING_TYPE_UNDER_LINE)
+            and self.kwargs.get(Constant.PROFILING_TYPE_UNDER_LINE) != profiling_type
+        ):
+            logger.warning(
+                "%s The input profiling type %s is inconsistent with the actual profiling type %s.",
+                self.__class__.__name__,
+                self.kwargs.get(Constant.PROFILING_TYPE_UNDER_LINE),
+                profiling_type,
+            )
         if not profiling_type:
             logger.warning("Unknown profiling type, the default value is set pytorch.")
             profiling_type = profiling_type_list[0]
@@ -158,21 +165,29 @@ class BaseAnalyzer(VersionControl, metaclass=ABCMeta):
                         break
             if profiling_version and self.kwargs.get(Constant.MINDSPORE_VERSION):
                 if profiling_version != self.kwargs.get(Constant.MINDSPORE_VERSION):
-                    logger.warning("%s The input version %s is inconsistent with the actual version %s.",
-                                   self.__class__.__name__, self.kwargs.get(Constant.MINDSPORE_VERSION),
-                                   profiling_version)
+                    logger.warning(
+                        "%s The input version %s is inconsistent with the actual version %s.",
+                        self.__class__.__name__,
+                        self.kwargs.get(Constant.MINDSPORE_VERSION),
+                        profiling_version,
+                    )
         elif Constant.PYTORCH in self.profiling_type:
-            profiling_version = self.kwargs.get(Constant.TORCH_VERSION,
-                                                EnumParamsParser().get_default(Constant.TORCH_VERSION))
+            profiling_version = self.kwargs.get(
+                Constant.TORCH_VERSION, EnumParamsParser().get_default(Constant.TORCH_VERSION)
+            )
             if self.kwargs.get(Constant.TORCH_VERSION) and profiling_version != self.kwargs.get(Constant.TORCH_VERSION):
-                logger.warning("%s The input version %s is inconsistent with the actual version %s.",
-                               self.__class__.__name__, self.kwargs.get(Constant.TORCH_VERSION), profiling_version)
+                logger.warning(
+                    "%s The input version %s is inconsistent with the actual version %s.",
+                    self.__class__.__name__,
+                    self.kwargs.get(Constant.TORCH_VERSION),
+                    profiling_version,
+                )
         return profiling_version
 
     def init_dataset_list(self) -> None:
         dataset_cls_list = self.dataset_cls_list
         if len(dataset_cls_list) == 0:
-            logger.warning(f"Analyser: %s don't rely on any dataset!", self.__class__.__name__)
+            logger.warning("Analyser: %s don't rely on any dataset!", self.__class__.__name__)
             return
 
         for dataset_cls in dataset_cls_list:

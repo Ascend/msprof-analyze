@@ -41,12 +41,14 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -o /path/to/advisor_outpu
 
 **数据准备**
 
-msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/mindspore_profiler_user_guide.md)》。
+msprof-analyze需要传入采集的性能数据文件夹，支持输入路径为集群性能数据路径和单卡的性能数据路径。如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》或《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
 
 **约束**
 
-- CANN软件版本8.0RC1之前仅支持对text格式文件分析，8.0RC1及之后支持text、db格式的采集数据分析。
-- Ascend 950 系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
+- CANN软件版本8.0.RC1之前仅支持对text格式文件分析，8.0.RC1及之后支持text、db格式的采集数据分析。
+<!-- npu="950" id1 -->
+- Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵和通信算子带宽数据，因此该工具slow rank、slow link、communication的分析功能不具有参考意义。
+<!-- end id1 -->
 
 ## 4. 功能介绍（advisor命令行方式）
 
@@ -62,7 +64,7 @@ msprof-analyze advisor命令行包含如下三个子命令：
 
 | dimension  | mode                                  | 参数释义                                                                                | 支持场景                         |
 | ---------- |---------------------------------------|-------------------------------------------------------------------------------------| ------------------------------------ |
-| overall    | Overall Summary                       | 计算、通信、空闲等维度对性能数据进行拆解                                                                | PyTorch、MindSpore |
+| overall    | Overall Summary                       | 从计算、通信、空闲等维度对性能数据进行拆解                                                                | PyTorch、MindSpore |
 |            | Environment Variable Issues | 环境变量设置推荐                                                                            | PyTorch |
 |     | slow rank                             | 慢卡识别                                                                                | PyTorch、MindSpore            |
 |            | slow link                             | 慢链路识别                                                                               | PyTorch、MindSpore          |
@@ -123,16 +125,16 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 
 | 参数                | 可选/必选 | 说明                                                         |
 | ------------------- | --------- | ------------------------------------------------------------ |
-| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况： 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。 csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。 配置该参数表示开启强制执行，默认未配置表示关闭。 |
-| `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值： `cn`：输出中文，默认值。 `en`：输出英文。 |
-| `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细保存堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
-| `-h`，`-H` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
+| `--force`           | 可选      | 强制执行advisor。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 |
+| `-l` `--language`   | 可选      | 设置分析结果输出的语言，可取值：`cn`：输出中文，默认值。`en`：输出英文。 |
+| `--debug`           | 可选      | 工具执行报错时可打开此开关，将会展示详细堆栈信息。配置该参数表示开启Debug，默认未配置表示关闭。 |
+| `-h` `--help` | 可选      | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。     |
 
 #### 4.3.3 环境与版本配置
 
 | 参数 | 说明 |
 | --- | --- |
-| `-cv`<br>`--cann_version` | 使用Profiling工具采集时对应的CANN软件版本。目前配套的兼容版本为“6.3.RC2”，“7.0.RC1”、“7.0.0”、“8.0.RC1”，此字段不填默认按“8.0.RC1”版本数据进行处理，其余版本采集的Profiling数据在分析时可能会导致不可知问题。可通过在环境中执行如下命令获取其version字段：`cat /usr/local/Ascend/cann/aarch64-linux/ascend_toolkit_install.info` |
+| `-cv`<br>`--cann_version` | 使用Profiling工具采集时对应的CANN软件版本。目前配套的兼容版本为“6.3.RC2”，“7.0.RC1”、“7.0.0”、“8.0.RC1”，此字段不填默认按“8.0.RC1”版本数据进行处理，其余版本采集的Profiling数据在分析时可能会导致不可预知的问题。可通过在环境中执行如下命令获取其version字段：`cat /usr/local/Ascend/cann/aarch64-linux/ascend_toolkit_install.info` |
 | `-tv`<br>`--torch_version` | 运行环境的torch版本，默认为1.11.0，支持torch1.11.0和torch2.1.0，当运行环境torch版本为其他版本如torch1.11.3时，可以忽略小版本号差异选择相近的torch版本如1.11.0。 |
 | `-pt`<br>`--profiling_type` | 配置性能数据采集使用的Profiling工具类型。可取值：<br>`pytorch`：使用Ascend PyTorch Profiler接口方式采集的性能数据时配置，默认值。<br>`mindspore`：使用MindSpore Profiler接口方式采集的性能数据时配置。<br>`mslite`：使用[Benchmark](https://gitee.com/ascend/tools/tree/master/ais-bench_workload/tool/ais_bench)工具采集的性能数据时配置。不建议使用。<br>**schedule不支持该参数。** |
 
@@ -224,7 +226,7 @@ overall模块仅识别问题，不提供调优建议。
 
 ![env_var.png](../figures/env_var.png)
 
-上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/canncommercial/900/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
+上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
 
 无标杆单卡场景的overall summary分析示例如下：
 
@@ -252,7 +254,7 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
   ![comparison2](../figures/comparison2.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 - Api compare of RankStep and RankStep：API的待比对总耗时、待比对API自身耗时（除去API调用的子API的耗时）、待比对平均耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）、Diff Self Ratio（标杆API自身耗时/待比对API自身耗时）、Diff Avg Ratio（标杆平均耗时/待比对平均耗时）和Diff Calls Ratio（标杆执行次数/待比对执行次数）。
 
@@ -260,7 +262,7 @@ comparison模块识别标杆和待比对性能数据的Kernel和API数据。无�
 
   ![comparison3](../figures/comparison3.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 `mstt_advisor_{timestamp}.html`文件的comparison模块内容仅展示Kernel和API的Top 10条数据，详细数据需要查看`mstt_advisor_{timestamp}.xlsx`文件。
 
@@ -291,7 +293,7 @@ performance problem analysis模块包含memory、communication、computation、d
 
   ![comparison](../figures/comparison.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 - Api compare of Target and Benchmark：API的待比对总耗时、待比对API自身耗时（除去API调用的子API的耗时）、待比对平均耗时和待比对执行次数，以及标杆的对应数据，最后计算Diff Total Ratio（标杆总耗时/待比对总耗时）、Diff Self Ratio（标杆API自身耗时/待比对API自身耗时）、Diff Avg Ratio（标杆平均耗时/待比对平均耗时）和Diff Calls Ratio（标杆执行次数/待比对执行次数）。
 
@@ -299,7 +301,7 @@ performance problem analysis模块包含memory、communication、computation、d
 
   ![comparison1](../figures/comparison1.png)
 
-  其中inf表示分母为0（未获取到待对比数据或待对比数据为0），None表示未获取到数据。
+  其中inf表示分母为0（未获取到待比对数据或待比对数据为0），None表示未获取到数据。
 
 `mstt_advisor_{timestamp}.html`文件的comparison模块内容仅展示Kernel和API的Top 10条数据，详细数据需要查看`mstt_advisor_{timestamp}.xlsx`文件。
 
@@ -358,7 +360,7 @@ communication模块从通信维度进行分析，目前支持通信小包检测�
 
 - Zero1：每张NPU存储完整的一份梯度和模型参数，只有1/N优化器。每张NPU使用各自的数据做前向传播、反向传播，反向传播后使用all-reduce同步梯度到所有卡，使得每张卡有所有算子的梯度。每张卡根据梯度和1/N优化器更新1/N模型参数，再使用all-gather通信将优化器更新后的1/N模型参数发送给其它卡，因为每张卡有完整的一份模型参数需要更新。
 - Zero2：每张NPU存储完整的一份模型参数，只有1/N优化器和1/N梯度。每张NPU使用各自的数据做前向传播。反向传播后，计算出本卡的局部梯度，使用Reduce-Scatter通信聚合梯度，保证每张卡只保存1/N梯度。每张卡根据自己保持的1/N优化器和1/N梯度更新1/N模型参数，再使用all-gather通信将更新后的模型参数发送给其它卡，因为每张卡有完整的一份模型参数需要更新。
-- Zero3：每张NPU存储1/N模型参数、1/N优化器和1/N梯度。前向传播前，每张卡all-gather通信获取到完整的模型参数，再做前向传播计算，每用完一部分模型参数后就把它删除。反向传播开始前，每张卡all-gather通信获取到完整的模型参数，每用完一部分模型参数后就把它删除。使用reduce-scatter通信聚合梯度。每张卡根据自己保持的1/N优化器和1/N梯度更新1/N模型参数，由于每张卡只保存1/N模型参数，无需要将更新后的模型参数发送给其它卡。
+- Zero3：每张NPU存储1/N模型参数、1/N优化器和1/N梯度。前向传播前，每张卡all-gather通信获取到完整的模型参数，再做前向传播计算，每用完一部分模型参数后就把它删除。反向传播开始前，每张卡all-gather通信获取到完整的模型参数，每用完一部分模型参数后就把它删除。使用reduce-scatter通信聚合梯度。每张卡根据自己保持的1/N优化器和1/N梯度更新1/N模型参数，由于每张卡只保存1/N模型参数，无需将更新后的模型参数发送给其它卡。
 
 通信重传检测示例如下：
 
@@ -419,7 +421,7 @@ Synchronize Stream Issues示例如下，需要根据堆栈来修改对应代码�
 
 ![schedule_2](../figures/schedule_2.png)
 
-上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/environment_variable_reference/ASCEND_LAUNCH_BLOCKING.md)。
+上图中的ASCEND_LAUNCH_BLOCKING环境变量介绍请参见[ASCEND_LAUNCH_BLOCKING](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md)。
 
 Operator Dispatch Issues示例如下，提示需要在运行脚本的最开头添加如下代码用于消除aclopCompile：
 
@@ -432,7 +434,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 ![输入图片说明](../figures/schedule_1.png)
 
-上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/canncommercial/900/API/ascendgraphapi/aclcppdevg_03_0251.html)。
+上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/API/ascendgraphapi/aclcppdevg_03_0251.html)。
 
 #### 5.4.4 memory/dataloader模块问题速查
 
@@ -449,7 +451,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 ![dataloader](../figures/dataloader.png)
 
-上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://www.hiascend.com/document/detail/zh/Pytorch/710/ptmoddevg/trainingmigrguide/performance_tuning_0026.html)使用。
+上图中的`pin_memory`（内存锁定）和`num_workers`（数据加载子流程的数量）参数为[数据加载优化](https://gitcode.com/Ascend/ModelZoo-PyTorch/blob/master/PyTorch/docs/zh/performance_tuning/performance_tuning_methods/data_loading_optimization.md)使用。
 
 ## 6. 功能介绍（advisor Jupyter Notebook方式）
 
@@ -457,7 +459,7 @@ dataloader模块包含Slow Dataloader Issues，主要检测异常高耗时的dat
 
 advisor的Jupyter Notebook方式用于在Notebook页面中交互式查看性能数据分析过程和分析结果。
 
-使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+使用Jupyter Notebook方式前，需要先准备Ascend PyTorch Profiler采集的性能数据。采集方法请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 > Jupyter Notebook方式作为命令行方式的补充，不参与命令行主流程。MindSpore场景不支持Jupyter Notebook方式。
 
@@ -474,12 +476,12 @@ pip install jupyter notebook
 **下载msprof-analyze源码**
 
 ```bash
-git clone https://gitcode.com/Ascend/msprof-analyze
+git clone https://gitcode.com/Ascend/msprof-analyze -b master
 ```
 
 **准备性能数据**
 
-advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/v2.7.1/docs/zh/ascend_pytorch_profiler/ascend_pytorch_profiler_user_guide.md)》。
+advisor需要传入采集的性能数据文件夹，如何采集性能数据请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
 **使用限制**
 
@@ -549,4 +551,4 @@ msprof-analyze advisor all -d /path/to/profiling_data/ -bp /path/to/benchmark_pr
 
 **Q8：文件太大或属主不一致导致工具不执行怎么办？**
 
-确认风险后可以使用`--force`。该参数会强制跳过目录或文件属主判断，也会忽略csv文件大于5G、json文件大于10G、db文件大于8G的文件过大判断。
+确认风险后可以使用`--force`。该参数会强制跳过目录或文件属主判断，也会忽略csv文件大于5GB、json文件大于10GB、db文件大于8GB的文件过大判断。

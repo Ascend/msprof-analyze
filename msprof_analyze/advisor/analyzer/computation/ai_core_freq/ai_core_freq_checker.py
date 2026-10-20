@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.config.config import Config
@@ -20,7 +21,6 @@ from msprof_analyze.advisor.display.prompt.base_prompt import BasePrompt
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.utils.utils import convert_to_float
-from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 logger = get_logger()
 
@@ -32,7 +32,6 @@ class AICoreFreqChecker:
     DECREASE_FREQ_RATIO_INDEX = 3
 
     def __init__(self):
-
         self.ai_core_freq_issues = False
         self.desc = ""
         self.suggestions = ""
@@ -47,8 +46,9 @@ class AICoreFreqChecker:
         :Param event_dataset: dataset of timeline event
         """
         if not hasattr(event_dataset, "op_freq") or not getattr(event_dataset, "op_freq"):
-            logger.debug("Skip slow ai core frequency checker, "
-                         "because no ai core frequency were recorded in trace_view.json")
+            logger.debug(
+                "Skip slow ai core frequency checker, because no ai core frequency were recorded in trace_view.json"
+            )
             return
 
         self.rank = rank
@@ -68,15 +68,23 @@ class AICoreFreqChecker:
             decrease_freq_ratio = sum(max_freq - freq for freq in freq_list) / (max_freq * len(freq_list))
             if decrease_freq_ratio >= Config().get_config("frequency_threshold"):
                 self.ai_core_freq_issues = True
-                self.decrease_freq_ops.append([op_name, op_count, op_total_duration,
-                                               f"{round(decrease_freq_ratio, 4):.2%}",
-                                               round(sum(freq_list) / len(freq_list), 2),
-                                               max(freq_list), min(freq_list)])
+                self.decrease_freq_ops.append(
+                    [
+                        op_name,
+                        op_count,
+                        op_total_duration,
+                        f"{round(decrease_freq_ratio, 4):.2%}",
+                        round(sum(freq_list) / len(freq_list), 2),
+                        max(freq_list),
+                        min(freq_list),
+                    ]
+                )
 
         if self.decrease_freq_ops:
             # 按算子总耗时和降频比率 降序排列
             self.decrease_freq_ops.sort(
-                key=lambda x: (x[self.TOTAL_DURATION_INDEX], x[self.DECREASE_FREQ_RATIO_INDEX]), reverse=True)
+                key=lambda x: (x[self.TOTAL_DURATION_INDEX], x[self.DECREASE_FREQ_RATIO_INDEX]), reverse=True
+            )
         if not self.ai_core_freq_issues:
             return
 
@@ -122,13 +130,15 @@ class AICoreFreqChecker:
         priority = kwargs.get("priority")
         if self.SHOW_TOPK_OPS:
             self.desc += f" Only show {self.SHOW_TOPK_OPS} operators here, see latest mstt_advisor.xlsx for details."
-        return html_render.render_template(key="computation",
-                                           template_dir="templates",
-                                           template_name="ai_core_frequency.html",
-                                           desc=self.desc,
-                                           suggestion=self.suggestions,
-                                           headers=self.headers,
-                                           data=self.decrease_freq_ops[:self.SHOW_TOPK_OPS],
-                                           add_render_list=add_render_list,
-                                           priority_background_color=priority,
-                                           rank=kwargs.get("rank"))
+        return html_render.render_template(
+            key="computation",
+            template_dir="templates",
+            template_name="ai_core_frequency.html",
+            desc=self.desc,
+            suggestion=self.suggestions,
+            headers=self.headers,
+            data=self.decrease_freq_ops[: self.SHOW_TOPK_OPS],
+            add_render_list=add_render_list,
+            priority_background_color=priority,
+            rank=kwargs.get("rank"),
+        )

@@ -1,36 +1,36 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
-from msprof_analyze.prof_common.constant import Constant
 
 QUERY_COMMUNICATION_PTA = """
-WITH 
+WITH
 band AS (
     SELECT
         hccl_op_name,
         transport_type,
         JSON_OBJECT(
-            'Transit Time(ms)', transit_time, 
-            'Transit Size(MB)', transit_size, 
+            'Transit Time(ms)', transit_time,
+            'Transit Size(MB)', transit_size,
             'Bandwidth(GB/s)', bandwidth,
             'Large Packet Ratio', large_packet_ratio
         ) AS band_dict
     FROM CommAnalyzerBandwidth
     WHERE transport_type IN ('SDMA', 'RDMA')
-), 
+),
 sdma AS (SELECT hccl_op_name, band_dict FROM band WHERE transport_type = 'SDMA'),
 rdma AS (SELECT hccl_op_name, band_dict FROM band WHERE transport_type = 'RDMA')
 
@@ -49,20 +49,20 @@ LEFT JOIN rdma ON time.hccl_op_name = rdma.hccl_op_name
 """
 
 QUERY_COMMUNICATION_MINDSPORE = """
-WITH 
+WITH
 band AS (
     SELECT
         hccl_op_name,
         transport_type,
         JSON_OBJECT(
-            'Transit Time(ms)', transit_time, 
-            'Transit Size(MB)', transit_size, 
+            'Transit Time(ms)', transit_time,
+            'Transit Size(MB)', transit_size,
             'Bandwidth(GB/s)', bandwidth,
             'Large Packet Ratio', large_packet_ratio
         ) AS band_dict
     FROM CommAnalyzerBandwidth
     WHERE transport_type IN ('SDMA', 'RDMA')
-), 
+),
 sdma AS (SELECT hccl_op_name, band_dict FROM band WHERE transport_type = 'SDMA'),
 rdma AS (SELECT hccl_op_name, band_dict FROM band WHERE transport_type = 'RDMA')
 
@@ -79,29 +79,29 @@ LEFT JOIN rdma ON time.hccl_op_name = rdma.hccl_op_name
 """
 
 QUERY_CLUSTER_COMMUNICATION = """
-WITH 
+WITH
 band AS (
     SELECT
         hccl_op_name,
         band_type,
         JSON_OBJECT(
             'Transport Type', band_type,
-            'Transit Time(ms)', transit_time, 
-            'Transit Size(MB)', transit_size, 
+            'Transit Time(ms)', transit_time,
+            'Transit Size(MB)', transit_size,
             'Bandwidth(GB/s)', bandwidth,
             'Large Packet Ratio', large_packet_ratio
         ) AS band_dict
     FROM {band_table}
     WHERE band_type IN ('SDMA', 'RDMA')
-), 
+),
 sdma AS (
-    SELECT hccl_op_name, band_dict 
-    FROM band 
+    SELECT hccl_op_name, band_dict
+    FROM band
     WHERE band_type = 'SDMA'
 ),
 rdma AS (
-    SELECT hccl_op_name, band_dict 
-    FROM band 
+    SELECT hccl_op_name, band_dict
+    FROM band
     WHERE band_type = 'RDMA'
 )
 
@@ -112,15 +112,15 @@ SELECT
     time.start_timestamp,
     time.elapsed_time,
     time.step,
-    time.rank_id, 
+    time.rank_id,
     sdma.band_dict AS sdma_dict,
     rdma.band_dict AS rdma_dict
 FROM {time_table} AS time
-JOIN {group_table} AS group_map 
+JOIN {group_table} AS group_map
     ON time.group_name = group_map.group_name
-LEFT JOIN sdma 
+LEFT JOIN sdma
     ON time.hccl_op_name = sdma.hccl_op_name
-LEFT JOIN rdma 
+LEFT JOIN rdma
     ON time.hccl_op_name = rdma.hccl_op_name
 """
 
@@ -142,13 +142,12 @@ FROM ClusterStepTraceTime
 
 
 class CommunicationInfoExport(BaseStatsExport):
-
     def __init__(self, db_path, is_pta):
         super().__init__(db_path, "None", param_dict=None)
         self._query = QUERY_COMMUNICATION_PTA if is_pta else QUERY_COMMUNICATION_MINDSPORE
 
     def get_param_order(self):
-        return [] # 不使用任何参数
+        return []  # 不使用任何参数
 
 
 class ClusterAnalysisExport(BaseStatsExport):
@@ -171,9 +170,9 @@ class ClusterStepTraceTimeExport(ClusterAnalysisExport):
 class ClusterCommunicationInfoExport(ClusterAnalysisExport):
     def __init__(self, db_path):
         super().__init__(db_path)
-        self._query = QUERY_CLUSTER_COMMUNICATION.format(time_table=self.cluster_time_table,
-                                                         band_table=self.cluster_band_table,
-                                                         group_table=self.cluster_group_table)
+        self._query = QUERY_CLUSTER_COMMUNICATION.format(
+            time_table=self.cluster_time_table, band_table=self.cluster_band_table, group_table=self.cluster_group_table
+        )
 
 
 class ClusterBandwidthInfoExport(ClusterAnalysisExport):

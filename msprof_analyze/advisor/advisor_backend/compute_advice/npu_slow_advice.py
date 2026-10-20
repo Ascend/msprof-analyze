@@ -1,24 +1,25 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from abc import ABC
 import os
 import multiprocessing
-from msprof_analyze.prof_common.logger import get_logger
 
 import pandas as pd
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.path_manager import PathManager
 from msprof_analyze.advisor.advisor_backend.compute_advice.compute_advice_base import ComputeAdviceBase
 from msprof_analyze.advisor.advisor_backend.compute_advice.npu_fused.op_perf import OpPerfFactory
@@ -35,7 +36,7 @@ class NpuSlowAdvice(ComputeAdviceBase, ABC):
         super().__init__(collection_path)
         self.kernel_details_path = ""
         self.data = pd.DataFrame()
-    
+
     @staticmethod
     def save_to_excel(data: pd.DataFrame, file_path: str) -> None:
         PathManager.check_output_directory_path(os.path.dirname(file_path))
@@ -58,24 +59,24 @@ class NpuSlowAdvice(ComputeAdviceBase, ABC):
             if not fill_format:
                 continue
             worksheet.set_row(row[0] + 1, None, fill_format)
-    
+
     @staticmethod
     def update_op_row(row: tuple):
         return OpPerfFactory.build(row[1]).update()
-    
+
     def get_call_stack(self, data: pd.DataFrame, index_id: int, ts_col: str) -> str:
         if not self.has_callstack():
             logger.warning("There is no call stack info, please set 'with_stack=True'")
             return ""
         trace_json = TraceViewJson(self.trace_view_path)
         return trace_json.get_call_stack(data, index_id, ts_col)
-    
+
     def run(self):
         if not self.path_check():
             return self.data
         self.process()
         return self.data
-    
+
     def process(self):
         PathManager.check_input_file_path(self.kernel_details_path)
         PathManager.check_file_size(self.kernel_details_path)

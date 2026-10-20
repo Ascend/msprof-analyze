@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import copy
 import os
 from functools import partial
@@ -34,12 +35,19 @@ class AicpuChecker(OperatorChecker):
     STACK_INFO_ITEMS = "stack_info"
     SUGGESTION_INFO_ITEMS = "suggestions"
     _ITEMS = [
-        "op_name", "op_type", "task_duration", "input_shapes", "input_data_types", "input_formats", "output_shapes",
-        "output_data_types", "output_formats"
+        "op_name",
+        "op_type",
+        "task_duration",
+        "input_shapes",
+        "input_data_types",
+        "input_formats",
+        "output_shapes",
+        "output_data_types",
+        "output_formats",
     ]
 
     def __init__(self, cann_version):
-        super(AicpuChecker, self).__init__(cann_version=cann_version)
+        super().__init__(cann_version=cann_version)
         self.aicpu_rules: Dict = {}
         self.aicpu_checker: Dict = {}
         self.total_task_duration = 0.0
@@ -53,7 +61,7 @@ class AicpuChecker(OperatorChecker):
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "aicpu_rules.yaml"
+            "aicpu_rules.yaml",
         )
 
         if not os.path.exists(rule_path):
@@ -66,10 +74,16 @@ class AicpuChecker(OperatorChecker):
         self.double_suggestion = self.aicpu_rules.get("double_suggestion")
         self.filter_aicpu_rules(self.aicpu_rules)
         for checker_name, check_rule in self.aicpu_rules.items():
-            if not isinstance(check_rule, (list, dict,)):
+            if not isinstance(
+                check_rule,
+                (
+                    list,
+                    dict,
+                ),
+            ):
                 continue
 
-            if checker_name not in AICPU_CHECKER.keys():
+            if checker_name not in AICPU_CHECKER:
                 logger.warning("Skip %s, which is not support now.", checker_name)
                 continue
 
@@ -82,7 +96,6 @@ class AicpuChecker(OperatorChecker):
                 if key == 'DataTypeChecker' and self.cann_version in value['cann_version']:
                     support_checkers.append(checkers)
         aicpu_rules['CommonChecker'] = support_checkers
-        return
 
     def check_aicpu_attr(self, op_info) -> List[str]:
         suggestions = []
@@ -143,10 +156,14 @@ class AicpuChecker(OperatorChecker):
             if not op.has_attr("input_data_types"):
                 logger.warning(
                     "Skip checking of input data in AICPU checker "
-                    "because of not containing input_data_dtypes in op summary")
+                    "because of not containing input_data_dtypes in op summary"
+                )
                 break
-            if (op.has_attr("input_data_types") and "DOUBLE" in op.input_data_types
-                    and op.op_name not in double_type_ai_cpu_operator):
+            if (
+                op.has_attr("input_data_types")
+                and "DOUBLE" in op.input_data_types
+                and op.op_name not in double_type_ai_cpu_operator
+            ):
                 double_type_ai_cpu_operator.append(op.op_name)
         if bool(double_type_ai_cpu_operator):
             self._suggestion.append(self.double_suggestion.format(",".join(double_type_ai_cpu_operator)))
@@ -156,9 +173,9 @@ class AicpuChecker(OperatorChecker):
         if not op_name_list:
             return []
         if profiling_dataset.data_type == Constant.TEXT:
-            return self.query_stack_from_timeline_json(collection_path=profiling_dataset.collection_path,
-                                                       op_name_list=op_name_list,
-                                                       task_type=Constant.AI_CPU)
+            return self.query_stack_from_timeline_json(
+                collection_path=profiling_dataset.collection_path, op_name_list=op_name_list, task_type=Constant.AI_CPU
+            )
         elif profiling_dataset.data_type == Constant.DB and hasattr(profiling_dataset, "op_summary"):
             db_path = profiling_dataset.op_summary.file_path
             return self.query_stack_from_db(db_path, op_name_list, Constant.AI_CPU)
@@ -166,14 +183,13 @@ class AicpuChecker(OperatorChecker):
 
     def query_stack_from_timeline_json(self, collection_path, op_name_list, task_type):
         data: Dict[str, Dataset] = {}
-        event_dataset = ComputationAnalysisDataset(collection_path=collection_path,
-                                                   data=data,
-                                                   task_type=task_type)
+        event_dataset = ComputationAnalysisDataset(collection_path=collection_path, data=data, task_type=task_type)
 
         # disable multiprocessing, avoid cost time of enable new process for light task
         api_stack_finder = TimelineOpStackFinder()
-        api_stack_finder.get_api_stack_by_op_name(event_dataset, op_name_list, Constant.AI_CPU,
-                                                  disable_multiprocess=True)
+        api_stack_finder.get_api_stack_by_op_name(
+            event_dataset, op_name_list, Constant.AI_CPU, disable_multiprocess=True
+        )
         return api_stack_finder.get_stack_record()
 
     def query_stack_from_db(self, db_path, op_name_list, task_type):
@@ -182,14 +198,15 @@ class AicpuChecker(OperatorChecker):
 
     def make_render(self, html_render, record, add_render_list=True, **kwargs):
         priority = kwargs.get("priority")
-        return html_render.render_template(key="computation",
-                                           template_dir="templates",
-                                           template_name="operator_ai_cpu.html",
-                                           format_result=self.format_operator_result(record,
-                                                                                     Constant.OPERATOR_LIST_UNLIMIT),
-                                           add_render_list=add_render_list,
-                                           priority_background_color=priority,
-                                           rank=kwargs.get("rank"))
+        return html_render.render_template(
+            key="computation",
+            template_dir="templates",
+            template_name="operator_ai_cpu.html",
+            format_result=self.format_operator_result(record, Constant.OPERATOR_LIST_UNLIMIT),
+            add_render_list=add_render_list,
+            priority_background_color=priority,
+            rank=kwargs.get("rank"),
+        )
 
     def format_operator_result(self, record, limit):
         """
@@ -209,8 +226,7 @@ class AicpuChecker(OperatorChecker):
             "task_duration": round(record.statistics_item.task_duration, 2),
         }
 
-        statistic = self.group_by(copy.deepcopy(self._op_list), op_key='op_type',
-                                  limit=limit)
+        statistic = self.group_by(copy.deepcopy(self._op_list), op_key='op_type', limit=limit)
         format_result["statistic"] = statistic
         stack_key_list = ["stack_info", "input_data_types", "output_data_types"]
         if statistic:
@@ -219,8 +235,7 @@ class AicpuChecker(OperatorChecker):
                 info["op_info_list"] = op_info_list
         return format_result
 
-    def group_by_list(self, op_list, op_key_list: List = None,
-                      limit: int = Constant.OPERATOR_LIST_UNLIMIT):
+    def group_by_list(self, op_list, op_key_list: List = None, limit: int = Constant.OPERATOR_LIST_UNLIMIT):
         if op_list is None:
             op_list = []
         if op_key_list is None:
@@ -264,7 +279,7 @@ class BaserChecker:
 
 class CommonChecker(BaserChecker):
     def __init__(self, check_rules: List[Dict] = None):
-        super(CommonChecker, self).__init__()
+        super().__init__()
         self.check_rules = check_rules if check_rules is not None else []
         self.supported_checker = dict(DataTypeChecker=self.datatype_checker)
         self.build()
@@ -277,8 +292,7 @@ class CommonChecker(BaserChecker):
         valid_outputs = check_item.get('output', [])
         ignore_type = check_item.get('ignore_type', [])
         op_type = getattr(op_info, 'op_type', "UNKNOWN")
-        if "__ALL__" in supported_op_type or \
-                op_type.lower() in supported_op_type:
+        if "__ALL__" in supported_op_type or op_type.lower() in supported_op_type:
             if op_type.lower() in ignore_type:
                 return None
 
@@ -292,14 +306,12 @@ class CommonChecker(BaserChecker):
             if not unsupported_dtype_diff:
                 return None
 
-            return suggestion.format(",".join(unsupported_dtype_diff).upper(),
-                                     op_type,
-                                     ",".join(valid_inputs).upper())
+            return suggestion.format(",".join(unsupported_dtype_diff).upper(), op_type, ",".join(valid_inputs).upper())
         return None
 
     def build(self):
         for check in self.check_rules:
-            (check_func, check_rule), = check.items()
+            ((check_func, check_rule),) = check.items()
             if check_func not in self.supported_checker:
                 logger.warning("Skip %s, which has not been implemented.", check_func)
                 continue
@@ -308,7 +320,7 @@ class CommonChecker(BaserChecker):
 
 class ExampleGuideChecker(BaserChecker):
     def __init__(self, check_rules: List[Dict] = None):
-        super(ExampleGuideChecker, self).__init__()
+        super().__init__()
         self.check_rules = check_rules if check_rules is not None else []
         self.build()
 
@@ -323,11 +335,8 @@ class ExampleGuideChecker(BaserChecker):
             return None
 
         for check in self.check_rules:
-            (_, check_rule), = check.items()
+            ((_, check_rule),) = check.items()
             self.checker_list.append(partial(_guide_url, check_rule))
 
 
-AICPU_CHECKER = {
-    "CommonChecker": CommonChecker,
-    "ExampleGuideChecker": ExampleGuideChecker
-}
+AICPU_CHECKER = {"CommonChecker": CommonChecker, "ExampleGuideChecker": ExampleGuideChecker}

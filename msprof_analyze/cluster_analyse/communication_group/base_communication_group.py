@@ -1,22 +1,22 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 from abc import abstractmethod
 from collections import defaultdict
-from copy import deepcopy
 from multiprocessing import Pool
 import pandas as pd
 from msprof_analyze.cluster_analyse.recipes.communication_group_map.communication_group_map import CommunicationGroupMap
@@ -64,18 +64,14 @@ class BaseCommunicationGroup:
             if os.path.exists(comm_dir) or os.path.exists(matrix_dir):
                 comm_op_dirs.append((rank_id, comm_dir, matrix_dir))
             else:
-                logger.warning(
-                    "Rank %s does not have valid communication data and communication_matrix data.", rank_id
-                )
+                logger.warning("Rank %s does not have valid communication data and communication_matrix data.", rank_id)
         max_processes = int(os.cpu_count() / 2)
         with Pool(processes=max_processes) as p:
             self.rank_comm_dir_dict = p.map(self.read_communication_func, comm_op_dirs)
 
     def generate_communication_group(self):
-        self.communication_group[Constant.COLLECTIVE] = \
-            [list(group) for _, group in self.collective_group_dict.items()]
-        self.communication_group[Constant.P2P] = \
-            [list(group) for _, group in self.p2p_group_dict.items()]
+        self.communication_group[Constant.COLLECTIVE] = [list(group) for _, group in self.collective_group_dict.items()]
+        self.communication_group[Constant.P2P] = [list(group) for _, group in self.p2p_group_dict.items()]
 
     @abstractmethod
     def read_communication_func(self, params: tuple):
@@ -112,7 +108,6 @@ class BaseCommunicationGroup:
                 self.add_collective_group_rank_map(rank_id, step_id_dict.get(Constant.COLLECTIVE, {}))
                 self.add_p2p_group_rank_map(rank_id, step_id_dict.get(Constant.P2P, {}))
 
-
     @abstractmethod
     def dump_data(self):
         pass
@@ -123,7 +118,7 @@ class BaseCommunicationGroup:
             Constant.COLLECTIVE_GROUP: self.collective_group_dict,
             Constant.COMMUNICATION_OPS: self.communication_ops,
             Constant.MATRIX_OPS: self.matrix_ops,
-            Constant.COMMUNICATION_GROUP: self.communication_group
+            Constant.COMMUNICATION_GROUP: self.communication_group,
         }
         return comm_data_dict
 
@@ -155,32 +150,36 @@ class BaseCommunicationGroup:
             if comm_op.startswith('Total'):
                 continue
             group_name = comm_op.split('@')[-1]
-            self.communication_ops.append({
-                Constant.RANK_ID: rank_id,
-                Constant.STEP_ID: step_id,
-                Constant.COMM_OP_TYPE: comm_op_type,
-                Constant.COMM_OP_NAME: comm_op,
-                Constant.GROUP_NAME: group_name,
-                Constant.COMM_OP_INFO: comm_op_dict.get(comm_op)
-            })
+            self.communication_ops.append(
+                {
+                    Constant.RANK_ID: rank_id,
+                    Constant.STEP_ID: step_id,
+                    Constant.COMM_OP_TYPE: comm_op_type,
+                    Constant.COMM_OP_NAME: comm_op,
+                    Constant.GROUP_NAME: group_name,
+                    Constant.COMM_OP_INFO: comm_op_dict.get(comm_op),
+                }
+            )
 
     def add_matrix_ops(self, rank_id: int, step_id: str, step_id_dict: dict):
         for comm_op_type, comm_dict in step_id_dict.items():
-            if comm_op_type != Constant.COLLECTIVE and comm_op_type != Constant.P2P:
+            if comm_op_type not in (Constant.COLLECTIVE, Constant.P2P):
                 logger.warning("Unknown communication operators type!")
                 continue
             for op_name, op_link_info in comm_dict.items():
                 if op_name.startswith('Total'):
                     continue
                 group_name = op_name.split('@')[-1]
-                self.matrix_ops.append({
-                    Constant.RANK_ID: rank_id,
-                    Constant.STEP_ID: step_id,
-                    Constant.COMM_OP_TYPE: comm_op_type,
-                    Constant.COMM_OP_NAME: op_name,
-                    Constant.GROUP_NAME: group_name,
-                    Constant.COMM_OP_INFO: op_link_info
-                })
+                self.matrix_ops.append(
+                    {
+                        Constant.RANK_ID: rank_id,
+                        Constant.STEP_ID: step_id,
+                        Constant.COMM_OP_TYPE: comm_op_type,
+                        Constant.COMM_OP_NAME: op_name,
+                        Constant.GROUP_NAME: group_name,
+                        Constant.COMM_OP_INFO: op_link_info,
+                    }
+                )
 
     def analyze_parallel_group_info(self):
         # create comm group dataframe
@@ -208,5 +207,3 @@ class BaseCommunicationGroup:
 
         df = df.drop(columns=["global_ranks"])
         self.comm_group_parallel_info_df = df
-
-

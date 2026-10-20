@@ -7,7 +7,7 @@ Currently, there are primarily two tuning methods for the identified AICPU opera
 - PyTorch data type conversion: Operators executed on the AICPU are converted into operators executed on AICORE units
 - Equivalent operator replacement
 
-## Type Conversion
+## 1. Type Conversion
 
 PyTorch currently supports the following data types. For details, see [Tensor Attributes](https://pytorch.org/docs/stable/tensor_attributes.html).
 
@@ -17,7 +17,7 @@ PyTorch currently supports the following data types. For details, see [Tensor At
 
 Perform single-operator tests on common operators such as `MUL`, `Equal`, and `TensorEqual` to identify which operators are executed on the AICPU. Then, try converting them to data types supported by AICORE units to improve efficiency.
 
-### MUL
+### 1.1 `MUL`
 
 **Figure 2** Mul
 
@@ -35,7 +35,7 @@ Data types supported by AICPU:
 int16, complex128
 ```
 
-### Equal
+### 1.2 `Equal`
 
 **Figure 3** Equal
 
@@ -53,7 +53,7 @@ Data types supported by AICPU:
 int16, complex64, complex128
 ```
 
-### TensorEqual
+### 1.3 `TensorEqual`
 
 **Figure 4** TensorEqual
 
@@ -71,9 +71,9 @@ Data types supported by AICPU:
 int16, int64
 ```
 
-## Equivalent Operator Replacement
+## 2. Equivalent Operator Replacement
 
-### `Index` Operator Replacement
+### 2.1 `Index` Operator Replacement
 
 - Case 1: index by index
 
@@ -107,7 +107,7 @@ int16, int64
   
   index by mask and index_put by mask are relatively friendly to the NPU and the framework. The key is to keep the shape unchanged to avoid calling `contiguous`, and then defer necessary index extraction to the final step. When the number of indices is small, the index operation is faster and may be preferable to replacement.
 
-### `IndexPut` Operator Replacement
+### 2.2 `IndexPut` Operator Replacement
 
 The `IndexPut` operator is used for tensor assignment and slicing. It is generally executed on the AICPU. These operations can be converted into equivalent tensor operations that are executed on Cube units, as shown in the following example:
 
@@ -123,7 +123,7 @@ masked_input *= ~input_mask
 
 In this case, `masked_input` is a `float` tensor, and `input_mask` is a boolean tensor or a 0/1 matrix with the same shape as `masked_input`. Since this is a 0-assignment operation, `input_mask` is bitwise inverted before the multiplication.
 
-Taking 0-assignment as an example, the test on `float32` data with `shape = (512, 32, 64)` shows that the duration before replacement is 9.639978408813477 ms, while the duration after replacement is 0.1747608184814453 ms. As shown in the following figure, the total duration before replacement is 9.902 ms. The host delivers five operators to the device for execution, and `aclnnIndexPutImpl_IndexPut_IndexPut` is executed on the AICPU.
+Taking 0-assignment as an example, the test on `float32` data with `shape = (512, 32, 64)` shows that the duration before replacement is `9.639978408813477` ms, while the duration after replacement is `0.1747608184814453` ms. As shown in the following figure, the total duration before replacement is `9.902` ms. The host delivers five operators to the device for execution, and `aclnnIndexPutImpl_IndexPut_IndexPut` is executed on the AICPU.
 
 **Figure 7** Duration before replacement
 
@@ -135,23 +135,23 @@ After replacement, the total duration is 226.131 μs. Three operators are delive
 
 ![img](./figures/duration_after_replacement.png)
 
-### `ArgMin` Operator Optimization
+### 2.3 `ArgMin` Operator Optimization
 
 In CANN 6.3 RC2, the `ArgMin` operator is delivered to the AICPU for execution. In CANN 7.0 RC1, it is delivered to the AICORE for execution. In this case, you are advised to upgrade the CANN package version.
 
-Testing on a tensor with `shape = (1024, 1024)` yields the following results: On CANN 6.3 RC2, the single-operator duration is 2.603 ms.
+Testing on a tensor with `shape = (1024, 1024)` yields the following results: On CANN 6.3 RC2, the single-operator duration is `2.603` ms.
 
 **Figure 9** Single-operator duration (CANN 6.3 RC2)
 
 ![img](./figures/single_op_time_CANN63RC2.png)
 
-On CANN 7.0 RC1, the single-operator duration is 223.516 μs.
+On CANN 7.0 RC1, the single-operator duration is `223.516` μs.
 
 **Figure 10** Single-operator duration (CANN 7.0 RC1)
 
 ![img](./figures/single_op_time_CANN70RC1.png)
 
-### `nonzero` Operator Optimization
+### 2.4 `nonzero` Operator Optimization
 
 Converting a mask to an index can be replaced by multiplication in certain calculations for any tensor where all values are greater than 0. For example, to sum a masked tensor, `tensor_a[mask].sum()` is equivalent to `(tensor_a * mask).sum()`.
 

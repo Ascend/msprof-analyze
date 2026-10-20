@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from enum import Enum
 
 
@@ -93,15 +94,24 @@ class CsvTitleV2(CsvTitle):
 
 class Constant:
     DTYPE_SIZE_MAP = {
-        "int8": 1, "uint8": 1,
-        "int16": 2, "uint16": 2,
-        "int32": 4, "uint32": 4,
-        "int64": 8, "uint64": 8,
-        "float16": 2, "bfloat16": 2,
-        "bf16": 2, "dt_bf16": 2,
-        "float32": 4, "float": 4,
-        "float64": 8, "complex64": 8,
-        "complex128": 16, "bool": 1
+        "int8": 1,
+        "uint8": 1,
+        "int16": 2,
+        "uint16": 2,
+        "int32": 4,
+        "uint32": 4,
+        "int64": 8,
+        "uint64": 8,
+        "float16": 2,
+        "bfloat16": 2,
+        "bf16": 2,
+        "dt_bf16": 2,
+        "float32": 4,
+        "float": 4,
+        "float64": 8,
+        "complex64": 8,
+        "complex128": 16,
+        "bool": 1,
     }
     TP_THRESHOLD = 1150
     MAX_INPUT_MODE_LEN = 30
@@ -172,25 +182,72 @@ class Constant:
     # pattern_dict key: pattern, value: pattern name
     PATTERN_DICT = {
         ("Add", "DropOutDoMask", "Add"): "bias_dropout_add",
-        ("BatchMatMul", "Mul", "Cast", "Mul", "MaskedFill", "SoftmaxV2", "Cast", "DropOutDoMask",
-        "AsStrided", "BatchMatMul", "Transpose"): "FA",
-        ("Transpose", "Transpose", "Transpose", "Mul", "Transpose", "BatchMatMulV2", "MaskedFill",
-        "Cast", "SoftmaxV2", "Cast", "DropOutDoMask", "BatchMatMulV2", "Transpose"): "FA",
-        ("Transpose", "BatchMatMulV2", "Transpose", "Transpose", "BatchMatMulV2", "ZerosLike",
-        "DropOutDoMask", "Cast", "SoftmaxGrad", "Cast", "MaskedFill", "BatchMatMulV2",
-        "BatchMatMulV2", "Mul"): "FA",
-        ("Cast", "Square", "ReduceMeanD", "Add", "Rsqrt", "Cast", "Cast", "Mul", "Cast", "Cast",
-        "Mul", "Cast"): "RMSNORM",
+        (
+            "BatchMatMul",
+            "Mul",
+            "Cast",
+            "Mul",
+            "MaskedFill",
+            "SoftmaxV2",
+            "Cast",
+            "DropOutDoMask",
+            "AsStrided",
+            "BatchMatMul",
+            "Transpose",
+        ): "FA",
+        (
+            "Transpose",
+            "Transpose",
+            "Transpose",
+            "Mul",
+            "Transpose",
+            "BatchMatMulV2",
+            "MaskedFill",
+            "Cast",
+            "SoftmaxV2",
+            "Cast",
+            "DropOutDoMask",
+            "BatchMatMulV2",
+            "Transpose",
+        ): "FA",
+        (
+            "Transpose",
+            "BatchMatMulV2",
+            "Transpose",
+            "Transpose",
+            "BatchMatMulV2",
+            "ZerosLike",
+            "DropOutDoMask",
+            "Cast",
+            "SoftmaxGrad",
+            "Cast",
+            "MaskedFill",
+            "BatchMatMulV2",
+            "BatchMatMulV2",
+            "Mul",
+        ): "FA",
+        (
+            "Cast",
+            "Square",
+            "ReduceMeanD",
+            "Add",
+            "Rsqrt",
+            "Cast",
+            "Cast",
+            "Mul",
+            "Cast",
+            "Cast",
+            "Mul",
+            "Cast",
+        ): "RMSNORM",
         ("Cast", "LayerNorm", "Cast"): "LayerNorm",
         ("Add", "LayerNorm"): "AddLayerNorm",
         ("Add", "LayerNormV3"): "AddLayerNorm",
         ("Gelu", "Add"): "GeluAdd",
         ("Cast", "Square", "MemSet", "ReduceMean", "Add", "Rsqrt", "Mul", "Cast", "Mul"): "RMSNorm",
         ("BatchMatMul", "RealDiv", "Add", "Maximum", "SoftmaxV2", "Cast", "BatchMatMul"): "FA",
-        ("BatchMatMulV2", "RealDiv", "Add", "Cast", "Maximum", "Cast", "SoftmaxV2", "AsStrided",
-        "BatchMatMulV2"): "FA",
-        ("BatchMatMulV2", "RealDiv", "Add", "Cast", "SoftmaxV2", "Cast", "BroadcastTo",
-        "BatchMatMulV2"): "FA",
+        ("BatchMatMulV2", "RealDiv", "Add", "Cast", "Maximum", "Cast", "SoftmaxV2", "AsStrided", "BatchMatMulV2"): "FA",
+        ("BatchMatMulV2", "RealDiv", "Add", "Cast", "SoftmaxV2", "Cast", "BroadcastTo", "BatchMatMulV2"): "FA",
         ("Mul", "Slice", "Neg", "Slice", "ConcatD", "Cast", "Mul", "Add"): "RotaryMul",
         ("Mul", "AsStrided", "Neg", "AsStrided", "ConcatD", "Mul", "Add"): "RotaryMul",
         ("Mul", "Slice", "Neg", "Slice", "ConcatD", "Mul", "Add"): "RotaryMul",
@@ -199,7 +256,7 @@ class Constant:
         ("Slice", "Slice", "Swish", "Mul"): "torch_npu.npu_swiglu",
         ("Cast", "Mul", "MaskedFill", "SoftmaxV2", "Cast"): "torch_npu.npu_scaled_masked_softmax",
         ("Mul", "Slice", "Neg", "Slice", "ConcatD", "Mul"): "torch_npu.npu_rotary_mul",
-        ("Cast", "Square", "ReduceMeanD", "Add", "Rsqrt", "Mul", "Cast", "Mul"): "torch_npu.npu_rms_norm"
+        ("Cast", "Square", "ReduceMeanD", "Add", "Rsqrt", "Mul", "Cast", "Mul"): "torch_npu.npu_rms_norm",
     }
     TITLE = CsvTitleV2
 

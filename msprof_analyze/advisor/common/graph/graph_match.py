@@ -1,3 +1,19 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -26,16 +42,17 @@ logger = get_logger()
 
 
 class IsomorphismsIterArgsConfig:
-    def __init__(self,
-                 query_graph: nx.Graph,
-                 host_graph: nx.Graph,
-                 *args,
-                 directed: bool = None,
-                 _node_attr_fun: Callable = None,
-                 _node_struct_fun: Callable = None,
-                 _edge_attr_fun: Callable = None,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        query_graph: nx.Graph,
+        host_graph: nx.Graph,
+        *args,
+        directed: bool = None,
+        _node_attr_fun: Callable = None,
+        _node_struct_fun: Callable = None,
+        _edge_attr_fun: Callable = None,
+        **kwargs,
+    ):
         self.query_graph = query_graph
         self.host_graph = host_graph
         self.directed = directed
@@ -47,15 +64,17 @@ class IsomorphismsIterArgsConfig:
 
 
 class CandidateArgsConfig:
-    def __init__(self,
-                 backbone: Dict,
-                 query_graph: nx.Graph,
-                 host_graph: nx.Graph,
-                 next_node: Hashable = None,
-                 directed: bool = True,
-                 _node_attr_fun: Callable = None,
-                 _node_struct_fun: Callable = None,
-                 _edge_attr_fun: Callable = None):
+    def __init__(
+        self,
+        backbone: Dict,
+        query_graph: nx.Graph,
+        host_graph: nx.Graph,
+        next_node: Hashable = None,
+        directed: bool = True,
+        _node_attr_fun: Callable = None,
+        _node_struct_fun: Callable = None,
+        _edge_attr_fun: Callable = None,
+    ):
         self.backbone = backbone
         self.query_graph = query_graph
         self.host_graph = host_graph
@@ -67,11 +86,7 @@ class CandidateArgsConfig:
 
 
 @lru_cache()
-def match_node_attr_fun(query_node: Hashable,
-                        host_node: Hashable,
-                        query_graph: nx.Graph,
-                        host_graph: nx.Graph
-                        ) -> bool:
+def match_node_attr_fun(query_node: Hashable, host_node: Hashable, query_graph: nx.Graph, host_graph: nx.Graph) -> bool:
     """
     Check query node matches the attributes in host graph
 
@@ -100,11 +115,9 @@ def match_node_attr_fun(query_node: Hashable,
 
 
 @lru_cache()
-def match_node_struct_fun(query_node: Hashable,
-                          host_node: Hashable,
-                          query_graph: nx.Graph,
-                          host_graph: nx.Graph
-                          ) -> bool:
+def match_node_struct_fun(
+    query_node: Hashable, host_node: Hashable, query_graph: nx.Graph, host_graph: nx.Graph
+) -> bool:
     """
     Check query node matches the structure in host graph
 
@@ -121,11 +134,12 @@ def match_node_struct_fun(query_node: Hashable,
 
 
 @lru_cache()
-def match_edge_attr_fun(query_edge: Tuple[Hashable, Hashable],
-                        host_edge: Tuple[Hashable, Hashable],
-                        query_graph: nx.Graph,
-                        host_graph: nx.Graph
-                        ) -> bool:
+def match_edge_attr_fun(
+    query_edge: Tuple[Hashable, Hashable],
+    host_edge: Tuple[Hashable, Hashable],
+    query_graph: nx.Graph,
+    host_graph: nx.Graph,
+) -> bool:
     """
     Check query edge matches the attr in host graph
 
@@ -153,14 +167,16 @@ def match_edge_attr_fun(query_edge: Tuple[Hashable, Hashable],
     return True
 
 
-def find_isomorphisms(query_graph: nx.Graph,
-                      host_graph: nx.Graph,
-                      *args,
-                      _node_attr_fun: Callable = match_node_attr_fun,
-                      _node_struct_fun: Callable = match_node_struct_fun,
-                      _edge_attr_fun: Callable = match_edge_attr_fun,
-                      limit: int = None,
-                      **kwargs) -> List[Dict[Hashable, Hashable]]:
+def find_isomorphisms(
+    query_graph: nx.Graph,
+    host_graph: nx.Graph,
+    *args,
+    _node_attr_fun: Callable = match_node_attr_fun,
+    _node_struct_fun: Callable = match_node_struct_fun,
+    _edge_attr_fun: Callable = match_edge_attr_fun,
+    limit: int = None,
+    **kwargs,
+) -> List[Dict[Hashable, Hashable]]:
     """
     Find all the sub graphs that are isomorphic to query_graph in host_graph .
 
@@ -178,15 +194,17 @@ def find_isomorphisms(query_graph: nx.Graph,
     ```
     """
     candidates = []
-    for query_result in find_isomorphisms_iter(IsomorphismsIterArgsConfig(
+    for query_result in find_isomorphisms_iter(
+        IsomorphismsIterArgsConfig(
             query_graph,
             host_graph,
             *args,
             _node_attr_fun=_node_attr_fun,
             _node_struct_fun=_node_struct_fun,
             _edge_attr_fun=_edge_attr_fun,
-            **kwargs
-    )):
+            **kwargs,
+        )
+    ):
         candidates.append(query_result)
         if limit and len(candidates) >= limit:
             return candidates
@@ -216,11 +234,7 @@ def find_isomorphisms_iter(config: IsomorphismsIterArgsConfig) -> Generator[Dict
 
     if directed is None:
         # query graph and host graph should consider directions.
-        if isinstance(query_graph, nx.DiGraph) and \
-                isinstance(host_graph, nx.DiGraph):
-            directed = True
-        else:
-            directed = False
+        directed = isinstance(query_graph, nx.DiGraph) and isinstance(host_graph, nx.DiGraph)
 
     # Initialize queue
     dq = deque()
@@ -228,15 +242,17 @@ def find_isomorphisms_iter(config: IsomorphismsIterArgsConfig) -> Generator[Dict
 
     while len(dq) > 0:
         backbone = dq.pop()
-        next_candidate_backbones = get_next_candidates(CandidateArgsConfig(
-            backbone=backbone,
-            query_graph=query_graph,
-            host_graph=host_graph,
-            directed=directed,
-            _node_attr_fun=_node_attr_fun,
-            _node_struct_fun=_node_struct_fun,
-            _edge_attr_fun=_edge_attr_fun,
-        ))
+        next_candidate_backbones = get_next_candidates(
+            CandidateArgsConfig(
+                backbone=backbone,
+                query_graph=query_graph,
+                host_graph=host_graph,
+                directed=directed,
+                _node_attr_fun=_node_attr_fun,
+                _node_struct_fun=_node_struct_fun,
+                _edge_attr_fun=_edge_attr_fun,
+            )
+        )
         for candidate in next_candidate_backbones:
             # find a legal isomorphism
             if len(candidate) == len(query_graph):
@@ -272,12 +288,12 @@ def get_next_candidates(config: CandidateArgsConfig) -> List[Dict[Hashable, Hash
 
     if next_node is None and len(backbone) == 0:
         # Start case
-        next_node = max(node_priority.keys(),
-                        key=lambda x: node_priority.get(x, 0))
+        next_node = max(node_priority.keys(), key=lambda x: node_priority.get(x, 0))
 
         for node in host_graph.nodes:
-            if _node_attr_fun(next_node, node, query_graph, host_graph) and \
-                    _node_struct_fun(next_node, node, query_graph, host_graph):
+            if _node_attr_fun(next_node, node, query_graph, host_graph) and _node_struct_fun(
+                next_node, node, query_graph, host_graph
+            ):
                 candidate_nodes.append({next_node: node})
         return candidate_nodes
 
@@ -294,7 +310,7 @@ def get_next_candidates(config: CandidateArgsConfig) -> List[Dict[Hashable, Hash
             # nx.DiGraph.adj: A -> B : find next node from A to B
             backbone_neighbors = list(set(query_graph.adj[query_node_id]).union(set(query_graph.pred[query_node_id])))
 
-        query_backbone_node_count = sum([1 for _node in backbone_neighbors if _node in backbone])
+        query_backbone_node_count = sum(1 for _node in backbone_neighbors if _node in backbone)
         if query_backbone_node_count > 0:
             # Find a longer backbone node
             nodes_with_maximum_backbone.append(query_node_id)
@@ -337,7 +353,7 @@ def get_next_candidates(config: CandidateArgsConfig) -> List[Dict[Hashable, Hash
 
     elif len(next_edge_edges) > 1:
         candidate_nodes_set = set()
-        for (source, _, target) in candidate_nodes:
+        for source, _, target in candidate_nodes:
             if not directed:
                 candidate_nodes_from_this_edge = host_graph.adj[backbone[target]]
             else:
@@ -355,25 +371,27 @@ def get_next_candidates(config: CandidateArgsConfig) -> List[Dict[Hashable, Hash
 
     tentative_results = []
     for _node in candidate_nodes:
-        if all([_node not in backbone.values(),
+        if all(
+            [
+                _node not in backbone.values(),
                 _node_attr_fun(next_node, _node, query_graph, host_graph),
-                _node_struct_fun(next_node, _node, query_graph, host_graph)]
-               ):
-            tentative_results.append({**backbone,
-                                      next_node: _node})
+                _node_struct_fun(next_node, _node, query_graph, host_graph),
+            ]
+        ):
+            tentative_results.append({**backbone, next_node: _node})
 
-    final_candidates = check_edges_mapping(tentative_results,
-                                           query_graph=query_graph,
-                                           host_graph=host_graph,
-                                           _edge_attr_fun=_edge_attr_fun)
+    final_candidates = check_edges_mapping(
+        tentative_results, query_graph=query_graph, host_graph=host_graph, _edge_attr_fun=_edge_attr_fun
+    )
     return final_candidates
 
 
-def check_edges_mapping(candidates: List[Dict[Hashable, Hashable]],
-                        query_graph: nx.Graph,
-                        host_graph: nx.Graph,
-                        _edge_attr_fun: Callable = None
-                        ) -> List[Dict[Hashable, Hashable]]:
+def check_edges_mapping(
+    candidates: List[Dict[Hashable, Hashable]],
+    query_graph: nx.Graph,
+    host_graph: nx.Graph,
+    _edge_attr_fun: Callable = None,
+) -> List[Dict[Hashable, Hashable]]:
     """
     Check that all edges between the assigned nodes exist in the host graph.
 
@@ -399,10 +417,7 @@ def check_edges_mapping(candidates: List[Dict[Hashable, Hashable]],
 
             # check edge attr
             if _edge_attr_fun is None or not _edge_attr_fun(
-                    (edge_start, edge_end),
-                    (candidate[edge_start], candidate[edge_end]),
-                    query_graph,
-                    host_graph
+                (edge_start, edge_end), (candidate[edge_start], candidate[edge_end]), query_graph, host_graph
             ):
                 all_pass_flag = False
                 break
@@ -415,8 +430,9 @@ def check_edges_mapping(candidates: List[Dict[Hashable, Hashable]],
     for candidate in monomorphism_candidates:
         all_product = itertools.product(candidate.keys(), candidate.keys())
         for edge_start, edge_end in all_product:
-            if not query_graph.has_edge(edge_start, edge_end) and \
-                    host_graph.has_edge(candidate[edge_start], candidate[edge_end]):
+            if not query_graph.has_edge(edge_start, edge_end) and host_graph.has_edge(
+                candidate[edge_start], candidate[edge_end]
+            ):
                 break
         else:
             final_candidates.append(candidate)

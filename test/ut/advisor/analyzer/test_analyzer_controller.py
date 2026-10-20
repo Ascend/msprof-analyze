@@ -1,22 +1,22 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-import psutil
 
 from msprof_analyze.advisor.analyzer.analyzer_controller import AnalyzerController
 from msprof_analyze.advisor.analyzer.analyzer_controller import AsyncParams, EnumParamsParser
@@ -384,7 +384,7 @@ class TestAnalyzerController(unittest.TestCase):
         self.controller.slow_rank_analyzer.get_step_duration.return_value = 100
         self.controller._get_profiling_path_by_rank.return_value = 'test_analysis_path'
 
-        result = self.controller.cluster_memory_analysis(self.profiling_path)
+        _result = self.controller.cluster_memory_analysis(self.profiling_path)
 
         self.controller.slow_rank_analyzer.get_global_step_rank.assert_called_once_with(SlowRankAnalyzer.FREE)
         self.controller._get_profiling_path_by_rank.assert_called_once_with(self.profiling_path, 1)
@@ -404,7 +404,7 @@ class TestAnalyzerController(unittest.TestCase):
         self.controller.slow_rank_analyzer.get_step_duration.return_value = 100
         self.controller._get_profiling_path_by_rank.return_value = 'test_analysis_path'
 
-        result = self.controller.cluster_memory_analysis(self.profiling_path)
+        _result = self.controller.cluster_memory_analysis(self.profiling_path)
 
         self.controller.slow_rank_analyzer.get_global_step_rank.assert_called_once_with(SlowRankAnalyzer.FREE)
         self.controller._get_profiling_path_by_rank.assert_called_once_with(self.profiling_path, 0)
@@ -423,7 +423,7 @@ class TestAnalyzerController(unittest.TestCase):
 
     def test_profiling_comparison_enabled(self):
         compare_profiling_list = [{'profiling_path': 'test_path'}]
-        with patch('msprof_analyze.advisor.analyzer.analyzer_controller.Interface') as mock_interface:
+        with patch('msprof_analyze.advisor.analyzer.analyzer_controller.Interface'):
             result = self.controller._profiling_comparison(compare_profiling_list)
             self.assertEqual(len(result), 1)
 

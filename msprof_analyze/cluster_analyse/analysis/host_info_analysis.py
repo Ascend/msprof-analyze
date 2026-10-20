@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -87,8 +88,9 @@ class HostInfoAnalysis(BaseAnalysis):
             return
         DBManager.create_tables(result_db, Constant.TABLE_HOST_INFO)
         save_host_info = list(self.all_rank_host_info.items())
-        sql = "insert into {} values ({value})".format(Constant.TABLE_HOST_INFO,
-                                                       value="?," * (len(save_host_info[0]) - 1) + "?")
+        sql = "insert into {} values ({value})".format(  # nosec B608
+            Constant.TABLE_HOST_INFO, value="?," * (len(save_host_info[0]) - 1) + "?"
+        )
         DBManager.executemany_sql(db_conn, sql, save_host_info)
 
     def dump_rank_device_map(self, result_db, db_conn):
@@ -97,8 +99,9 @@ class HostInfoAnalysis(BaseAnalysis):
             return
         self.all_rank_device_info.sort()
         DBManager.create_tables(result_db, Constant.TABLE_RANK_DEVICE_MAP)
-        sql = "insert into {} values ({value})".format(Constant.TABLE_RANK_DEVICE_MAP,
-                                                       value="?," * (len(self.all_rank_device_info[0]) - 1) + "?")
+        sql = "insert into {} values ({value})".format(  # nosec B608
+            Constant.TABLE_RANK_DEVICE_MAP, value="?," * (len(self.all_rank_device_info[0]) - 1) + "?"
+        )
         DBManager.executemany_sql(db_conn, sql, self.all_rank_device_info)
 
     def analyze_host_info(self):
@@ -109,11 +112,11 @@ class HostInfoAnalysis(BaseAnalysis):
     def _build_rank_tasks(self):
         tasks = []
         for rank_id, profiling_dir in self.data_map.items():
-            tasks.append(HostInfoScanTask(
-                rank_id=str(rank_id),
-                profiling_dir=profiling_dir,
-                db_path=self._get_db_path(rank_id, profiling_dir)
-            ))
+            tasks.append(
+                HostInfoScanTask(
+                    rank_id=str(rank_id), profiling_dir=profiling_dir, db_path=self._get_db_path(rank_id, profiling_dir)
+                )
+            )
         return tasks
 
     def _scan_all_ranks(self, tasks):
@@ -149,11 +152,7 @@ class HostInfoAnalysis(BaseAnalysis):
 
         host_uid, host_name = str(host_info[0][0]), str(host_info[0][1])
         rank_device_info = [list(data) + [host_uid, task.profiling_dir] for data in rank_device_info]
-        return HostInfoScanResult(
-            host_uid=host_uid,
-            host_name=host_name,
-            rank_device_info=rank_device_info
-        )
+        return HostInfoScanResult(host_uid=host_uid, host_name=host_name, rank_device_info=rank_device_info)
 
     def _merge_results(self, results):
         self.all_rank_host_info = {}
@@ -187,7 +186,7 @@ class HostInfoAnalysis(BaseAnalysis):
     def _query_table_data(curs, table_name, first_row_only=False):
         if not DBManager.judge_table_exists(curs, table_name):
             return []
-        sql = f"select * from {table_name}"
+        sql = f"select * from {table_name}"  # nosec B608
         if first_row_only:
             sql += " limit 1"
         return DBManager.fetch_all_data(curs, sql, is_dict=False)
@@ -209,19 +208,15 @@ class HostInfoAnalysis(BaseAnalysis):
         rank_count = len(unique_rank_ids)
         if rank_count <= HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY:
             return f"[{','.join(unique_rank_ids)}]"
-        display_rank_ids = unique_rank_ids[:HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY]
-        return (
-            f"[{','.join(display_rank_ids)},...] "
-            f"({rank_count} ranks missing in total)"
-        )
+        display_rank_ids = unique_rank_ids[: HostInfoAnalysis.MAX_WARNING_RANK_DISPLAY]
+        return f"[{','.join(display_rank_ids)},...] ({rank_count} ranks missing in total)"
 
     @staticmethod
     def _build_aggregated_warning_message(warning_groups):
         message_parts = []
         for table_name, rank_ids in warning_groups.items():
             message_parts.append(
-                f"No {table_name} data for rank(s): "
-                f"{HostInfoAnalysis._format_warning_rank_ids(rank_ids)} in db file."
+                f"No {table_name} data for rank(s): {HostInfoAnalysis._format_warning_rank_ids(rank_ids)} in db file."
             )
         if not message_parts:
             return ""

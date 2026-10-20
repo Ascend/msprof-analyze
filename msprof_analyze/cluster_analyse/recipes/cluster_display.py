@@ -1,23 +1,24 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import logging
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from IPython.display import display, HTML
+from IPython.display import display
 from ipywidgets import Dropdown, fixed, interact
 
 logger = logging.getLogger("cluster_display")
@@ -45,7 +46,7 @@ def display_box(df, x=None, **layout_args):
             q3=df[q3],
             sd=df[std],
             lowerfence=df["minRank"],
-            upperfence=df["maxRank"]
+            upperfence=df["maxRank"],
         )
     )
     fig.update_layout(**layout_args)
@@ -59,13 +60,7 @@ def display_stats_scatter(df, x=None, **layout_args):
     fig = go.Figure()
     col_names = [q1, med, q3, "minRank", "maxRank"]
     for name in col_names:
-        fig.add_trace(
-            go.Scatter(
-                x=df[x],
-                y=df[name],
-                name=name
-            )
-        )
+        fig.add_trace(go.Scatter(x=df[x], y=df[name], name=name))
     fig.update_layout(**layout_args)
     fig.show()
 
@@ -87,10 +82,7 @@ def display_table_per_rank(df):
         description="rank:",
         disabled=False,
     )
-    interact(
-        display_table,
-        name=dropdown
-    )
+    interact(display_table, name=dropdown)
 
 
 def display_stats_per_operation(df, x=None, box=True, scatter=True, table=True, **layout_args):
@@ -115,60 +107,66 @@ def display_stats_per_operation(df, x=None, box=True, scatter=True, table=True, 
     operations = list(op_groups.groups.keys())
 
     if len(operations) > 1:
-        dropdown = Dropdown(
-            options=operations,
-            description="Operation:",
-            disabled=False,
-            value=operations[1]
-        )
-        interact(
-            display_graphs,
-            name=dropdown
-        )
+        dropdown = Dropdown(options=operations, description="Operation:", disabled=False, value=operations[1])
+        interact(display_graphs, name=dropdown)
         dropdown.value = operations[0]
     else:
         display_graphs(operations[0])
 
 
-def display_duration_boxplots(figs, stats_df: pd.DataFrame, orientation="v", title=None,
-                              x_title="Names", y_title="Time", legend_title="Legend"):
+def display_duration_boxplots(
+    figs, stats_df: pd.DataFrame, orientation="v", title=None, x_title="Names", y_title="Time", legend_title="Legend"
+):
     mean_ds = stats_df.get("Mean(Us)", None)
     min_ds = stats_df.get("Min(Us)", None)
     max_ds = stats_df.get("Max(Us)", None)
     q1_ds = stats_df.get("Q1(Us)", None)
     median_ds = stats_df.get('Median(Us)', None)
     q3_ds = stats_df.get('Q3(Us)', None)
-    display_boxplot(figs, stats_df.index, min_ds, q1_ds, median_ds, q3_ds, max_ds, mean_ds,
-                    orientation=orientation, title=title, x_title=x_title, y_title=y_title,
-                    legend_title=legend_title)
+    display_boxplot(
+        figs,
+        stats_df.index,
+        min_ds,
+        q1_ds,
+        median_ds,
+        q3_ds,
+        max_ds,
+        mean_ds,
+        orientation=orientation,
+        title=title,
+        x_title=x_title,
+        y_title=y_title,
+        legend_title=legend_title,
+    )
 
 
-def display_boxplot(figs, x_axis, min_ds, q1_ds, median_ds, q3_ds, max_ds, mean_ds, orientation="v",
-                    title=None, x_title=None, y_title="Time", legend_title="Legend"):
+def display_boxplot(
+    figs,
+    x_axis,
+    min_ds,
+    q1_ds,
+    median_ds,
+    q3_ds,
+    max_ds,
+    mean_ds,
+    orientation="v",
+    title=None,
+    x_title=None,
+    y_title="Time",
+    legend_title="Legend",
+):
     fig = go.Figure()
     fig.add_trace(
-        go.Box(
-            x=x_axis,
-            lowerfence=min_ds,
-            q1=q1_ds,
-            median=median_ds,
-            q3=q3_ds,
-            upperfence=max_ds,
-            mean=mean_ds
-        )
+        go.Box(x=x_axis, lowerfence=min_ds, q1=q1_ds, median=median_ds, q3=q3_ds, upperfence=max_ds, mean=mean_ds)
     )
     fig.update_traces(orientation=orientation)
-    fig.update_layout(
-        xaxis_title=x_title, yaxis_title=y_title, legend_title=legend_title,
-        title=title, height=1024
-    )
+    fig.update_layout(xaxis_title=x_title, yaxis_title=y_title, legend_title=legend_title, title=title, height=1024)
     fig.show()
     if isinstance(figs, list):
         figs.append(fig)
 
 
-def display_graph(figs, x_axis, y_axes, title=None,
-                  x_title=None, y_title=None, legend_title="Legend"):
+def display_graph(figs, x_axis, y_axes, title=None, x_title=None, y_title=None, legend_title="Legend"):
     if isinstance(y_axes, pd.DataFrame):
         data = y_axes.set_index(x_axis)
     elif isinstance(y_axes, dict):
@@ -181,9 +179,7 @@ def display_graph(figs, x_axis, y_axes, title=None,
         return
 
     fig = data.plot.line()
-    fig.update_layout(
-        title=title, xaxis_title=x_title, yaxis_title=y_title, legend_title=legend_title
-    )
+    fig.update_layout(title=title, xaxis_title=x_title, yaxis_title=y_title, legend_title=legend_title)
     fig.show()
     if isinstance(figs, list):
         figs.append(fig)
@@ -209,22 +205,16 @@ def display_bar(x_axis, y_axis, title=None, y_index=None, x_label=None, y_label=
         # get index of the top1
         top1_indices = data[y_index].nlargest(1).index
         # change the color for the top1
-        for i, bar in enumerate(fig.patches):
+        for i, patch in enumerate(fig.patches):
             if data.index[i] in top1_indices:
-                bar.set_color('#FFA500')  # highlight in orange
+                patch.set_color('#FFA500')  # highlight in orange
 
 
 def display_stats_per_rank_groups_combobox(rank_stats_gdf):
     names = list(rank_stats_gdf.groups.keys())
     if len(names) > 1:
-        dropdown = Dropdown(
-            options=names, layout={"width": "max-content"}, value=names[1]
-        )
-        interact(
-            __display_stats_per_rank_group,
-            selected=dropdown,
-            rank_stats_gdf=fixed(rank_stats_gdf)
-        )
+        dropdown = Dropdown(options=names, layout={"width": "max-content"}, value=names[1])
+        interact(__display_stats_per_rank_group, selected=dropdown, rank_stats_gdf=fixed(rank_stats_gdf))
         dropdown.value = names[0]
     elif len(names) == 1:
         __display_stats_per_rank_group(names[0], rank_stats_gdf)
@@ -240,36 +230,39 @@ def __display_stats_per_rank_group(selected, rank_stats_gdf):
 
     figs = []
     display_duration_boxplots(figs, df, x_title="Ranks")
-    display_graph(
-        figs,
-        df.index,
-        df[["Q1(Us)", "Median(Us)", "Q3(Us)"]],
-        title="50% of Distribution",
-        x_title="Ranks"
-    )
+    display_graph(figs, df.index, df[["Q1(Us)", "Median(Us)", "Q3(Us)"]], title="50% of Distribution", x_title="Ranks")
 
 
 def display_stats_optional_combobox(options, display_func, args, description="Option:"):
     if len(options) > 1:
-        dropdown = Dropdown(
-            options=options, layout={"width": "max-content"}, value=options[1],
-            description=description
-        )
-        interact(
-            display_func,
-            selected=dropdown,
-            args=fixed(args)
-        )
+        dropdown = Dropdown(options=options, layout={"width": "max-content"}, value=options[1], description=description)
+        interact(display_func, selected=dropdown, args=fixed(args))
         dropdown.value = options[0]
     elif len(options) == 1:
         display_func(options[0], args)
 
 
 COLOR_PALETTE = [
-    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-    '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
-    '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5'
+    '#1f77b4',
+    '#ff7f0e',
+    '#2ca02c',
+    '#d62728',
+    '#9467bd',
+    '#8c564b',
+    '#e377c2',
+    '#7f7f7f',
+    '#bcbd22',
+    '#17becf',
+    '#aec7e8',
+    '#ffbb78',
+    '#98df8a',
+    '#ff9896',
+    '#c5b0d5',
+    '#c49c94',
+    '#f7b6d2',
+    '#c7c7c7',
+    '#dbdb8d',
+    '#9edae5',
 ]
 
 
@@ -280,16 +273,23 @@ def create_legend_color_map(legends, color_palette=None):
     unique_legends = sorted(legends.unique()) if legends is not None else []
     legend_color_map = {}
     if len(unique_legends) > len(color_palette):
-        logger.warning(f"Number of unique legends exceeds the number of colors. Colors will be repeated.")
+        logger.warning("Number of unique legends exceeds the number of colors. Colors will be repeated.")
     for i, rank in enumerate(unique_legends):
         legend_color_map[rank] = color_palette[i % len(color_palette)]
 
     return legend_color_map
 
 
-def display_duration_boxplots_with_legend(figs, stats_df: pd.DataFrame, legend_col_name=None,
-                                          orientation="v", title=None, x_title="Names", y_title="Time",
-                                          color_palette=None):
+def display_duration_boxplots_with_legend(
+    figs,
+    stats_df: pd.DataFrame,
+    legend_col_name=None,
+    orientation="v",
+    title=None,
+    x_title="Names",
+    y_title="Time",
+    color_palette=None,
+):
     # 提取统计数据
     x_axis = stats_df.index
     mean_ds = stats_df.get("Mean(Us)", None)
@@ -302,8 +302,10 @@ def display_duration_boxplots_with_legend(figs, stats_df: pd.DataFrame, legend_c
     # 验证必要的统计列存在
     required_columns = [mean_ds, min_ds, max_ds, q1_ds, median_ds, q3_ds]
     if any(col is None for col in required_columns):
-        logger.error(f"Missing required columns. Please ensure the input DataFrame contains the following columns: "
-                     f"Mean(Us), Min(Us), Max(Us), Q1(Us), Median(Us), Q3(Us)")
+        logger.error(
+            "Missing required columns. Please ensure the input DataFrame contains the following columns: "
+            "Mean(Us), Min(Us), Max(Us), Q1(Us), Median(Us), Q3(Us)"
+        )
         return
 
     # 创建颜色映射
@@ -342,15 +344,12 @@ def display_duration_boxplots_with_legend(figs, stats_df: pd.DataFrame, legend_c
                 showlegend=show_legend,
                 marker_color=color,
                 line_color=color,
-                legendgroup=str(legend_value)
+                legendgroup=str(legend_value),
             )
         )
 
     # 更新图表布局
-    axis_config = {
-        'categoryorder': 'array',
-        'categoryarray': list(x_axis)
-    }
+    axis_config = {'categoryorder': 'array', 'categoryarray': list(x_axis)}
 
     fig.update_traces(orientation=orientation)
     fig.update_layout(
@@ -359,7 +358,7 @@ def display_duration_boxplots_with_legend(figs, stats_df: pd.DataFrame, legend_c
         title=title,
         height=1024,
         xaxis=axis_config if orientation == "v" else {},
-        yaxis=axis_config if orientation == "h" else {}
+        yaxis=axis_config if orientation == "h" else {},
     )
 
     fig.show()

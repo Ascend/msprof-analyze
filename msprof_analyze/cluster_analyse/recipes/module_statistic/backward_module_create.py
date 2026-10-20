@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import pandas as pd
 
@@ -31,28 +32,30 @@ class BackwardModuleCreator:
         self.tree_builder = TreeBuilder()
 
     def run(self, module_df):
-        logger.info(f"Start to create backward module events.")
+        logger.info("Start to create backward module events.")
         if module_df.empty:
-            logger.info(f"No module event. Skip backward module creation.")
+            logger.info("No module event. Skip backward module creation.")
             return pd.DataFrame()
 
         fwd_bwd_df = self._query_fwd_bwd_connections()
         if fwd_bwd_df.empty:
-            logger.info(f"No fwd-bwd connections. Skip backward module creation.")
+            logger.info("No fwd-bwd connections. Skip backward module creation.")
             return pd.DataFrame()
 
         backward_events = self.create_backward_module_events(module_df, fwd_bwd_df)
-        logger.info(f"Created {len(backward_events)} backward module events.")
+        logger.info("Created %s backward module events.", len(backward_events))
 
         return backward_events
 
     def create_backward_module_events(self, module_df, fwd_bwd_df):
         # 创建模块节点和前向节点
         module_nodes = self.tree_builder.create_tree_nodes_from_df(
-            module_df, NodeType.MODULE_EVENT_NODE, 'startNs', 'endNs', 'name')
+            module_df, NodeType.MODULE_EVENT_NODE, 'startNs', 'endNs', 'name'
+        )
 
         fwd_nodes = self.tree_builder.create_tree_nodes_from_df(
-            fwd_bwd_df, NodeType.CPU_OP_EVENT, 'fwd_ts', 'fwd_end', 'fwd_name')
+            fwd_bwd_df, NodeType.CPU_OP_EVENT, 'fwd_ts', 'fwd_end', 'fwd_name'
+        )
 
         # 构建树
         all_nodes = module_nodes + fwd_nodes
@@ -84,15 +87,17 @@ class BackwardModuleCreator:
             if not module and not module_parent:
                 return
 
-            results.append({
-                'module_parent': module_parent,
-                'module': module,
-                'module_start': module_node.start,
-                'module_end': module_node.end,
-                'fwd_name': fwd_node.name,
-                'fwd_ts': fwd_node.start,
-                'fwd_end': fwd_node.end,
-            })
+            results.append(
+                {
+                    'module_parent': module_parent,
+                    'module': module,
+                    'module_start': module_node.start,
+                    'module_end': module_node.end,
+                    'fwd_name': fwd_node.name,
+                    'fwd_ts': fwd_node.start,
+                    'fwd_end': fwd_node.end,
+                }
+            )
 
         self.tree_builder.traverse_module_tree(root, callback=process_fwd_node)
         return results
@@ -109,9 +114,14 @@ class BackwardModuleCreator:
 
         # 创建新的模块事件
         merged_df.sort_values(by=['bwd_ts'], inplace=True)
-        merged_df['group'] = (merged_df[['module_parent', 'module', 'module_start', 'module_end']]
-                              != merged_df[['module_parent', 'module', 'module_start', 'module_end']]
-                              .shift()).any(axis=1).cumsum()
+        merged_df['group'] = (
+            (
+                merged_df[['module_parent', 'module', 'module_start', 'module_end']]
+                != merged_df[['module_parent', 'module', 'module_start', 'module_end']].shift()
+            )
+            .any(axis=1)
+            .cumsum()
+        )
 
         # 生成父模块事件
         parent_bwd_modules = merged_df.groupby('group').agg(

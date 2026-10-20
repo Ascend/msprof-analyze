@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import argparse
 import json
 import os
@@ -46,6 +47,7 @@ class BaseRecipeAnalysis(ABC):
         Constant.PROFILER_DB_PATH: "profiler DB file (e.g. ascend_pytorch_profiler_xxx.db)",
         Constant.ANALYSIS_DB_PATH: "analysis DB file (analysis.db)",
     }
+    DEFAULT_RANK_ID = -1
 
     def __init__(self, params):
         self._collection_dir = params.get(Constant.COLLECTION_PATH, "")
@@ -296,9 +298,19 @@ class BaseRecipeAnalysis(ABC):
             db_path = MsprofDataPreprocessor.get_msprof_profiler_db_path(data_path)
             return db_path if db_path else os.path.join(data_path, "msprof_xx.db")
         if self._prof_type == Constant.MINDSPORE:
-            return os.path.join(data_path, Constant.SINGLE_OUTPUT, f"ascend_mindspore_profiler_{rank_id}.db")
+            db_name = (
+                "ascend_mindspore_profiler.db"
+                if rank_id == self.DEFAULT_RANK_ID
+                else f"ascend_mindspore_profiler_{rank_id}.db"
+            )
+            return os.path.join(data_path, Constant.SINGLE_OUTPUT, db_name)
         if self._prof_type == Constant.PYTORCH:
-            return os.path.join(data_path, Constant.SINGLE_OUTPUT, f"ascend_pytorch_profiler_{rank_id}.db")
+            db_name = (
+                "ascend_pytorch_profiler.db"
+                if rank_id == self.DEFAULT_RANK_ID
+                else f"ascend_pytorch_profiler_{rank_id}.db"
+            )
+            return os.path.join(data_path, Constant.SINGLE_OUTPUT, db_name)
         if self._prof_type == Constant.MSMONITOR:
             return data_path
         return ""

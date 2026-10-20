@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 
 from msprof_analyze.advisor.dataset.timeline_event_dataset import ScheduleAnalysisDataset
@@ -21,7 +22,6 @@ from msprof_analyze.advisor.utils.utils import convert_to_float, convert_to_int,
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.file_manager import FileManager
-
 
 
 class AbnormalGcStatistic:
@@ -53,8 +53,12 @@ class AbnormalGcStatistic:
     def export(self):
         res = []
         for free_event in self.events:
-            res.append([round(convert_to_float(free_event.get("ts", 0)), 2),
-                        round(convert_to_float(free_event.get("free time", 0)), 4)])
+            res.append(
+                [
+                    round(convert_to_float(free_event.get("ts", 0)), 2),
+                    round(convert_to_float(free_event.get("free time", 0)), 4),
+                ]
+            )
         return res
 
 
@@ -124,17 +128,19 @@ class ConjecturedGcChecker:
         priority = kwargs.get("priority")
         rank = kwargs.get("rank")
         show_num = min(self.gc_topk_num, self.gc_statistic.count)
-        html_render.render_template(key="schedule",
-                                    template_dir="templates",
-                                    template_name="gc.html",
-                                    title="Conjectured GC Analysis",
-                                    desc=self.desc,
-                                    solutions=self.solutions,
-                                    headers=self.HEADERS,
-                                    datas=self.gc_statistic.export()[:show_num],
-                                    num=show_num,
-                                    priority_background_color=priority,
-                                    rank=rank)
+        html_render.render_template(
+            key="schedule",
+            template_dir="templates",
+            template_name="gc.html",
+            title="Conjectured GC Analysis",
+            desc=self.desc,
+            solutions=self.solutions,
+            headers=self.HEADERS,
+            data_list=self.gc_statistic.export()[:show_num],
+            num=show_num,
+            priority_background_color=priority,
+            rank=rank,
+        )
 
     def get_free_events_include_gc(self, large_free_events, acl_events):
         free_event_index, acl_event_index = 0, 0
@@ -179,8 +185,10 @@ class ConjecturedGcChecker:
             free_include_acl_events[free_event_name]["free time"] = free_duration
             acl_event_dur = free_include_acl_events.get(free_event_name, {}).get(self.ACL_EVENT_DUR, 0.0)
             acl_event_count = free_include_acl_events.get(free_event_name, {}).get(self.ACL_EVENT_COUNT, 0)
-            if safe_division(acl_event_dur, free_duration) < self.max_acl_event_time_ratio and safe_division(
-                    acl_event_count, free_duration) < self.max_acl_event_num_ratio:
+            if (
+                safe_division(acl_event_dur, free_duration) < self.max_acl_event_time_ratio
+                and safe_division(acl_event_count, free_duration) < self.max_acl_event_num_ratio
+            ):
                 self.gc_statistic.count += 1
                 self.gc_statistic.duration += free_duration
                 self.gc_statistic.events.append(free_include_acl_events.get(free_event_name, {}))
@@ -191,7 +199,7 @@ class ConjecturedGcChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "conjectured_gc.yaml"
+            "conjectured_gc.yaml",
         )
 
         gc_rule = FileManager.read_yaml_file(gc_rule_path)

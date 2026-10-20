@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from abc import ABC
 import multiprocessing
 from msprof_analyze.prof_common.logger import get_logger
@@ -24,7 +25,6 @@ logger = get_logger()
 
 
 class TimelineBaseChecker(ABC):
-
     def __init__(self, n_processes: int = 1):
         self.n_processes = n_processes
         self._matched_op_index = {} if self.n_processes <= 1 else multiprocessing.Manager().dict()
@@ -33,12 +33,20 @@ class TimelineBaseChecker(ABC):
         self.framework_black_list = False
 
     def query_stack(self, event_dataset: ScheduleAnalysisDataset = None, profiling_with_stack: str = None):
-        if all([len(matched_index) == 0 for matched_index in self._matched_op_index.values()]):
+        if all(len(matched_index) == 0 for matched_index in self._matched_op_index.values()):
             return
 
-        event_dataset = event_dataset if not profiling_with_stack else ScheduleAnalysisDataset(
-            collection_path=profiling_with_stack, data={}, _datasets={}, analysis_mode="fusion_ops",
-            build_dataset=False)
+        event_dataset = (
+            event_dataset
+            if not profiling_with_stack
+            else ScheduleAnalysisDataset(
+                collection_path=profiling_with_stack,
+                data={},
+                _datasets={},
+                analysis_mode="fusion_ops",
+                build_dataset=False,
+            )
+        )
 
         op_stack_list = event_dataset.parse_data_with_generator(self._query_stack_by_matched_index)
         for op_stack in op_stack_list:

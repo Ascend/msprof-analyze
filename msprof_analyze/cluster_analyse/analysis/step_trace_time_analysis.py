@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
 
@@ -36,8 +37,8 @@ class StepTraceTimeAnalysis:
     PROFILER_METADATA_JSON = "profiler_metadata.json"
     PARALLEL_HEADERS = ["DP Index", "PP Index", "TP Index"]
     STEP_TRACE_TIME_SQL = """
-    SELECT 
-        step, 
+    SELECT
+        step,
         computing,communication_not_overlapped,
         overlapped,
         communication,
@@ -107,7 +108,7 @@ class StepTraceTimeAnalysis:
             return
 
         try:
-            calculator = ParallelStrategyCalculator(**self.distributed_args)
+            calculator = ParallelStrategyCalculator(**self.distributed_args)  # pylint: disable=not-a-mapping
             parallelism_map = calculator.run()
         except Exception as err:
             logger.error(err)
@@ -116,19 +117,25 @@ class StepTraceTimeAnalysis:
 
         if len(parallelism_map) > len(self.step_time_dict):
             missing_rank_ids = [
-                rank_id
-                for rank_id in range(len(parallelism_map))
-                if rank_id not in self.step_time_dict
+                rank_id for rank_id in range(len(parallelism_map)) if rank_id not in self.step_time_dict
             ]
-            logger.warning("Step trace data length should equal to real rank numbers, but get step data length ="
-                           "%s, real rank numbers = %s, maybe lost some rank ids = %s, please check your profiling "
-                           "data.", str(len(self.step_time_dict)), str(len(parallelism_map)), str(missing_rank_ids))
+            logger.warning(
+                "Step trace data length should equal to real rank numbers, but get step data length ="
+                "%s, real rank numbers = %s, maybe lost some rank ids = %s, please check your profiling "
+                "data.",
+                str(len(self.step_time_dict)),
+                str(len(parallelism_map)),
+                str(missing_rank_ids),
+            )
 
         if len(parallelism_map) < len(self.step_time_dict):
-            logger.error("Step trace data length should equal to real rank numbers, but get step data length = %s,"
-                         " real rank numbers = %s, maybe parallel params in profiler_metadata.json is error, "
-                         "please check your metadata data.",
-                         str(len(self.step_time_dict)), str(len(parallelism_map)))
+            logger.error(
+                "Step trace data length should equal to real rank numbers, but get step data length = %s,"
+                " real rank numbers = %s, maybe parallel params in profiler_metadata.json is error, "
+                "please check your metadata data.",
+                str(len(self.step_time_dict)),
+                str(len(parallelism_map)),
+            )
             self.distributed_args = None
             return
 
@@ -136,8 +143,9 @@ class StepTraceTimeAnalysis:
             rank_id = step_data[2]
             if isinstance(rank_id, int):
                 # type is rank, rank_id is int
-                step_data.extend(list(parallelism_map[rank_id])
-                                 if parallelism_map[rank_id] else ['NA'] * len(self.PARALLEL_HEADERS))
+                step_data.extend(
+                    list(parallelism_map[rank_id]) if parallelism_map[rank_id] else ['NA'] * len(self.PARALLEL_HEADERS)
+                )
             else:
                 # type is stage, rank_id is tuple
                 step_data.extend(['NA'] * len(self.PARALLEL_HEADERS))
@@ -148,8 +156,9 @@ class StepTraceTimeAnalysis:
             return
         if self.data_type == Constant.TEXT:
             headers = self.get_headers()
-            FileManager.create_csv_file(self.cluster_analysis_output_path, self.step_data_list,
-                                        self.CLUSTER_TRACE_TIME_CSV, headers)
+            FileManager.create_csv_file(
+                self.cluster_analysis_output_path, self.step_data_list, self.CLUSTER_TRACE_TIME_CSV, headers
+            )
         else:
             output_path = os.path.join(self.cluster_analysis_output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
             result_db = os.path.join(output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
@@ -160,8 +169,9 @@ class StepTraceTimeAnalysis:
                 for data in self.step_data_list:
                     data.extend([0] * (column_len - data_len))
             conn, cursor = DBManager.create_connect_db(result_db)
-            sql = "insert into {} values ({value})".format(self.CLUSTER_TRACE_TIME_TABLE,
-                                                           value="?," * (len(self.step_data_list[0]) - 1) + "?")
+            sql = "insert into {} values ({value})".format(  # nosec B608
+                self.CLUSTER_TRACE_TIME_TABLE, value="?," * (len(self.step_data_list[0]) - 1) + "?"
+            )
             DBManager.executemany_sql(conn, sql, self.step_data_list)
             DBManager.destroy_db_connect(conn, cursor)
 
@@ -175,31 +185,40 @@ class StepTraceTimeAnalysis:
                 if self.is_msprof:
                     msprof_json = self.find_msprof_json(os.path.join(profiling_dir_path, "mindstudio_profiler_output"))
                     self.step_time_dict[rank_id] = MsprofStepTraceTimeAdapter(
-                        msprof_json).generate_step_trace_time_data()
+                        msprof_json
+                    ).generate_step_trace_time_data()
                 else:
                     step_time_file = os.path.join(profiling_dir_path, Constant.SINGLE_OUTPUT, Constant.STEP_TIME_CSV)
                     if os.path.exists(step_time_file):
                         self.step_time_dict[rank_id] = FileManager.read_csv_file(step_time_file, StepTraceTimeBean)
             else:
                 if self.is_msprof or self.is_mindspore:
-                    profiler_db = MsprofDataPreprocessor.get_msprof_profiler_db_path(profiling_dir_path) if \
-                        self.is_msprof else os.path.join(profiling_dir_path, Constant.SINGLE_OUTPUT,
-                                                         f"ascend_mindspore_profiler_{rank_id}.db")
+                    profiler_db = (
+                        MsprofDataPreprocessor.get_msprof_profiler_db_path(profiling_dir_path)
+                        if self.is_msprof
+                        else os.path.join(
+                            profiling_dir_path, Constant.SINGLE_OUTPUT, f"ascend_mindspore_profiler_{rank_id}.db"
+                        )
+                    )
                     self.step_time_dict[rank_id] = MsprofStepTraceTimeDBAdapter(
-                        {Constant.PROFILER_DB_PATH: profiler_db}).generate_step_trace_time_data()
+                        {Constant.PROFILER_DB_PATH: profiler_db}
+                    ).generate_step_trace_time_data()
                 else:
-                    step_time_file = os.path.join(profiling_dir_path, Constant.SINGLE_OUTPUT,
-                                                  Constant.DB_COMMUNICATION_ANALYZER)
-                    if (os.path.exists(step_time_file) and
-                            DBManager.check_tables_in_db(step_time_file, Constant.TABLE_STEP_TRACE)):
+                    step_time_file = os.path.join(
+                        profiling_dir_path, Constant.SINGLE_OUTPUT, Constant.DB_COMMUNICATION_ANALYZER
+                    )
+                    if os.path.exists(step_time_file) and DBManager.check_tables_in_db(
+                        step_time_file, Constant.TABLE_STEP_TRACE
+                    ):
                         conn, cursor = DBManager.create_connect_db(step_time_file)
                         sql = self.STEP_TRACE_TIME_SQL.format(Constant.TABLE_STEP_TRACE)
                         data = DBManager.fetch_all_data(cursor, sql, is_dict=False)
                         self.step_time_dict[rank_id] = data
                         DBManager.destroy_db_connect(conn, cursor)
             if not self.step_time_dict.get(rank_id):
-                logger.warning("Rank %s does not have a valid step_trace_time data in %s file.",
-                               str(rank_id), str(self.data_type))
+                logger.warning(
+                    "Rank %s does not have a valid step_trace_time data in %s file.", str(rank_id), str(self.data_type)
+                )
 
     def analyze_step_time(self):
         for rank_id, data_bean_list in self.step_time_dict.items():
@@ -231,11 +250,11 @@ class StepTraceTimeAnalysis:
 
     def get_headers(self):
         if self.step_time_dict:
-            for rank in self.step_time_dict:
-                if self.step_time_dict.get(rank) and self.distributed_args:
-                    return self.step_time_dict[rank][0].all_headers + self.PARALLEL_HEADERS
-                elif self.step_time_dict.get(rank):
-                    return self.step_time_dict[rank][0].all_headers
+            for rank, rank_data in self.step_time_dict.items():
+                if rank_data and self.distributed_args:
+                    return rank_data[0].all_headers + self.PARALLEL_HEADERS
+                elif rank_data:
+                    return rank_data[0].all_headers
         return []
 
     def generate_stage_group_list(self):
@@ -244,7 +263,7 @@ class StepTraceTimeAnalysis:
         params = {
             Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.cluster_analysis_output_path,
             Constant.DATA_TYPE: self.data_type,
-            Constant.COMM_DATA_DICT: self.communication_data_dict
+            Constant.COMM_DATA_DICT: self.communication_data_dict,
         }
         stage_analyzer = StageInfoAnalysis(params)
         stage_list = stage_analyzer.run()

@@ -1,17 +1,18 @@
-# Copyright (c) 2024 , Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import re
 
 from msprof_analyze.compare_tools.compare_backend.utils.common_func import calculate_diff_ratio
@@ -52,16 +53,31 @@ class ModuleStatisticBean:
         return [base_kernel_detals, com_kernel_details]
 
     def get_total_row(self):
-        total_diff, total_ratio = calculate_diff_ratio(self._base_info.device_total_dur_ms,
-                                                       self._comparison_info.device_total_dur_ms)
-        self_diff, _ = calculate_diff_ratio(self._base_info.device_self_dur_ms,
-                                            self._comparison_info.device_self_dur_ms)
+        total_diff, total_ratio = calculate_diff_ratio(
+            self._base_info.device_total_dur_ms, self._comparison_info.device_total_dur_ms
+        )
+        self_diff, _ = calculate_diff_ratio(
+            self._base_info.device_self_dur_ms, self._comparison_info.device_self_dur_ms
+        )
         row = [
-            None, self._module_class, self._module_level, self._module_name, "[ TOTAL ]", None,
-            self._base_info.device_self_dur_ms, self._base_info.number, self._base_info.device_total_dur_ms,
-            None, self._comparison_info.device_self_dur_ms, self._comparison_info.number,
-            self._comparison_info.device_total_dur_ms, total_diff, self_diff,
-            total_ratio, self._base_info.call_stack, self._comparison_info.call_stack
+            None,
+            self._module_class,
+            self._module_level,
+            self._module_name,
+            "[ TOTAL ]",
+            None,
+            self._base_info.device_self_dur_ms,
+            self._base_info.number,
+            self._base_info.device_total_dur_ms,
+            None,
+            self._comparison_info.device_self_dur_ms,
+            self._comparison_info.number,
+            self._comparison_info.device_total_dur_ms,
+            total_diff,
+            self_diff,
+            total_ratio,
+            self._base_info.call_stack,
+            self._comparison_info.call_stack,
         ]
         return row
 
@@ -71,13 +87,29 @@ class ModuleStatisticBean:
             base_dur_list = base_dur_dict.get("total", [])
             com_dur_dict = self._comparison_info.api_dict.pop(op_name, {})
             com_dur_list = com_dur_dict.get("total", [])
-            base_kernel_detals, com_kernel_details = self._get_kernel_detail_rows(base_dur_dict.get("detail", {}),
-                                                                                  com_dur_dict.get("detail", {}))
+            base_kernel_detals, com_kernel_details = self._get_kernel_detail_rows(
+                base_dur_dict.get("detail", {}), com_dur_dict.get("detail", {})
+            )
             self_diff, self_ratio = calculate_diff_ratio(sum(base_dur_list), sum(com_dur_list))
             row = [
-                None, self._module_class, self._module_level, self._module_name, op_name, base_kernel_detals,
-                sum(base_dur_list), len(base_dur_list), None, com_kernel_details, sum(com_dur_list),
-                len(com_dur_list), None, None, self_diff, self_ratio, None, None
+                None,
+                self._module_class,
+                self._module_level,
+                self._module_name,
+                op_name,
+                base_kernel_detals,
+                sum(base_dur_list),
+                len(base_dur_list),
+                None,
+                com_kernel_details,
+                sum(com_dur_list),
+                len(com_dur_list),
+                None,
+                None,
+                self_diff,
+                self_ratio,
+                None,
+                None,
             ]
             rows.append(row)
 
@@ -86,9 +118,24 @@ class ModuleStatisticBean:
             base_kernel_detals, com_kernel_details = self._get_kernel_detail_rows({}, com_dur_dict.get("detail", {}))
             self_diff, self_ratio = calculate_diff_ratio(0, sum(com_dur_list))
             row = [
-                None, self._module_class, self._module_level, self._module_name, op_name, base_kernel_detals, 0, 0,
-                None, com_kernel_details, sum(com_dur_list), len(com_dur_list), None, None, self_diff,
-                self_ratio, None, None
+                None,
+                self._module_class,
+                self._module_level,
+                self._module_name,
+                op_name,
+                base_kernel_detals,
+                0,
+                0,
+                None,
+                com_kernel_details,
+                sum(com_dur_list),
+                len(com_dur_list),
+                None,
+                None,
+                self_diff,
+                self_ratio,
+                None,
+                None,
             ]
             rows.append(row)
         return rows
@@ -114,8 +161,9 @@ class ModuleStatisticInfo:
             self.device_total_dur_ms += module.device_total_dur / Constant.US_TO_MS
             for torch_op in module.toy_layer_api_list:
                 self.api_dict.setdefault(torch_op.name, {}).setdefault("total", []).append(
-                    torch_op.device_dur / Constant.US_TO_MS)
+                    torch_op.device_dur / Constant.US_TO_MS
+                )
                 for kernel in torch_op.kernel_list:
-                    self.api_dict.setdefault(torch_op.name, {}).setdefault("detail", {}).setdefault(kernel.kernel_name,
-                                                                                                    []).append(
-                        kernel.device_dur / Constant.US_TO_MS)
+                    self.api_dict.setdefault(torch_op.name, {}).setdefault("detail", {}).setdefault(
+                        kernel.kernel_name, []
+                    ).append(kernel.device_dur / Constant.US_TO_MS)

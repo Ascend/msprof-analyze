@@ -1,18 +1,18 @@
-# pylint: disable=duplicate-code
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import pandas as pd
@@ -24,6 +24,7 @@ from msprof_analyze.cluster_analyse.common_func.excel_utils import ExcelUtils
 from msprof_analyze.prof_exports.module_statistic_export import ModuleMstxRangeExport
 from msprof_analyze.cluster_analyse.common_func.utils import ensure_numeric_columns
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
@@ -34,6 +35,7 @@ class OperatorMfu(ModuleStatistic):
 
     TABLE_OPERATOR_MFU = "OperatorMFU"
     TABLE_MODULE_MFU = "ModuleMFU"
+    SUGGESTION = "kernel级或者module级MFU统计，后者仅当采集数据包含Module domain的msTX Range时生成。"
 
     @property
     def base_dir(self):
@@ -284,6 +286,13 @@ class OperatorMfu(ModuleStatistic):
             self.dump_data(
                 module_mfu_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, self.TABLE_MODULE_MFU, index=False
             )
+        set_json_success(
+            msg_dict={
+                "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
+                "tables": [self.TABLE_OPERATOR_MFU, self.TABLE_MODULE_MFU],
+            },
+            suggestion=self.SUGGESTION,
+        )
 
     def save_excel(self, mapper_res):
         """将各 rank 的分析结果写入 Excel 文件。"""
@@ -328,6 +337,7 @@ class OperatorMfu(ModuleStatistic):
                     excel_utils.clear()
                 except Exception as e:
                     logger.error("Save module MFU excel failed, err: %s", e)
+        set_json_success(msg_dict={"csv_dir": self.output_path}, suggestion=self.SUGGESTION)
 
     def _format_kernel_mfu_columns(self, df, export_type):
         """按导出类型格式化 kernel 级 MFU 列名。"""

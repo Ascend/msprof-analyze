@@ -1,22 +1,24 @@
-# Copyright (C) 2025. Huawei Technologies Co., Ltd. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 from typing import List
 
 import pandas as pd
 
-from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_sql import TimelineDBHelper
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.db_manager import DBManager
 from msprof_analyze.prof_common.logger import get_logger
@@ -27,14 +29,14 @@ logger = get_logger()
 class DBStackFinder:
     QUERY_API_CALL_STACK_SQL = """
     WITH ranked_api AS (
-        SELECT 
+        SELECT
             api.*,
             ROW_NUMBER() OVER (ORDER BY api.startNs) AS dataset_index
-        FROM 
+        FROM
             PYTORCH_API as api
     )
-    
-    SELECT 
+
+    SELECT
         api.dataset_index,
         api_name_str.value AS name,
         api.startNs / 1000.0 AS ts,
@@ -54,7 +56,7 @@ class DBStackFinder:
         {comm_schedule}
     ),
     task_connections AS (
-        SELECT 
+        SELECT
             str.value AS op_name,
             task.taskId AS task_id,
             str_type.value AS task_type,
@@ -66,8 +68,8 @@ class DBStackFinder:
         JOIN CONNECTION_IDS conn ON conn.connectionId = task.connectionId
         WHERE str_type.value = ?
     )
-    
-    SELECT 
+
+    SELECT
         tc.op_name,
         tc.task_id,
         tc.task_type,
@@ -103,11 +105,14 @@ class DBStackFinder:
         """
         tag = task_type + "_" + "stack"
         if tag not in self.stack_map or self.stack_map[tag] is None:
-            comm_schedule = self.COMBINE_COMMUNICATION_SCHEDULE_INFO \
-                if DBManager.check_tables_in_db(self._db_path, Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO) \
+            comm_schedule = (
+                self.COMBINE_COMMUNICATION_SCHEDULE_INFO
+                if DBManager.check_tables_in_db(self._db_path, Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO)
                 else ""
-            if not self._query_stack(tag, self.QUERY_TASK_STACK_WITH_NAME_TEMPLATE.format(comm_schedule=comm_schedule),
-                                     [task_type]):
+            )
+            if not self._query_stack(
+                tag, self.QUERY_TASK_STACK_WITH_NAME_TEMPLATE.format(comm_schedule=comm_schedule), [task_type]
+            ):
                 return []
 
         df = self.stack_map[tag]
@@ -137,8 +142,7 @@ class DBStackFinder:
         return filtered_df.set_index("dataset_index")["call_stack"].to_dict()
 
     def _is_db_contains_stack(self):
-        return (os.path.exists(self._db_path) and
-                DBManager.check_tables_in_db(self._db_path, *self.related_table))
+        return os.path.exists(self._db_path) and DBManager.check_tables_in_db(self._db_path, *self.related_table)
 
     def _query_stack(self, name, sql, params=None):
         if not self._is_db_contains_stack():
@@ -157,10 +161,9 @@ class DBStackFinder:
             self.stack_map[name] = df
             return True
         except Exception as e:
-            logger.error(f"Error loading API stack data: {e}")
+            logger.error("Error loading API stack data: %s", e)
             self.stack_map[name] = None
             return False
         finally:
             if conn and cursor:
                 DBManager.destroy_db_connect(conn, cursor)
-

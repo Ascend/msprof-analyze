@@ -86,5 +86,5 @@ CSV文件列名如下：
 | End Time(us) | 空闲时间结束时间戳，TEXT类型，单位为us。 |
 | Duration(us) | 空闲时间持续时间，REAL类型，单位为us。 |
 | Pytorch Idle Time(us) | PyTorch层idle时间，REAL类型，单位为us。 |
-| Cann Idle Time(us) | CANN层idle时间，REAL类型，单位为us。 |
+| CANN Idle Time(us) | CANN层idle时间，REAL类型，单位为us。 |
 | Reason | 空闲原因描述，TEXT类型。 |

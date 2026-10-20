@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-大集群场景涉及到多个计算节点，数据量大，单卡维度的性能数据统计与分析无法评估整体集群算子运行情况的掩盖程度。
+大集群场景涉及多个计算节点，数据量大，单卡维度的性能数据统计与分析无法评估整体集群算子运行情况的掩盖程度。
 
 集群算子掩盖线性度分析（computational_op_masking）提供了集群训练过程中不同并行场景下，算子掩盖耗时的分析功能，包括计算、通信各部分，帮助用户找到性能瓶颈。
 
@@ -28,7 +28,7 @@ msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数
 msprof-analyze -m computational_op_masking [--export_type <export_type>] [--step_id <step_id>] [--parallel_types <parallel_types>] -d <cluster_data> [-o <output_path>]
 ```
 
-**参数说明**  
+**参数说明**
 
 | 参数                | 可选/必选 | 说明                                                                                   |
 |-------------------|-------|--------------------------------------------------------------------------------------|
@@ -49,7 +49,7 @@ msprof-analyze -m computational_op_masking [--export_type <export_type>] [--step
 msprof-analyze -m computational_op_masking --export_type db --step_id 11 --parallel_types "edp,dp;dp;edp" -d ./xxx/cluster_data -o ./xxx/output_path
 ```
 
-**输出说明**  
+**输出说明**
 
 在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`ComputationalOperatorMaskingLinearity`表，具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
@@ -65,8 +65,8 @@ ComputationalOperatorMaskingLinearity表字段如下：
 | stepEndTime                           | INTEGER | step结束时间。                                           |
 | totalCommunicationOperatorTime        | INTEGER | step内通信总耗时。                                       |
 | timeRatioOfStepCommunicationOperator  | REAL    | step内通信总耗时与step总耗时的比值。                     |
-| totalTimeWithoutCommunicationBlackout | INTEGER | step内通信算子被计算算子掩盖的总时间。                   |
-| ratioOfUnmaskedCommunication          | REAL    | step内通信算子被计算算子掩盖的总时间与step总耗时的比值。 |
+| totalTimeWithoutCommunicationBlackout | INTEGER | step内通信算子未被计算算子掩盖的耗时。                   |
+| ratioOfUnmaskedCommunication          | REAL    | step内通信算子未被计算算子掩盖的耗时与step总耗时的比值。 |
 
 上表中时间相关字段单位统一使用微秒（us）。
 

@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import Dict, List
@@ -36,9 +37,17 @@ class GroupStatistic:
     def add_op(self, op_name: str, hccl_info: HcclInfo):
         if self.abnormal_op_dict.get(op_name) is None:
             self.abnormal_op_dict.setdefault(op_name, [])
-        self.abnormal_op_dict.get(op_name).append([hccl_info.group, op_name, hccl_info.step, hccl_info.rank,
-                                                   hccl_info.get_rdma_transit_size(),
-                                                   hccl_info.get_rdma_transmit_time(), hccl_info.get_rdma_bandwidth()])
+        self.abnormal_op_dict.get(op_name).append(
+            [
+                hccl_info.group,
+                op_name,
+                hccl_info.step,
+                hccl_info.rank,
+                hccl_info.get_rdma_transit_size(),
+                hccl_info.get_rdma_transmit_time(),
+                hccl_info.get_rdma_bandwidth(),
+            ]
+        )
 
 
 class CommunicationRetransmissionChecker:
@@ -89,10 +98,11 @@ class CommunicationRetransmissionChecker:
                         self.group_statistics.setdefault(group_name, GroupStatistic(self.min_retransmission_time))
                         self.abnormal_group_count += 1
                     for hccl_info in hccl_list:
-                        if hccl_info.rdma_info.get('Transit Size(MB)', 0):
-                            transit_time = hccl_info.rdma_info.get('Transit Time(ms)', 0)
-                            if transit_time > self.min_retransmission_time:
-                                self.group_statistics.get(group_name).add_op(op_name, hccl_info)
+                        if (
+                            hccl_info.rdma_info.get('Transit Size(MB)', 0)
+                            and hccl_info.rdma_info.get('Transit Time(ms)', 0) > self.min_retransmission_time
+                        ):
+                            self.group_statistics.get(group_name).add_op(op_name, hccl_info)
         if self.rdma_issues:
             self.desc = self.desc.format(group_count=self.abnormal_group_count)
             for _, group_statistic in self.group_statistics.items():
@@ -115,14 +125,16 @@ class CommunicationRetransmissionChecker:
 
     def make_render(self, html_render, add_render_list=True, **kwargs):
         priority = kwargs.get("priority")
-        return html_render.render_template(key="communication",
-                                           template_dir="templates",
-                                           template_name="communication_retransmission_analysis.html",
-                                           desc=self.desc,
-                                           solutions=self.solutions,
-                                           headers=self.headers,
-                                           data=self.abnormal_rdma_list,
-                                           priority_background_color=priority)
+        return html_render.render_template(
+            key="communication",
+            template_dir="templates",
+            template_name="communication_retransmission_analysis.html",
+            desc=self.desc,
+            solutions=self.solutions,
+            headers=self.headers,
+            data=self.abnormal_rdma_list,
+            priority_background_color=priority,
+        )
 
     def _init_rule(self):
         language = AdditionalArgsManager().language
@@ -130,7 +142,7 @@ class CommunicationRetransmissionChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "rdma_analysis.yaml"
+            "rdma_analysis.yaml",
         )
 
         syncbn_rule = FileManager.read_yaml_file(syncbn_rule_path)

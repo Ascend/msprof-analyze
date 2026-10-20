@@ -1,28 +1,100 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
+import sqlite3
+import tempfile
 import unittest
 from unittest.mock import patch
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.mstx2commop.mstx2commop import Mstx2Commop
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_exports.mstx2commop_export import Mstx2CommopExport
 
 
 class TestMstx2Commop(unittest.TestCase):
+
+    def test_mstx_export_should_support_connection_id_and_stream_id_matching(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            db_path = os.path.join(tmp_dir, "profiler.db")
+            connection = sqlite3.connect(db_path)
+            connection.executescript("""
+                CREATE TABLE MSTX_EVENTS (startNs INTEGER, connectionId INTEGER, message INTEGER);
+                CREATE TABLE TASK (startNs INTEGER, endNs INTEGER, connectionId INTEGER, streamId INTEGER);
+                CREATE TABLE STRING_IDS (id INTEGER, value TEXT);
+            """)
+            connection.executemany(
+                "INSERT INTO MSTX_EVENTS VALUES (?, ?, ?)",
+                [(100, 1, 7), (101, 2, 8), (102, 3, 9), (103, 5, 10), (104, 6, 11)]
+            )
+            connection.executemany(
+                "INSERT INTO TASK VALUES (?, ?, ?, ?)",
+                [
+                    (110, 120, 4, 99),
+                    (130, 140, 2, 200),
+                    (150, 160, 3, 101),
+                    (170, 180, 5, 500),
+                    (190, 200, 6, 600),
+                ]
+            )
+            connection.executemany(
+                "INSERT INTO STRING_IDS VALUES (?, ?)",
+                [
+                    (7, '{"streamId": "99", "count": "1", "dataType": "bfp16", '
+                        '"groupName": "group_name_13", "opName": "stream_only"}'),
+                    (8, r'{\"streamId\": \"100\", \"count\": \"1\", \"dataType\": \"bfp16\", '
+                        r'\"groupName\": \"group_name_13\", \"opName\": \"escaped_connection_only\"}'),
+                    (9, '{"streamId": "101", "count": "1", "dataType": "bfp16", '
+                        '"groupName": "group_name_13", "opName": "both_match"}'),
+                    (10, '{"streamId": "102", "count": "1", "dataType": "bfp16", '
+                         '"groupName": "group_name_13", "opName": "connection_only"}'),
+                    (11, 'message "streamId": "103", "count": "1", "dataType": "bfp16", '
+                         '"groupName": "group_name_13", "opName": "non_json_connection_only"')
+                ]
+            )
+            connection.commit()
+            connection.close()
+
+            export = Mstx2CommopExport(db_path, "Mstx2Commop", {
+                Constant.START_NS: 0,
+                Constant.END_NS: 200,
+            })
+            result = export.read_export_db()
+
+        self.assertEqual(len(result), 5)
+        self.assertEqual(set(result["connectionId"]), {2, 3, 4, 5, 6})
+
+        matched_connections = {
+            value.split('"opName": "')[1].split('"')[0]: connection_id
+            for value, connection_id in zip(result["value"], result["connectionId"])
+        }
+        self.assertEqual(matched_connections, {
+            "stream_only": 4,
+            "escaped_connection_only": 2,
+            "both_match": 3,
+            "connection_only": 5,
+            "non_json_connection_only": 6,
+        })
+        self.assertEqual((result["value"].str.contains('"opName": "both_match"')).sum(), 1)
+        self.assertTrue(
+            result.loc[result["value"].str.contains("escaped_connection_only"), "value"]
+            .iloc[0]
+            .startswith('{"streamId"')
+        )
 
     @patch("msprof_analyze.prof_common.db_manager.DBManager.insert_data_into_db")
     @patch("msprof_analyze.cluster_analyse.recipes.base_recipe_analysis.BaseRecipeAnalysis.dump_data")

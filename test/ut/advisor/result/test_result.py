@@ -1,37 +1,34 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import patch
 import os
 import shutil
-import tempfile
-import json
-from collections import OrderedDict
 from msprof_analyze.advisor.result.result import (
     ResultWriter, SheetRecoder, OptimizeResult, TerminalResult
 )
-from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.config.config import Config
 from msprof_analyze.prof_common.file_manager import FileManager
-from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 
 class TestResultWriter(unittest.TestCase):
     temp_dir = os.path.join(os.path.dirname(__file__), 'DT_CLUSTER_PREPROCESS')
 
-    def setUp(self):    
+    def setUp(self):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
         self.test_file = os.path.join(self.temp_dir, "test_result.xlsx")
@@ -49,7 +46,7 @@ class TestResultWriter(unittest.TestCase):
             ["Data1", "Data2", "Data3"],
             ["Data4", "Data5", "Data6"]
         ]
-        
+
         writer.add_data(sheet_name, headers, data_list)
         writer.save()
         self.assertTrue(os.path.exists(self.test_file))
@@ -57,7 +54,7 @@ class TestResultWriter(unittest.TestCase):
     def test_add_data_with_long_sheet_name(self):
         writer = ResultWriter(self.test_file)
         long_sheet_name = "A" * 50
-        
+
         writer.add_data(long_sheet_name, ["Header"], [["Data"]])
         writer.save()
         self.assertTrue(os.path.exists(self.test_file))
@@ -71,18 +68,18 @@ class TestSheetRecoder(unittest.TestCase):
     def test_add_headers(self):
         sheet_name = "Test Sheet"
         headers = ["Header1", "Header2"]
-        
+
         self.recorder.add_headers(sheet_name, headers)
-        
+
         self.assertIn(sheet_name, self.recorder.sheet_data)
         self.assertEqual(self.recorder.sheet_data[sheet_name]["headers"], headers)
 
     def test_add_data(self):
         sheet_name = "Test Sheet"
         data = ["Data1", "Data2"]
-        
+
         self.recorder.add_data(sheet_name, data)
-        
+
         self.assertIn(sheet_name, self.recorder.sheet_data)
         self.assertIn(data, self.recorder.sheet_data[sheet_name]["data"])
 
@@ -90,16 +87,16 @@ class TestSheetRecoder(unittest.TestCase):
         sheet_name = "Test Sheet"
         self.recorder.add_headers(sheet_name, ["Header"])
         self.recorder.add_data(sheet_name, ["Data"])
-        
+
         self.recorder.clear()
-        
+
         self.assertEqual(len(self.recorder.sheet_data), 0)
 
 
 class TestOptimizeResult(unittest.TestCase):
     temp_dir = os.path.join(os.path.dirname(__file__), 'DT_CLUSTER_PREPROCESS')
 
-    def setUp(self):    
+    def setUp(self):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
         self.test_result_file = os.path.join(self.temp_dir, "analysis_result.xlsx")
@@ -107,13 +104,13 @@ class TestOptimizeResult(unittest.TestCase):
         os.makedirs(self.test_result_file, exist_ok=True)
         os.makedirs(self.test_tune_ops_file, exist_ok=True)
 
-        
+
         self.config_patcher = patch.object(Config, 'analysis_result_file', self.test_result_file)
         self.config_patcher.start()
-        
+
         self.tune_ops_patcher = patch.object(Config, 'tune_ops_file', self.test_tune_ops_file)
         self.tune_ops_patcher.start()
-        
+
         self.optimize_result = OptimizeResult()
         self.optimize_result.clear()
 
@@ -134,9 +131,9 @@ class TestOptimizeResult(unittest.TestCase):
 
     def test_clear(self):
         self.optimize_result.add_detail("Test Sheet", ["H1"], ["D1"])
-        
+
         self.optimize_result.clear()
-        
+
         self.assertEqual(len(self.optimize_result.data), 0)
 
 
@@ -151,14 +148,14 @@ class TestTerminalResult(unittest.TestCase):
     def test_add_result(self):
         result_str = ["Category", "Description", "Suggestion"]
         self.terminal_result.add(result_str)
-        
+
         self.assertEqual(len(self.terminal_result.result_list), 1)
         self.assertEqual(self.terminal_result.result_list[0], result_str)
 
     def test_print_with_results(self):
         self.terminal_result.add(["Category1", "Description1", "Suggestion1"])
         self.terminal_result.add(["Category2", "Description2", "Suggestion2"])
-        
+
         with patch('click.echo') as mock_echo:
             self.terminal_result.print()
             mock_echo.assert_called()

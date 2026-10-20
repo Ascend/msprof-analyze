@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -24,7 +25,6 @@ logger = get_logger()
 
 
 class OverallSummaryAdvice(AdviceBase):
-
     def __init__(self, collection_path: str, kwargs: dict):
         super().__init__(collection_path)
         self.base_collection_path = kwargs.get("base_collection_path", "")
@@ -55,7 +55,7 @@ class OverallSummaryAdvice(AdviceBase):
             try:
                 duration = float(split_data[0])
             except ValueError:
-                logger.warning(f"Invalid time value: {time_value}.")
+                logger.warning("Invalid time value: %s.", time_value)
         return duration, num
 
     @staticmethod
@@ -76,7 +76,7 @@ class OverallSummaryAdvice(AdviceBase):
             if os.path.exists(self.base_collection_path):
                 self._has_base_collection = True
             else:
-                logger.warning(f"Invalid path which not exists: {self.base_collection_path}.")
+                logger.warning("Invalid path which not exists: %s.", self.base_collection_path)
         return os.path.exists(self.collection_path)
 
     def process(self):
@@ -123,17 +123,18 @@ class OverallSummaryAdvice(AdviceBase):
                 continue
             sub_time_dict.setdefault(f"{category} Subtype", []).append(self.time_name_map.get(time_name, ""))
             duration, num = self.split_duration_and_num(time_value)
-            sub_time_dict.setdefault(f"Duration(s)", []).append(duration)
-            sub_time_dict.setdefault(f"Duration Ratio", []).append(
-                "{:.2%}".format(self.calculate_ratio(duration, total_duration)))
-            sub_time_dict.setdefault(f"Kernel Number", []).append(num)
+            sub_time_dict.setdefault("Duration(s)", []).append(duration)
+            sub_time_dict.setdefault("Duration Ratio", []).append(
+                "{:.2%}".format(self.calculate_ratio(duration, total_duration))
+            )
+            sub_time_dict.setdefault("Kernel Number", []).append(num)
         self.cur_data[self.time_name_map.get(category)] = sub_time_dict
 
     def identify_bottleneck(self):
         overall_data = self.cur_data.get("overall_data")
         if not overall_data:
             return
-        e2e_time = '%.3f' % sum([data for data in overall_data.values()])
+        e2e_time = '%.3f' % sum(data for data in overall_data.values())
         overall_bottleneck = f"The Model E2E Time is {e2e_time}s.\n"
         comparison_bottleneck = ""
         for time_type, time_value in overall_data.items():
@@ -142,14 +143,18 @@ class OverallSummaryAdvice(AdviceBase):
             self.cur_bottleneck[self.time_name_map.get(time_type)] = f"{time_type} is {time_value}s.\n{advice}"
             # add overall bottleneck
             overall_bottleneck += f"  -- {time_type} is {time_value}s\n"
-            if time_type == "Free Time" and self._is_minimal_profiling and self.calculate_ratio(time_value,
-                                                                                                e2e_time) > 0.1:
+            if (
+                time_type == "Free Time"
+                and self._is_minimal_profiling
+                and self.calculate_ratio(time_value, e2e_time) > 0.1
+            ):
                 overall_bottleneck += "percentage of free time exceed the threshold 10%."
             if not self._has_base_collection:
                 continue
             # add comparison bottleneck
-            time_type_origin = "Uncovered Communication Time(Wait Time)" \
-                if time_type == "Uncovered Communication Time" else time_type
+            time_type_origin = (
+                "Uncovered Communication Time(Wait Time)" if time_type == "Uncovered Communication Time" else time_type
+            )
             base_duration, _ = self.split_duration_and_num(self.get_time_value(time_type_origin, self._base_data))
             if time_value > base_duration:
                 ratio = "{:.2%}".format(self.calculate_ratio(time_value - base_duration, base_duration))

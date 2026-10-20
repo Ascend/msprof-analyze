@@ -1,28 +1,31 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 from collections import OrderedDict
 from datetime import datetime
 
 from msprof_analyze.compare_tools.compare_backend.comparator.communication_comparator import CommunicationComparator
 from msprof_analyze.compare_tools.compare_backend.comparator.module_comparetor import ModuleComparator
-from msprof_analyze.compare_tools.compare_backend.comparator.module_statistic_comparator \
-    import ModuleStatisticComparator
+from msprof_analyze.compare_tools.compare_backend.comparator.module_statistic_comparator import (
+    ModuleStatisticComparator,
+)
 from msprof_analyze.compare_tools.compare_backend.comparator.operator_comparator import OperatorComparator
-from msprof_analyze.compare_tools.compare_backend.comparator.operator_statistic_comparator \
-    import OperatorStatisticComparator
+from msprof_analyze.compare_tools.compare_backend.comparator.operator_statistic_comparator import (
+    OperatorStatisticComparator,
+)
 from msprof_analyze.compare_tools.compare_backend.comparator.api_compare_comparator import ApiCompareComparator
 from msprof_analyze.compare_tools.compare_backend.comparator.kernel_compare_comparator import KernelCompareComparator
 from msprof_analyze.compare_tools.compare_backend.comparator.overall_metrics_comparator import OverallMetricsComparator
@@ -95,7 +98,7 @@ class DetailPerformanceGenerator:
         if self._args.enable_profiling_compare:
             overall_data = {
                 Constant.BASE_DATA: self._profiling_data_dict.get(Constant.BASE_DATA).overall_metrics,
-                Constant.COMPARISON_DATA: self._profiling_data_dict.get(Constant.COMPARISON_DATA).overall_metrics
+                Constant.COMPARISON_DATA: self._profiling_data_dict.get(Constant.COMPARISON_DATA).overall_metrics,
             }
             comparator_list.append(OverallMetricsComparator(overall_data, OverallMetricsBean))
         # 通信性能比对
@@ -120,24 +123,26 @@ class DetailPerformanceGenerator:
         # build tree for operator_compare memory_compare and api_compare
         base_op_prepare, comparison_op_prepare = None, None
         if self._args.enable_memory_compare or self._args.enable_api_compare or enable_operator_compare:
-            base_op_prepare = OperatorDataPrepare(self._profiling_data_dict.get(Constant.BASE_DATA),
-                                                  self._base_step_id)
-            comparison_op_prepare = OperatorDataPrepare(self._profiling_data_dict.get(Constant.COMPARISON_DATA),
-                                                        self._comparison_step_id)
+            base_op_prepare = OperatorDataPrepare(self._profiling_data_dict.get(Constant.BASE_DATA), self._base_step_id)
+            comparison_op_prepare = OperatorDataPrepare(
+                self._profiling_data_dict.get(Constant.COMPARISON_DATA), self._comparison_step_id
+            )
 
         # 算子性能比对-operator级
         op_compare_result = []
         if enable_operator_compare:
-            op_compare_result = self._operator_match(base_op_prepare.get_top_layer_ops(),
-                                                     comparison_op_prepare.get_top_layer_ops())
+            op_compare_result = self._operator_match(
+                base_op_prepare.get_top_layer_ops(), comparison_op_prepare.get_top_layer_ops()
+            )
             comparator_list.append(OperatorStatisticComparator(op_compare_result, OperatorStatisticBean))
             if not self._args.disable_details:
                 comparator_list.append(OperatorComparator(op_compare_result, OperatorCompareBean))
         # 算子内存比对
         if self._args.enable_memory_compare:
             if not op_compare_result:
-                op_compare_result = self._operator_match(base_op_prepare.get_top_layer_ops(),
-                                                         comparison_op_prepare.get_top_layer_ops())
+                op_compare_result = self._operator_match(
+                    base_op_prepare.get_top_layer_ops(), comparison_op_prepare.get_top_layer_ops()
+                )
             comparator_list.append(OperatorStatisticComparator(op_compare_result, MemoryStatisticBean))
             if not self._args.disable_details:
                 comparator_list.append(OperatorComparator(op_compare_result, MemoryCompareBean))
@@ -161,18 +166,22 @@ class DetailPerformanceGenerator:
         return comparator_list
 
     def _module_match(self):
-        if not self._profiling_data_dict.get(Constant.BASE_DATA).python_function_data or not \
-                self._profiling_data_dict.get(Constant.COMPARISON_DATA).python_function_data:
+        if (
+            not self._profiling_data_dict.get(Constant.BASE_DATA).python_function_data
+            or not self._profiling_data_dict.get(Constant.COMPARISON_DATA).python_function_data
+        ):
             return []
-        base_root_node = ModuleDataPrepare(
-            self._profiling_data_dict.get(Constant.BASE_DATA)).build_module_tree()
+        base_root_node = ModuleDataPrepare(self._profiling_data_dict.get(Constant.BASE_DATA)).build_module_tree()
         comparison_root_node = ModuleDataPrepare(
-            self._profiling_data_dict.get(Constant.COMPARISON_DATA)).build_module_tree()
-        return SequencePreMatching(self._args).run(SequencePreMatching.MODULE_TYPE, base_root_node,
-                                                   comparison_root_node)
+            self._profiling_data_dict.get(Constant.COMPARISON_DATA)
+        ).build_module_tree()
+        return SequencePreMatching(self._args).run(
+            SequencePreMatching.MODULE_TYPE, base_root_node, comparison_root_node
+        )
 
     def _operator_match(self, base_ops, comparison_ops):
         base_bwd_tid = self._profiling_data_dict.get(Constant.BASE_DATA).bwd_tid
         comparison_bwd_tid = self._profiling_data_dict.get(Constant.COMPARISON_DATA).bwd_tid
-        return SequencePreMatching(self._args, base_bwd_tid, comparison_bwd_tid).run(SequencePreMatching.OP_TYPE,
-                                                                                     base_ops, comparison_ops)
+        return SequencePreMatching(self._args, base_bwd_tid, comparison_bwd_tid).run(
+            SequencePreMatching.OP_TYPE, base_ops, comparison_ops
+        )

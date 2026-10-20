@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.cluster_analyse.prof_bean.step_trace_time_bean import StepTraceTimeBean
 from msprof_analyze.prof_common.utils import convert_to_float
@@ -40,9 +41,18 @@ class MsprofStepTraceTimeAdapter:
 
     def __init__(self, file_path):
         self.file_path = file_path
-        self._data = {self.STEP: None, self.COMPUTE: 0, self.COMM_NOT_OVERLAP: 0, self.OVERLAPPED: 0,
-                      self.COMMUNICATION: 0, self.FREE: 0, self.STAGE: 0, self.BUBBLE: 0,
-                      self.COMM_NOT_OVERLAP_EXCLUDE_RECEIVE: 0, self.PREPARE: 0}
+        self._data = {
+            self.STEP: None,
+            self.COMPUTE: 0,
+            self.COMM_NOT_OVERLAP: 0,
+            self.OVERLAPPED: 0,
+            self.COMMUNICATION: 0,
+            self.FREE: 0,
+            self.STAGE: 0,
+            self.BUBBLE: 0,
+            self.COMM_NOT_OVERLAP_EXCLUDE_RECEIVE: 0,
+            self.PREPARE: 0,
+        }
 
     def generate_step_trace_time_data(self):
         json_str = []
@@ -100,32 +110,42 @@ class MsprofStepTraceTimeDBAdapter(MsprofStepTraceTimeAdapter):
         self._data[self.OVERLAPPED] = self._data[self.COMMUNICATION] - self._data[self.COMM_NOT_OVERLAP]
         e2e_time = self._data[self.FREE] + self._data[self.COMPUTE] + self._data[self.COMM_NOT_OVERLAP]
         self._data[self.STAGE] = e2e_time - self._data[self.BUBBLE]
-        return [[self._data[self.STEP], self._data[self.COMPUTE] / Constant.NS_TO_US,
-                 self._data[self.COMM_NOT_OVERLAP] / Constant.NS_TO_US, self._data[self.OVERLAPPED] / Constant.NS_TO_US,
-                 self._data[self.COMMUNICATION] / Constant.NS_TO_US, self._data[self.FREE] / Constant.NS_TO_US,
-                 self._data[self.STAGE] / Constant.NS_TO_US, self._data[self.BUBBLE] / Constant.NS_TO_US,
-                 self._data[self.COMM_NOT_OVERLAP_EXCLUDE_RECEIVE] / Constant.NS_TO_US,
-                 self._data[self.PREPARE] / Constant.NS_TO_US]]
+        return [
+            [
+                self._data[self.STEP],
+                self._data[self.COMPUTE] / Constant.NS_TO_US,
+                self._data[self.COMM_NOT_OVERLAP] / Constant.NS_TO_US,
+                self._data[self.OVERLAPPED] / Constant.NS_TO_US,
+                self._data[self.COMMUNICATION] / Constant.NS_TO_US,
+                self._data[self.FREE] / Constant.NS_TO_US,
+                self._data[self.STAGE] / Constant.NS_TO_US,
+                self._data[self.BUBBLE] / Constant.NS_TO_US,
+                self._data[self.COMM_NOT_OVERLAP_EXCLUDE_RECEIVE] / Constant.NS_TO_US,
+                self._data[self.PREPARE] / Constant.NS_TO_US,
+            ]
+        ]
 
     def _init_task_info_from_db(self):
         db_path = self.file_path.get(Constant.PROFILER_DB_PATH)
         conn, curs = DBManager.create_connect_db(db_path)
         if not (conn and curs):
-            logger.warning(f"Failed to connect to db file: {db_path}")
+            logger.warning("Failed to connect to db file: %s", db_path)
             return
         self.task_db_con = conn
         self.task_db_curs = curs
         if DBManager.judge_table_exists(curs, TableConstant.TABLE_STRING_IDS):
-            sql = "select id, value from {}".format(TableConstant.TABLE_STRING_IDS)
+            sql = "select id, value from {}".format(TableConstant.TABLE_STRING_IDS)  # nosec B608
             string_id_data = DBManager.fetch_all_data(curs, sql, is_dict=False)
             self.string_id_map = {data[0]: data[1] for data in string_id_data}
         if DBManager.judge_table_exists(curs, TableConstant.TABLE_COMPUTE_TASK_INFO):
-            sql = f"select TASK.startNs, TASK.endNs from {TableConstant.TABLE_COMPUTE_TASK_INFO} JOIN " \
-                  f"{TableConstant.TABLE_TASK} on {TableConstant.TABLE_TASK}.globalTaskId = " \
-                  f"{TableConstant.TABLE_COMPUTE_TASK_INFO}.globalTaskId"
+            sql = (
+                f"select TASK.startNs, TASK.endNs from {TableConstant.TABLE_COMPUTE_TASK_INFO} JOIN "  # nosec B608
+                f"{TableConstant.TABLE_TASK} on {TableConstant.TABLE_TASK}.globalTaskId = "
+                f"{TableConstant.TABLE_COMPUTE_TASK_INFO}.globalTaskId"
+            )
             self.compute_task_info = DBManager.fetch_all_data(curs, sql, is_dict=False)
         if DBManager.judge_table_exists(curs, TableConstant.TABLE_COMMUNICATION_OP):
-            sql = "select opName, startNs, endNs from {}".format(TableConstant.TABLE_COMMUNICATION_OP)
+            sql = "select opName, startNs, endNs from {}".format(TableConstant.TABLE_COMMUNICATION_OP)  # nosec B608
             self.communication_op_info = DBManager.fetch_all_data(curs, sql, is_dict=False)
         DBManager.destroy_db_connect(conn, curs)
 
@@ -135,7 +155,8 @@ class MsprofStepTraceTimeDBAdapter(MsprofStepTraceTimeAdapter):
         for op_info in self.communication_op_info:
             op_start_time = op_info[self.START_NS]
             time_range = RangeCaculator.generate_time_range(
-                op_start_time, op_info[self.END_NS], class_range=CommunicationTimeRange)
+                op_start_time, op_info[self.END_NS], class_range=CommunicationTimeRange
+            )
             communication_data.append(time_range)
             op_name = self.string_id_map.get(op_info[self.OP_NAME], '')
             if op_name.startswith('hcom_receive'):

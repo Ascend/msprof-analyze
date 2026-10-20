@@ -1,20 +1,20 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import configparser
-import os
 from email.utils import parseaddr
 from typing import Dict, List
 from urllib.parse import urlparse
@@ -28,11 +28,7 @@ logger = get_logger()
 
 class SafeConfigReader:
     def __init__(self, config_file):
-        self._validation_mapping = {
-            'THRESHOLD': self.check_threshold,
-            'URL': self.check_url,
-            'EMAIL': self.check_email
-        }
+        self._validation_mapping = {'THRESHOLD': self.check_threshold, 'URL': self.check_url, 'EMAIL': self.check_email}
         self._config = configparser.RawConfigParser()
         self.read_config(config_file)
 
@@ -58,27 +54,27 @@ class SafeConfigReader:
         for key in keys:
             value = convert_to_float(self._config.get(section, key))
             if value < 0 or value > 1:
-                raise ValueError("Threshold %s is not between 0 and 1", value)
+                raise ValueError(f"Threshold {value} is not between 0 and 1")
 
     def check_url(self, section, keys: List):
         for key in keys:
             url = self._config.get(section, key)
             parsed_url = urlparse(url)
             if not all([parsed_url.scheme, parsed_url.netloc]):
-                raise ValueError("url %s is not valid", url)
+                raise ValueError(f"url {url} is not valid")
 
     def check_email(self, section, keys: List):
         for key in keys:
             email = self._config.get(section, key)
             if '@' not in parseaddr(email)[1]:  # parseaddr固定返回一个双元组，无越界风险
-                raise ValueError("email %s is not valid", email)
+                raise ValueError(f"email {email} is not valid")
 
 
 def convert_to_float(num):
     try:
         return float(num)
     except (ValueError, FloatingPointError):
-        logger.error(f"Can not convert %s to float", num)
+        logger.error("Can not convert %s to float", num)
     return 0
 
 
@@ -86,7 +82,7 @@ def convert_to_int(num, default_value=0):
     try:
         return int(num)
     except (ValueError, NameError):
-        logger.error(f"Can not convert %s to int", num)
+        logger.error("Can not convert %s to int", num)
     return default_value
 
 
@@ -96,10 +92,12 @@ def compute_ratio(dividend: float, divisor: float):
     else:
         return round(dividend / divisor, 4)
 
+
 def convert_ns_to_us(ns_value):
     if ns_value is None:
         return None
     return round(ns_value * 0.001, 3)
+
 
 def convert_ns_to_us_str(ns_value):
     if ns_value is None:

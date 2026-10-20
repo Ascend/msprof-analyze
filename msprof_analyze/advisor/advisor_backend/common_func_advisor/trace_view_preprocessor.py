@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 
 import re
@@ -72,10 +73,13 @@ class TraceViewPreProcessor:
         """
         check whether data is valid fp data
         """
-        return data[Constant.OP_TID] == fp_tid and \
-            Constant.TS in data and Constant.DUR in data and \
-            not data[Constant.OP_NAME].startswith(Constant.STEP_PREFIX) and \
-            data[Constant.PID] == py_pid
+        return (
+            data[Constant.OP_TID] == fp_tid
+            and Constant.TS in data
+            and Constant.DUR in data
+            and not data[Constant.OP_NAME].startswith(Constant.STEP_PREFIX)
+            and data[Constant.PID] == py_pid
+        )
 
     @staticmethod
     def _is_bp_op(op_name: str) -> bool:
@@ -89,18 +93,24 @@ class TraceViewPreProcessor:
         """
         check whether data is valid bp data
         """
-        return data[Constant.OP_TID] == bp_tid and \
-            Constant.TS in data and Constant.DUR in data and \
-            data[Constant.PID] == py_pid
+        return (
+            data[Constant.OP_TID] == bp_tid
+            and Constant.TS in data
+            and Constant.DUR in data
+            and data[Constant.PID] == py_pid
+        )
 
     @staticmethod
     def _is_torch_to_npu_link(data: dict, fp_tid: int) -> bool:
         """
         check whether data is torch to npu link
         """
-        return Constant.CAT in data and data[Constant.CAT] == Constant.ASYNC_NPU and \
-            data[Constant.PH] == Constant.PH_START and \
-            data[Constant.PID] == fp_tid
+        return (
+            Constant.CAT in data
+            and data[Constant.CAT] == Constant.ASYNC_NPU
+            and data[Constant.PH] == Constant.PH_START
+            and data[Constant.PID] == fp_tid
+        )
 
     @staticmethod
     def _is_send_recv_op(op_name: str) -> bool:
@@ -127,9 +137,12 @@ class TraceViewPreProcessor:
         """
         check whether data is python process
         """
-        return Constant.PH in data and data[Constant.PH] == Constant.PH_META and \
-            data[Constant.OP_NAME] == Constant.PROCESS_NAME and \
-            data[Constant.ARGS][Constant.OP_NAME] == Constant.FRAMEWORK_NAME
+        return (
+            Constant.PH in data
+            and data[Constant.PH] == Constant.PH_META
+            and data[Constant.OP_NAME] == Constant.PROCESS_NAME
+            and data[Constant.ARGS][Constant.OP_NAME] == Constant.FRAMEWORK_NAME
+        )
 
     @staticmethod
     def _is_step_op(data: dict) -> bool:
@@ -143,18 +156,24 @@ class TraceViewPreProcessor:
         """
         check whether data is ascend process data
         """
-        return Constant.PH in data and data[Constant.PH] == Constant.PH_META and \
-            data[Constant.OP_NAME] == Constant.PROCESS_NAME and \
-            data[Constant.ARGS][Constant.OP_NAME] == Constant.ASCEND_HARDWARE_NAME
+        return (
+            Constant.PH in data
+            and data[Constant.PH] == Constant.PH_META
+            and data[Constant.OP_NAME] == Constant.PROCESS_NAME
+            and data[Constant.ARGS][Constant.OP_NAME] == Constant.ASCEND_HARDWARE_NAME
+        )
 
     @staticmethod
     def _is_npu_op(data: dict, ascend_pid: int) -> bool:
         """
         check whether data is npu op
         """
-        return Constant.PH in data and data[Constant.PH] == Constant.PH_X and \
-            not data[Constant.OP_NAME].isupper() and \
-            data[Constant.PID] == ascend_pid
+        return (
+            Constant.PH in data
+            and data[Constant.PH] == Constant.PH_X
+            and not data[Constant.OP_NAME].isupper()
+            and data[Constant.PID] == ascend_pid
+        )
 
     def process(self, raw_data: list) -> Optional[FineTraceViewData]:
         """

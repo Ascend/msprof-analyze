@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from collections import defaultdict
 import json
@@ -90,7 +91,7 @@ class PPChart(BaseRecipeAnalysis):
             'overlap': num_overlap_stages,
             '1b1overlap': num_1b1overlap_stages,
             'interleaved_backward': num_interleaved_backward_stages,
-            'cooldown': num_cooldown_stages
+            'cooldown': num_cooldown_stages,
         }
         return schedule_all_stages
 
@@ -101,8 +102,8 @@ class PPChart(BaseRecipeAnalysis):
             return
         schedule_all_stages = self.generate_dualpipev_schedule(pp_size, self.micro_batch_num)
         cur_micro_batch_id_dict = defaultdict(dict)
-        flag = defaultdict(bool) # 标识最后一个阶段是BACKWARD_STAGE_0开头还是BACKWARD_STAGE_1开头
-        for stage_name, stage_num in schedule_all_stages.items():
+        flag = defaultdict(bool)  # 标识最后一个阶段是BACKWARD_STAGE_0开头还是BACKWARD_STAGE_1开头
+        for stage_name, stage_num in schedule_all_stages.items():  # pylint: disable=too-many-nested-blocks
             for i, num in enumerate(stage_num):
                 last_forward_id_0 = cur_micro_batch_id_dict[i].setdefault(self.FORWARD_STAGE_0, -1)
                 last_forward_id_1 = cur_micro_batch_id_dict[i].setdefault(self.FORWARD_STAGE_1, -1)
@@ -141,9 +142,11 @@ class PPChart(BaseRecipeAnalysis):
                             self.pp_stage_mstx_num[i] += 1
                         else:
                             self.micro_batch_id_dict[i].append(
-                                [f"{last_forward_id_0 + j + 1}F+{last_backward_id_1 + j + 1}B", 3])
+                                [f"{last_forward_id_0 + j + 1}F+{last_backward_id_1 + j + 1}B", 3]
+                            )
                         self.micro_batch_id_dict[i].append(
-                            [f"{last_forward_id_1 + j + 1}F+{last_backward_id_0 + j + 1}B", 3])
+                            [f"{last_forward_id_1 + j + 1}F+{last_backward_id_0 + j + 1}B", 3]
+                        )
                         cur_micro_batch_id_dict[i][self.FORWARD_STAGE_0] += 1
                         cur_micro_batch_id_dict[i][self.FORWARD_STAGE_1] += 1
                         cur_micro_batch_id_dict[i][self.BACKWARD_STAGE_0] += 1
@@ -156,7 +159,8 @@ class PPChart(BaseRecipeAnalysis):
                             self.pp_stage_mstx_num[i] += 1
                         self.micro_batch_id_dict[i].append([f"{last_backward_id_1 + j + 1}B", 4])
                         self.micro_batch_id_dict[i].append(
-                            [f"{last_forward_id_1 + j + 1}F+{last_backward_id_0 + j + 1}B", 4])
+                            [f"{last_forward_id_1 + j + 1}F+{last_backward_id_0 + j + 1}B", 4]
+                        )
                         cur_micro_batch_id_dict[i][self.FORWARD_STAGE_1] += 1
                         cur_micro_batch_id_dict[i][self.BACKWARD_STAGE_0] += 1
                         cur_micro_batch_id_dict[i][self.BACKWARD_STAGE_1] += 1
@@ -177,8 +181,10 @@ class PPChart(BaseRecipeAnalysis):
                     self.pp_stage_mstx_num[i] += num
                 elif stage_name == "cooldown":
                     self.pp_stage_mstx_num[i] += pp_size  # 不开dw分离
-                    while last_backward_id_0 < self.micro_batch_num - 1 or \
-                        last_backward_id_1 < self.micro_batch_num * 2 - 1:
+                    while (
+                        last_backward_id_0 < self.micro_batch_num - 1
+                        or last_backward_id_1 < self.micro_batch_num * 2 - 1
+                    ):
                         if flag[i]:
                             if last_backward_id_0 < self.micro_batch_num - 1:
                                 self.micro_batch_id_dict[i].append([str(f"{last_backward_id_0 + 1}B"), 6])
@@ -199,14 +205,14 @@ class PPChart(BaseRecipeAnalysis):
         rank_path = self._data_map[rank_id]
         db_path = self._get_profiler_db_path(rank_id, rank_path)
         if not os.path.exists(db_path):
-            logger.error(f"Db_file: {db_path} not exist.")
+            logger.error("Db_file: %s not exist.", db_path)
             return
         try:
             service = DatabaseService(db_path, {})
             service.add_table_for_query("META_DATA", ["name", "value"])
             df = service.query_data().get("META_DATA", None)
             if df is None:
-                logger.warning(f"There is no META_DATA in {db_path}.")
+                logger.warning("There is no META_DATA in %s.", db_path)
                 return
             pp_info = df.loc[df["name"] == "pp_info", "value"]
             if pp_info.empty:
@@ -228,7 +234,7 @@ class PPChart(BaseRecipeAnalysis):
                 analysis_class=self._recipe_name,
                 rank_pp_stage_map=self.map_rank_pp_stage(self.distributed_args),
                 pp_stage_mstx_num=self.pp_stage_mstx_num,
-                micro_batch_id_dict=self.micro_batch_id_dict
+                micro_batch_id_dict=self.micro_batch_id_dict,
             )
         )
 
@@ -236,12 +242,12 @@ class PPChart(BaseRecipeAnalysis):
         """
         Run Recipe to create Mstx2Commop table
         """
-        logger.info(f"Run Mstx2Commop recipe.")
+        logger.info("Run Mstx2Commop recipe.")
         try:
             group_map_recipe = Mstx2Commop(self.params)
             group_map_recipe.run(context, copy_db=False)
         except Exception as e:
-            logger.error(f"Run Mstx2Commop recipe failed: {e}!")
+            logger.error("Run Mstx2Commop recipe failed: %s!", e)
             return False
         return True
 
@@ -249,12 +255,12 @@ class PPChart(BaseRecipeAnalysis):
         """
         Run Recipe to create CommunicationGroupMapping table
         """
-        logger.info(f"Run P2PPairing recipe.")
+        logger.info("Run P2PPairing recipe.")
         try:
             group_map_recipe = P2PPairing(self.params)
             group_map_recipe.run(context)
         except Exception as e:
-            logger.error(f"Run P2PPairing recipe failed: {e}!")
+            logger.error("Run P2PPairing recipe failed: %s!", e)
             return False
         return True
 
@@ -278,8 +284,9 @@ class PPChart(BaseRecipeAnalysis):
         if res:
             logger.info("PPChart finished.")
 
-    def _mapper_func_for_dualpipev(self, data_map, analysis_class, rank_pp_stage_map, pp_stage_mstx_num,
-                                   micro_batch_id_dict):
+    def _mapper_func_for_dualpipev(
+        self, data_map, analysis_class, rank_pp_stage_map, pp_stage_mstx_num, micro_batch_id_dict
+    ):
         """
         rank_pp_stage_map: 记录rank与pp_stage的映射，可以知道某个rank属于哪个pp_stage
         pp_stage_mstx_num： 每个pp_stage预期的前反向的总打点数
@@ -293,12 +300,12 @@ class PPChart(BaseRecipeAnalysis):
         step_range = data_map.get(Constant.STEP_RANGE)
         df = PPChartExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no mstx data in {profiler_db_path}.")
+            logger.warning("There is no mstx data in %s.", profiler_db_path)
             return
         rank_id = data_map.get(Constant.RANK_ID)
         pp_stage = rank_pp_stage_map.get(rank_id)
         if pp_stage is None:
-            logger.error(f"The rank {rank_id} does not belong to any PP stage.")
+            logger.error("The rank %s does not belong to any PP stage.", rank_id)
             return
         df = filter_non_overlapping(df)
         df["name"] = ""
@@ -306,27 +313,38 @@ class PPChart(BaseRecipeAnalysis):
 
         def match_mstx_name(group):
             if len(group) != pp_stage_mstx_num[pp_stage]:
-                logger.error(f"The number of mstx_count should be {pp_stage_mstx_num[pp_stage]}, not {len(group)}.")
+                logger.error("The number of mstx_count should be %s, not %s.", pp_stage_mstx_num[pp_stage], len(group))
                 return group
             for idx, (i, row) in enumerate(group.iterrows()):
                 micro_batch_id_info = micro_batch_id_dict[pp_stage][idx]
                 group.at[i, "name"] = micro_batch_id_info[0]
                 group.at[i, "type"] = micro_batch_id_info[1]
             return group
+
         df = df.groupby("step").apply(match_mstx_name)
         result = df[["name", "startNs", "endNs", "type"]]
-        self.dump_data(data=result, file_name="", table_name=self.STEP_TASK_INFO, index=False,
-                       custom_db_path=data_map.get(Constant.PROFILER_DB_PATH))
+        self.dump_data(
+            data=result,
+            file_name="",
+            table_name=self.STEP_TASK_INFO,
+            index=False,
+            custom_db_path=data_map.get(Constant.PROFILER_DB_PATH),
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         step_range = data_map.get(Constant.STEP_RANGE)
         df = PPChartExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no mstx data in {profiler_db_path}.")
+            logger.warning("There is no mstx data in %s.", profiler_db_path)
             return
         df["name"] = df["msg"].apply(lambda x: "FP" if "forward" in x.lower() else "BP")
         df['type'] = df['name'].map({'FP': 0, 'BP': 1})
         result = df[["name", "startNs", "endNs", "type"]]
-        self.dump_data(data=result, file_name="", table_name=self.STEP_TASK_INFO, index=False,
-                       custom_db_path=data_map.get(Constant.PROFILER_DB_PATH))
+        self.dump_data(
+            data=result,
+            file_name="",
+            table_name=self.STEP_TASK_INFO,
+            index=False,
+            custom_db_path=data_map.get(Constant.PROFILER_DB_PATH),
+        )

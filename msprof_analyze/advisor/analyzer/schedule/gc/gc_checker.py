@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 
@@ -27,7 +28,6 @@ logger = get_logger()
 
 
 class GcChecker:
-
     def __init__(self):
         self.stage = None
         self.rank = None
@@ -64,8 +64,9 @@ class GcChecker:
                 self.abnormal_gc_list.append([gc_event.ts, gc_event.dur])
         self.abnormal_gc_duration = round(self.abnormal_gc_duration / 1000, 4)
         self.abnormal_gc_list.sort(key=lambda x: x[1], reverse=True)
-        self.desc = self.gc_problem_with_count.format(gc_count=self.abnormal_gc_count,
-                                                      gc_total_time=self.abnormal_gc_duration)
+        self.desc = self.gc_problem_with_count.format(
+            gc_count=self.abnormal_gc_count, gc_total_time=self.abnormal_gc_duration
+        )
 
     def make_record(self, result: OptimizeResult):
         """
@@ -95,17 +96,19 @@ class GcChecker:
         priority = kwargs.get("priority")
         rank = kwargs.get("rank")
         show_num = min(self.gc_topk_num, self.abnormal_gc_count)
-        html_render.render_template(key="schedule",
-                                    template_dir="templates",
-                                    template_name="gc.html",
-                                    title="GC Analysis",
-                                    desc=self.desc,
-                                    solutions=self.solutions,
-                                    headers=self.headers,
-                                    datas=self.abnormal_gc_list[:show_num],
-                                    num=show_num,
-                                    priority_background_color=priority,
-                                    rank=rank)
+        html_render.render_template(
+            key="schedule",
+            template_dir="templates",
+            template_name="gc.html",
+            title="GC Analysis",
+            desc=self.desc,
+            solutions=self.solutions,
+            headers=self.headers,
+            data_list=self.abnormal_gc_list[:show_num],
+            num=show_num,
+            priority_background_color=priority,
+            rank=rank,
+        )
 
     def _init_rule(self):
         language = AdditionalArgsManager().language
@@ -113,7 +116,7 @@ class GcChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "gc.yaml"
+            "gc.yaml",
         )
         gc_rule = FileManager.read_yaml_file(gc_rule_path)
 

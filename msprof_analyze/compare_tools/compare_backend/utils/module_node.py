@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import re
 from math import ceil
 
@@ -20,8 +21,17 @@ from msprof_analyze.compare_tools.compare_backend.utils.torch_op_node import Tor
 
 
 class ModuleNode:
-    __slots__ = ['_event', '_parent_node', '_child_nodes', '_module_level', '_kernel_self_list', '_kernel_total_list',
-                 '_call_stack', '_root_torch_op_node', '_cur_torch_op_node']
+    __slots__ = [
+        '_event',
+        '_parent_node',
+        '_child_nodes',
+        '_module_level',
+        '_kernel_self_list',
+        '_kernel_total_list',
+        '_call_stack',
+        '_root_torch_op_node',
+        '_cur_torch_op_node',
+    ]
     ts = "ts"
     kernels = "kernels"
     _call_stack_pool = {}
@@ -33,8 +43,9 @@ class ModuleNode:
         self._module_level = parent_node.module_level + 1 if parent_node else 1
         self._kernel_self_list = []
         self._kernel_total_list = []
-        call_stack = f"{parent_node.call_stack};\n{event.name}" if parent_node and parent_node.call_stack \
-            else event.name
+        call_stack = (
+            f"{parent_node.call_stack};\n{event.name}" if parent_node and parent_node.call_stack else event.name
+        )
         self._call_stack = self._call_stack_pool.setdefault(call_stack, call_stack)
         self._root_torch_op_node = TorchOpNode()
         self._cur_torch_op_node = self._root_torch_op_node
@@ -78,14 +89,14 @@ class ModuleNode:
 
     @property
     def host_self_dur(self):
-        return self.dur - sum([node.dur for node in self.child_nodes])
+        return self.dur - sum(node.dur for node in self.child_nodes)
 
     @property
     def device_self_dur(self):
         dur = 0
         for kernel_dict in self._kernel_self_list:
             kernel_list = kernel_dict.get(self.kernels, [])
-            dur += sum([kernel.device_dur for kernel in kernel_list])
+            dur += sum(kernel.device_dur for kernel in kernel_list)
         return dur
 
     @property
@@ -93,7 +104,7 @@ class ModuleNode:
         dur = 0
         for kernel_dict in self._kernel_total_list:
             kernel_list = kernel_dict.get(self.kernels, [])
-            dur += sum([kernel.device_dur for kernel in kernel_list])
+            dur += sum(kernel.device_dur for kernel in kernel_list)
         return dur
 
     @property
@@ -153,8 +164,10 @@ class ModuleNode:
 
     def find_torch_op_call(self, event):
         while self._cur_torch_op_node:
-            if self._cur_torch_op_node != self._root_torch_op_node and \
-                    event.start_time > self._cur_torch_op_node.end_time:
+            if (
+                self._cur_torch_op_node != self._root_torch_op_node
+                and event.start_time > self._cur_torch_op_node.end_time
+            ):
                 self._cur_torch_op_node = self._cur_torch_op_node.parent
                 continue
             tree_node = TorchOpNode(event, self._cur_torch_op_node)

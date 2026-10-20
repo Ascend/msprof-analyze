@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import argparse
 import copy
 import os
@@ -72,9 +73,17 @@ class Interface:
         allocator = ProfDataAllocate(self.collection_path)
         if not allocator.allocate_prof_data():
             return {}
-        res = {Constant.DATA_MAP: allocator.data_map, Constant.DATA_TYPE: allocator.data_type,
-                Constant.PROFILING_TYPE: allocator.prof_type}
-        logger.info(f"Finish allocate profiling data: {len(allocator.data_map)} ranks, data type: {allocator.data_type}, profiling type: {allocator.prof_type}")
+        res = {
+            Constant.DATA_MAP: allocator.data_map,
+            Constant.DATA_TYPE: allocator.data_type,
+            Constant.PROFILING_TYPE: allocator.prof_type,
+        }
+        logger.info(
+            "Finish allocate profiling data: %s ranks, data type: %s, profiling type: %s",
+            len(allocator.data_map),
+            allocator.data_type,
+            allocator.prof_type,
+        )
         return res
 
     def run(self):
@@ -86,8 +95,11 @@ class Interface:
             PathManager.make_dir_safety(self.cluster_analysis_output_path)
 
         data_dict = self.allocate_prof_data()
-        data_map, data_type, prof_type = (data_dict.get(Constant.DATA_MAP), data_dict.get(Constant.DATA_TYPE),
-                                          data_dict.get(Constant.PROFILING_TYPE))
+        data_map, data_type, prof_type = (
+            data_dict.get(Constant.DATA_MAP),
+            data_dict.get(Constant.DATA_TYPE),
+            data_dict.get(Constant.PROFILING_TYPE),
+        )
         if not data_map:
             logger.warning("Can not get rank info or profiling data.")
             return
@@ -96,18 +108,20 @@ class Interface:
             return
 
         params = copy.deepcopy(self.origin_params)
-        params.update({
-            Constant.COLLECTION_PATH: self.collection_path,
-            Constant.ANALYSIS_MODE: self.analysis_mode,
-            Constant.DATA_MAP: data_map,
-            Constant.DATA_TYPE: data_type,
-            Constant.PROFILING_TYPE: data_dict.get(Constant.PROFILING_TYPE),
-            Constant.IS_MSPROF: prof_type == Constant.MSPROF,
-            Constant.IS_MINDSPORE: prof_type == Constant.MINDSPORE,
-            Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.cluster_analysis_output_path
-        })
+        params.update(
+            {
+                Constant.COLLECTION_PATH: self.collection_path,
+                Constant.ANALYSIS_MODE: self.analysis_mode,
+                Constant.DATA_MAP: data_map,
+                Constant.DATA_TYPE: data_type,
+                Constant.PROFILING_TYPE: data_dict.get(Constant.PROFILING_TYPE),
+                Constant.IS_MSPROF: prof_type == Constant.MSPROF,
+                Constant.IS_MINDSPORE: prof_type == Constant.MINDSPORE,
+                Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.cluster_analysis_output_path,
+            }
+        )
         if self.analysis_mode in COMM_FEATURE_LIST:
-            FileManager.create_output_dir(self.cluster_analysis_output_path)
+            FileManager.create_output_dir(self.cluster_analysis_output_path, is_overwrite=(data_type == Constant.DB))
             PathManager.check_output_directory_path(self.cluster_analysis_output_path)
             logger.info("Begin generate communication data.")
             if data_type == Constant.TEXT:
@@ -115,8 +129,7 @@ class Interface:
                 logger.info("Communication data read completed.")
                 params[Constant.COMM_DATA_DICT] = comm_data_dict
             AnalysisFacade(params).cluster_analyze()
-            logger.info("The cluster analysis result file has been generated: %s",
-                        self.cluster_analysis_output_path)
+            logger.info("The cluster analysis result file has been generated: %s", self.cluster_analysis_output_path)
         elif data_type == Constant.TEXT:
             logger.error("The current analysis node only supports DB as input data. Please check.")
         else:
@@ -126,16 +139,26 @@ class Interface:
 
 def cluster_analysis_main():
     parser = argparse.ArgumentParser(description="cluster analysis module")
-    parser.add_argument('-d', '--profiling_path', type=PathManager.expanduser_for_argumentparser, required=True,
-                        help="profiling data path")
+    parser.add_argument(
+        '-d',
+        '--profiling_path',
+        type=PathManager.expanduser_for_argumentparser,
+        required=True,
+        help="profiling data path",
+    )
     parser.add_argument('-m', '--mode', choices=ALL_FEATURE_LIST, default='all', help="different analysis mode")
-    parser.add_argument('-o', '--output_path', type=PathManager.expanduser_for_argumentparser,
-                        help='Path of cluster analysis output')
-    parser.add_argument('--force', action='store_true',
-                        help="Indicates whether to skip verification of the owner, size, and permissions.")
+    parser.add_argument(
+        '-o', '--output_path', type=PathManager.expanduser_for_argumentparser, help='Path of cluster analysis output'
+    )
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help="Indicates whether to skip verification of the owner, size, and permissions.",
+    )
     parser.add_argument("--parallel_mode", type=str, help="context mode", default="concurrent")
-    parser.add_argument("--export_type", type=str, help="recipe export type", choices=["db", "notebook", "text"],
-                        default="db")
+    parser.add_argument(
+        "--export_type", type=str, help="recipe export type", choices=["db", "notebook", "text"], default="db"
+    )
     parser.add_argument("--rank_list", type=str, help="Rank id list", default='all')
     parser.add_argument("--step_id", type=int, help="Step id", default=Constant.VOID_STEP)
 
@@ -144,7 +167,7 @@ def cluster_analysis_main():
     if extra_args:
         if parameter.get(Constant.MODE) in COMM_FEATURE_LIST:
             unknown_args = " ".join(extra_args)
-            logger.warning(f"Invalid parameters: {unknown_args}. It will not have any effect.")
+            logger.warning("Invalid parameters: %s. It will not have any effect.", unknown_args)
         else:
             parameter[Constant.EXTRA_ARGS] = extra_args
     Interface(parameter).run()

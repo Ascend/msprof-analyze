@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import unittest
 from unittest.mock import patch
@@ -27,7 +28,7 @@ class TestJudgeNorm(unittest.TestCase):
         data_list = [10] * 120
         res = judge_norm(data_list)
         self.assertEqual(res, [])
-    
+
     def test_with_outlier(self):
         data_with_outlier = [10] * 120
         data_with_outlier.append(0)
@@ -41,7 +42,7 @@ class TestJudgeDixon(unittest.TestCase):
             data_list = [100 + j for j in range(i)]
             res = judge_dixon(data_list)
             self.assertEqual(res, [])
-    
+
     def test_with_outlier(self):
         for i in [6, 8, 12, 30]:
             data_with_outlier = [100 + j for j in range(i)]
@@ -57,7 +58,7 @@ class TestJudgeDixon(unittest.TestCase):
 
 
 class TestVoteAnalysis(unittest.TestCase):
-    
+
     @staticmethod
     def init_cmm_ops_df(group_0_op_0_num, group_0_op_1_num, group_1_op_0_num):
         comm_ops_df = pd.DataFrame(columns=["rankId", "groupName", "opName", "communication_times"])
@@ -68,7 +69,7 @@ class TestVoteAnalysis(unittest.TestCase):
         for i in range(group_1_op_0_num):
             comm_ops_df.loc[len(comm_ops_df)] = [i, "group_1", "op_0", 0]
         return comm_ops_df
-    
+
     def test_grouping_ops(self):
         group_0_op_0_num = 10
         group_0_op_1_num = 10

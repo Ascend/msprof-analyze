@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
@@ -29,7 +30,6 @@ logger = get_logger()
 
 
 class OverallSummaryAnalyzer(BaseAnalyzer):
-
     def __init__(self, collection_path: str, n_processes: int = 1, **kwargs):
         profile_path = get_profile_path(collection_path)
         super().__init__(profile_path, n_processes, **kwargs)
@@ -65,13 +65,13 @@ class OverallSummaryAnalyzer(BaseAnalyzer):
             time_category_dict = {
                 "Computing Time": round(overall_dict.get('computing_time_ms', 0.0), 3),
                 "Uncovered Communication Time": round(overall_dict.get('uncovered_communication_time_ms', 0.0), 3),
-                "Free Time": round(overall_dict.get('free_time_ms', 0.0), 3)
+                "Free Time": round(overall_dict.get('free_time_ms', 0.0), 3),
             }
         else:
             time_category_dict = {
                 "计算时长": round(overall_dict.get('computing_time_ms', 0.0), 3),
                 "未被掩盖的通信时长": round(overall_dict.get('uncovered_communication_time_ms', 0.0), 3),
-                "空闲时长": round(overall_dict.get('free_time_ms', 0.0), 3)
+                "空闲时长": round(overall_dict.get('free_time_ms', 0.0), 3),
             }
         return time_category_dict
 
@@ -90,14 +90,15 @@ class OverallSummaryAnalyzer(BaseAnalyzer):
         self._is_minimal_profiling = self._disaggregate_perf.get("minimal_profiling", False)
         self.cur_data["overall_data"] = self.get_time_category_dict(self._disaggregate_perf.get('overall', {}))
         if self._has_benchmark_profiling:
-            self._disaggregate_benchmark_perf = ComparisonInterface(
-                self.benchmark_profiling_path).disaggregate_perf(Constant.OVERALL_COMPARE)
+            self._disaggregate_benchmark_perf = ComparisonInterface(self.benchmark_profiling_path).disaggregate_perf(
+                Constant.OVERALL_COMPARE
+            )
 
     def identify_bottleneck(self):
         overall_data = self.cur_data.get("overall_data")
         if not overall_data:
             return
-        e2e_time = round(sum([data for data in overall_data.values()]), 3)
+        e2e_time = round(sum(data for data in overall_data.values()), 3)
 
         language = AdditionalArgsManager().language
         if language == "en":
@@ -111,8 +112,11 @@ class OverallSummaryAnalyzer(BaseAnalyzer):
                 overall_bottleneck += f"    -- {time_type} is {time_value}ms\n"
             else:
                 overall_bottleneck += f"    -- {time_type}是{time_value}ms\n"
-            if time_type == "Free Time" and self._is_minimal_profiling and self.calculate_ratio(time_value,
-                                                                                                e2e_time) > 0.1:
+            if (
+                time_type == "Free Time"
+                and self._is_minimal_profiling
+                and self.calculate_ratio(time_value, e2e_time) > 0.1
+            ):
                 if language == "en":
                     overall_bottleneck += "percentage of free time exceed the threshold 10%."
                 else:
@@ -120,9 +124,9 @@ class OverallSummaryAnalyzer(BaseAnalyzer):
             if not self._has_benchmark_profiling:
                 continue
             # add comparison bottleneck
-            base_duration = self.get_time_category_dict(
-                self._disaggregate_benchmark_perf.get('overall', {})
-            ).get(time_type)
+            base_duration = self.get_time_category_dict(self._disaggregate_benchmark_perf.get('overall', {})).get(
+                time_type
+            )
             if time_value > base_duration:
                 ratio = "{:.2%}".format(self.calculate_ratio(time_value - base_duration, base_duration))
                 if language == "en":
@@ -202,17 +206,10 @@ class OverallSummaryAnalyzer(BaseAnalyzer):
         """
         if not self.bottleneck_str and not self.cur_advices:
             return
-        optimization_item = OptimizeItem(
-            self.over_summary_analyzer,
-            self.bottleneck_str,
-            self.cur_advices
-        )
+        optimization_item = OptimizeItem(self.over_summary_analyzer, self.bottleneck_str, self.cur_advices)
         self.result.add(OptimizeRecord(optimization_item))
 
-        self.result.add_detail(
-            self.over_summary_analyzer,
-            headers=self.over_summary_analysis["headers"]
-        )
+        self.result.add_detail(self.over_summary_analyzer, headers=self.over_summary_analysis["headers"])
         for data in self.over_summary_analysis["data"]:
             self.result.add_detail(self.over_summary_analyzer, detail=data)
 
@@ -224,16 +221,18 @@ class OverallSummaryAnalyzer(BaseAnalyzer):
         result_for_html = {
             "Description": bottleneck_str,
             "suggestion": self.cur_advices,
-            "details": [self.over_summary_analysis]
+            "details": [self.over_summary_analysis],
         }
-        self.html_render.render_template(key="overall",
-                                         title="Overall Summary",
-                                         template_dir="templates",
-                                         template_name="cluster_analysis.html",
-                                         cann_version=self.cann_version,
-                                         profiling_type=self.profiling_type,
-                                         profiling_version=self.profiling_version,
-                                         result=result_for_html)
+        self.html_render.render_template(
+            key="overall",
+            title="Overall Summary",
+            template_dir="templates",
+            template_name="cluster_analysis.html",
+            cann_version=self.cann_version,
+            profiling_type=self.profiling_type,
+            profiling_version=self.profiling_version,
+            result=result_for_html,
+        )
 
     def get_priority(self, max_mem_op_dur=None):
         pass

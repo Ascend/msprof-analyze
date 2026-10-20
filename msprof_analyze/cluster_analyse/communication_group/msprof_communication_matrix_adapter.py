@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import re
 from collections import defaultdict
 
@@ -26,8 +27,10 @@ logger = get_logger()
 
 class MsprofCommunicationMatrixAdapter:
     P2P_HCOM = ["hcom_send", "hcom_receive", "hcom_batchsendrecv"]
-    HCCL_PATTERN = r"send|reduce|invalid|broadcast|allreduce|" \
-                   r"receive|allgather|reducescatter|scatter|alltoall|alltoallv|alltoallvc|batchsendrecv"
+    HCCL_PATTERN = (
+        r"send|reduce|invalid|broadcast|allreduce|"
+        r"receive|allgather|reducescatter|scatter|alltoall|alltoallv|alltoallvc|batchsendrecv"
+    )
     BANDWIDTH_GB_S = "Bandwidth(GB/s)"
     TRANSPORT_TYPE = "Transport Type"
     TRANSIT_SIZE_MB = "Transit Size(MB)"
@@ -49,9 +52,11 @@ class MsprofCommunicationMatrixAdapter:
             else:
                 split_comm_dict[Constant.COLLECTIVE][communication_op] = comm_matrix_info
         output_comm_matrix["step"][Constant.P2P] = self.integrate_matrix_data(
-            self.get_comm_type(split_comm_dict[Constant.P2P]))
+            self.get_comm_type(split_comm_dict[Constant.P2P])
+        )
         output_comm_matrix["step"][Constant.COLLECTIVE] = self.integrate_matrix_data(
-            self.get_comm_type(split_comm_dict[Constant.COLLECTIVE]))
+            self.get_comm_type(split_comm_dict[Constant.COLLECTIVE])
+        )
         return output_comm_matrix
 
     def get_comm_type(self, op_data: dict) -> dict:
@@ -62,7 +67,7 @@ class MsprofCommunicationMatrixAdapter:
                 comm_op_type = match_obj.group()
             else:
                 comm_op_type = communication_op.split("__")[0]
-                logger.warning(f"Unknown communication op type: {comm_op_type}")
+                logger.warning("Unknown communication op type: %s", comm_op_type)
             for link, data in communication_info.items():
                 new_comm_op_name = (comm_op_type, communication_op.split("@")[-1], link)
                 data['Op Name'] = communication_op.split("@")[0]
@@ -89,12 +94,16 @@ class MsprofCommunicationMatrixAdapter:
             comm_op_dict[new_comm_op_name_top1].update({link: data[0]})
             comm_op_dict[new_comm_op_name_middle].update({link: data[len(data) // 2]})
             comm_op_dict[new_comm_op_name_bottom1].update({link: data[-1]})
-            comm_op_dict[new_comm_op_name_total].update({link: {
-                self.TRANSPORT_TYPE: t_type,
-                self.TRANSIT_SIZE_MB: t_size,
-                self.TRANSIT_TIME_MS: t_time,
-                self.BANDWIDTH_GB_S: bandwidth
-            }})
+            comm_op_dict[new_comm_op_name_total].update(
+                {
+                    link: {
+                        self.TRANSPORT_TYPE: t_type,
+                        self.TRANSIT_SIZE_MB: t_size,
+                        self.TRANSIT_TIME_MS: t_time,
+                        self.BANDWIDTH_GB_S: bandwidth,
+                    }
+                }
+            )
             if len(data) >= 2:
                 comm_op_dict[new_comm_op_name_bottom2].update({link: data[-2]})
             if len(data) >= 3:

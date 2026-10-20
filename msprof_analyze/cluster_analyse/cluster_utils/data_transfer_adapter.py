@@ -1,40 +1,70 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import copy
 from msprof_analyze.cluster_analyse.common_func.table_constant import TableConstant
 from msprof_analyze.prof_common.constant import Constant
 
 
-class DataTransferAdapter(object):
-    COMM_TIME_TABLE_COLUMN = [TableConstant.START_TIMESTAMP, TableConstant.ELAPSED_TIME, TableConstant.TRANSIT_TIME,
-                              TableConstant.WAIT_TIME, TableConstant.SYNCHRONIZATION_TIME, TableConstant.IDLE_TIME,
-                              TableConstant.SYNCHRONIZATION_TIME_RATIO, TableConstant.WAIT_TIME_RATIO]
-    COMM_TIME_JSON_COLUMN = [Constant.START_TIMESTAMP, Constant.ELAPSE_TIME_MS, Constant.TRANSIT_TIME_MS,
-                             Constant.WAIT_TIME_MS, Constant.SYNCHRONIZATION_TIME_MS, Constant.IDLE_TIME_MS,
-                             Constant.SYNCHRONIZATION_TIME_RATIO, Constant.WAIT_TIME_RATIO]
-    MATRIX_TABLE_COLUMN = [TableConstant.TRANSIT_SIZE, TableConstant.TRANSIT_TIME, TableConstant.BANDWIDTH,
-                           TableConstant.TRANSPORT_TYPE, TableConstant.OPNAME]
-    MATRIX_JSON_COLUMN = [Constant.TRANSIT_SIZE_MB, Constant.TRANSIT_TIME_MS, Constant.BANDWIDTH_GB_S,
-                          Constant.TRANSPORT_TYPE, Constant.OP_NAME]
-    COMM_BD_TABLE_COLUMN = [TableConstant.TRANSIT_SIZE, TableConstant.TRANSIT_TIME, TableConstant.BANDWIDTH,
-                            TableConstant.LARGE_PACKET_RATIO]
-    COMM_BD_JSON_COLUMN = [Constant.TRANSIT_SIZE_MB, Constant.TRANSIT_TIME_MS, Constant.BANDWIDTH_GB_S,
-                           Constant.LARGE_PACKET_RATIO]
-
-    def __init__(self):
-        super().__init__()
+class DataTransferAdapter:
+    COMM_TIME_TABLE_COLUMN = [
+        TableConstant.START_TIMESTAMP,
+        TableConstant.ELAPSED_TIME,
+        TableConstant.TRANSIT_TIME,
+        TableConstant.WAIT_TIME,
+        TableConstant.SYNCHRONIZATION_TIME,
+        TableConstant.IDLE_TIME,
+        TableConstant.SYNCHRONIZATION_TIME_RATIO,
+        TableConstant.WAIT_TIME_RATIO,
+    ]
+    COMM_TIME_JSON_COLUMN = [
+        Constant.START_TIMESTAMP,
+        Constant.ELAPSE_TIME_MS,
+        Constant.TRANSIT_TIME_MS,
+        Constant.WAIT_TIME_MS,
+        Constant.SYNCHRONIZATION_TIME_MS,
+        Constant.IDLE_TIME_MS,
+        Constant.SYNCHRONIZATION_TIME_RATIO,
+        Constant.WAIT_TIME_RATIO,
+    ]
+    MATRIX_TABLE_COLUMN = [
+        TableConstant.TRANSIT_SIZE,
+        TableConstant.TRANSIT_TIME,
+        TableConstant.BANDWIDTH,
+        TableConstant.TRANSPORT_TYPE,
+        TableConstant.OPNAME,
+    ]
+    MATRIX_JSON_COLUMN = [
+        Constant.TRANSIT_SIZE_MB,
+        Constant.TRANSIT_TIME_MS,
+        Constant.BANDWIDTH_GB_S,
+        Constant.TRANSPORT_TYPE,
+        Constant.OP_NAME,
+    ]
+    COMM_BD_TABLE_COLUMN = [
+        TableConstant.TRANSIT_SIZE,
+        TableConstant.TRANSIT_TIME,
+        TableConstant.BANDWIDTH,
+        TableConstant.LARGE_PACKET_RATIO,
+    ]
+    COMM_BD_JSON_COLUMN = [
+        Constant.TRANSIT_SIZE_MB,
+        Constant.TRANSIT_TIME_MS,
+        Constant.BANDWIDTH_GB_S,
+        Constant.LARGE_PACKET_RATIO,
+    ]
 
     def transfer_comm_from_db_to_json(self, time_info: list, bandwidth_info: list):
         result = {}
@@ -46,8 +76,9 @@ class DataTransferAdapter(object):
             for key, value in dict(zip(self.COMM_TIME_JSON_COLUMN, self.COMM_TIME_TABLE_COLUMN)).items():
                 if not key.endswith("ratio"):
                     comm_time[key] = time_data.get(value, 0)
-            result.setdefault(time_data[TableConstant.STEP], {}).setdefault(time_data[TableConstant.TYPE], {}). \
-                setdefault(hccl_name, {})[Constant.COMMUNICATION_TIME_INFO] = comm_time
+            result.setdefault(time_data[TableConstant.STEP], {}).setdefault(
+                time_data[TableConstant.TYPE], {}
+            ).setdefault(hccl_name, {})[Constant.COMMUNICATION_TIME_INFO] = comm_time
         hccl_set = set()
         for bd_data in bandwidth_info:
             hccl_name = bd_data[TableConstant.HCCL_OP_NAME] + "@" + bd_data[TableConstant.GROUP_NAME]
@@ -60,14 +91,18 @@ class DataTransferAdapter(object):
                     key_dict = dict(zip(self.COMM_BD_JSON_COLUMN, self.COMM_BD_TABLE_COLUMN))
                     self.set_value_by_key(temp_dict, bd_data, key_dict)
                     comm_bd.setdefault(bd_data[TableConstant.TRANSPORT_TYPE], temp_dict).setdefault(
-                        Constant.SIZE_DISTRIBUTION, {})[bd_data[TableConstant.PACKAGE_SIZE]] = \
-                        [bd_data[TableConstant.COUNT], bd_data[TableConstant.TOTAL_DURATION]]
-                    result.setdefault(bd_data[TableConstant.STEP], {}).setdefault(bd_data[TableConstant.TYPE], {}). \
-                        setdefault(hccl, {})[Constant.COMMUNICATION_BANDWIDTH_INFO] = comm_bd
+                        Constant.SIZE_DISTRIBUTION, {}
+                    )[bd_data[TableConstant.PACKAGE_SIZE]] = [
+                        bd_data[TableConstant.COUNT],
+                        bd_data[TableConstant.TOTAL_DURATION],
+                    ]
+                    result.setdefault(bd_data[TableConstant.STEP], {}).setdefault(
+                        bd_data[TableConstant.TYPE], {}
+                    ).setdefault(hccl, {})[Constant.COMMUNICATION_BANDWIDTH_INFO] = comm_bd
         return result
 
     def transfer_comm_from_json_to_db(self, res_data: dict):
-        res_comm_data, res_bd_data = list(), list()
+        res_comm_data, res_bd_data = [], []
 
         def split_comm_time(rank_set, step, op_name, op_data):
             for rank_id, comm_data in op_data.items():
@@ -123,12 +158,13 @@ class DataTransferAdapter(object):
                     temp_dict = dict()
                     key_dict = dict(zip(self.MATRIX_JSON_COLUMN, self.MATRIX_TABLE_COLUMN))
                     self.set_value_by_key(temp_dict, data, key_dict)
-                    result.setdefault(data[TableConstant.STEP], {}).setdefault(data[TableConstant.TYPE], {}). \
-                        setdefault(hccl, {}).setdefault(key, temp_dict)
+                    result.setdefault(data[TableConstant.STEP], {}).setdefault(data[TableConstant.TYPE], {}).setdefault(
+                        hccl, {}
+                    ).setdefault(key, temp_dict)
         return result
 
     def transfer_matrix_from_json_to_db(self, res_data: dict):
-        result = list()
+        result = []
 
         def split_matrix_data(rank_set, step, op_dict):
             group_name = ""
@@ -144,7 +180,7 @@ class DataTransferAdapter(object):
                         TableConstant.HCCL_OP_NAME: hccl_op_name,
                         TableConstant.GROUP_NAME: group_name,
                         TableConstant.SRC_RANK: link_key.split("-")[0],
-                        TableConstant.DST_RANK: link_key.split("-")[1]
+                        TableConstant.DST_RANK: link_key.split("-")[1],
                     }
                     key_dict = dict(zip(self.MATRIX_TABLE_COLUMN, self.MATRIX_JSON_COLUMN))
                     self.set_value_by_key(matrix_data, link_data, key_dict)

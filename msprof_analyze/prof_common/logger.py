@@ -1,15 +1,18 @@
-# Copyright (C) 2024-2024. Huawei Technologies Co., Ltd. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import logging
 import os
 import tempfile
@@ -23,8 +26,7 @@ _agent_mode = False
 def _create_formatter():
     """Create a standard log formatter"""
     return logging.Formatter(
-        fmt="[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d] %(message)s",
-        datefmt='%Y-%m-%d %H:%M:%S'
+        fmt="[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d] %(message)s", datefmt='%Y-%m-%d %H:%M:%S'
     )
 
 
@@ -65,8 +67,10 @@ def is_agent_mode():
 def get_log_level():
     log_level = os.getenv(Constant.MSPROF_ANALYZE_LOG_LEVEL, Constant.DEFAULT_LOG_LEVEL).upper()
     if not hasattr(logging, log_level):
-        raise AttributeError(f"module 'logging' has no attribute '{log_level}', "
-                             f"supported log level: {', '.join(Constant.SUPPORTED_LOG_LEVEL)}")
+        raise AttributeError(
+            f"module 'logging' has no attribute '{log_level}', "
+            f"supported log level: {', '.join(Constant.SUPPORTED_LOG_LEVEL)}"
+        )
     return log_level
 
 

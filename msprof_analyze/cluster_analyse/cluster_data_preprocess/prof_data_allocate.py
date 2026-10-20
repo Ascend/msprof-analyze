@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 from collections import defaultdict
@@ -34,7 +35,7 @@ class ProfDataAllocate:
         Constant.PYTORCH: re.compile(r'^ascend_pytorch_profiler(?:_(\d+))?\.db$'),
         Constant.MINDSPORE: re.compile(r'^ascend_mindspore_profiler(?:_(\d+))?\.db$'),
         Constant.MSPROF: re.compile(r'^msprof_\d{14}\.db$'),
-        Constant.MSMONITOR: re.compile(r'^msmonitor_(\d+)_\d{17}_(-1|\d+)\.db$')
+        Constant.MSMONITOR: re.compile(r'^msmonitor_(\d+)_\d{17}_(-1|\d+)\.db$'),
     }
 
     ASCEND_PT = "ascend_pt"
@@ -61,7 +62,7 @@ class ProfDataAllocate:
     def _extract_rank_id_from_profiler_db(file_name: str, prof_type: str):
         """从profiler_db文件名中提取rank_id，传入的file_name已经过正则匹配"""
         if prof_type not in [Constant.PYTORCH, Constant.MINDSPORE, Constant.MSMONITOR]:
-            logger.error(f"Unsupported prof_type {prof_type}. Can not extract rank_id from profile db.")
+            logger.error("Unsupported prof_type %s. Can not extract rank_id from profile db.", prof_type)
             return None
 
         pattern = ProfDataAllocate.DB_PATTERNS[prof_type]
@@ -80,13 +81,15 @@ class ProfDataAllocate:
 
             # 处理特殊情况：ascend_pytorch_profiler.db（捕获组为None）
             if rank_str is None:
-                logger.warning(f"No rank_id for {file_name}. Using default value {ProfDataAllocate.DEFAULT_RANK_ID}.")
+                logger.warning(
+                    "No rank_id for %s. Using default value %s.", file_name, ProfDataAllocate.DEFAULT_RANK_ID
+                )
                 return ProfDataAllocate.DEFAULT_RANK_ID
 
             return int(rank_str)
 
         except (IndexError, ValueError) as e:
-            logger.error(f"Failed to extract rank_id from {file_name}: {str(e)}")
+            logger.error("Failed to extract rank_id from %s: %s", file_name, str(e))
             return None
 
     @staticmethod
@@ -95,7 +98,7 @@ class ProfDataAllocate:
         return (
             DataPreprocessor.postprocess_data_map(data_maps[Constant.PYTORCH], Constant.PYTORCH),
             DataPreprocessor.postprocess_data_map(data_maps[Constant.MINDSPORE], Constant.MINDSPORE),
-            DataPreprocessor.postprocess_data_map(data_maps[Constant.MSMONITOR], Constant.MSMONITOR)
+            DataPreprocessor.postprocess_data_map(data_maps[Constant.MSMONITOR], Constant.MSMONITOR),
         )
 
     def allocate_prof_data(self):
@@ -106,14 +109,14 @@ class ProfDataAllocate:
         if self._msmonitor_data_map:
             self._set_prof_data(Constant.MSMONITOR, Constant.DB, self._msmonitor_data_map)
             return True
-        logger.error(f"Failed to allocate profiling data!")
+        logger.error("Failed to allocate profiling data!")
         return False
 
     def allocate_db_prof_data(self):
         data_maps = {
             Constant.PYTORCH: defaultdict(list),
             Constant.MINDSPORE: defaultdict(list),
-            Constant.MSMONITOR: defaultdict(list)
+            Constant.MSMONITOR: defaultdict(list),
         }
         # 处理输入路径，搜索路径下所有文件夹与文件，max_depth=5
         for root, dirs, files in PathManager.limited_depth_walk(self.profiling_path, max_depth=5):
@@ -133,7 +136,7 @@ class ProfDataAllocate:
 
         # 检查是否多种类型文件同时存在
         if pytorch_data_map and mindspore_data_map:
-            logger.error(f"Can not analysis PyTorch and MindSpore at the same time!")
+            logger.error("Can not analysis PyTorch and MindSpore at the same time!")
             self.prof_type = Constant.INVALID
             return False
 
@@ -217,7 +220,6 @@ class ProfDataAllocate:
         if rank_id != -1:
             data_maps[Constant.PYTORCH][rank_id].append(root)
 
-
     def _scan_files_for_msmonitor_db(self, root: str, files: List[str], msmonitor_map: Dict):
         msmonitor_pattern = self.DB_PATTERNS[Constant.MSMONITOR]
         for file_name in files:
@@ -228,8 +230,7 @@ class ProfDataAllocate:
 
     def _set_prof_data(self, prof_type, data_type, data_map):
         if prof_type != Constant.MSMONITOR and self._msmonitor_data_map:
-            logger.warning(f"Find {prof_type} and msmonitor data at the same time! Just analysis {prof_type} data!")
+            logger.warning("Find %s and msmonitor data at the same time! Just analysis %s data!", prof_type, prof_type)
         self.prof_type = prof_type
         self.data_type = data_type
         self.data_map = data_map
-

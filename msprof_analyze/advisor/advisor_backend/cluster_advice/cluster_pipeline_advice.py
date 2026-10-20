@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import multiprocessing
 import os
@@ -59,12 +60,7 @@ class PipelineTraceViewer:
     FP = "FP"
     BP = "BP"
 
-    COLORS = {
-        STAGE: STAGE_COLOR,
-        BUBBLE: BUBBLE_COLOR,
-        FP: FP_COLOR,
-        BP: BP_COLOR
-    }
+    COLORS = {STAGE: STAGE_COLOR, BUBBLE: BUBBLE_COLOR, FP: FP_COLOR, BP: BP_COLOR}
 
     def gen_stage_bubble_trace_data(self, rank_id: int, timeslice_list: List[PipelineTimeSlice]) -> List[Dict]:
         """
@@ -74,8 +70,9 @@ class PipelineTraceViewer:
         trace_data = []
 
         for timeslice in timeslice_list:
-            data = self._gen_trace_pair(timeslice.slice_type, timeslice.start,
-                                        timeslice.end, self.PIPLINE_VIEW, rank_str)
+            data = self._gen_trace_pair(
+                timeslice.slice_type, timeslice.start, timeslice.end, self.PIPLINE_VIEW, rank_str
+            )
             trace_data.append(data)
 
         return trace_data
@@ -89,23 +86,21 @@ class PipelineTraceViewer:
 
         for timeslice in timeslice_list:
             if timeslice.slice_type == self.BUBBLE:
-                data = self._gen_trace_pair(timeslice.slice_type, timeslice.start,
-                                            timeslice.end, self.PIPLINE_VIEW, rank_str)
+                data = self._gen_trace_pair(
+                    timeslice.slice_type, timeslice.start, timeslice.end, self.PIPLINE_VIEW, rank_str
+                )
                 trace_data.append(data)
             else:
                 last_end = timeslice.start
                 for bp_bound in timeslice.bp_timeslice:
-                    data = self._gen_trace_pair(self.FP, last_end,
-                                                bp_bound[0], self.PIPLINE_VIEW, rank_str)
+                    data = self._gen_trace_pair(self.FP, last_end, bp_bound[0], self.PIPLINE_VIEW, rank_str)
                     trace_data.append(data)
                     last_end = bp_bound[1]
 
-                    data = self._gen_trace_pair(self.BP, bp_bound[0],
-                                                bp_bound[1], self.PIPLINE_VIEW, rank_str)
+                    data = self._gen_trace_pair(self.BP, bp_bound[0], bp_bound[1], self.PIPLINE_VIEW, rank_str)
                     trace_data.append(data)
 
-                last_data = self._gen_trace_pair(self.FP, last_end,
-                                                 timeslice.end, self.PIPLINE_VIEW, rank_str)
+                last_data = self._gen_trace_pair(self.FP, last_end, timeslice.end, self.PIPLINE_VIEW, rank_str)
                 trace_data.append(last_data)
 
         return trace_data
@@ -118,7 +113,7 @@ class PipelineTraceViewer:
             Constant.PID: pid,
             Constant.OP_TID: tid,
             Constant.TS: start_ts,
-            Constant.DUR: str(Decimal(end_ts) - Decimal(start_ts))
+            Constant.DUR: str(Decimal(end_ts) - Decimal(start_ts)),
         }
 
         return data
@@ -213,8 +208,9 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
         return res_fp_ops, res_bp_ops
 
     @staticmethod
-    def update_ops_time(ops_list: List[List[dict]], torch_to_npu_links: List[dict],
-                        npu_ops_ts_dur: dict) -> List[List[dict]]:
+    def update_ops_time(
+        ops_list: List[List[dict]], torch_to_npu_links: List[dict], npu_ops_ts_dur: dict
+    ) -> List[List[dict]]:
         """
         update fp and bp bound ops time at device by using torch_to_npu_links
         """
@@ -233,8 +229,7 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
 
             if cpu_op_s < link_s < cpu_op_e:
                 link_stack.append(link)
-            if link_s > cpu_op_e or \
-                    (link_stack and not torch_to_npu_que):
+            if link_s > cpu_op_e or (link_stack and not torch_to_npu_que):
                 min_link = link_stack[0]
                 max_link = link_stack[-1]
 
@@ -290,8 +285,11 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
         process all rank profiling data by using multi-process
         """
         start_time = time.time()
-        logger.info("Start to process %s rank profiling data with %s workers.",
-                    str(len(self.rank_prof_dirs)), str(self.worker_num))
+        logger.info(
+            "Start to process %s rank profiling data with %s workers.",
+            str(len(self.rank_prof_dirs)),
+            str(self.worker_num),
+        )
         with multiprocessing.Pool(self.worker_num) as pool:
             results = pool.map(self.work, self.rank_prof_dirs.items())
 
@@ -313,21 +311,21 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
         json_path = os.path.join(rank_prof_dir, Constant.ASCEND_PROFILER_OUTPUT, Constant.TRACE_VIEW_JSON)
         fine_data = self.load_trace_view_data(json_path)
         if not fine_data.hcom_ops or not fine_data.hcom_tids:
-            logger.error("[Rank %s] No hcom send recv ops found, make sure the trace view data is "
-                         "pipeline parallel sense.", str(rank_id))
+            logger.error(
+                "[Rank %s] No hcom send recv ops found, make sure the trace view data is pipeline parallel sense.",
+                str(rank_id),
+            )
             return [], show_fp_bp
 
-        timeslice_list = self.get_pipeline_timeslice(fine_data.hcom_ops, fine_data.hcom_tids, fine_data.min_ts,
-                                                     fine_data.max_ts)
+        timeslice_list = self.get_pipeline_timeslice(
+            fine_data.hcom_ops, fine_data.hcom_tids, fine_data.min_ts, fine_data.max_ts
+        )
         if not fine_data.fp_ops or not fine_data.bp_ops:
-            logger.info("[Rank %s] No frameWork data in trace view, only show stage and bubble.",
-                        str(rank_id))
+            logger.info("[Rank %s] No frameWork data in trace view, only show stage and bubble.", str(rank_id))
         elif len(fine_data.hcom_tids) > 1:
-            logger.warning("[Rank %s] More than one hcom tid found, only show stage and bubble.",
-                           str(rank_id))
+            logger.warning("[Rank %s] More than one hcom tid found, only show stage and bubble.", str(rank_id))
         else:
-            logger.info("[Rank %s] Found frameWork data in trace view, show fp bp and bubble.",
-                        rank_id)
+            logger.info("[Rank %s] Found frameWork data in trace view, show fp bp and bubble.", rank_id)
             bp_ops = self.get_fp_bp_bound_ops(fine_data)
             self.update_stage_fp_bp(timeslice_list, bp_ops)
             show_fp_bp = True
@@ -348,9 +346,7 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
                 Constant.PH: Constant.PH_META,
                 Constant.PID: self.PIPELINE_VIEW,
                 Constant.OP_TID: self.PIPELINE_VIEW,
-                Constant.ARGS: {
-                    Constant.OP_NAME: self.PIPELINE_VIEW
-                }
+                Constant.ARGS: {Constant.OP_NAME: self.PIPELINE_VIEW},
             }
         )
         self.output_format_data[self.DATA] = self.cur_data
@@ -391,8 +387,9 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
         bp_ops = self.update_ops_time(res_bp_ops, fine_data.torch_to_npu_links, fine_data.npu_ops_ts_dur)
         return bp_ops
 
-    def get_pipeline_timeslice(self, hcom_ops: list, hcom_tids: list,
-                               min_ts: str, max_ts: str) -> List[PipelineTimeSlice]:
+    def get_pipeline_timeslice(
+        self, hcom_ops: list, hcom_tids: list, min_ts: str, max_ts: str
+    ) -> List[PipelineTimeSlice]:
         """
         get pipeline timeslice by using hcom ops
         """
@@ -415,8 +412,7 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
         timeslice_list.insert(len(timeslice_list), PipelineTimeSlice(timeslice_list[-1].end, max_ts, self.STAGE))
         return timeslice_list
 
-    def update_stage_fp_bp(self, timeslice_list: List[PipelineTimeSlice],
-                           bp_ops: List[List[dict]]) -> None:
+    def update_stage_fp_bp(self, timeslice_list: List[PipelineTimeSlice], bp_ops: List[List[dict]]) -> None:
         """
         update stage fp and bp time
         """
@@ -427,7 +423,7 @@ class ClusterPipelineAdvice(ClusterAdviceBase):
             while pipeline_que[0].slice_type != self.STAGE:
                 pipeline_que.popleft()
                 if not pipeline_que:
-                    return None
+                    return
 
             bp_bound_data = bp_bound_que[0]
             bp_bound_s = Decimal(bp_bound_data[0]['npu_op_ts'])

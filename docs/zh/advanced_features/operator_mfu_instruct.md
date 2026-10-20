@@ -95,7 +95,7 @@ msprof-analyze -m operator_mfu -d <profiling_path> [-o <output_path>] [--export_
 | -m | 必选 | 设置为 `operator_mfu`，启动算子 MFU 分析。 |
 | -d | 必选 | 集群性能数据文件父目录路径。 |
 | -o | 可选 | 分析结果输出路径，默认输出在 `-d` 参数指定的目录下。 |
-| --export_type | 可选 | 输出文件类型，可选 `db` 或 `text`，默认为 `db` 。 |
+| --export_type | 可选 | 输出文件类型，可选 `db` 或 `text`，默认为 `db`。 |
 
 更多参数详细介绍请参见 msprof-analyze 的[参数说明](./README.md#51-参数说明)。
 

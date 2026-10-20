@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
 from abc import ABC, abstractmethod
@@ -26,7 +27,6 @@ logger = get_logger()
 
 
 class BaseStatsExport(ABC):
-
     def __init__(self, db_path, analysis_class, param_dict=None):
         """Base class for stats export.
 
@@ -60,7 +60,7 @@ class BaseStatsExport(ABC):
                 logger.error("db path is None.")
                 return None
             if not os.path.exists(self._db_path):
-                logger.error(f"Db file does not exist: {self._db_path}")
+                logger.error("Db file does not exist: %s", self._db_path)
                 return None
             query = self.get_query()
             if query is None:
@@ -74,7 +74,7 @@ class BaseStatsExport(ABC):
             DBManager.destroy_db_connect(conn, cursor)
             return data
         except Exception as e:
-            logger.error(f"File {self._db_path} read failed error: {e}")
+            logger.error("File %s read failed error: %s", self._db_path, e)
             return None
 
     def _build_param_list(self):
@@ -87,5 +87,5 @@ class BaseStatsExport(ABC):
             if param_name in self._param_dict:
                 param_list.append(self._param_dict.get(param_name))
             else:
-                logger.warning(f"param {param_name} not in param_dict.")
+                logger.warning("param %s not in param_dict.", param_name)
         return param_list if param_list else None

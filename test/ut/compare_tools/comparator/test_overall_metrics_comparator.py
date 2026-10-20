@@ -1,19 +1,20 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import unittest
-from unittest.mock import MagicMock, patch
-from math import isclose
+from unittest.mock import MagicMock
 from msprof_analyze.compare_tools.compare_backend.comparator.overall_metrics_comparator import OverallMetricsComparator
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.compare_tools.compare_backend.utils.excel_config import ExcelConfig
@@ -25,10 +26,10 @@ class TestOverallMetricsComparator(unittest.TestCase):
         self.mock_bean.rows = [["metric1", 100, 200, 100, "50%"]]
         self.base_info = MagicMock()
         self.base_info.e2e_time_ms = 1000.0
-        
+
         self.comp_info = MagicMock()
         self.comp_info.e2e_time_ms = 2000.0
-        
+
         self.origin_data = {
             Constant.BASE_DATA: self.base_info,
             Constant.COMPARISON_DATA: self.comp_info
@@ -59,7 +60,7 @@ class TestOverallMetricsComparator(unittest.TestCase):
         mock_bean_instance = MagicMock()
         mock_bean_instance.rows = [["metric1", 100, 200, 100, "50%"]]
         self.mock_bean.return_value = mock_bean_instance
-        
+
         comparator._compare()
         self.mock_bean.assert_called_once_with(self.base_info, self.comp_info)
         self.assertEqual(len(comparator._rows), 1)
@@ -77,7 +78,7 @@ class TestOverallMetricsComparator(unittest.TestCase):
         ]
         self.mock_bean.return_value = mock_bean_instance
         comparator._compare()
- 
+
         self.assertEqual(len(comparator._row_style), 3)
         self.assertEqual(comparator._row_style[0], ExcelConfig.ROW_STYLE_MAP.get("metric1", {}))
         self.assertEqual(comparator._row_style[1], ExcelConfig.ROW_STYLE_MAP.get("metric2", {}))

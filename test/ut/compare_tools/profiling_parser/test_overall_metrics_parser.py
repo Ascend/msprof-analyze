@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -114,6 +115,14 @@ class TestOverallMetricsParser(unittest.TestCase):
         self.assertEqual(merged[0], [1, 6])
         self.assertEqual(merged[1], [8, 10])
         self.assertEqual(merged[2], [15, 18])
+
+    def test_merge_intervals_second_call_does_not_mutate_first_call_result(self):
+        compute_intervals = [[1, 2], [5, 6]]
+        merged_compute_intervals = self.parser.merge_intervals(compute_intervals)
+
+        self.parser.merge_intervals(compute_intervals + [[5, 10]])
+
+        self.assertEqual(merged_compute_intervals, [[1, 2], [5, 6]])
 
     def test_calculate_lccl_time(self):
         mock_lccl_op = MagicMock(spec=HcclOpBean)
@@ -229,13 +238,13 @@ class TestOverallMetricsParser(unittest.TestCase):
 
         # Verify database query was called without step_range
         expected_sql = """
-        SELECT 
+        SELECT
             round(TASK.endNs - TASK.startNs) AS "Duration",
             TASK.startNs AS "startNs",
             TASK.endNs AS "endNs"
-        FROM 
-            TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id 
-        WHERE STRING_IDS.value == 'C_CORE_SQE' 
+        FROM
+            TASK LEFT JOIN STRING_IDS ON TASK.taskType == STRING_IDS.id
+        WHERE STRING_IDS.value == 'C_CORE_SQE'
         ORDER BY TASK.startNs
         """
 
@@ -657,4 +666,3 @@ class TestOverallMetricsParser(unittest.TestCase):
 
             # Expect E2E = 9000 - 1500 = 7500 us
             self.mock_npu_parser.result_data.overall_metrics.set_e2e_time.assert_called_with(7500.0)
-

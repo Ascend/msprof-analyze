@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import pandas as pd
@@ -96,15 +97,14 @@ class CannApiSum(BaseRecipeAnalysis):
         self.add_helper_file("cluster_display.py")
 
     def save_db(self):
-        self.dump_data(self._stats_rank_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSumRank",
-                       index=False)
+        self.dump_data(self._stats_rank_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSumRank", index=False)
         self.dump_data(self._stats_data, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "CannApiSum")
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": ["CannApiSumRank", "CannApiSum"]
+                "tables": ["CannApiSumRank", "CannApiSum"],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def save_csv(self):
@@ -114,10 +114,10 @@ class CannApiSum(BaseRecipeAnalysis):
             msg_dict={
                 "csv_path": [
                     os.path.join(self.output_path, "rank_stats.csv"),
-                    os.path.join(self.output_path, "all_stats.csv")
+                    os.path.join(self.output_path, "all_stats.csv"),
                 ],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def _mapper_func(self, data_map, analysis_class):
@@ -126,6 +126,6 @@ class CannApiSum(BaseRecipeAnalysis):
         step_range = data_map.get(Constant.STEP_RANGE)
         df = CannApiSumExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None, None
         return rank_id, df

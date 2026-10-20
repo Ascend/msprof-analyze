@@ -6,7 +6,7 @@
 
 ## Prerequisites
 
-Install msprof-analyze following the [installation guide](../getting_started/install_guide.md). Collect Profiling data with `record_shapes=True`, `ProfilerLevel.Level1` or higher, and `ExportType.Db`. The exported database must include `COMPUTE_TASK_INFO`, `TASK`, and `STRING_IDS`. Neither `with_flops` nor msTX instrumentation is required.
+Install msprof-analyze following the [installation guide](../install_guide/msprof-analyze_install_guide.md). Collect Profiling data with `record_shapes=True`, `ProfilerLevel.Level1` or higher, and `ExportType.Db`. The exported database must include `COMPUTE_TASK_INFO`, `TASK`, and `STRING_IDS`. Neither `with_flops` nor msTX instrumentation is required.
 
 For example:
 

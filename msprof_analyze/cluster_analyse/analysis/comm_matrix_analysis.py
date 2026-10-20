@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import copy
 import os
@@ -41,7 +42,7 @@ class CommMatrixAnalysis(BaseAnalysis):
         link_info_dict[Constant.TRANSIT_TIME_MS] += single_link_dict.get(Constant.TRANSIT_TIME_MS, 0)
         link_info_dict[Constant.TRANSIT_SIZE_MB] += single_link_dict.get(Constant.TRANSIT_SIZE_MB, 0)
 
-    def run(self, completed_processes, lock):
+    def run(self, completed_processes, lock):  # pylint: disable=arguments-differ
         if not self.communication_ops:
             increase_shared_value(completed_processes, lock)
             logger.info("CommMatrixAnalysis completed")
@@ -55,9 +56,9 @@ class CommMatrixAnalysis(BaseAnalysis):
     def dump_db(self):
         raise RuntimeError("CommMatrixAnalysis only supports text-mode output.")
 
-    def compute_total_info(self, step_dict: dict):
-        self.merge_same_links(step_dict)
-        self.combine_link_info(step_dict)
+    def compute_total_info(self, communication_ops: dict):
+        self.merge_same_links(communication_ops)
+        self.combine_link_info(communication_ops)
 
     def merge_same_links(self, step_dict: dict):
         def update_rank_map(step_dict):
@@ -74,9 +75,14 @@ class CommMatrixAnalysis(BaseAnalysis):
                             if src_rank not in project_local_global_rank_map.get(group_name, {}):
                                 project_local_global_rank_map.setdefault(group_name, {})[src_rank] = rank_id
                             elif project_local_global_rank_map.get(group_name, {}).get(src_rank) != rank_id:
-                                logger.warning(f"In the same communication group {group_name}, global rank {rank_id} "
-                                               f"and {project_local_global_rank_map.get(group_name, {}).get(src_rank)} "
-                                               f"get the same local rank {src_rank}!")
+                                logger.warning(
+                                    "In the same communication group %s, global rank %s and %s "
+                                    "get the same local rank %s!",
+                                    group_name,
+                                    rank_id,
+                                    project_local_global_rank_map.get(group_name, {}).get(src_rank),
+                                    src_rank,
+                                )
 
         def process_link_key(rank_dict):
             for link_key in rank_dict:
@@ -91,18 +97,24 @@ class CommMatrixAnalysis(BaseAnalysis):
                 src_rank = link_key.split('-')[0]
                 dst_rank = link_key.split('-')[1]
                 if src_rank not in rank_map:
-                    logger.warning(f"The src local rank {src_rank} of the operator {op_name} "
-                                   f"cannot be mapped to the global rank.")
+                    logger.warning(
+                        "The src local rank %s of the operator %s cannot be mapped to the global rank.",
+                        src_rank,
+                        op_name,
+                    )
                     continue
                 if dst_rank not in rank_map:
-                    logger.warning(f"The dst local rank {dst_rank} of the operator {op_name} "
-                                   f"cannot be mapped to the global rank.")
+                    logger.warning(
+                        "The dst local rank %s of the operator %s cannot be mapped to the global rank.",
+                        dst_rank,
+                        op_name,
+                    )
                     continue
                 src_rank = rank_map[src_rank]
                 dst_rank = rank_map[dst_rank]
-                link_dict[Constant.BANDWIDTH_GB_S] = \
-                    self.compute_ratio(link_dict.get(Constant.TRANSIT_SIZE_MB, 0),
-                                       link_dict.get(Constant.TRANSIT_TIME_MS, 0))
+                link_dict[Constant.BANDWIDTH_GB_S] = self.compute_ratio(
+                    link_dict.get(Constant.TRANSIT_SIZE_MB, 0), link_dict.get(Constant.TRANSIT_TIME_MS, 0)
+                )
                 tmp_link[f"{src_rank}-{dst_rank}"] = link_dict
             return tmp_link
 
@@ -110,7 +122,7 @@ class CommMatrixAnalysis(BaseAnalysis):
             Constant.TRANSPORT_TYPE: '',
             Constant.TRANSIT_TIME_MS: 0,
             Constant.TRANSIT_SIZE_MB: 0,
-            Constant.OP_NAME: ''
+            Constant.OP_NAME: '',
         }
         project_local_global_rank_map = self.get_parallel_group_info()
         update_rank_map(step_dict)
@@ -126,7 +138,7 @@ class CommMatrixAnalysis(BaseAnalysis):
             Constant.TRANSPORT_TYPE: '',
             Constant.TRANSIT_TIME_MS: 0,
             Constant.TRANSIT_SIZE_MB: 0,
-            Constant.OP_NAME: ''
+            Constant.OP_NAME: '',
         }
         total_op_info = defaultdict(lambda: copy.deepcopy(default_value))
         total_group_op_info = defaultdict(lambda: copy.deepcopy(total_op_info))
@@ -137,9 +149,9 @@ class CommMatrixAnalysis(BaseAnalysis):
                     self.combine_link(total_group_op_info[group_name][link_key], link_dict)
         for group_name, total_op_info in total_group_op_info.items():
             for _, link_dict in total_op_info.items():
-                link_dict[Constant.BANDWIDTH_GB_S] = \
-                    self.compute_ratio(link_dict.get(Constant.TRANSIT_SIZE_MB, 0),
-                                       link_dict.get(Constant.TRANSIT_TIME_MS, 0))
+                link_dict[Constant.BANDWIDTH_GB_S] = self.compute_ratio(
+                    link_dict.get(Constant.TRANSIT_SIZE_MB, 0), link_dict.get(Constant.TRANSIT_TIME_MS, 0)
+                )
             step_dict[f"{Constant.TOTAL_OP_INFO}@{group_name}"] = total_op_info
 
     def get_parallel_group_info(self):

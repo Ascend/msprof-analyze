@@ -1,20 +1,20 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
-from collections import defaultdict
 import pandas as pd
 
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
@@ -55,7 +55,7 @@ class FreqAnalysis(BaseRecipeAnalysis):
         for freqs, rank_id in mapper_res:
             if freqs == [self.COMMON_FREQ]:
                 continue
-            elif set(freqs) == {self.COMMON_FREQ, self.FREE_FREQ}:
+            if set(freqs) == {self.COMMON_FREQ, self.FREE_FREQ}:
                 self.free_freq_ranks.append(rank_id)
             else:
                 self.abnormal_freq_ranks.append(rank_id)
@@ -65,8 +65,11 @@ class FreqAnalysis(BaseRecipeAnalysis):
 
     def save_db(self):
         if len(self.free_freq_ranks) > 0:
-            logger.info(f"Found {len(self.free_freq_ranks)} ranks with free time, "
-                        f"aicore frequency in {[self.FREE_FREQ, self.COMMON_FREQ]}.")
+            logger.info(
+                "Found %s ranks with free time, aicore frequency in %s.",
+                len(self.free_freq_ranks),
+                [self.FREE_FREQ, self.COMMON_FREQ],
+            )
             free_ranks_df = pd.DataFrame()
             free_ranks_df["rankId"] = self.free_freq_ranks
             free_ranks_df["aicoreFrequency"] = str([self.FREE_FREQ, self.COMMON_FREQ])
@@ -74,11 +77,12 @@ class FreqAnalysis(BaseRecipeAnalysis):
             self.dump_data(free_ranks_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "FreeFrequencyRanks")
         else:
             logger.info("No rank found with free time.")
-        if len(self.abnormal_freq_ranks) > 0:    
-            logger.info(f"Found {len(self.abnormal_freq_ranks)} ranks with abnormal aicore frequency.")
+        if len(self.abnormal_freq_ranks) > 0:
+            logger.info("Found %s ranks with abnormal aicore frequency.", len(self.abnormal_freq_ranks))
 
-            abnormal_ranks_df = pd.DataFrame.from_dict(self.abnormal_freq_ranks_map, 
-                                                       orient="index", columns=["aicoreFrequency"])
+            abnormal_ranks_df = pd.DataFrame.from_dict(
+                self.abnormal_freq_ranks_map, orient="index", columns=["aicoreFrequency"]
+            )
             abnormal_ranks_df = abnormal_ranks_df.reset_index().rename(columns={"index": "rankId"})
             abnormal_ranks_df.set_index(["rankId"], inplace=True)
             self.dump_data(abnormal_ranks_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "AbnormalFrequencyRanks")
@@ -89,9 +93,9 @@ class FreqAnalysis(BaseRecipeAnalysis):
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": ["FreeFrequencyRanks", "AbnormalFrequencyRanks"]
+                "tables": ["FreeFrequencyRanks", "AbnormalFrequencyRanks"],
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def run(self, context):
@@ -99,7 +103,7 @@ class FreqAnalysis(BaseRecipeAnalysis):
         self.reducer_func(mapper_res)
 
         if self._export_type == Constant.DB:
-            self.save_db() 
+            self.save_db()
         else:
             logger.error("Frequence analysis is not supported for notebook export type.")
 
@@ -112,10 +116,10 @@ class FreqAnalysis(BaseRecipeAnalysis):
         aic_freq = service_res.get("AICORE_FREQ", None)
         rank_id = service_res.get("RANK_DEVICE_MAP", None)
         if aic_freq is None or aic_freq.empty:
-            logger.error(f"No aic freq data found in {profiler_db_path}.")
+            logger.error("No aic freq data found in %s.", profiler_db_path)
             return None, None
         if rank_id is None or rank_id.empty:
-            logger.error(f"No rank_id data found in {profiler_db_path}.")
+            logger.error("No rank_id data found in %s.", profiler_db_path)
             return None, None
         rank_id = rank_id["rankId"].values[0]
         freq_arr = aic_freq["freq"].values

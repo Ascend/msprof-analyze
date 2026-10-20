@@ -1,33 +1,29 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from collections import defaultdict
 import os
 
 from msprof_analyze.cluster_analyse.cluster_data_preprocess.data_preprocessor import DataPreprocessor
 from msprof_analyze.prof_common.constant import Constant
-from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.logger import get_logger
 
 logger = get_logger()
 
 
 class PytorchDataPreprocessor(DataPreprocessor):
-
-    def __init__(self, path_list: list):
-        super().__init__(path_list)
-
     @property
     def db_pattern(self):
         return r'^ascend_pytorch_profiler(?:_\d+)?\.db$'
@@ -45,13 +41,10 @@ class PytorchDataPreprocessor(DataPreprocessor):
                 rank_id_map[rank_id].append(dir_name)
         self.data_map = self.postprocess_data_map(rank_id_map, Constant.PYTORCH)
         if unknown_rank_paths:
-            logger.warning(f"Failed to get rank_id for some paths."
-                           f"Affected paths: {unknown_rank_paths}\n"
-                           "Expected to get rank_id from profiler_info_{rank_id}.json")
+            logger.warning(
+                "Failed to get rank_id for some paths."
+                "Affected paths: %s\n"
+                "Expected to get rank_id from profiler_info_{rank_id}.json",
+                unknown_rank_paths,
+            )
         return self.data_map
-
-
-
-
-
-

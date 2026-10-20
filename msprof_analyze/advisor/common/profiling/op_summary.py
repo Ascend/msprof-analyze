@@ -1,3 +1,19 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -14,13 +30,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from msprof_analyze.prof_common.logger import get_logger
 import os
 from abc import abstractmethod
 from decimal import Decimal
 from typing import List, Any
 import pandas as pd
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.cluster_analyse.common_func.table_constant import TableConstant
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.dataset.profiling.info_collection import OpInfo
@@ -82,6 +98,7 @@ class OpSummary(OpSummaryBase):
     """
     op summary
     """
+
     FILE_PATTERN_MSG = "op_summary_*.csv"
     FILE_INFO = "op summary from text"
     file_pattern_list = [r"^op_summary_[_\d]+\.csv$"]
@@ -99,8 +116,11 @@ class OpSummary(OpSummaryBase):
             for idx, value in enumerate(op_data):
                 title = title_dict.get(idx, "")
                 formatted_title = format_excel_title(title)
-                if formatted_title == 'task_start_time' and 'us' in title and \
-                        value.replace('.', '').replace("E+", "").isnumeric():
+                if (
+                    formatted_title == 'task_start_time'
+                    and 'us' in title
+                    and value.replace('.', '').replace("E+", "").isnumeric()
+                ):
                     value = str(Decimal(value) * Decimal(1000))
                 op_info.add_attr(formatted_title, value)
             self.op_list.append(op_info)
@@ -112,8 +132,11 @@ class OpSummary(OpSummaryBase):
         return True
 
     def get_static_shape_operators(self) -> List[Any]:
-        return [op_info.get_attr("op_name")
-                for op_info in self.op_list if op_info.get_attr("op_state") == self.STATIC_OP_STATE]
+        return [
+            op_info.get_attr("op_name")
+            for op_info in self.op_list
+            if op_info.get_attr("op_state") == self.STATIC_OP_STATE
+        ]
 
     def contains_op_state_info(self):
         return True
@@ -124,13 +147,15 @@ class OpSummaryDB(OpSummaryBase):
     FILE_INFO = "op summary from db"
     COLUMN_BLOCK_NUM = "blockNum"
 
-    file_pattern_list = [r'^ascend_pytorch_profiler(?:_\d+)?\.db$',
-                         r'^ascend_mindspore_profiler(?:_\d+)?\.db$',
-                         r'^msprof_\d{14}\.db$']
+    file_pattern_list = [
+        r'^ascend_pytorch_profiler(?:_\d+)?\.db$',
+        r'^ascend_mindspore_profiler(?:_\d+)?\.db$',
+        r'^msprof_\d{14}\.db$',
+    ]
 
     COMPUTE_INFO_SQL = """
     WITH compute_info AS (
-        SELECT 
+        SELECT
             (SELECT value FROM STRING_IDS WHERE id = t.name) AS op_name,
             t.globalTaskId,
             {block_dim_state}
@@ -143,7 +168,7 @@ class OpSummaryDB(OpSummaryBase):
             (SELECT value FROM STRING_IDS WHERE id = t.outputFormats) AS output_formats,
             (SELECT value FROM STRING_IDS WHERE id = t.outputDataTypes) AS output_data_types
             {op_state}
-        FROM 
+        FROM
             COMPUTE_TASK_INFO t
     )
     SELECT
@@ -156,9 +181,9 @@ class OpSummaryDB(OpSummaryBase):
         task.streamId as stream_id,
         task.contextId as context_id,
         task.taskId as task_id
-    FROM 
+    FROM
         compute_info
-    JOIN 
+    JOIN
         TASK as task ON compute_info.globalTaskId = task.globalTaskId;
     """
 
@@ -177,25 +202,25 @@ class OpSummaryDB(OpSummaryBase):
 
     COMMUNICATION_INFO_SQL = """
     WITH comm_info AS (
-        SELECT 
+        SELECT
             (SELECT value FROM STRING_IDS WHERE id = c.opName) AS op_name,
             (SELECT value FROM STRING_IDS WHERE id = c.opType) AS op_type,
             startNs as task_start_time,
             endNs as task_end_time,
             endNs - startNs as task_duration,
             connectionId
-        FROM 
+        FROM
             COMMUNICATION_OP c
     )
-    SELECT 
+    SELECT
         comm.*,
         t.deviceId as device_id,
         t.modelId as model_id,
         'COMMUNICATION' as task_type
-    FROM 
+    FROM
         comm_info comm
     JOIN (
-        SELECT 
+        SELECT
             connectionId,
             deviceId,
             modelId
@@ -218,7 +243,7 @@ class OpSummaryDB(OpSummaryBase):
         task.streamId as stream_id,
         task.contextId as context_id,
         task.taskId as task_id
-    FROM COMMUNICATION_SCHEDULE_TASK_INFO as CSTI 
+    FROM COMMUNICATION_SCHEDULE_TASK_INFO as CSTI
     JOIN TASK as task ON task.globalTaskId = CSTI.globalTaskId
     """
 
@@ -233,10 +258,11 @@ class OpSummaryDB(OpSummaryBase):
         # export data
         compute_df = self.export_compute_task(file)
         communication_df = self._execute_sql(file, self.COMMUNICATION_INFO_SQL, [Constant.TABLE_COMMUNICATION_OP])
-        comm_schedule_df = self._execute_sql(file, self.COMMUNICATION_SCHEDULE_SQL,
-                                             [Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO])
+        comm_schedule_df = self._execute_sql(
+            file, self.COMMUNICATION_SCHEDULE_SQL, [Constant.TABLE_COMMUNICATION_SCHEDULE_TASK_INFO]
+        )
         if compute_df.empty and communication_df.empty and comm_schedule_df.empty:
-            logger.warning(f"No compute and communication operators in db: {file}")
+            logger.warning("No compute and communication operators in db: %s", file)
             return False
         # post process
         total_df = self.post_process([compute_df, communication_df, comm_schedule_df])
@@ -253,9 +279,11 @@ class OpSummaryDB(OpSummaryBase):
     def get_static_shape_operators(self) -> List[Any]:
         if not self.contains_op_state_info():
             return []
-        return [op_info.get_attr("op_name")
-                for op_info in self.op_list if op_info.get_attr("op_state") == self.STATIC_OP_STATE]
-
+        return [
+            op_info.get_attr("op_name")
+            for op_info in self.op_list
+            if op_info.get_attr("op_state") == self.STATIC_OP_STATE
+        ]
 
     def export_compute_task(self, db_path):
         # check whether opState in COMPUTE_TASK_INFO
@@ -275,10 +303,7 @@ class OpSummaryDB(OpSummaryBase):
             t.blockDim AS block_dim,
             t.mixBlockDim AS mix_block_dim,
             """
-        comp_info_sql = self.COMPUTE_INFO_SQL.format(
-            op_state=op_state,
-            block_dim_state=block_dim_state
-        )
+        comp_info_sql = self.COMPUTE_INFO_SQL.format(op_state=op_state, block_dim_state=block_dim_state)
         # export basic compute_task_info, task_pmu_info
         basic_df = self._execute_sql(db_path, comp_info_sql, [Constant.TABLE_COMPUTE_TASK_INFO])
         pmu_df = self._execute_sql(db_path, self.PMU_SQL, [Constant.TABLE_TASK_PMU_INFO])
@@ -289,7 +314,7 @@ class OpSummaryDB(OpSummaryBase):
             index='globalTaskId',
             columns='name',
             values='value',
-            aggfunc='first'  # 如果有多个值，取第一个
+            aggfunc='first',  # 如果有多个值，取第一个
         ).reset_index()
         compute_df = basic_df.merge(pivoted_pmu_df, on='globalTaskId', how='left').fillna(0)
         return compute_df
@@ -310,8 +335,9 @@ class OpSummaryDB(OpSummaryBase):
         for col in time_cols:
             total_df[col] = total_df[col].apply(lambda x: Decimal(x) / 1000 if x != 'N/A' else x)
         # process columns
-        total_df = total_df.rename(columns={'aiv_total_time': 'aiv_time', 'aic_total_time': 'aicore_time'},
-                                   errors='ignore')
+        total_df = total_df.rename(
+            columns={'aiv_total_time': 'aiv_time', 'aic_total_time': 'aicore_time'}, errors='ignore'
+        )
         total_df = total_df.drop(columns=['task_end_time', 'globalTaskId', 'connectionId'], errors='ignore')
         return total_df
 

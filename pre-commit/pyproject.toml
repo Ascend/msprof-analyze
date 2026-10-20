@@ -95,6 +95,9 @@ disable = [
   "wrong-import-order",
   "wrong-import-position",
   "import-error",
+
+  # 重复代码检查（R0801）
+  "duplicate-code",
 ]
 
 # ==============================================
@@ -123,4 +126,3 @@ skips = []
 # 报告格式
 format = "screen"
 quiet = true
-

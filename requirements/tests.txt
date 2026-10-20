@@ -15,3 +15,9 @@ sqlalchemy
 beautifulsoup4
 ipython
 ipywidgets
+pandas
+numpy
+plotly
+psutil
+openpyxl
+pytest-asyncio==0.21.2

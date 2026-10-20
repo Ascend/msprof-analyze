@@ -1,16 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import unittest
 from unittest.mock import MagicMock, patch
 from msprof_analyze.compare_tools.compare_backend.comparator.kernel_type_comparator import KernelTypeComparator
@@ -28,13 +30,13 @@ class TestKernelTypeComparator(unittest.TestCase):
             "kernel_type2": MagicMock(),
             "kernel_type3": MagicMock()
         }
-        
+
         self.comparison_kernels = {
             "kernel_type1": MagicMock(),
             "kernel_type2": MagicMock(),
             "kernel_type4": MagicMock()
         }
-        
+
         self.origin_data = {
             Constant.BASE_DATA: self.base_kernels,
             Constant.COMPARISON_DATA: self.comparison_kernels
@@ -49,14 +51,14 @@ class TestKernelTypeComparator(unittest.TestCase):
     def test_compare_mixed_data_types(self, mock_update_order_id):
         op_statistic_bean = OpStatisticBean({"total_time": 100})
         magic_mock = MagicMock()
-        
+
         origin_data = {
             Constant.BASE_DATA: {"type1": op_statistic_bean, "type2": magic_mock},
             Constant.COMPARISON_DATA: {"type1": op_statistic_bean, "type2": magic_mock}
         }
-        
+
         comparator = KernelTypeComparator(origin_data, self.mock_bean)
-        
+
         mock_bean_instance = MagicMock()
         mock_bean_instance.row = ["test", 0, 0, 0]
         self.mock_bean.return_value = mock_bean_instance

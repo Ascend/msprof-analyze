@@ -1,32 +1,36 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-from msprof_analyze.prof_common.logger import get_logger
 import re
 import traceback
 from collections import OrderedDict
 from tqdm import tqdm
 import ijson
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_sql import TimelineDBHelper
 from msprof_analyze.advisor.dataset.dataset import Dataset
-
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.common.timeline.event import TimelineEvent
-from msprof_analyze.advisor.utils.utils import get_file_path_from_directory, check_path_valid, singleton, \
-    convert_to_float
+from msprof_analyze.advisor.utils.utils import (
+    get_file_path_from_directory,
+    check_path_valid,
+    singleton,
+    convert_to_float,
+)
 from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_collector import (
     OpCompileCollector,
     SynchronizeStreamCollector,
@@ -43,7 +47,7 @@ from msprof_analyze.advisor.dataset.timeline_op_collector.timeline_op_collector 
     StepCollector,
     GcCollector,
     FreeEventsCollector,
-    AclEventsCollector
+    AclEventsCollector,
 )
 
 logger = get_logger()
@@ -84,10 +88,9 @@ class BaseTimelineEventDataset(Dataset):
         kwargs = {}
         if func_name == FrequencyCollector.__name__:
             ops_with_task_type = getattr(self, "ops_with_task_type", {}).values()
-            kwargs["ai_core_ops"] = [op
-                                     for op in ops_with_task_type if
-                                     op.get(Constant.TASK_TYPE) in [Constant.AI_CORE, Constant.MIX_AIC]
-                                     ]
+            kwargs["ai_core_ops"] = [
+                op for op in ops_with_task_type if op.get(Constant.TASK_TYPE) in [Constant.AI_CORE, Constant.MIX_AIC]
+            ]
         return kwargs
 
     def add_event(self, index, event):
@@ -104,20 +107,11 @@ class BaseTimelineEventDataset(Dataset):
 
     def get_timeline_file_list(self):
         if self.data_type == Constant.TEXT:
-            timeline_file_list = get_file_path_from_directory(
-                self.collection_path,
-                lambda file: self.TRACE_VIEW_PATTERN.match(file)
-            )
+            timeline_file_list = get_file_path_from_directory(self.collection_path, self.TRACE_VIEW_PATTERN.match)
         elif self.data_type == Constant.DB:
             # 尝试匹配 PyTorch 和 MindSpore 两种 DB 文件
-            pytorch_files = get_file_path_from_directory(
-                self.collection_path,
-                lambda file: self.PYTORCH_DB_PATTERN.match(file)
-            )
-            mindspore_files = get_file_path_from_directory(
-                self.collection_path,
-                lambda file: self.MINDSPORE_DB_PATTERN.match(file)
-            )
+            pytorch_files = get_file_path_from_directory(self.collection_path, self.PYTORCH_DB_PATTERN.match)
+            mindspore_files = get_file_path_from_directory(self.collection_path, self.MINDSPORE_DB_PATTERN.match)
             if pytorch_files and mindspore_files:
                 logger.error("Both PyTorch and MindSpore DB files found, ambiguous!")
                 return False
@@ -133,11 +127,12 @@ class BaseTimelineEventDataset(Dataset):
             return False
 
         if len(timeline_file_list) == 0:
-            logger.warning(f"Please ensure timeline file in {self.collection_path}, skip timeline analysis.")
+            logger.warning("Please ensure timeline file in %s, skip timeline analysis.", self.collection_path)
             return False
         if len(timeline_file_list) > 1:
-            logger.warning(f"Found multiple timeline files in {self.collection_path}, "
-                           f"load the file of device 0 for analysis.")
+            logger.warning(
+                "Found multiple timeline files in %s, load the file of device 0 for analysis.", self.collection_path
+            )
         self.timeline_file = sorted(timeline_file_list)[0]
         return True
 
@@ -153,14 +148,14 @@ class BaseTimelineEventDataset(Dataset):
             db_helper = TimelineDBHelper(self.timeline_file)
             if not db_helper.init_timeline_db_helper():
                 return False
-            for _, collector in tqdm(self.collector_map.items(), leave=False,
-                                    desc="Building dataset for timeline analysis"):
+            for _, collector in tqdm(
+                self.collector_map.items(), leave=False, desc="Building dataset for timeline analysis"
+            ):
                 for event_type in collector.get_event_type():
                     df = db_helper.query_timeline_event(event_type)
                     collector.add_op_from_db(df)
         except Exception:
-            logger.warning("Error %s while parsing from db, file %s", traceback.format_exc(),
-                           self.timeline_file)
+            logger.warning("Error %s while parsing from db, file %s", traceback.format_exc(), self.timeline_file)
             return False
         finally:
             if db_helper:
@@ -173,17 +168,24 @@ class BaseTimelineEventDataset(Dataset):
             return result
 
         try:
-            with open(self.timeline_file, "r") as f:
-                for i, event in tqdm(enumerate(ijson.items(f, "item")),
-                                     leave=False, ncols=100, desc="Building dataset for timeline analysis",
-                                     total=self.dataset_len):
+            with open(self.timeline_file, "r", encoding="utf-8") as f:
+                for i, event in tqdm(
+                    enumerate(ijson.items(f, "item")),
+                    leave=False,
+                    ncols=100,
+                    desc="Building dataset for timeline analysis",
+                    total=self.dataset_len,
+                ):
                     func_res = func(index=i, event=event)
                     if func_res is not None:
                         result.append(func_res)
 
         except Exception:
-            logger.warning("Error %s while parsing file %s, continue to timeline analysis", traceback.format_exc(),
-                           self.timeline_file)
+            logger.warning(
+                "Error %s while parsing file %s, continue to timeline analysis",
+                traceback.format_exc(),
+                self.timeline_file,
+            )
         return result
 
     def _get_target_ops_by_step(self, op_list):
@@ -216,14 +218,16 @@ class BaseTimelineEventDataset(Dataset):
                 logger.debug("Operator Collector %s use operators of all step for analysis", collector_name)
                 target_op_list = collector.op_list
 
-            logger.debug("Source number of ops is %s, number of ops after filtered by rank is %s",
-                         len(collector.op_list), len(target_op_list))
+            logger.debug(
+                "Source number of ops is %s, number of ops after filtered by rank is %s",
+                len(collector.op_list),
+                len(target_op_list),
+            )
 
             collector_kwargs = self.get_post_process_kwargs(collector_name)
             collector.post_process(target_op_list, **collector_kwargs)
             for property_name, property_value in collector.attribute_to_dataset.items():
                 setattr(self, property_name, property_value)
-
 
 
 @singleton
@@ -239,7 +243,7 @@ class ScheduleAnalysisDataset(BaseTimelineEventDataset):
         OptimizerCollector=OptimizerCollector(),
         GcCollector=GcCollector(),
         FreeEventsCollector=FreeEventsCollector(),
-        AclEventsCollector=AclEventsCollector()
+        AclEventsCollector=AclEventsCollector(),
     )
 
     def __init__(self, collection_path, data: dict, build_dataset=True, **kwargs) -> None:

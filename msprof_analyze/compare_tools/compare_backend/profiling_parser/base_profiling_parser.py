@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 from abc import abstractmethod, ABC
 from decimal import Decimal
@@ -20,10 +21,11 @@ import ijson
 
 from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.compare_event import (
     KernelEvent,
-    MemoryEvent
+    MemoryEvent,
 )
-from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.kernel_details_bean \
-    import KernelDetailsBean
+from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.kernel_details_bean import (
+    KernelDetailsBean,
+)
 from msprof_analyze.compare_tools.compare_backend.compare_bean.origin_data_bean.trace_event_bean import TraceEventBean
 from msprof_analyze.compare_tools.compare_backend.compare_bean.profiling_info import ProfilingInfo
 from msprof_analyze.prof_common.constant import Constant
@@ -36,7 +38,6 @@ logger = get_logger()
 
 
 class ProfilingResult:
-
     def __init__(self, profiling_type):
         self._profiling_type = profiling_type
         self.torch_op_data = []
@@ -73,7 +74,8 @@ class ProfilingResult:
 
     def update_comm_task_data(self, comm_name: str, task_event: TraceEventBean):
         self.communication_dict.setdefault(comm_name, {}).setdefault("comm_task", {}).setdefault(
-            task_event.name, []).append(task_event.dur)
+            task_event.name, []
+        ).append(task_event.dur)
 
     def update_kernel_details(self, kernels: dict):
         self.kernel_details = kernels
@@ -176,10 +178,17 @@ class BaseProfilingParser(ABC):
     def load_data(self) -> ProfilingResult:
         self._result_data.update_bwd_tid(self._bwd_tid)
         if self._step_id != Constant.VOID_STEP and self._profiling_type == Constant.GPU:
-            msg = "[WARNING] step id is invalid in GPU data, please use this when comparing between NPU datas."
+            msg = "[WARNING] step id is invalid in GPU data, please use this when comparing between NPU data."
             raise RuntimeError(msg)
-        if any((self._enable_profiling_compare, self._enable_operator_compare, self._enable_memory_compare,
-                self._enable_api_compare, self._enable_communication_compare)):
+        if any(
+            (
+                self._enable_profiling_compare,
+                self._enable_operator_compare,
+                self._enable_memory_compare,
+                self._enable_api_compare,
+                self._enable_communication_compare,
+            )
+        ):
             self._dispatch_events()
             self._update_kernel_dict()
             self._update_communication_dict()
@@ -354,12 +363,12 @@ class BaseProfilingParser(ABC):
         self._comm_list.sort(key=lambda x: x.start_time)
         self._comm_task_list.sort(key=lambda x: x.start_time)
         if len(self.step_range) == 2:
-            comm_list = [event
-                         for event in self._comm_list
-                         if self.step_range[0] <= event.start_time <= self.step_range[1]]
-            comm_task_list = [event
-                              for event in self._comm_task_list
-                              if self.step_range[0] <= event.start_time <= self.step_range[1]]
+            comm_list = [
+                event for event in self._comm_list if self.step_range[0] <= event.start_time <= self.step_range[1]
+            ]
+            comm_task_list = [
+                event for event in self._comm_task_list if self.step_range[0] <= event.start_time <= self.step_range[1]
+            ]
         else:
             comm_list = self._comm_list
             comm_task_list = self._comm_task_list
@@ -394,17 +403,20 @@ class BaseProfilingParser(ABC):
             logger.warning("Can't find any communication op in the file: %s", self._profiling_path)
         if self._enable_kernel_compare and not self._result_data.kernel_details:
             if self._profiling_type == Constant.GPU:
-                logger.warning(f"kernel compare only support between NPU data and NPU data.")
+                logger.warning("kernel compare only support between NPU data and NPU data.")
             else:
-                logger.warning("Can't find any valid kernels in the file: %s. Please "
-                               "make sure that the profiling data is greater than level0 and "
-                               "aic_metrics=PipeUtilization.", self._profiling_path)
+                logger.warning(
+                    "Can't find any valid kernels in the file: %s. Please "
+                    "make sure that the profiling data is greater than level0 and "
+                    "aic_metrics=PipeUtilization.",
+                    self._profiling_path,
+                )
 
     def _trace_event_generator(self, profiling_type):
         PathManager.check_input_file_path(self._json_path)
         FileManager.check_file_size(self._json_path)
         item = self.trace_event_item.get(profiling_type)
-        with open(self._json_path, 'r') as file:
+        with open(self._json_path, 'r', encoding='utf-8') as file:
             for event in ijson.items(file, item):
                 yield TraceEventBean(event)
 

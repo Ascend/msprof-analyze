@@ -1,20 +1,20 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
-from json import JSONDecodeError
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,6 @@ from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseReci
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.constant import ProfilerTableConstant
 from msprof_analyze.prof_common.db_manager import DBManager
-from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_exports.p2p_pairing_export import P2PPairingExport
 
@@ -32,7 +31,6 @@ logger = get_logger()
 
 
 class P2PPairing(BaseRecipeAnalysis):
-
     P2P_OP_NAME_PATTERN = r"^hcom_([Ss]end|[Rr](ecv|eceive))__\d+_\d+_\d+$"
     DOMAIN_ID_EXTRACT_PATTERN = r"__(\d+)_\d+_\d+"
     RECEIVE_OP_MATCH_PATTERN = r"[Rr]ecv|[Rr]eceive"
@@ -73,21 +71,23 @@ class P2PPairing(BaseRecipeAnalysis):
                 return
             if self.COL_NAME_P2P_CONNECTION_ID not in ret:
                 DBManager.execute_sql(
-                    conn,
-                    f"ALTER TABLE {self.TARGET_TABLE_NAME} ADD COLUMN {self.COL_NAME_P2P_CONNECTION_ID} TEXT"
+                    conn, f"ALTER TABLE {self.TARGET_TABLE_NAME} ADD COLUMN {self.COL_NAME_P2P_CONNECTION_ID} TEXT"
                 )
             DBManager.execute_sql(
                 conn,
-                f"UPDATE {self.TARGET_TABLE_NAME} SET {self.COL_NAME_P2P_CONNECTION_ID} = NULL"
+                f"UPDATE {self.TARGET_TABLE_NAME} SET {self.COL_NAME_P2P_CONNECTION_ID} = NULL",  # nosec B608
             )
             DBManager.executemany_sql(
                 conn,
+                ""  # nosec B608
                 f"""
                 UPDATE {self.TARGET_TABLE_NAME}
                 SET {self.COL_NAME_P2P_CONNECTION_ID} = ?
                 WHERE {ProfilerTableConstant.OP_NAME} = ?;""",
-                [(row[self.COL_NAME_P2P_CONNECTION_ID], row[P2PPairingExport.CO_OP_NAME])
-                for _, row in df_result.iterrows()]
+                [
+                    (row[self.COL_NAME_P2P_CONNECTION_ID], row[P2PPairingExport.CO_OP_NAME])
+                    for _, row in df_result.iterrows()
+                ],
             )
         finally:
             DBManager.destroy_db_connect(conn, cursor)
@@ -99,23 +99,27 @@ class P2PPairing(BaseRecipeAnalysis):
         出现Send和Recv算子已有的频次。比如说，一个算子的名称为`hcom_send_233_58_1`，自己在通信域内的rank号为0，对端的rank号为1；在这之前
         并没有存在0卡向1卡的Send任务。因此生成的id为`233_0_1_0`
         """
-        df[self.COL_NAME_DOMAIN_ID] = df[P2PPairingExport.OP_NAME]. \
-            str.extract(self.DOMAIN_ID_EXTRACT_PATTERN)[0]
-        df[self.COL_NAME_IS_RECEIVE] = df[P2PPairingExport.OP_NAME]. \
-            str.contains(self.RECEIVE_OP_MATCH_PATTERN)
-        df.loc[
-            df[self.COL_NAME_IS_RECEIVE], [P2PPairingExport.SRC_RANK, self.COL_NAME_OP_DST_RANK]
-        ] = df.loc[
+        df[self.COL_NAME_DOMAIN_ID] = df[P2PPairingExport.OP_NAME].str.extract(self.DOMAIN_ID_EXTRACT_PATTERN)[0]
+        df[self.COL_NAME_IS_RECEIVE] = df[P2PPairingExport.OP_NAME].str.contains(self.RECEIVE_OP_MATCH_PATTERN)
+        df.loc[df[self.COL_NAME_IS_RECEIVE], [P2PPairingExport.SRC_RANK, self.COL_NAME_OP_DST_RANK]] = df.loc[
             df[self.COL_NAME_IS_RECEIVE], [self.COL_NAME_OP_DST_RANK, P2PPairingExport.SRC_RANK]
         ].values
         df[P2PPairingExport.SRC_RANK] = df[P2PPairingExport.SRC_RANK].astype(int)
         df[self.COL_NAME_OP_DST_RANK] = df[self.COL_NAME_OP_DST_RANK].astype(int)
-        df[self.COL_NAME_OP_NAMING_INDEX] = df.sort_values(by=[P2PPairingExport.START_TIME]). \
-            groupby([P2PPairingExport.SRC_RANK, self.COL_NAME_OP_DST_RANK]).cumcount()
-        df[self.COL_NAME_P2P_CONNECTION_ID] = (df[self.COL_NAME_DOMAIN_ID].astype(str) + "_"
-                                               + df[P2PPairingExport.SRC_RANK].astype(str) + "_"
-                                               + df[self.COL_NAME_OP_DST_RANK].astype(str) + "_"
-                                               + df[self.COL_NAME_OP_NAMING_INDEX].astype(str))
+        df[self.COL_NAME_OP_NAMING_INDEX] = (
+            df.sort_values(by=[P2PPairingExport.START_TIME])
+            .groupby([P2PPairingExport.SRC_RANK, self.COL_NAME_OP_DST_RANK])
+            .cumcount()
+        )
+        df[self.COL_NAME_P2P_CONNECTION_ID] = (
+            df[self.COL_NAME_DOMAIN_ID].astype(str)
+            + "_"
+            + df[P2PPairingExport.SRC_RANK].astype(str)
+            + "_"
+            + df[self.COL_NAME_OP_DST_RANK].astype(str)
+            + "_"
+            + df[self.COL_NAME_OP_NAMING_INDEX].astype(str)
+        )
         return df.reset_index()
 
     def fine_filtering_src_dst_ranks(self, df: pd.DataFrame):
@@ -132,15 +136,14 @@ class P2PPairing(BaseRecipeAnalysis):
         def check_src_dst_rank_unique(group):
             return group[P2PPairingExport.DST_RANK].nunique() == 1 and group[P2PPairingExport.SRC_RANK].nunique() == 1
 
-        unique_src_dst_rank: pd.DataFrame = (df.groupby(P2PPairingExport.OP_NAME).apply(check_src_dst_rank_unique))
+        unique_src_dst_rank: pd.DataFrame = df.groupby(P2PPairingExport.OP_NAME).apply(check_src_dst_rank_unique)
 
         def get_dst_rank_value(group):
             if group[P2PPairingExport.DST_RANK].nunique() == 1:
                 return group[P2PPairingExport.DST_RANK].iloc[0]
             return np.nan
 
-        dst_rank_value: pd.DataFrame = (df.groupby(P2PPairingExport.OP_NAME, group_keys=False).
-                                        apply(get_dst_rank_value))
+        dst_rank_value: pd.DataFrame = df.groupby(P2PPairingExport.OP_NAME, group_keys=False).apply(get_dst_rank_value)
 
         df = df.copy()
         df[self.COL_NAME_IS_UNIQUE_VALUE] = df[P2PPairingExport.OP_NAME].map(unique_src_dst_rank)
@@ -150,8 +153,10 @@ class P2PPairing(BaseRecipeAnalysis):
 
         check_src_dst_rank_unique_false: pd.DataFrame = df[~df[self.COL_NAME_IS_UNIQUE_VALUE]]
         if not check_src_dst_rank_unique_false.empty:
-            logger.warning(f"There are communication op entries with multiple destination ranks! "
-                           f"Please check the corresponding profiler database file.")
+            logger.warning(
+                "There are communication op entries with multiple destination ranks! "
+                "Please check the corresponding profiler database file."
+            )
 
         df = df[df[self.COL_NAME_IS_UNIQUE_VALUE]]
         return df.reset_index()
@@ -166,22 +171,25 @@ class P2PPairing(BaseRecipeAnalysis):
         filtered_df = df[df[P2PPairingExport.CO_GROUP_NAME] == df[P2PPairingExport.CTI_GROUP_NAME]]
         anomaly_group_match = df[df[P2PPairingExport.CO_GROUP_NAME] != df[P2PPairingExport.CTI_GROUP_NAME]]
         if not anomaly_group_match.empty:
-            logger.warning(f"Group name mismatch in {len(anomaly_group_match)} entries. Please check the"
-                           f" profiler database in communication task info.")
+            logger.warning(
+                "Group name mismatch in %s entries. Please check the profiler database in communication task info.",
+                len(anomaly_group_match),
+            )
         return filtered_df.reset_index()
 
     def _mapper_func(self, data_map, analysis_class):
         profiler_db_path: str = data_map.get(Constant.PROFILER_DB_PATH)
-        profiler_parent_path: str = os.path.dirname(os.path.dirname(profiler_db_path))
-        if not DBManager.check_tables_in_db(profiler_db_path, Constant.TABLE_COMMUNICATION_OP,
-                                            Constant.TABLE_COMMUNICATION_TASK_INFO):
-            logger.warning("Some communication data is missing. "
-                           "Please check whether the data level is at level1 or above.")
+        if not DBManager.check_tables_in_db(
+            profiler_db_path, Constant.TABLE_COMMUNICATION_OP, Constant.TABLE_COMMUNICATION_TASK_INFO
+        ):
+            logger.warning(
+                "Some communication data is missing. Please check whether the data level is at level1 or above."
+            )
             return None
         step_range = data_map.get(Constant.STEP_RANGE)
         df: pd.DataFrame = P2PPairingExport(profiler_db_path, analysis_class, step_range).read_export_db()
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
 
         df = self.filter_data_by_group_name(df)
@@ -190,17 +198,23 @@ class P2PPairing(BaseRecipeAnalysis):
 
         df_filtered = self.fine_filtering_src_dst_ranks(df.copy())
         if df_filtered.empty:
-            logger.warning("The result of fine_filtering_src_dst_ranks is empty!"
-                           "Please check whether the data level is at level1 or above.")
+            logger.warning(
+                "The result of fine_filtering_src_dst_ranks is empty!"
+                "Please check whether the data level is at level1 or above."
+            )
             return None
 
-        df_result = df_filtered.groupby([P2PPairingExport.OP_NAME, P2PPairingExport.CO_OP_NAME]).agg(
-            {
-                P2PPairingExport.START_TIME: "first",
-                P2PPairingExport.SRC_RANK: "first",
-                self.COL_NAME_OP_DST_RANK: "first"
-            }
-        ).reset_index()
+        df_result = (
+            df_filtered.groupby([P2PPairingExport.OP_NAME, P2PPairingExport.CO_OP_NAME])
+            .agg(
+                {
+                    P2PPairingExport.START_TIME: "first",
+                    P2PPairingExport.SRC_RANK: "first",
+                    self.COL_NAME_OP_DST_RANK: "first",
+                }
+            )
+            .reset_index()
+        )
 
         df_result = self.generate_p2p_connection_index(df_result)
 

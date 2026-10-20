@@ -1,12 +1,12 @@
-# Table Structures of Recipe Results and `cluster_analysis.db` Deliverables
+# Table Structures of Parsing Results and `cluster_analysis.db` Deliverables
 
-> [!NOTE]NOTE
+> [!NOTE]
 >
 > - When `msprof-analyze` is configured with the `--mode` option, the profile data is analyzed and the `cluster_analysis.db` deliverables are generated. This topic describes the table structures and fields of these deliverables.
 >
 > - Some analysis features do not generate the `cluster_analysis.db` file.
 
-## `cluster_step_trace_time.csv`
+## 1. `cluster_step_trace_time.csv`
 
 Generated when the data parsing mode is `communication_matrix`, `communication_time`, or `all`.
 
@@ -18,7 +18,7 @@ Column C: **Index**. This column is related to the type and indicates the device
 
 Column D: **Computing**. This column displays the computation duration.
 
-Column E: **Communication (Not Overlapped)**. This column displays the communication duration not overlapped by computation.
+Column E: **Communication(Not Overlapped)**. This column displays the communication duration not overlapped by computation.
 
 Column F: **Overlapped**. This column displays the duration where computation and communication overlap.
 
@@ -30,7 +30,7 @@ Column I: **Stage**. This column and the following two columns are valid only fo
 
 Column J: **Bubble**. This column displays the bubble time, which is the sum of the duration of all `receive` operators.
 
-Column K: **Communication (Not Overlapped and Exclude Receive)**. This column indicates the communication duration that is not overlapped and excludes the duration of `receive` operators.
+Column K: **Communication(Not Overlapped and Exclude Receive)**. This column indicates the communication duration that is not overlapped and excludes the duration of `receive` operators.
 
 Column L: **Preparing**. This column displays the duration from the start of an iteration to the execution of the first computation or communication operator.
 
@@ -46,19 +46,19 @@ Column O: **TP Index**. This column displays the index of the TP group to which 
 
 * Check for host-bound issues or uneven distribution based on the idle duration statistics.
 
-* Check for excessive communication duration based on the duration displayed in the **Communication (Not Overlapped and Exclude Receive)** column.
+* Check for excessive communication duration based on the duration displayed in the **Communication(Not Overlapped and Exclude Receive)** column.
 
 * Check whether the bubble configuration is appropriate and whether imbalance exists between stages based on the proportion of bubble time and the theoretical calculation formula.
 
 Theoretically, the values for these durations should remain relatively consistent. If the difference between the maximum and minimum values exceeds 5%, a slow rank may exist.
 
-## `cluster_communication_matrix.json`
+## 2. `cluster_communication_matrix.json`
 
 Generated when the data parsing mode is `communication_matrix` or `all`.
 
 Open the JSON file using VS Code or a JSON viewer and search for `Total`. There will be multiple results. Generally, the structure of the link bandwidth information is as follows:
 
-```bash
+```json
 {src_rank}-{dst_rank}: {
     "Transport Type": "LOCAL",
     "Transit Time(ms)": 0.02462,
@@ -73,16 +73,16 @@ Open the JSON file using VS Code or a JSON viewer and search for `Total`. There 
 - `HCCS` or `PCIE`: represents intra-node inter-chip copy, which provides medium speed.
 - `RDMA`: represents inter-node copy, which provides the lowest speed.
 
-## `cluster_communication.json`
+## 3. `cluster_communication.json`
 
 Generated when the data parsing mode is set to `communication_time` or `all`.
 It mainly provides the communication duration data.
 
-## `compute_op_sum`
+## 4. `compute_op_sum`
 
 When `-m compute_op_sum` is set, the following tables are generated.
 
-### `ComputeOpAllRankStats`
+### 4.1 `ComputeOpAllRankStats`
 
 Description:
 
@@ -104,7 +104,7 @@ Table fields
 | MaxNs    | REAL    | Maximum duration                          |
 | SumNs    | REAL    | Total duration                            |
 
-### `ComputeOpPerRankStatsByOpType`
+### 4.2 `ComputeOpPerRankStatsByOpType`
 
 Description:
 
@@ -127,7 +127,7 @@ Table fields
 | SumNs    | REAL    | Total duration                            |
 | Rank     | INTEGER | Rank ID                              |
 
-### `ComputeOpPerRankStatsByOpName`
+### 4.3 `ComputeOpPerRankStatsByOpName`
 
 Description:
 
@@ -153,11 +153,11 @@ Table fields
 | SumNs       | REAL    | Total duration                            |
 | Rank        | INTEGER | Rank ID                              |
 
-## `cann_api_sum`
+## 5. `cann_api_sum`
 
 When `-m cann_api_sum` is set, the following tables are generated:
 
-### `CannApiSum`
+### 5.1 `CannApiSum`
 
 Description:
 
@@ -181,7 +181,7 @@ Table fields
 | minRank        | TEXT    | A set of ranks corresponding to `minNs`             |
 | maxRank        | TEXT    | A set of ranks corresponding to `maxNs`             |
 
-### `CannApiSumRank`
+### 5.2 `CannApiSumRank`
 
 Description:
 
@@ -204,11 +204,11 @@ Table fields
 | stdev         | REAL    | Standard deviation of the duration      |
 | rank          | INTEGER | Rank ID          |
 
-## `hccl_sum`
+## 6. `hccl_sum`
 
 When `-m hccl_sum` is set, the following tables are generated:
 
-### `HcclAllRankStats`
+### 6.1 `HcclAllRankStats`
 
 Description:
 
@@ -229,7 +229,7 @@ Table fields
 | MaxNs    | REAL    | Maximum duration   | 
 | SumNs    | REAL    | Total duration     |
 
-### `HcclPerRankStats`
+### 6.2 `HcclPerRankStats`
 
 Description:
 
@@ -251,7 +251,7 @@ Table fields
 | SumNs    | REAL    | Total duration     |
 | Rank     | INTEGER | Rank ID       |
 
-### `HcclGroupNameMap`
+### 6.3 `HcclGroupNameMap`
 
 Description:
 
@@ -265,7 +265,7 @@ Table fields
 | GroupId   | TEXT | Last three digits of the hash value of the communication group|
 | Ranks     | TEXT | All ranks within the communication group|
 
-### `HcclTopOpStats`
+### 6.4 `HcclTopOpStats`
 
 Description:
 
@@ -288,11 +288,11 @@ Table fields
 | MinRank  | INTEGER | Rank with the minimum duration for the communication operator|
 | MaxRank  | INTEGER | Rank with the maximum duration for the communication operator|
 
-## `mstx_sum`
+## 7. `mstx_sum`
 
 When `-m mstx_sum` is set, the following tables are generated:
 
-### `MSTXAllFrameworkStats`
+### 7.1 `MSTXAllFrameworkStats`
 
 Description:
 
@@ -314,7 +314,7 @@ Table fields
 | SumNs    | REAL    | Total duration|
 | StepId   | INTEGER | Iteration ID|
 
-### `MSTXAllCannStats`
+### 7.2 `MSTXAllCannStats`
 
 Description:
 
@@ -336,7 +336,7 @@ Table fields
 | SumNs    | REAL    | Total duration|
 | StepId   | INTEGER | Iteration ID|
 
-### `MSTXAllDeviceStats`
+### 7.3 `MSTXAllDeviceStats`
 
 Description:
 
@@ -358,7 +358,7 @@ Table fields
 | SumNs    | REAL    | Total duration|
 | StepId   | INTEGER | Iteration ID|
 
-### `MSTXMarkStats`
+### 7.4 `MSTXMarkStats`
 
 Description:
 
@@ -375,11 +375,11 @@ Table fields
 | Rank                | INTEGER | global rank |
 | StepId              | INTEGER | Iteration ID|
 
-## `communication_group_map`
+## 8. `communication_group_map`
 
 When `-m communication_group_map` is set, the following tables are generated:
 
-### `CommunicationGroupMapping`
+### 8.1 `CommunicationGroupMapping`
 
 Description:
 
@@ -395,13 +395,13 @@ Table fields
 | group_id   | TEXT | Communication group name defined within HCCL, such as `{ip_address}%enp67s0f5_60000_0_1708156014257149`|
 | pg_name    | TEXT | Service-defined communication group name (such as `dp`, `dp_cp`, and `mp`).                                |
 
-## `cluster_time_summary`
+## 9. `cluster_time_summary`
 
 When `-m cluster_time_summary` is set, the following tables are generated:
 
 Note: This table is similar to `cluster_step_trace_time.csv`, which will be replaced later.
 
-### `ClusterTimeSummary`
+### 9.1 `ClusterTimeSummary`
 
 Description:
 
@@ -425,13 +425,13 @@ Table fields (time unit: μs)
 | memoryNotOverlapComputationCommunication | REAL | Total duration of asynchronous memory copy not overlapped by computation or communication| 
 | taskLaunchDelayAvgTime                   | REAL | Delivery duration (average duration from the start of the host-side API to the start of the device-side task)|
 
-## `cluster_time_compare_summary`
+## 10. `cluster_time_compare_summary`
 
 When `-m cluster_time_compare_summary` is set, the following tables are generated.
 
 Note: This analysis feature requires the `cluster_time_summary` results. Both cluster data and benchmark cluster data must contain a `cluster_analysis.db` file including the `ClusterTimeSummary` table.
 
-### `ClusterTimeCompareSummary`
+### 10.1 `ClusterTimeCompareSummary`
 
 Description: Provides a comparison between the current cluster and the benchmark cluster. For example, `computationDiff` indicates the difference in computation time between the current cluster and the benchmark cluster. A positive `computationDiff` value indicates the current cluster computation time exceeds that of the benchmark cluster, while a negative value indicates the opposite.
 
@@ -442,14 +442,14 @@ Table fields (time unit: μs)
 | rank         | INTEGER | global rank |
 | step         | INTEGER | Iteration ID|
 | stepTime     | REAL    | Iteration duration for current cluster data|
-| stepTimeBase | REAL    | Computation time for benchmark cluster data|
+| stepTimeBase | REAL    | Iteration duration for benchmark cluster data|
 | stepTimeDiff | REAL    | Difference in iteration duration|
 |......|-|Some fields omitted (for the `ClusterTimeSummary` table, current cluster data, benchmark cluster data, and the difference between the two are displayed)|
 | taskLaunchDelayAvgTime     | REAL | Delivery duration for current cluster data|
 | taskLaunchDelayAvgTimeBase   | REAL | Delivery duration for benchmark cluster data|
 | taskLaunchDelayAvgTimeDiff | REAL | Difference in delivery duration|
 
-## `freq_analysis`
+## 11. `freq_analysis`
 
 Description:
 
@@ -461,7 +461,7 @@ Provides AI Core frequency analysis to enable one-click NPU frequency reduction 
 
 When `-m freq_analysis` is set, the following tables are generated if frequency reduction occurs.
 
-### `FreeFrequencyRanks`
+### 11.1 `FreeFrequencyRanks`
 
 Description:
 
@@ -474,7 +474,7 @@ Table fields
 | rankId          | INTEGER | global rank |
 | aicoreFrequency | TEXT    | [800, 1800] |
 
-### `AbnormalFrequencyRanks`
+### 11.2 `AbnormalFrequencyRanks`
 
 Description:
 
@@ -487,7 +487,7 @@ Table fields
 | rankId          | INTEGER | global rank |
 | aicoreFrequency | TEXT    | List of frequencies in abnormal reduction scenarios, such as [800, 1150, 1450, 1800]|
 
-## `ep_load_balance`
+## 12. `ep_load_balance`
 
 Description:
 
@@ -495,7 +495,7 @@ In cluster training scenarios, MoE load imbalance refers to the uneven distribut
 
 When `-m ep_load_balance` is set, the following tables are generated.
 
-### `EPTokensSummary`
+### 12.1 `EPTokensSummary`
 
 Description:
 
@@ -509,7 +509,7 @@ Table fields
 | epRanks            | TEXT    | A set of ranks within the same Expert Parallelism (EP) group, such as [rank0,rank1]|
 | inputShapesSummary | INTEGER | Sum of the first dimension of all `input_shapes` for the `GroupedMatmul` operator on this rank|
 
-### `TopEPTokensInfo`
+### 12.2 `TopEPTokensInfo`
 
 Description:
 
@@ -522,7 +522,7 @@ Table fields
 | epRanks    | TEXT    | A set of ranks within the EP group with load imbalance, such as [rank0, rank1]|
 | tokensDiff | INTEGER | Difference between the maximum and minimum values within the same EP group|
 
-## `mstx2commop`
+## 13. `mstx2commop`
 
 When `-m mstx2commop` is set, `cluster_analysis.db` is not generated, and the built-in communication instrumentation data is converted into communication operators.
 
@@ -532,11 +532,11 @@ Output:
 
 When `Level_none` is set, the unified database does not contain a `COMMUNICATION_OP` table. This analysis feature converts built-in communication instrumentation data into communication operators for display in MindStudio Insight.
 
-## `slow_rank`
+## 14. `slow_rank`
 
 When `-m slow_rank` is set, the following tables are generated.
 
-### `SlowRank`
+### 14.1 `SlowRank`
 
 Description:
 
@@ -549,7 +549,7 @@ Table fields
 | rankId          | INTEGER | Slow rank   |
 | slowAffectCount | INTEGER | Number of communications affected by this rank|
 
-### `SlowOpStats`
+### 14.2 `SlowOpStats`
 
 Description:
 
@@ -575,7 +575,7 @@ Table fields
 | MinRank   | INTEGER | Rank with the minimum duration for the communication operator|
 | MaxRank   | INTEGER | Rank with the maximum duration for the communication operator|
 
-## `p2p_pairing`
+## 15. `p2p_pairing`
 
 When `-m p2p_pairing` is set, `cluster_analysis.db` is not generated.
 
@@ -585,11 +585,11 @@ Output:
 
 An `opConnectionId` column is added to the `COMMUNICATION_OP` table in the `ascend_pytorch_profiler_{rank_id}.db` file of the cluster data. P2P operators across different ranks can be linked based on this operator connection ID (`opConnectionId`).
 
-## `pp_chart`
+## 16. `pp_chart`
 
 Note: This capability requires lightweight instrumentation before and after forward and backward passes. Use `msprof-analyze` for processing and MindStudio Insight for result visualization.
 
-### Instrumentation
+### 16.1 Instrumentation
 
 Taking `DualpipeV2` as an example, locate the forward and backward pass code and add the following code to `dualpipev_schedules.py` (for reference only; ensure the code is added at the correct location):
 
@@ -632,7 +632,7 @@ prof.add_metadata('pp_info', json.dumps(
 # Replace microbatch_num with the actual value.
 ```
 
-### `StepTaskInfo`
+### 16.2 `StepTaskInfo`
 
 Description:
 
@@ -647,17 +647,17 @@ Table fields
 | endNs   | INTEGER | End time on the device|
 | type    | INTEGER | Type (different types are displayed in different colors)|
 
-### Communication
+### 16.3 Communication
 
 When `profiler_level` is set to `Level_none`, the `COMMUNICATION_OP` table is not generated. Use the `mstx2commop` analysis feature to convert built-in communication instrumentation data into communication operators to generate this table. The PP chart can also display `send` and `recv` operators.
 
 With the `COMMUNICATION_OP` table, use the `p2p_pairing` analysis feature to display `send` and `recv` connection lines in the PP chart. This allows the PP pipeline to also display the `send` and `recv` lines. However, this feature requires `level 1` or higher.
 
-### `communication_group.json`
+### 16.4 `communication_group.json`
 
 Records communication group information. It is generated by parsing `analysis.db`. `collective` indicates a collective communication group, and `P2P` indicates point-to-point communication. Ignore this file.
 
-### `stats.ipynb`
+### 16.5 `stats.ipynb`
 
 - Generated when the analysis feature is set to `cann_api_sum` and stored in the `cluster_analysis_output/CannApiSum` directory.
 
@@ -679,11 +679,11 @@ Records communication group information. It is generated by parsing `analysis.db
 
   Open this file using Jupyter Notebook or MindStudio Insight to view abnormal slow link data analysis results for cluster scenarios (summarizing all cluster links in charts) and cluster slow link total duration analysis results (displaying data for detected potential slow links).
 
-## `export_summary`
+## 17. `export_summary`
 
 When `-m export_summary` is set, the following files are generated in the `ASCEND_PROFILER_OUTPUT` directory of each rank.
 
-### `api_statistic.csv`
+### 17.1 `api_statistic.csv`
 
 Description:
 
@@ -700,7 +700,7 @@ Table fields
 | Min Time(us) | REAL | Minimum duration (μs)|
 | Max Time(us) | REAL | Maximum duration (μs)|
 
-### `kernel_details.csv`
+### 17.2 `kernel_details.csv`
 
 Description:
 

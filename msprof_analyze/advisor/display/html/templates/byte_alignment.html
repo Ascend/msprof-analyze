@@ -19,7 +19,7 @@
             {% endfor %}
         {% endfor %}
         </table>
-        {% if datas|safe %}
+        {% if data_list|safe %}
         <a style="font-weight: bold" id="detail_description">The details of top {{ num }} abnormal communication
             operators are as follows:</a>
         <br><br>
@@ -30,7 +30,7 @@
                 {% endfor %}
                 </tr>
 
-                {% for row in datas %}
+                {% for row in data_list %}
                 <tr>
                     {% for element in row %}
                     <td>{{ element|safe }}</td>

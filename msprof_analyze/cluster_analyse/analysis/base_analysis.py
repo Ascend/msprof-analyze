@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from abc import abstractmethod
 
 from msprof_analyze.cluster_analyse.cluster_utils.data_transfer_adapter import DataTransferAdapter
@@ -23,6 +24,8 @@ logger = get_logger()
 
 
 class BaseAnalysis:
+    SAVED_JSON = ""
+
     def __init__(self, param: dict):
         self.collection_path = param.get(Constant.COLLECTION_PATH)
         self.cluster_analysis_output_path = param.get(Constant.CLUSTER_ANALYSIS_OUTPUT_PATH)
@@ -72,6 +75,9 @@ class BaseAnalysis:
     def dump_db(self):
         pass
 
+    def compute_total_info(self, communication_ops):
+        """compute total info of communication ops, implemented in subclasses"""
+
     def dump_json(self):
         output_comm_data = {}
         for key in self.comm_ops_struct:
@@ -88,8 +94,9 @@ class BaseAnalysis:
             step_id = single_op.get(Constant.STEP_ID, 'N/A')
             op_name = single_op.get(Constant.COMM_OP_NAME, 'N/A')
             op_info = single_op.get(Constant.COMM_OP_INFO)
-            self.comm_ops_struct.setdefault(rank_tup, {}).setdefault(step_id, {}). \
-                setdefault(op_name, {}).setdefault(rank_id, op_info)
+            self.comm_ops_struct.setdefault(rank_tup, {}).setdefault(step_id, {}).setdefault(op_name, {}).setdefault(
+                rank_id, op_info
+            )
 
     def combine_ops_total_info(self):
         for _, group_dict in self.comm_ops_struct.items():

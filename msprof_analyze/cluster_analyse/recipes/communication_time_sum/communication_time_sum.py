@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 
 import os
@@ -280,7 +281,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
             merged_df.groupby(
                 [TableConstant.GROUP_NAME, TableConstant.STEP, TableConstant.RANK_ID, TableConstant.TRANSPORT_TYPE]
             )
-            .apply(self._get_sum_distinct_op)
+            .apply(self._get_sum_distinct_op, include_groups=False)
             .reset_index()
             .rename(
                 columns={TableConstant.TRANSIT_SIZE: sum_transit_size, TableConstant.TRANSIT_TIME: sum_transit_time}
@@ -358,14 +359,16 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
 
         is_time_df_empty = time_df is None or time_df.empty
         is_bandwidth_df_empty = bandwidth_df is None or bandwidth_df.empty
-        if is_time_df_empty or is_bandwidth_df_empty:
+        if is_time_df_empty and is_bandwidth_df_empty:
             logger.warning("There is no stats data in %s.", analysis_db_path)
             return None, None
-        # 补充step、rank_id字段
-        time_df[TableConstant.RANK_ID] = rank_id
-        bandwidth_df[TableConstant.RANK_ID] = rank_id
-        if TableConstant.STEP not in time_df.columns:
-            time_df[TableConstant.STEP] = TableConstant.STEP
-        if TableConstant.STEP not in bandwidth_df.columns:
-            bandwidth_df[TableConstant.STEP] = TableConstant.STEP
+        # 两类统计数据可独立生成，分别补充step、rank_id字段。
+        if not is_time_df_empty:
+            time_df[TableConstant.RANK_ID] = rank_id
+            if TableConstant.STEP not in time_df.columns:
+                time_df[TableConstant.STEP] = TableConstant.STEP
+        if not is_bandwidth_df_empty:
+            bandwidth_df[TableConstant.RANK_ID] = rank_id
+            if TableConstant.STEP not in bandwidth_df.columns:
+                bandwidth_df[TableConstant.STEP] = TableConstant.STEP
         return time_df, bandwidth_df

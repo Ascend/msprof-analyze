@@ -1,19 +1,19 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import pandas as pd
 from collections import defaultdict
@@ -32,13 +32,13 @@ class GPUAnalyzer:
         nvtx_event_export = GPUNVTXEventsExport(self.gpu_db_path, self.recipe_name)
         df_nvtx = nvtx_event_export.read_export_db()
         if df_nvtx is None or df_nvtx.empty:
-            logger.error(f"Can not export nvtx events from {self.gpu_db_path}")
+            logger.error("Can not export nvtx events from %s", self.gpu_db_path)
             return None, None
 
         gpu_kernel_export = GPUKernelExport(self.gpu_db_path, self.recipe_name)
         df_kernels = gpu_kernel_export.read_export_db()
         if df_kernels is None or df_kernels.empty:
-            logger.error(f"Can not export CUDA kernel events from {self.gpu_db_path}")
+            logger.error("Can not export CUDA kernel events from %s", self.gpu_db_path)
             return None, None
 
         return df_nvtx, df_kernels
@@ -71,6 +71,7 @@ class GPUAnalyzer:
 
     def _create_event_handlers(self, marker_cache, op_cache, type_push, type_pop, type_kernel):
         """创建事件类型到处理函数的映射表"""
+
         class ThreadState:
             def __init__(self):
                 self.full_stack = []
@@ -123,13 +124,15 @@ class GPUAnalyzer:
                 module = "No Scope"
 
             if module != "No Scope":
-                results[rank_id].append({
-                    'Parent Module': parent_module,
-                    'Module': module,
-                    'Op Name': raw_op,
-                    'Kernel Name': kernel_name,
-                    'Duration (ns)': duration
-                })
+                results[rank_id].append(
+                    {
+                        'Parent Module': parent_module,
+                        'Module': module,
+                        'Op Name': raw_op,
+                        'Kernel Name': kernel_name,
+                        'Duration (ns)': duration,
+                    }
+                )
 
         # 返回事件处理器映射表
         return {
@@ -148,13 +151,9 @@ class GPUAnalyzer:
 
         # 构建事件列表
         nvtx_push = [
-            (row.start_ns, TYPE_PUSH, row.thread_id, row.name, None)
-            for row in df_nvtx.itertuples(index=False)
+            (row.start_ns, TYPE_PUSH, row.thread_id, row.name, None) for row in df_nvtx.itertuples(index=False)
         ]
-        nvtx_pop = [
-            (row.end_ns, TYPE_POP, row.thread_id, None, None)
-            for row in df_nvtx.itertuples(index=False)
-        ]
+        nvtx_pop = [(row.end_ns, TYPE_POP, row.thread_id, None, None) for row in df_nvtx.itertuples(index=False)]
         kernel_events = [
             (row.cpu_start_ns, TYPE_KERNEL, row.thread_id, (row.kernel_name, row.gpu_duration_ns), row.rank_id)
             for row in df_kernels.itertuples(index=False)
@@ -192,7 +191,7 @@ class GPUAnalyzer:
             return None
         df_dict = self.process_hierarchy(df_nvtx, df_kernels)
         return df_dict
-    
+
     def get_aggregated_df(self):
         df_dict = self.analyze()
         if not df_dict:
@@ -201,24 +200,29 @@ class GPUAnalyzer:
 
         final_df_dict = {}
         for tid, df in df_dict.items():
-            grouped = df.groupby(['Parent Module', 'Module', 'Op Name', 'Kernel Name']).agg(
-                Total_Time_ns=('Duration (ns)', 'sum'),
-                Count=('Duration (ns)', 'count')
-            ).reset_index()
+            grouped = (
+                df.groupby(['Parent Module', 'Module', 'Op Name', 'Kernel Name'])
+                .agg(Total_Time_ns=('Duration (ns)', 'sum'), Count=('Duration (ns)', 'count'))
+                .reset_index()
+            )
             grouped['Avg_Time_ns'] = grouped['Total_Time_ns'] / grouped['Count']
 
             grouped = grouped.sort_values(
-                by=['Parent Module', 'Module', 'Op Name', 'Total_Time_ns'],
-                ascending=[True, True, True, False]
+                by=['Parent Module', 'Module', 'Op Name', 'Total_Time_ns'], ascending=[True, True, True, False]
             )
-            
-            final_df = grouped[['Parent Module', 'Module', 'Op Name', 'Kernel Name',
-                            'Total_Time_ns', 'Avg_Time_ns', 'Count']]
 
-            final_df = final_df.rename(columns={'Kernel Name': 'Kernel List',
-                                                'Total_Time_ns': 'Total Kernel Duration(ns)',
-                                                'Avg_Time_ns': 'Avg Kernel Duration(ns)',
-                                                'Count': 'Op Count'})
+            final_df = grouped[
+                ['Parent Module', 'Module', 'Op Name', 'Kernel Name', 'Total_Time_ns', 'Avg_Time_ns', 'Count']
+            ]
+
+            final_df = final_df.rename(
+                columns={
+                    'Kernel Name': 'Kernel List',
+                    'Total_Time_ns': 'Total Kernel Duration(ns)',
+                    'Avg_Time_ns': 'Avg Kernel Duration(ns)',
+                    'Count': 'Op Count',
+                }
+            )
             final_df = final_df.set_index(['Parent Module', 'Module', 'Op Name'])
             final_df_dict[tid] = final_df
         return final_df_dict

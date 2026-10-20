@@ -1,19 +1,19 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-from typing import Dict, List
 from msprof_analyze.prof_common.logger import get_logger
 
 from msprof_analyze.advisor.analyzer.base_analyzer import BaseAnalyzer
@@ -65,9 +65,11 @@ class SlowLinkAnalyzer(BaseAnalyzer):
 
     def optimize(self, **kwargs):
         if self.rank_bw_dict is None:
-            logger.error("Slow link analysis failed due to data loading failure. \
+            logger.error(
+                "Slow link analysis failed due to data loading failure. \
                         Please check your cluster_analysis_output folder. \
-                        If you are not concerned about this type of data, please ignore this message.")
+                        If you are not concerned about this type of data, please ignore this message."
+            )
             return self.result
         self.process()
         self.make_record()
@@ -84,29 +86,32 @@ class SlowLinkAnalyzer(BaseAnalyzer):
         if len(data_list) > 0:
             avg_bw = round(sum(data_list) / len(data_list), 3)
         else:
-            logger.info("The slow link (identified bottleneck) cannot provide a bottleneck \
-                           because the analysis data is missing bandwidth information.")
+            logger.info(
+                "The slow link (identified bottleneck) cannot provide a bottleneck \
+                           because the analysis data is missing bandwidth information."
+            )
             return
         language = AdditionalArgsManager().language
         if language == "en":
-            self.bottelneck += f'{link_type}: \n' \
-                               f'    The average is {avg_bw}, \n' \
-                               f'    while the maximum  is {round(max(data_list), 3)}GB/s \n' \
-                               f'    and the minimum is {round(min(data_list), 3)}GB/s. \n' \
-                               f'    the difference is {round(max(data_list) - min(data_list), 3)}GB/s. \n'
+            self.bottelneck += (
+                f'{link_type}: \n'
+                f'    The average is {avg_bw}, \n'
+                f'    while the maximum  is {round(max(data_list), 3)}GB/s \n'
+                f'    and the minimum is {round(min(data_list), 3)}GB/s. \n'
+                f'    the difference is {round(max(data_list) - min(data_list), 3)}GB/s. \n'
+            )
         else:
-            self.bottelneck += f'{link_type}： \n' \
-                               f'    平均值是 {avg_bw}， \n' \
-                               f'    但最大值是 {round(max(data_list), 3)}GB/s ，\n' \
-                               f'    最小值是 {round(min(data_list), 3)}GB/s。\n' \
-                               f'    差距为 {round(max(data_list) - min(data_list), 3)}GB/s。 \n'
+            self.bottelneck += (
+                f'{link_type}： \n'
+                f'    平均值是 {avg_bw}， \n'
+                f'    但最大值是 {round(max(data_list), 3)}GB/s ，\n'
+                f'    最小值是 {round(min(data_list), 3)}GB/s。\n'
+                f'    差距为 {round(max(data_list) - min(data_list), 3)}GB/s。 \n'
+            )
 
     def format_details(self):
         if not self.rank_bw_dict:
-            return {
-                "headers": [],
-                "data": []
-            }
+            return {"headers": [], "data": []}
 
         details_dict = {}
         headers = list({k for rank_bw_value in self.rank_bw_dict.values() for k in rank_bw_value.keys()})
@@ -131,11 +136,7 @@ class SlowLinkAnalyzer(BaseAnalyzer):
         title = self.SLOW_LINK_ANALYSIS_CN
         if AdditionalArgsManager().language == "en":
             title = self.SLOW_LINK_ANALYSIS
-        optimization_item = OptimizeItem(
-            title,
-            self.bottelneck,
-            self.suggestion
-        )
+        optimization_item = OptimizeItem(title, self.bottelneck, self.suggestion)
         self.result.add(OptimizeRecord(optimization_item))
 
         data_list = self.format_datas.get("data", [])
@@ -147,17 +148,19 @@ class SlowLinkAnalyzer(BaseAnalyzer):
         result_for_html = {
             "Description": self.bottelneck,
             "suggestion": self.suggestion,
-            "details": [self.format_datas]
+            "details": [self.format_datas],
         }
 
-        self.html_render.render_template(key=template_key,
-                                         title=SlowLinkAnalyzer.SLOW_LINK_ANALYSIS,
-                                         template_dir="templates",
-                                         template_name="cluster_analysis.html",
-                                         cann_version=self.cann_version,
-                                         profiling_type=self.profiling_type,
-                                         profiling_version=self.profiling_version,
-                                         result=result_for_html)
+        self.html_render.render_template(
+            key=template_key,
+            title=SlowLinkAnalyzer.SLOW_LINK_ANALYSIS,
+            template_dir="templates",
+            template_name="cluster_analysis.html",
+            cann_version=self.cann_version,
+            profiling_type=self.profiling_type,
+            profiling_version=self.profiling_version,
+            result=result_for_html,
+        )
 
     def get_global_step_rank(self, bindwidth_type):
         global_step_rank = {}
@@ -179,8 +182,7 @@ class SlowLinkAnalyzer(BaseAnalyzer):
                 return global_step_rank
             max_bandwidth, min_bandwidth = max(data_list), min(data_list)
 
-            if self.compute_max_gap_ratio(data_list, sum(data_list) / len(
-                    data_list)) < self.RATIO_THRESHOLD:
+            if self.compute_max_gap_ratio(data_list, sum(data_list) / len(data_list)) < self.RATIO_THRESHOLD:
                 return global_step_rank
 
             max_bandwidth_index = data_list.index(max_bandwidth)

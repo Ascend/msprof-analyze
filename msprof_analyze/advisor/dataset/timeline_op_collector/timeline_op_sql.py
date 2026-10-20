@@ -1,15 +1,18 @@
-# Copyright (C) 2025. Huawei Technologies Co., Ltd. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import os
 import re
 
@@ -39,14 +42,14 @@ class TimelineEventDBSQL:
         api.startNs / 1000.0 AS ts,
         (api.endNs - api.startNs) / 1000.0 AS dur,
         ROW_NUMBER() OVER (ORDER BY api.startNs) AS dataset_index
-    FROM 
+    FROM
         PYTORCH_API as api
-    JOIN 
+    JOIN
         STRING_IDS str ON api.name = str.id
     """
 
     QUEYR_CANN_API_SQL = """
-    SELECT 
+    SELECT
         CASE type.name
             WHEN 'acl' THEN 'AscendCL@' || str.value
             WHEN 'runtime' THEN 'Runtime@' || str.value
@@ -57,9 +60,9 @@ class TimelineEventDBSQL:
         api.startNs / 1000.0 AS ts,
         (api.endNs - api.startNs) / 1000.0 AS dur,
         type.name as type
-    FROM 
+    FROM
         CANN_API as api
-    JOIN 
+    JOIN
         STRING_IDS as str ON api.name = str.id
     JOIN
         ENUM_API_TYPE as type ON api.type = type.id
@@ -71,7 +74,7 @@ class TimelineEventDBSQL:
         timestampNs / 1000.0 AS ts,
         freq AS MHz,
         LEAD(timestampNs) OVER (ORDER BY timestampNs) AS end
-    FROM 
+    FROM
         AICORE_FREQ
     """
 
@@ -80,12 +83,12 @@ class TimelineEventDBSQL:
         'GC' AS name,
         startNs / 1000.0 AS ts,
         (endNs - startNs) / 1000.0 AS dur
-    FROM 
+    FROM
         GC_RECORD
     """
 
     QUERY_TASK_EVENT_SQL = """
-    SELECT 
+    SELECT
         str.value as name,
         CTI.taskType as 'Task Type',
         TASK.startNs / 1000.0 as ts,
@@ -93,49 +96,49 @@ class TimelineEventDBSQL:
         TASK.taskId as task_id
     FROM COMPUTE_TASK_INFO CTI
     JOIN STRING_IDS as str ON CTI.name= str.id
-    JOIN TASK ON TASK.globalTaskId = CTI.globalTaskId    
+    JOIN TASK ON TASK.globalTaskId = CTI.globalTaskId
     """
 
     QUERY_OVERLAP_ANALYSIS_SQL = """
     WITH combined_tasks AS (
-        SELECT 
+        SELECT
             TASK.startNs as startNs,
             TASK.endNs as endNs
         FROM COMPUTE_TASK_INFO CTI
         JOIN TASK ON TASK.globalTaskId = CTI.globalTaskId
-    
+
         UNION ALL
-        
-        SELECT 
+
+        SELECT
             COMM.startNs as startNs,
             COMM.endNs as endNs
         FROM COMMUNICATION_OP COMM
     ),
-    
+
     -- Assign group numbers to identify continuous overlapping intervals
     grouped_tasks AS (
-        SELECT 
+        SELECT
             startNs,
             endNs,
             SUM(new_group) OVER (ORDER BY startNs) AS group_id
         FROM (
-            SELECT 
+            SELECT
                 startNs,
                 endNs,
                 -- Detect when a new group should start (no overlap with previous max end)
                 CASE WHEN startNs > MAX(endNs) OVER (
-                    ORDER BY startNs 
+                    ORDER BY startNs
                     ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
                 ) OR MAX(endNs) OVER (
-                    ORDER BY startNs 
+                    ORDER BY startNs
                     ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
                 ) IS NULL THEN 1 ELSE 0 END AS new_group
             FROM combined_tasks
         )
     )
-    
+
     -- Merge intervals within each group
-    SELECT 
+    SELECT
         MIN(startNs) AS startNs,
         MAX(endNs) AS endNs
     FROM grouped_tasks
@@ -143,15 +146,14 @@ class TimelineEventDBSQL:
     ORDER BY startNs
     """
 
-
     QUYER_CALL_STACK_SIMPLE = """
     SELECT
         str.value AS name,
         api.startNs / 1000.0 AS ts,
         ROW_NUMBER() OVER (ORDER BY api.startNs) AS dataset_index
-    FROM 
+    FROM
         PYTORCH_API as api
-    JOIN 
+    JOIN
         STRING_IDS str ON api.name = str.id
     WHERE
         api.callchains is not NULL
@@ -159,14 +161,14 @@ class TimelineEventDBSQL:
 
     QUERY_API_CALL_STACK_SQL = """
     WITH ranked_api AS (
-        SELECT 
+        SELECT
             api.*,
             ROW_NUMBER() OVER (ORDER BY api.startNs) AS dataset_index
-        FROM 
+        FROM
             PYTORCH_API as api
     )
 
-    SELECT 
+    SELECT
         api.dataset_index,
         api_name_str.value AS name,
         api.startNs / 1000.0 AS ts,
@@ -182,15 +184,20 @@ class TimelineEventDBSQL:
 
     TABLE_MAPPING = {
         TimelineEventType.FRAMEWORK_API: [Constant.TABLE_STRING_IDS, Constant.TABLE_PYTORCH_API],
-        TimelineEventType.CANN_API: [Constant.TABLE_CANN_API, Constant.TABLE_STRING_IDS,
-                                     Constant.TABLE_ENUM_API_TYPE],
+        TimelineEventType.CANN_API: [Constant.TABLE_CANN_API, Constant.TABLE_STRING_IDS, Constant.TABLE_ENUM_API_TYPE],
         TimelineEventType.AICORE_FREQ: [Constant.TABLE_AICORE_FREQ],
         TimelineEventType.GC_RECORD: [Constant.TABLE_GC_RECORD],
-        TimelineEventType.TASK_EVENT: [Constant.TABLE_TASK, Constant.TABLE_STRING_IDS,
-                                       Constant.TABLE_COMPUTE_TASK_INFO],
+        TimelineEventType.TASK_EVENT: [
+            Constant.TABLE_TASK,
+            Constant.TABLE_STRING_IDS,
+            Constant.TABLE_COMPUTE_TASK_INFO,
+        ],
         TimelineEventType.CALL_STACK_SIMPLE: [Constant.TABLE_PYTORCH_API],
-        TimelineEventType.OVERLAP_ANALYSIS: [Constant.TABLE_TASK, Constant.TABLE_COMPUTE_TASK_INFO,
-                                             Constant.TABLE_COMMUNICATION_OP]
+        TimelineEventType.OVERLAP_ANALYSIS: [
+            Constant.TABLE_TASK,
+            Constant.TABLE_COMPUTE_TASK_INFO,
+            Constant.TABLE_COMMUNICATION_OP,
+        ],
     }
 
     SQL_MAPPING = {
@@ -200,26 +207,25 @@ class TimelineEventDBSQL:
         TimelineEventType.GC_RECORD: QUERY_GC_SQL,
         TimelineEventType.TASK_EVENT: QUERY_TASK_EVENT_SQL,
         TimelineEventType.CALL_STACK_SIMPLE: QUYER_CALL_STACK_SIMPLE,
-        TimelineEventType.OVERLAP_ANALYSIS: QUERY_OVERLAP_ANALYSIS_SQL
+        TimelineEventType.OVERLAP_ANALYSIS: QUERY_OVERLAP_ANALYSIS_SQL,
     }
 
     @staticmethod
     def get_related_table(event_type):
         if event_type not in TimelineEventDBSQL.TABLE_MAPPING:
-            logger.error(f"Unsupported event type: {event_type}, can not get related table")
+            logger.error("Unsupported event type: %s, can not get related table", event_type)
             return []
         return TimelineEventDBSQL.TABLE_MAPPING[event_type]
 
     @staticmethod
     def get_sql(event_type):
         if event_type not in TimelineEventDBSQL.SQL_MAPPING:
-            logger.error(f"Unsupported event type: {event_type}, can not get sql")
+            logger.error("Unsupported event type: %s, can not get sql", event_type)
             return ""
         return TimelineEventDBSQL.SQL_MAPPING[event_type]
 
 
 class TimelineDBHelper:
-
     def __init__(self, db_path):
         self.init = False
         self.event_data_map = {}
@@ -276,8 +282,7 @@ class TimelineDBHelper:
         try:
             df = pd.read_sql(sql, self.conn)
         except Exception as err:
-            logger.error(f"execute sql failed: {err}")
+            logger.error("execute sql failed: %s", err)
             return None
         self.event_data_map[event_type] = df
         return df
-

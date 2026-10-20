@@ -1,17 +1,18 @@
-# Copyright (c) 2023, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2023 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 from msprof_analyze.prof_common.logger import get_logger
 
@@ -20,8 +21,13 @@ from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.result.result import OptimizeResult
 from msprof_analyze.advisor.result.item import OptimizeItem, OptimizeRecord
 from msprof_analyze.advisor.dataset.cluster.cluster_dataset import ClusterStepTraceTimeDataset
-from msprof_analyze.advisor.utils.utils import safe_index_value, safe_division, convert_to_int, safe_index, \
-    convert_to_float
+from msprof_analyze.advisor.utils.utils import (
+    safe_index_value,
+    safe_division,
+    convert_to_int,
+    safe_index,
+    convert_to_float,
+)
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 logger = get_logger()
@@ -69,7 +75,8 @@ class SlowRankAnalyzer(BaseAnalyzer):
             logger.error(
                 "Slow rank analysis failed, "
                 "please ensure file 'step_trace_time.csv' exists in your profiling directory %s",
-                Constant.ASCEND_PROFILER_OUTPUT)
+                Constant.ASCEND_PROFILER_OUTPUT,
+            )
             return self.result
         self.process()
         self.make_record()
@@ -96,14 +103,18 @@ class SlowRankAnalyzer(BaseAnalyzer):
         if max_ratio > self.RATIO_THRESHOLD:
             language = AdditionalArgsManager().language
             if language == "en":
-                self.bottelneck += f'{self.BOTTLENECK_LIST[produce_type]} \n' \
-                                   f'    has some issues in the cluster, \n' \
-                                   f'    because the max difference of {self.BOTTLENECK_LIST[produce_type]} time \n' \
-                                   f'    has reached {round(max_ratio * mean_total_time / 1000, 3)}ms. \n'
+                self.bottelneck += (
+                    f'{self.BOTTLENECK_LIST[produce_type]} \n'
+                    f'    has some issues in the cluster, \n'
+                    f'    because the max difference of {self.BOTTLENECK_LIST[produce_type]} time \n'
+                    f'    has reached {round(max_ratio * mean_total_time / 1000, 3)}ms. \n'
+                )
             else:
-                self.bottelneck += f'集群中的{self.BOTTLENECK_LIST_CN[produce_type]}有问题， \n' \
-                                   f'因为{self.BOTTLENECK_LIST_CN[produce_type]}时间的最大差距已经达到 \n' \
-                                   f'{round(max_ratio * mean_total_time / 1000, 3)}ms。 \n'
+                self.bottelneck += (
+                    f'集群中的{self.BOTTLENECK_LIST_CN[produce_type]}有问题， \n'
+                    f'因为{self.BOTTLENECK_LIST_CN[produce_type]}时间的最大差距已经达到 \n'
+                    f'{round(max_ratio * mean_total_time / 1000, 3)}ms。 \n'
+                )
 
     def make_record(self):
         """
@@ -112,11 +123,7 @@ class SlowRankAnalyzer(BaseAnalyzer):
         title = self.SLOW_RANK_ANALYSIS_CN
         if AdditionalArgsManager().language == "en":
             title = self.SLOW_RANK_ANALYSIS
-        optimization_item = OptimizeItem(
-            title,
-            self.bottelneck,
-            self.suggestion
-        )
+        optimization_item = OptimizeItem(title, self.bottelneck, self.suggestion)
         self.result.add(OptimizeRecord(optimization_item))
 
         data_list = self.format_datas.get("data", [])
@@ -142,17 +149,19 @@ class SlowRankAnalyzer(BaseAnalyzer):
         result_for_html = {
             "Description": self.bottelneck,
             "suggestion": self.suggestion,
-            "details": [self.format_datas]
+            "details": [self.format_datas],
         }
 
-        self.html_render.render_template(key=template_key,
-                                         title=SlowRankAnalyzer.SLOW_RANK_ANALYSIS,
-                                         template_dir="templates",
-                                         template_name="cluster_analysis.html",
-                                         cann_version=self.cann_version,
-                                         profiling_type=self.profiling_type,
-                                         profiling_version=self.profiling_version,
-                                         result=result_for_html)
+        self.html_render.render_template(
+            key=template_key,
+            title=SlowRankAnalyzer.SLOW_RANK_ANALYSIS,
+            template_dir="templates",
+            template_name="cluster_analysis.html",
+            cann_version=self.cann_version,
+            profiling_type=self.profiling_type,
+            profiling_version=self.profiling_version,
+            result=result_for_html,
+        )
 
     def get_global_step_rank(self, dimension):
         global_step_rank = {}
@@ -172,8 +181,7 @@ class SlowRankAnalyzer(BaseAnalyzer):
             return global_step_rank
         max_time, min_time = max(data_list), min(data_list)
 
-        if self.compute_max_gap_ratio(data_list, sum(data_list) / len(
-                data_list)) < self.RATIO_THRESHOLD:
+        if self.compute_max_gap_ratio(data_list, sum(data_list) / len(data_list)) < self.RATIO_THRESHOLD:
             logger.info("There is no significant difference in computation time among all ranks")
             return global_step_rank
         max_time_index = data_list.index(max_time)
@@ -223,8 +231,10 @@ class SlowRankAnalyzer(BaseAnalyzer):
                 tmp_rank_list.append(rank_id)
                 tmp_time_list.append(time)
 
-            if self.compute_max_gap_ratio(tmp_time_list, safe_division(sum(tmp_time_list), len(
-                    tmp_time_list))) < self.RATIO_THRESHOLD:
+            if (
+                self.compute_max_gap_ratio(tmp_time_list, safe_division(sum(tmp_time_list), len(tmp_time_list)))
+                < self.RATIO_THRESHOLD
+            ):
                 continue
 
             max_time, min_time = max(tmp_time_list), min(tmp_time_list)
@@ -259,23 +269,20 @@ class SlowRankAnalyzer(BaseAnalyzer):
         # 获取目标rank_id和step的行索引
         if step is None or step_index is None:
             row_index = safe_index_value(
-                [tuple_list[rank_id_index] == rank_id for tuple_list in self.format_datas.get("data")],
-                True
+                [tuple_list[rank_id_index] == rank_id for tuple_list in self.format_datas.get("data")], True
             )
         else:
             index_match_list = []
             for tuple_list in self.format_datas.get("data"):
                 index_match_list.append(tuple_list[rank_id_index] == rank_id and tuple_list[step_index] == step)
-            row_index = safe_index_value(
-                index_match_list,
-                True
-            )
+            row_index = safe_index_value(index_match_list, True)
         if row_index is None:
             return default_step_duration
 
         compute_time = safe_index(safe_index(self.format_datas.get("data"), row_index, []), compute_col_index, 0)
-        communicate_time = safe_index(safe_index(self.format_datas.get("data"), row_index, []), communicate_col_index,
-                                      0)
+        communicate_time = safe_index(
+            safe_index(self.format_datas.get("data"), row_index, []), communicate_col_index, 0
+        )
         free_time = safe_index(safe_index(self.format_datas.get("data"), row_index, []), free_col_index, 0)
         return convert_to_float(compute_time) + convert_to_float(communicate_time) + convert_to_float(free_time)
 

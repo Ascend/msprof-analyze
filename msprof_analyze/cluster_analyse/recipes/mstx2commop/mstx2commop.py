@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import json
 import os
@@ -43,11 +44,10 @@ def double_hash(data):
         hash_values[0] = (hash_values[0] * prime[0] + ord(d)) & uint32_max
         hash_values[1] = (hash_values[1] * prime[1] + ord(d)) & uint32_max
 
-    return ((hash_values[0] << uint32_bits) | hash_values[1])
+    return (hash_values[0] << uint32_bits) | hash_values[1]
 
 
 class Mstx2Commop(BaseRecipeAnalysis):
-
     def __init__(self, params):
         super().__init__(params)
         logger.info("Mstx2Commop init.")
@@ -77,19 +77,19 @@ class Mstx2Commop(BaseRecipeAnalysis):
         df = Mstx2CommopExport(profiler_db_path, analysis_class, step_range).read_export_db()
 
         if df is None or df.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
 
         df_hccl_dt = df_dict.get("ENUM_HCCL_DATA_TYPE")
 
         if df_hccl_dt is None or df_hccl_dt.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
 
         df_string_ids = df_dict.get("STRING_IDS")
 
         if df_string_ids is None or df_string_ids.empty:
-            logger.warning(f"There is no stats data in {profiler_db_path}.")
+            logger.warning("There is no stats data in %s.", profiler_db_path)
             return None
 
         value_len = 4
@@ -98,7 +98,7 @@ class Mstx2Commop(BaseRecipeAnalysis):
 
         # json格式数据转化
         if df.loc[0, 'value'][0] == '{':
-            df['value'] = df['value'].apply(lambda x: json.loads(x))
+            df['value'] = df['value'].apply(json.loads)
             df['opType_primal'] = df['value'].apply(lambda x: x['opName'] + '_')
             df['groupName_primal'] = df['value'].apply(lambda x: x['groupName'])
             df['dataType'] = df['value'].apply(lambda x: x['dataType'])
@@ -147,11 +147,14 @@ class Mstx2Commop(BaseRecipeAnalysis):
         df_concat['dataType'] = df_concat['dataType'].apply(lambda x: hccl_data_type_dict[x])
 
         df_concat['string_id_opType_primal'] = df_concat['opType_primal'].apply(
-            lambda x: 1 if x in string_ids_dict else 0)
+            lambda x: 1 if x in string_ids_dict else 0
+        )
         df_concat['string_id_opName_primal'] = df_concat['opName_primal'].apply(
-            lambda x: 1 if x in string_ids_dict else 0)
+            lambda x: 1 if x in string_ids_dict else 0
+        )
         df_concat['string_id_groupName_primal'] = df_concat['groupName_primal'].apply(
-            lambda x: 1 if x in string_ids_dict else 0)
+            lambda x: 1 if x in string_ids_dict else 0
+        )
         optype_primal_list = list(set(df_concat[df_concat['string_id_opType_primal'] == 0]['opType_primal']))
         opname_primal_list = list(set(df_concat[df_concat['string_id_opName_primal'] == 0]['opName_primal']))
         groupname_primal_list = list(set(df_concat[df_concat['string_id_groupName_primal'] == 0]['groupName_primal']))
@@ -172,20 +175,37 @@ class Mstx2Commop(BaseRecipeAnalysis):
         )
 
         communication_op = df_concat[
-            ['opName', 'startNs', 'endNs', 'connectionId', 'groupName', 'opId', 'relay', 'retry', 'dataType', 'algType',
-             'count', 'opType']]
+            [
+                'opName',
+                'startNs',
+                'endNs',
+                'connectionId',
+                'groupName',
+                'opId',
+                'relay',
+                'retry',
+                'dataType',
+                'algType',
+                'count',
+                'opType',
+            ]
+        ]
         communication_op = communication_op.copy()
         communication_op.sort_values('startNs', ascending=True, inplace=True)
         communication_op.set_index('opId', inplace=True)
         string_ids_insert = list(map(list, zip(special_id_list, special_primal_list)))
 
-        new_profiler_db = self._prepare_output_profiler_db(data_map.get(Constant.PROFILER_DB_PATH)) if self.copy_db \
+        new_profiler_db = (
+            self._prepare_output_profiler_db(data_map.get(Constant.PROFILER_DB_PATH))
+            if self.copy_db
             else data_map.get(Constant.PROFILER_DB_PATH)
+        )
 
         DBManager.insert_data_into_db(new_profiler_db, TABLE_STRING_IDS, string_ids_insert)
 
-        self.dump_data(data=communication_op, file_name="", table_name=TABLE_COMMUNICATION_OP,
-                       custom_db_path=new_profiler_db)
+        self.dump_data(
+            data=communication_op, file_name="", table_name=TABLE_COMMUNICATION_OP, custom_db_path=new_profiler_db
+        )
 
         return data_map.get(Constant.RANK_ID)
 

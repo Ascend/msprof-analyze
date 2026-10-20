@@ -1,17 +1,18 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import List
@@ -25,7 +26,6 @@ from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.advisor.utils.utils import convert_to_float
 from msprof_analyze.advisor.dataset.cluster.hccl_collection import HcclInfo
 from msprof_analyze.advisor.dataset.profiling.info_collection import OpInfo
-from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 
 logger = get_logger()
 
@@ -87,7 +87,7 @@ class BandwidthContentionChecker:
         for hccl_op in self.abnormal_sdma_list:
             res.append([hccl_op.name, round(hccl_op.dur, 4), round(hccl_op.bandwidth, 2)])
         res.sort(key=lambda x: x[2])
-        return res[:min(len(res), self.contention_topk)]
+        return res[: min(len(res), self.contention_topk)]
 
     def check_task_dict(self, profiling_dataset: ProfilingDataset) -> bool:
         if not hasattr(profiling_dataset, "op_summary"):
@@ -123,8 +123,11 @@ class BandwidthContentionChecker:
         while hccl_index < len(self.sdma_list) and matmul_index < len(self.matmul_list):
             if self.sdma_list[hccl_index].end < self.matmul_list[matmul_index].get_float_attr("task_start_time"):
                 hccl_index += 1
-            elif self.matmul_list[matmul_index].get_float_attr("task_start_time") + \
-                    self.matmul_list[matmul_index].get_float_attr("task_duration") < self.sdma_list[hccl_index].ts:
+            elif (
+                self.matmul_list[matmul_index].get_float_attr("task_start_time")
+                + self.matmul_list[matmul_index].get_float_attr("task_duration")
+                < self.sdma_list[hccl_index].ts
+            ):
                 matmul_index += 1
             else:
                 if self.sdma_list[hccl_index].bandwidth < self.threshold:
@@ -149,15 +152,17 @@ class BandwidthContentionChecker:
 
     def make_render(self, html_render, add_render_list=True, **kwargs):
         priority = kwargs.get("priority")
-        return html_render.render_template(key="communication",
-                                           template_dir="templates",
-                                           template_name="contention.html",
-                                           desc=self.desc,
-                                           solutions=self.solutions,
-                                           headers=self.headers,
-                                           data=self.export_sdma_list(),
-                                           topk=self.contention_topk,
-                                           priority_background_color=priority)
+        return html_render.render_template(
+            key="communication",
+            template_dir="templates",
+            template_name="contention.html",
+            desc=self.desc,
+            solutions=self.solutions,
+            headers=self.headers,
+            data=self.export_sdma_list(),
+            topk=self.contention_topk,
+            priority_background_color=priority,
+        )
 
     def _init_rule(self):
         language = AdditionalArgsManager().language
@@ -165,7 +170,7 @@ class BandwidthContentionChecker:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
             "rules",
             language,
-            "bandwidth_contention.yaml"
+            "bandwidth_contention.yaml",
         )
 
         contention_rule = FileManager.read_yaml_file(contention_rule_path)

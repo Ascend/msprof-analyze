@@ -1,6 +1,6 @@
 # module_statistic
 
-## Overview
+## 1. Overview
 
 Profile data model structure breakdown (`module_statistic`) is an analysis feature provided by MindStudio Profiler Analyze (`msprof-analyze`) for automatic parsing of PyTorch model hierarchical structures. It helps accurately locate performance bottlenecks and provides key insights for model optimization. This analysis feature provides the following capabilities:
 
@@ -8,11 +8,11 @@ Profile data model structure breakdown (`module_statistic`) is an analysis featu
 * Operator-to-kernel mapping: establishes the mapping between operators at the framework layer and the execution kernels on the NPU.
 * Performance analysis: accurately collects statistics and outputs the execution duration of kernels on the device.
 
-## Preparations
+## 2. Preparations
 
 **Environment Setup**
 
-Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installation Guide](../getting_started/install_guide.md).
+Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](../install_guide/msprof-analyze_install_guide.md).
 
 **Data preparation**
 
@@ -27,11 +27,11 @@ Install `msprof-analyze`. For details, see [MindStudio Profiler Analyze Installa
    * Modify the configuration to set `export_type` to include `db` in `torch_npu.profiler._ExperimentalConfig`.
    * Flush profile data to the path specified by the `torch_npu.profiler.tensorboard_trace_handler` API. This directory serves as the input for `msprof-analyze cluster`.
 
-For details about the complete sample code, see [Sample Code for Profile Data Collection](#sample-code-for-profile-data-collection).
+For details about the complete code sample, see [Code Sample for Profile Data Collection](#51-code-sample-for-profile-data-collection).
 
-## Model Structure Breakdown
+## 3. Function
 
-**Function**
+**Description**
 
 Analyzes the collected data (with model-level MSTX instrumentation) by using `msprof-analyze`.
 
@@ -43,37 +43,45 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 
 **Command-line Options**
 
-| Option| Mandatory (Yes/No)| Description                             |
-| ---- | --------- |---------------------------------|
-| -m   | Yes     | Specifies the analysis mode to execute. Set it to `module_statistic` to enable model structure breakdown.|
-| -d   | Yes     | Specifies the cluster profile data directory.                   |
-| -o   | No     | Specifies the output directory.                      |
-| --export_type   | No     | Specifies the output file type. Valid values: `db` or `text`.            |
+| Option | Required (Yes/No) | Description |
+| --- | --- | --- |
+| -m | Yes | Specifies the analysis feature. Set it to `module_statistic` to enable model structure breakdown. |
+| -d | Yes | Specifies the parent directory of the cluster profile data files. |
+| -o | No | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
+| --export_type | No | Specifies the output file type. Valid values: `db` (default) or `text`. |
 
-For details about more options, see [Command-line Options and Parameters](./README.md#command-line-options-and-parameters) of `msprof-analyze`.
+For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
 **Output Description**
 
-* The output results display the model hierarchy, operator call sequence, kernels executed on the NPU, and execution statistics.
-* If `export_type` is set to `text`, a separate `module_statistic_{rank_id}.xlsx` file is generated for each device, as shown in the following figure.
+* When `--export_type` is set to `db`, the `cluster_analysis_output/cluster_analysis.db` file is generated under the directory specified by `-o`, and the `ModuleStatistic` table is generated in this file.
+* When `--export_type` is set to `text`, a separate `module_statistic_{rank_id}.xlsx` file is generated for each rank.
+
+For details about the output files, see [Output File Description](#4-output-file-description).
+
+## 4. Output File Description
+
+The output results show the model hierarchy, operator execution order, kernels executed on the NPU, and execution duration statistics.
+
+**`ModuleStatistic` table**
+
+| Field | Description |
+| --- | --- |
+| parentModule | Name (`TEXT` type) of the upper-layer module |
+| module | Name (`TEXT` type) of the bottom-layer module |
+| opName | Name (`TEXT` type) of the framework-side operator (within the same module, operators are sorted by call sequence) |
+| kernelList | Sequence (`TEXT` type) of kernels delivered by the framework-side operator to the device for execution |
+| totalKernelDuration(ns) | Total execution duration (`REAL` type) of kernels on the device corresponding to the framework-side operator (ns) |
+| avgKernelDuration(ns) | Average execution duration (`REAL` type) of kernels on the device corresponding to the framework-side operator (ns) |
+| opCount | Number (`INTEGER` type) of times the framework-side operator is executed during the collection period |
+| rankID | Unique identifier (`INTEGER` type) for the device in cluster scenarios |
+
+**`module_statistic_{rank_id}.xlsx`**
 ![vllm_module_statistic](../figures/vllm_module_statistic.png)
 
-* If `export_type` is set to `db`, results are saved to the `ModuleStatistic` table in `cluster_analysis.db`. The following table describes the fields.
+## 5. Appendixes
 
-  | Field                   | Description                                                                                     |
-  |-------------------------|-----------------------------------------------------------------------------------------|
-  | parentModule            | Name (`TEXT type`) of the upper-layer module                                                                      |
-  | module                  | Name (`TEXT` type) of the bottom-layer module                                                                     |
-  | opName                  | Name (`TEXT` type) of the framework-side operator (within the same module, operators are sorted by call sequence)                                                    |
-  | kernelList              | Sequence (`TEXT` type) of kernels delivered by the framework-side operator to the device for execution                                                      |
-  | totalKernelDuration(ns) | Total execution duration (`REAL` type) of kernels on the device corresponding to the framework-side operator (ns)                                              |
-  | avgKernelDuration(ns)       | Average execution duration (`REAL` type) of kernels on the device corresponding to the framework-side operator (ns)                                             |
-  | opCount                 | Number (`INTEGER` type) of times the framework-side operator is executed during the collection period                                                             |
-  | rankID                  | Unique identifier (`INTEGER` type) for the device in cluster scenarios                                                     |
-
-## Appendixes
-
-### Sample Code for Profile Data Collection
+### 5.1 Code Sample for Profile Data Collection
 
 For complex model structures, use a selective instrumentation strategy to reduce performance overhead. Core performance instrumentation is implemented as follows:
 
@@ -93,7 +101,7 @@ def custom_call(self, *args, **kwargs):
 nn.Module.__call__ = custom_call
 ```
 
-The complete sample code is as follows:
+The complete code sample is as follows:
 
 ```python
 import random

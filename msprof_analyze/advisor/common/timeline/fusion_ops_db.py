@@ -1,3 +1,19 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -30,9 +46,9 @@ logger = get_logger()
 def init_timeline_ops_db(cann_version=None, profiling_type=None, profiling_version=None):
     logger.debug("init operators database")
 
-    return FusionOperatorDB(cann_version=cann_version,
-                            profiling_type=profiling_type,
-                            profiling_version=profiling_version)
+    return FusionOperatorDB(
+        cann_version=cann_version, profiling_type=profiling_type, profiling_version=profiling_version
+    )
 
 
 def get_timeline_fusion_ops_yaml_path():
@@ -41,30 +57,42 @@ def get_timeline_fusion_ops_yaml_path():
     if advisor_rule_path and os.path.exists(advisor_rule_path):
         specified_file_path = get_file_path_by_walk(advisor_rule_path, Constant.TIMELINE_FUSION_OPS_YAML_NAME)
         if len(specified_file_path.strip()) and os.path.exists(specified_file_path):
-            logger.debug("Successfully find The %s file which is specified by the environment variable: %s.",
-                         specified_file_path, Constant.ADVISOR_RULE_PATH)
+            logger.debug(
+                "Successfully find The %s file which is specified by the environment variable: %s.",
+                specified_file_path,
+                Constant.ADVISOR_RULE_PATH,
+            )
             return specified_file_path
-        logger.warning("The %s does not exist in path: %s. Try to use cloud or default local YAML file.",
-                       Constant.TIMELINE_FUSION_OPS_YAML_NAME, os.path.normpath(advisor_rule_path))
+        logger.warning(
+            "The %s does not exist in path: %s. Try to use cloud or default local YAML file.",
+            Constant.TIMELINE_FUSION_OPS_YAML_NAME,
+            os.path.normpath(advisor_rule_path),
+        )
     # 检查云文件默认保存路径文件夹下是否存在相应文件, 默认路径 ~/rules/cloud/
-    cloud_file_path = os.path.join(os.path.expanduser("~"), Constant.CLOUD_RULE_PATH,
-                                   Constant.TIMELINE_FUSION_OPS_YAML_NAME)
+    cloud_file_path = os.path.join(
+        os.path.expanduser("~"), Constant.CLOUD_RULE_PATH, Constant.TIMELINE_FUSION_OPS_YAML_NAME
+    )
     if os.path.exists(cloud_file_path):
-        logger.debug("Successfully find The cloud %s file in %s.", Constant.TIMELINE_FUSION_OPS_YAML_NAME,
-                     cloud_file_path)
+        logger.debug(
+            "Successfully find The cloud %s file in %s.", Constant.TIMELINE_FUSION_OPS_YAML_NAME, cloud_file_path
+        )
         return cloud_file_path
     # 检查本地默认文件
-    local_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
-                                   Constant.DEFAULT_RULE_PATH, Constant.TIMELINE_FUSION_OPS_YAML_NAME)
+    local_file_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+        Constant.DEFAULT_RULE_PATH,
+        Constant.TIMELINE_FUSION_OPS_YAML_NAME,
+    )
     if not os.path.exists(local_file_path):
         # 若本地默认文件不存在, 则log异常信息并
-        logger.error("The default local YAML file does not exist. Please check the YAML file in the default path %s.",
-                     local_file_path)
+        logger.error(
+            "The default local YAML file does not exist. Please check the YAML file in the default path %s.",
+            local_file_path,
+        )
     return local_file_path
 
 
 class FusionOperatorDB:
-
     def __init__(self, cann_version=None, profiling_type=None, profiling_version=None):
         self.timeline_fusion_ops_yaml_path = os.path.normpath(get_timeline_fusion_ops_yaml_path())
         self.cann_version = cann_version or EnumParamsParser().get_default(Constant.CANN_VERSION)
@@ -75,8 +103,9 @@ class FusionOperatorDB:
 
         self.is_empty = False
         self.timeline_op_rule_handler = TimelineOpRuleHandler()
-        self.fusion_operator = self._load_yaml(
-            self.timeline_fusion_ops_yaml_path) if profiling_type == Constant.PYTORCH else {}
+        self.fusion_operator = (
+            self._load_yaml(self.timeline_fusion_ops_yaml_path) if profiling_type == Constant.PYTORCH else {}
+        )
 
         self._dequeue_op_names = []
         self._aten_op_names = []
@@ -112,8 +141,11 @@ class FusionOperatorDB:
 
     def get_fusion_operator_with_unique_id(self, unique_id):
         if unique_id == Constant.TIMELINE_FUSION_OPS_INVALID_UNIQUE_ID:
-            logger.warning("The specified unique id: %s is invalid.Please check whether the rule of the unique id "
-                           "exists and modify the rule.", Constant.TIMELINE_FUSION_OPS_INVALID_UNIQUE_ID)
+            logger.warning(
+                "The specified unique id: %s is invalid.Please check whether the rule of the unique id "
+                "exists and modify the rule.",
+                Constant.TIMELINE_FUSION_OPS_INVALID_UNIQUE_ID,
+            )
             return {}
         result_tmp_rule = self.timeline_op_rule_handler.get_tmp_timeline_op_rule_with_unique_id(unique_id)
         result_op_rule = OpRule(result_tmp_rule)
@@ -128,8 +160,9 @@ class FusionOperatorDB:
     def regenerate_timeline_op_rule_with_version(self, cann_version=None, torch_version=None):
         cann_version = cann_version or self.cann_version
         torch_version = torch_version or self.profiling_version
-        unique_id = self._get_unique_id_in_supported_version_dict(cann_version=cann_version,
-                                                                  torch_version=torch_version)
+        unique_id = self._get_unique_id_in_supported_version_dict(
+            cann_version=cann_version, torch_version=torch_version
+        )
         self.regenerate_timeline_op_rule_with_unique_id(unique_id)
 
     def regenerate_op_api_map_and_op_names(self):
@@ -145,8 +178,7 @@ class FusionOperatorDB:
         """校验当前版本是否被规则库中的版本支持, 保存版本支持信息数组, 按数组或字符串的可变方式保存"""
         if db_content is None:
             logger.warning(
-                "The rule library is empty. Check the rule library file: %s",
-                self.timeline_fusion_ops_yaml_path
+                "The rule library is empty. Check the rule library file: %s", self.timeline_fusion_ops_yaml_path
             )
             return False
         for rule_dic in db_content:
@@ -163,7 +195,8 @@ class FusionOperatorDB:
                 logger.warning(
                     "The unique id: %s of the rule should be a positive integer. "
                     "Please check and modify the rule configuration in the YAML file： %s.",
-                    unique_id, os.path.normpath(self.timeline_fusion_ops_yaml_path)
+                    unique_id,
+                    os.path.normpath(self.timeline_fusion_ops_yaml_path),
                 )
             self._supported_version_dict[unique_id] = supported_version
 
@@ -172,7 +205,7 @@ class FusionOperatorDB:
             logger.warning(
                 "The rule library does not contain rules that support the current version. "
                 "Check the rule library file: %s",
-                self.timeline_fusion_ops_yaml_path
+                self.timeline_fusion_ops_yaml_path,
             )
             return False
 
@@ -180,8 +213,12 @@ class FusionOperatorDB:
         is_version_supported = self._is_version_supported_in_supported_version_dict()
         if not is_version_supported:
             # 若规则库不支持当前版本, 则log警告信息
-            logger.warning("Unsupported versions: cann-%s and torch-%s, supported version list of ['cann', 'torch'] "
-                           "is %s", self.cann_version, self.profiling_version, self._supported_version_dict.values())
+            logger.warning(
+                "Unsupported versions: cann-%s and torch-%s, supported version list of ['cann', 'torch'] is %s",
+                self.cann_version,
+                self.profiling_version,
+                self._supported_version_dict.values(),
+            )
         return is_version_supported
 
     def _is_version_supported_in_supported_version_dict(self, cann_version=None, torch_version=None):
@@ -251,9 +288,12 @@ class FusionOperatorDB:
         logger.debug("Try to use the following yaml file as timeline ops rule: %s.", os.path.abspath(file_path))
         # 若文件不存在，则报错, 并返回空字典
         if not os.path.exists(file_path):
-            logger.warning("Path: '%s' does not exist, please specific existed path of "
-                           "fusion operators yaml file by setting env '%s'",
-                           os.path.abspath(file_path), Constant.ADVISOR_RULE_PATH)
+            logger.warning(
+                "Path: '%s' does not exist, please specific existed path of "
+                "fusion operators yaml file by setting env '%s'",
+                os.path.abspath(file_path),
+                Constant.ADVISOR_RULE_PATH,
+            )
             self.is_empty = True
             return {}
 
@@ -280,7 +320,7 @@ class FusionOperatorDB:
         logger.warning(
             "Failed to load fusion operators database, skip analyze timeline for affinity api,"
             " please refer to database yaml %s to customize your yaml.",
-            self.timeline_fusion_ops_yaml_path
+            self.timeline_fusion_ops_yaml_path,
         )
         self.is_empty = True
         return {}

@@ -1,23 +1,23 @@
-# Copyright (c) 2024, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2024 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 from collections import namedtuple
 
 import os
 import pandas as pd
 
-from msprof_analyze.cluster_analyse.common_func.utils import describe_duration
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
@@ -29,8 +29,7 @@ from msprof_analyze.cluster_analyse.recipes.mstx_sum.mstx_sum_recipe_builder imp
 
 logger = get_logger()
 
-MarkInfo = namedtuple("MarkInfo", ["name", "framework_duration", "cann_duration", "device_duration",
-                                   "tid", "start_ns"])
+MarkInfo = namedtuple("MarkInfo", ["name", "framework_duration", "cann_duration", "device_duration", "tid", "start_ns"])
 
 
 def format_mark_info(df: pd.DataFrame, start_idx, stop_idx, name) -> MarkInfo:
@@ -42,7 +41,7 @@ def format_mark_info(df: pd.DataFrame, start_idx, stop_idx, name) -> MarkInfo:
         cann_duration=float(stop_series["cann_ts"] - start_series["cann_ts"]),
         device_duration=float(stop_series["device_ts"] - start_series["device_ts"]),
         tid=start_series["tid"],
-        start_ns=start_series["cann_ts"]
+        start_ns=start_series["cann_ts"],
     )
 
 
@@ -54,7 +53,7 @@ def format_range_info(df: pd.DataFrame, idx, name) -> MarkInfo:
         cann_duration=float(range_series["cann_end_ts"] - range_series["cann_start_ts"]),
         device_duration=float(range_series["device_end_ts"] - range_series["device_start_ts"]),
         tid=range_series["tid"],
-        start_ns=range_series["cann_start_ts"]
+        start_ns=range_series["cann_start_ts"],
     )
 
 
@@ -74,7 +73,7 @@ def compute_step_id(mark_stat, step_stats_df: pd.DataFrame):
     for step_info in step_stats_df.itertuples(index=False):
         if step_info.start_ns <= mark_stat.start_ns <= step_info.end_ns:
             return step_info.step_id
-    logger.warning(f"{mark_stat.name} is not in any step.")
+    logger.warning("%s is not in any step.", mark_stat.name)
     return 0
 
 
@@ -87,9 +86,9 @@ def format_columns(df: pd.DataFrame):
             "duration": "DurationNs",
             "step_id": "StepId",
             "tid": "Tid",
-            "name": "Name"
+            "name": "Name",
         },
-        axis="columns"
+        axis="columns",
     )
     cols = [col for col in formatted_df.columns if not col.endswith("_ns") and col not in {"Tid"}]
     return formatted_df[cols]
@@ -102,10 +101,10 @@ def handle_mark_data(mark_df: pd.DataFrame, rank_id: int) -> list:
     mismatch_msg = []
     for idx, row in enumerate(mark_df.itertuples(index=False)):
         if row.msg.endswith(MstxSum.START_SUFFIX):
-            msg = row.msg[:-len(MstxSum.START_SUFFIX)]
+            msg = row.msg[: -len(MstxSum.START_SUFFIX)]
             mark_info.setdefault(row.tid, {}).setdefault(msg, []).append(idx)
         elif row.msg.endswith(MstxSum.STOP_SUFFIX):
-            msg = row.msg[:-len(MstxSum.STOP_SUFFIX)]
+            msg = row.msg[: -len(MstxSum.STOP_SUFFIX)]
             idx_list = mark_info.get(row.tid, {}).get(msg, [])
             if not idx_list:
                 mismatch_msg.append((row.msg, idx))
@@ -121,8 +120,11 @@ def handle_mark_data(mark_df: pd.DataFrame, rank_id: int) -> list:
             mismatch_msg.extend((msg + MstxSum.START_SUFFIX, idx) for idx in idx_list)
     if mismatch_msg:
         mismatch_msg.sort(key=lambda msg: msg[1])
-        logger.warning(f"The following mark messages do not match anyone in "
-                       f"rank {rank_id}: {','.join(msg[0] for msg in mismatch_msg)}.")
+        logger.warning(
+            "The following mark messages do not match anyone in rank %s: %s.",
+            rank_id,
+            ','.join(msg[0] for msg in mismatch_msg),
+        )
 
     return res
 
@@ -160,16 +162,38 @@ class MstxSum(BaseRecipeAnalysis):
 
     def stats_format_columns(self, df: pd.DataFrame):
         rename_map = {
-            "25%": "Q1Ns", "50%": "MedianNs", "75%": "Q3Ns",
-            0.25: "Q1Ns", 0.5: "MedianNs", 0.75: "Q3Ns",
-            "Q1": "Q1Ns", "Q3": "Q3Ns", "min": "MinNs", "max": "MaxNs",
-            "median": "MedianNs", "sum": "SumNs", "std": "StdNs",
-            "mean": "MeanNs", "count": "Count"
+            "25%": "Q1Ns",
+            "50%": "MedianNs",
+            "75%": "Q3Ns",
+            0.25: "Q1Ns",
+            0.5: "MedianNs",
+            0.75: "Q3Ns",
+            "Q1": "Q1Ns",
+            "Q3": "Q3Ns",
+            "min": "MinNs",
+            "max": "MaxNs",
+            "median": "MedianNs",
+            "sum": "SumNs",
+            "std": "StdNs",
+            "mean": "MeanNs",
+            "count": "Count",
         }
 
         formatted_df = df.rename(rename_map, axis="columns")
-        stats_cols = ["Count", "MeanNs", "StdNs", "MinNs", "MinRank", "Q1Ns", "MedianNs",
-                      "Q3Ns", "MaxNs", "MaxRank", "SumNs", "Dispersion(%)"]
+        stats_cols = [
+            "Count",
+            "MeanNs",
+            "StdNs",
+            "MinNs",
+            "MinRank",
+            "Q1Ns",
+            "MedianNs",
+            "Q3Ns",
+            "MaxNs",
+            "MaxRank",
+            "SumNs",
+            "Dispersion(%)",
+        ]
         other_cols = [col for col in formatted_df.columns if col not in stats_cols]
         return formatted_df[stats_cols + other_cols]
 
@@ -209,10 +233,19 @@ class MstxSum(BaseRecipeAnalysis):
         self.calculate_ratio('FrameworkDurationNs')
         self.calculate_ratio('DeviceDurationNs')
         self.mark_stats = self.mark_stats.sort_values(by='CannDurationRatio(%)', ascending=False)
-        self.mark_stats = self.mark_stats.reindex(columns=["Name", "FrameworkDurationNs", "FrameworkDurationRatio(%)",
-                                                           "CannDurationNs", "CannDurationRatio(%)",
-                                                           "DeviceDurationNs", "DeviceDurationRatio(%)",
-                                                           "Rank", "StepId"])
+        self.mark_stats = self.mark_stats.reindex(
+            columns=[
+                "Name",
+                "FrameworkDurationNs",
+                "FrameworkDurationRatio(%)",
+                "CannDurationNs",
+                "CannDurationRatio(%)",
+                "DeviceDurationNs",
+                "DeviceDurationRatio(%)",
+                "Rank",
+                "StepId",
+            ]
+        )
         self.mark_stats = self.mark_stats.reset_index(drop=True)
         mark_step_df = self.mark_stats.groupby("StepId")
         for step_id, df in mark_step_df:
@@ -233,13 +266,9 @@ class MstxSum(BaseRecipeAnalysis):
     def calculate_ratio(self, calculate_type):
         self.mark_stats['total_DurationNs'] = self.mark_stats.groupby('Rank')[calculate_type].transform('sum')
         non_zero_rows = self.mark_stats['total_DurationNs'] != 0
-        self.mark_stats.loc[non_zero_rows, calculate_type.replace('Ns', '') + "Ratio(%)"] = ((self.mark_stats.loc[
-                                                                                                  non_zero_rows,
-                                                                                                  calculate_type] /
-                                                                                              self.mark_stats.loc[
-                                                                                                  non_zero_rows,
-                                                                                                  'total_DurationNs'])
-                                                                                             * 100)
+        self.mark_stats.loc[non_zero_rows, calculate_type.replace('Ns', '') + "Ratio(%)"] = (
+            self.mark_stats.loc[non_zero_rows, calculate_type] / self.mark_stats.loc[non_zero_rows, 'total_DurationNs']
+        ) * 100
         self.mark_stats.loc[~non_zero_rows, calculate_type.replace('Ns', '') + "Ratio(%)"] = 0
         self.mark_stats = self.mark_stats.drop(columns=['total_DurationNs'], errors='ignore')
 
@@ -283,15 +312,14 @@ class MstxSum(BaseRecipeAnalysis):
         mark_df = MstxMarkExport(profiler_db_path, analysis_class, step_range).read_export_db()
         range_df = MstxRangeExport(profiler_db_path, analysis_class, step_range).read_export_db()
         tree_builder = MstxSumRecipeTreeBuilder(range_df)
-        tree_builder.build_tree("cann_start_ts", "cann_end_ts", "msg",
-                                MstxSumRecipeNodeType.DEFAULT_NODE)
+        tree_builder.build_tree("cann_start_ts", "cann_end_ts", "msg", MstxSumRecipeNodeType.DEFAULT_NODE)
         mstx_res = []
         if not mark_df.empty:
             mstx_res += handle_mark_data(mark_df, rank_id)
         if not range_df.empty:
             mstx_res += handle_range_data(range_df)
         if not mstx_res:
-            logger.warning(f"There is no mstx data in {profiler_db_path}.")
+            logger.warning("There is no mstx data in %s.", profiler_db_path)
             return None
 
         mstx_stats_df = pd.DataFrame(mstx_res).assign(Rank=rank_id)

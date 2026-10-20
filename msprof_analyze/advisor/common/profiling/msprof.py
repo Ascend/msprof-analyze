@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Copyright (C) 2024-2024. Huawei Technologies Co., Ltd. All rights reserved.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
-from msprof_analyze.prof_common.logger import get_logger
 import os
 from typing import Dict, List
 import json
 import pandas as pd
 
+from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.advisor.dataset.profiling.info_collection import TaskInfo
 from msprof_analyze.advisor.dataset.profiling.profiling_parser import ProfilingParser
@@ -49,6 +51,7 @@ class Msprof(ProfilingParser):
     msprof
 
     """
+
     FILE_PATTERN_MSG = "msprof_*.json"
     FILE_INFO = "msprof"
 
@@ -147,11 +150,9 @@ class Msprof(ProfilingParser):
             dur = task.dur
             if start_time == -1 or dur == -1 or dur == 0:
                 continue
-            if start_time < min_time:
-                min_time = start_time
+            min_time = min(min_time, start_time)
             end_time = start_time + dur
-            if end_time > max_time:
-                max_time = end_time
+            max_time = max(max_time, end_time)
         if not is_iter:
             self._iteration_time = dur
             self._max_time = max_time
@@ -175,9 +176,11 @@ class MsprofDB(Msprof):
     FILE_PATTERN_MSG = "ascend_*_profiler.db"
     FILE_INFO = "timeline info from db"
 
-    file_pattern_list = [r'^ascend_pytorch_profiler(?:_\d+)?\.db$',
-                         r'^ascend_mindspore_profiler(?:_\d+)?\.db$',
-                         r'^msprof_\d{14}\.db$']
+    file_pattern_list = [
+        r'^ascend_pytorch_profiler(?:_\d+)?\.db$',
+        r'^ascend_mindspore_profiler(?:_\d+)?\.db$',
+        r'^msprof_\d{14}\.db$',
+    ]
 
     HCCL_TASK_SQL = """
     SELECT
@@ -193,8 +196,8 @@ class MsprofDB(Msprof):
           'link type', link.name,
           'size(Byte)', comm.size
       ) as args
-      
-    FROM COMMUNICATION_TASK_INFO as comm 
+
+    FROM COMMUNICATION_TASK_INFO as comm
     JOIN TASK as task ON comm.globalTaskId = task.globalTaskId
     JOIN STRING_IDS as str ON str.id = comm.taskType
     JOIN ENUM_HCCL_LINK_TYPE as link ON link.id = comm.linkType
@@ -206,13 +209,13 @@ class MsprofDB(Msprof):
         str.value as name,
         comm.startNs / 1000.0 as ts,
         (comm.endNs - comm.startNs) / 1000.0 as dur
-    FROM COMMUNICATION_OP as comm 
+    FROM COMMUNICATION_OP as comm
     JOIN STRING_IDS as str ON str.id = comm.opName
     """
 
     NODE_INFO_SQL = """
     WITH ranked_apis AS (
-        SELECT 
+        SELECT
             str.value AS name,
             api.startNs / 1000.0 AS ts,
             (api.endNs - api.startNs) / 1000.0 AS dur,
@@ -222,7 +225,7 @@ class MsprofDB(Msprof):
         JOIN STRING_IDS as str ON api.name = str.id
         JOIN ENUM_API_TYPE as type ON api.type = type.id
     )
-    SELECT 
+    SELECT
         name,
         ts,
         dur,
@@ -231,9 +234,6 @@ class MsprofDB(Msprof):
     WHERE type = 'node'
     ORDER BY ts;
     """
-
-    def __init__(self, path: str) -> None:
-        super().__init__(path)
 
     def parse_from_file(self, file: str):
         if not file or not os.path.exists(file):
@@ -258,6 +258,3 @@ class MsprofDB(Msprof):
         if 'args' in df.columns:
             df['args'] = df['args'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         result.extend([TaskInfo(record) for record in df.to_dict('records')])
-
-
-

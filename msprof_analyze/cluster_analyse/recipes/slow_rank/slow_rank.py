@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 from collections import defaultdict
@@ -60,18 +61,30 @@ def judge_dixon(time_list):
     # 计算狄克逊检验的检验指标，次小值和最小值差，比上最大值和最小值的差。根据数据数量改变次小值和最大值的选取
     if n <= Constant.MAX_DIXON_NUM:
         if n <= Constant.DIXON_THRESHOLD_1:
-            flag = (sorted_list[1] - sorted_list[0]) / (sorted_list[-1] - sorted_list[0]) \
-                if (sorted_list[-1] - sorted_list[0]) else 0
+            flag = (
+                (sorted_list[1] - sorted_list[0]) / (sorted_list[-1] - sorted_list[0])
+                if (sorted_list[-1] - sorted_list[0])
+                else 0
+            )
         elif n <= Constant.DIXON_THRESHOLD_2:
-            flag = (sorted_list[1] - sorted_list[0]) / (sorted_list[-2] - sorted_list[0]) \
-                if (sorted_list[-2] - sorted_list[0]) else 0
+            flag = (
+                (sorted_list[1] - sorted_list[0]) / (sorted_list[-2] - sorted_list[0])
+                if (sorted_list[-2] - sorted_list[0])
+                else 0
+            )
         elif n <= Constant.DIXON_THRESHOLD_3:
-            flag = (sorted_list[2] - sorted_list[0]) / (sorted_list[-2] - sorted_list[0]) \
-                if (sorted_list[-2] - sorted_list[0]) else 0
+            flag = (
+                (sorted_list[2] - sorted_list[0]) / (sorted_list[-2] - sorted_list[0])
+                if (sorted_list[-2] - sorted_list[0])
+                else 0
+            )
         else:
-            flag = (sorted_list[2] - sorted_list[0]) / (sorted_list[-3] - sorted_list[0]) \
-                if (sorted_list[-3] - sorted_list[0]) else 0
-        
+            flag = (
+                (sorted_list[2] - sorted_list[0]) / (sorted_list[-3] - sorted_list[0])
+                if (sorted_list[-3] - sorted_list[0])
+                else 0
+            )
+
         # 根据数据数量查表，若计算的检验指标较大，则认为有异常值，耗时最短的卡是慢卡
         if flag > DIXON_TABLE_995[n]:
             return [time_list.index(sorted_list[0])]
@@ -91,6 +104,7 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
     SlowRank / slow_rank.csv：基于“同名通信算子属同一次集合通信，结束时间相近且先开始的 rank 等待后开始的 rank”的假设，通过离群值算法找到每次集合通信中耗时异常短的算子所在 rank 并累计投票。用它先快速确定重点排查对象。
     SlowOpStats / slow_op_stats.csv：统计这些慢卡投票对应的通信算子，可进一步定位慢卡在该算子前的具体瓶颈操作。
     """
+
     def __init__(self, params):
         super().__init__(params)
         self.perpector_df = None
@@ -122,7 +136,7 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
         analyzer = SlowRankVoteAnalysis(comm_ops_df)
         self.perpector_df, self.stat_df = analyzer.run()
         if self.perpector_df is None or self.perpector_df.empty:
-            logger.info(f"No slow rank found, skip data dump.")
+            logger.info("No slow rank found, skip data dump.")
             return
         if self._export_type == Constant.DB:
             self.save_db()
@@ -134,13 +148,15 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
         else:
             logger.error("SlowRank analysis is not supported for notebook export type.")
 
-    def save_db(self, ):
+    def save_db(
+        self,
+    ):
         self.dump_data(self.perpector_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowRank")
         self.dump_data(self.stat_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER, "SlowOpStats", index=False)
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": ["SlowRank", "SlowOpStats"]
+                "tables": ["SlowRank", "SlowOpStats"],
             },
             suggestion="根据当前的快慢卡统计算法，展示各个rank得出的快慢卡影响次数，识别慢卡出现的原因。",
         )
@@ -156,10 +172,10 @@ class SlowRankAnalysis(BaseRecipeAnalysis):
             msg_dict={
                 "csv_path": [
                     os.path.join(self.output_path, "rank_stats.csv"),
-                    os.path.join(self.output_path, "slow_op_stats.csv")
+                    os.path.join(self.output_path, "slow_op_stats.csv"),
                 ]
             },
-            suggestion=self.SUGGESTION
+            suggestion=self.SUGGESTION,
         )
 
     def _mapper_func(self, data_map, analysis_class):
@@ -189,7 +205,7 @@ class SlowRankVoteAnalysis:
             'MedianNs': series.median(),
             'Q3Ns': series.quantile(0.75),
             'MaxNs': series.max(),
-            'SumNs': series.sum()
+            'SumNs': series.sum(),
         }
 
     def grouping_ops(self):
@@ -242,13 +258,15 @@ class SlowRankVoteAnalysis:
                     start_times.append(comm_start_arr[ops_list[rank_idx]])
                 # 计算统计信息
                 stats = self.calculate_basic_stats(time_list)
-                record.append({
-                    'SlowRank': ",".join(str(rank_id) for rank_id in slow_ranks),
-                    'OpName': op_name,
-                    'GroupName': group_name,
-                    'Timestamp': min(start_times),
-                    **stats
-                })
+                record.append(
+                    {
+                        'SlowRank': ",".join(str(rank_id) for rank_id in slow_ranks),
+                        'OpName': op_name,
+                        'GroupName': group_name,
+                        'Timestamp': min(start_times),
+                        **stats,
+                    }
+                )
 
         perpector_df = pd.DataFrame(columns=["rankId", "slowAffectCount"])
         for rank, perpector_times in perpector_dict.items():

@@ -1,17 +1,18 @@
-# Copyright (c) 2025, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 import json
 import os
 import pandas as pd
@@ -46,8 +47,11 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
     @staticmethod
     def get_comm_type_from_op_name(op_name: str):
         op_name_lower = op_name.lower()
-        return Constant.P2P if ("send" in op_name_lower or "receive" in op_name_lower or "recv" in op_name_lower) \
-               else Constant.COLLECTIVE
+        return (
+            Constant.P2P
+            if ("send" in op_name_lower or "receive" in op_name_lower or "recv" in op_name_lower)
+            else Constant.COLLECTIVE
+        )
 
     @staticmethod
     def update_rank_set(group_df):
@@ -55,13 +59,17 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
         rank_set_col = TableConstant.RANK_SET
         global_ranks_col = CommunicationGroupMap.GLOBAL_RANKS
         if rank_set_col not in group_df.columns or global_ranks_col not in group_df.columns:
-            logger.warning(f"Skip update rank_set, since {rank_set_col} or {global_ranks_col} column not in group_df.")
+            logger.warning(
+                "Skip update rank_set, since %s or %s column not in group_df.", rank_set_col, global_ranks_col
+            )
             return group_df
 
-        mask = (group_df[global_ranks_col].notna() &
-                (group_df[global_ranks_col].astype(str) != "") &
-                (group_df[global_ranks_col].astype(str) != "[]") &
-                (group_df[global_ranks_col] != group_df[rank_set_col]))
+        mask = (
+            group_df[global_ranks_col].notna()
+            & (group_df[global_ranks_col].astype(str) != "")
+            & (group_df[global_ranks_col].astype(str) != "[]")
+            & (group_df[global_ranks_col] != group_df[rank_set_col])
+        )
 
         updated_df = group_df.copy()
         updated_df.loc[mask, rank_set_col] = updated_df.loc[mask, global_ranks_col]
@@ -78,7 +86,7 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
             logger.info("Reset export_type to db")
             self.save_db()  # It may be invoked by other recipe, so it must be set to 'db' here.
         else:
-            logger.error(f"CommGroupMap: {self._export_type} is not supported for export type.")
+            logger.error("CommGroupMap: %s is not supported for export type.", self._export_type)
 
     def generate_communication_group_mapping(self, context):
         mapper_res = self.mapper_func(context)
@@ -93,11 +101,14 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
         comm_group_combined_df = pd.concat(comm_group_df_list).drop_duplicates()
         if comm_group_combined_df.empty:
             return
-        comm_group_combined_df = (comm_group_combined_df.groupby([TableConstant.TYPE, TableConstant.GROUP_NAME])
-                                  [TableConstant.RANK_ID].apply(lambda x: sorted(set(x))).reset_index())
-        comm_group_combined_df[TableConstant.RANK_SET] = (
-            comm_group_combined_df[TableConstant.RANK_ID].
-            apply(lambda x: "(" + ",".join(str(i) for i in sorted(x)) + ")"))
+        comm_group_combined_df = (
+            comm_group_combined_df.groupby([TableConstant.TYPE, TableConstant.GROUP_NAME])[TableConstant.RANK_ID]
+            .apply(lambda x: sorted(set(x)))
+            .reset_index()
+        )
+        comm_group_combined_df[TableConstant.RANK_SET] = comm_group_combined_df[TableConstant.RANK_ID].apply(
+            lambda x: "(" + ",".join(str(i) for i in sorted(x)) + ")"
+        )
 
         comm_group_combined_df = comm_group_combined_df.drop(columns=[TableConstant.RANK_ID])
         # concat all parallel group info
@@ -110,53 +121,72 @@ class CommunicationGroupMap(BaseRecipeAnalysis):
         if not parallel_info_combined_df.empty:
             group_df = self.update_rank_set(group_df)
         # column order
-        column_order = [TableConstant.TYPE, TableConstant.RANK_SET, TableConstant.GROUP_NAME,
-                        TableConstant.GROUP_ID, TableConstant.PG_NAME]
+        column_order = [
+            TableConstant.TYPE,
+            TableConstant.RANK_SET,
+            TableConstant.GROUP_NAME,
+            TableConstant.GROUP_ID,
+            TableConstant.PG_NAME,
+        ]
         self.group_df = group_df[column_order]
 
     def save_db(self):
-        self.dump_data(self.group_df, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
-                       self.COMMUNICATION_GROUP_MAPPING_TABLE, index=False)
+        self.dump_data(
+            self.group_df,
+            Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+            self.COMMUNICATION_GROUP_MAPPING_TABLE,
+            index=False,
+        )
 
     def _mapper_func(self, data_map, analysis_class):
         rank_id = data_map.get(Constant.RANK_ID)
         # read CommAnalyzerTime table
         analysis_db_path = data_map.get(Constant.ANALYSIS_DB_PATH)
         analysis_data_service = DatabaseService(analysis_db_path, {})
-        analysis_data_service.add_table_for_query(Constant.TABLE_COMM_ANALYZER_TIME,
-                                                  [TableConstant.HCCL_OP_NAME, TableConstant.GROUP_NAME])
+        analysis_data_service.add_table_for_query(
+            Constant.TABLE_COMM_ANALYZER_TIME, [TableConstant.HCCL_OP_NAME, TableConstant.GROUP_NAME]
+        )
         comm_time_res = analysis_data_service.query_data()
         comm_time_df = comm_time_res.get(Constant.TABLE_COMM_ANALYZER_TIME)
         if comm_time_df is None or comm_time_df.empty:
             return pd.DataFrame(), pd.DataFrame()
         # process comm_time_df: group_name, type, rank_id
         comm_time_df[TableConstant.RANK_ID] = rank_id
-        comm_time_df[TableConstant.TYPE] = (comm_time_df[TableConstant.HCCL_OP_NAME].
-                                            apply(lambda x: self.get_comm_type_from_op_name(x)))
+        comm_time_df[TableConstant.TYPE] = comm_time_df[TableConstant.HCCL_OP_NAME].apply(
+            self.get_comm_type_from_op_name
+        )
         comm_time_df = comm_time_df.drop(columns=[TableConstant.HCCL_OP_NAME])
         comm_time_df = comm_time_df.drop_duplicates()
 
         # read META_DATA table
         profiler_db_path = data_map.get(Constant.PROFILER_DB_PATH)
         profiler_data_service = DatabaseService(profiler_db_path, {})
-        profiler_data_service.add_table_for_query(Constant.TABLE_META_DATA,
-                                                  [TableConstant.NAME, TableConstant.VALUE])
+        profiler_data_service.add_table_for_query(Constant.TABLE_META_DATA, [TableConstant.NAME, TableConstant.VALUE])
         meta_data_res = profiler_data_service.query_data()
         meta_data_df = meta_data_res.get(Constant.TABLE_META_DATA)
         # process parallel_info_df
-        parallel_info_df = pd.DataFrame(columns=[TableConstant.GROUP_NAME, TableConstant.GROUP_ID,
-                                                 TableConstant.PG_NAME, self.GLOBAL_RANKS])
-        if (meta_data_df is None or meta_data_df.empty or
-                Constant.PARALLEL_GROUP_INFO not in meta_data_df[TableConstant.NAME].values):
+        parallel_info_df = pd.DataFrame(
+            columns=[TableConstant.GROUP_NAME, TableConstant.GROUP_ID, TableConstant.PG_NAME, self.GLOBAL_RANKS]
+        )
+        if (
+            meta_data_df is None
+            or meta_data_df.empty
+            or Constant.PARALLEL_GROUP_INFO not in meta_data_df[TableConstant.NAME].values
+        ):
             return comm_time_df, parallel_info_df
-        info_str = meta_data_df.loc[meta_data_df[TableConstant.NAME] == Constant.PARALLEL_GROUP_INFO,
-                                    TableConstant.VALUE].values[0]
+        info_str = meta_data_df.loc[
+            meta_data_df[TableConstant.NAME] == Constant.PARALLEL_GROUP_INFO, TableConstant.VALUE
+        ].values[0]
         info_dict = json.loads(info_str)
         for group_id, parallel_info in info_dict.items():
             group_name = str(double_hash(group_id))  # group_name is hashed group_id
             pg_name = parallel_info.get(TableConstant.GROUP_NAME, "")
             global_ranks = sorted(parallel_info.get(self.GLOBAL_RANKS, []))
-            parallel_info_df.loc[parallel_info_df.shape[0]] = [group_name, group_id, pg_name,
-                                                               "(" + ",".join(str(i) for i in global_ranks) + ")"]
+            parallel_info_df.loc[parallel_info_df.shape[0]] = [
+                group_name,
+                group_id,
+                pg_name,
+                "(" + ",".join(str(i) for i in global_ranks) + ")",
+            ]
 
         return comm_time_df, parallel_info_df
