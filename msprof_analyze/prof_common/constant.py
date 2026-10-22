@@ -507,6 +507,7 @@ class Constant:
     TABLE_MEMORY_RECORD = "MEMORY_RECORD"
     TABLE_STEP_TIME = "STEP_TIME"
     TABLE_COMPUTATIONAL_OPERATOR_MASKING_LINEARITY = "ComputationalOperatorMaskingLinearity"
+    TABLE_CLUSTER_COMPARE_BASELINE_OPERATOR = "ClusterCompareBaselineOperator"
 
     # communication task type
     NOTIFY_RECORD = "Notify_Record"

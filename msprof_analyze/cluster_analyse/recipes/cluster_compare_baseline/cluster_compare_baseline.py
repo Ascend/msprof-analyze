@@ -1,21 +1,23 @@
-# Copyright (c) 2026, Huawei Technologies Co., Ltd.
-# All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 #
-# Licensed under the Apache License, Version 2.0  (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#          http://license.coscl.org.cn/MulanPSL2
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
 
 import os
 import pandas as pd
 from msprof_analyze.prof_common.constant import Constant
+from msprof_analyze.prof_common.file_manager import FileManager
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.cluster_analyse.recipes.base_recipe_analysis import BaseRecipeAnalysis
 
@@ -185,10 +187,34 @@ class ClusterCompareBaseline(
         finally:
             self._data_map = original_data_map
 
+    def save_reports(self):
+        """保存报告：文本 + DB 表"""
+        # 1. 文本报告 → .txt（人类可读）
+        if self.text_reports:
+            text_path = os.path.join(self.output_path, "cluster_compare_baseline.txt")
+            content = "\n".join(self.text_reports) + "\n"
+            try:
+                FileManager.create_common_file(text_path, content)
+                logger.info("Cluster compare baseline text report saved to %s", text_path)
+            except Exception as e:
+                logger.error("Failed to write text report '%s': %s", text_path, e)
+
+        # 2. 算子报告 → DB 表（与 ComputationalOpMasking 共用 cluster_analysis.db）
+        if self.operator_reports:
+            df = pd.DataFrame(self.operator_reports)
+            self.dump_data(
+                data=df,
+                file_name=Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
+                table_name=Constant.TABLE_CLUSTER_COMPARE_BASELINE_OPERATOR,
+                index=False,
+            )
+
     def run(self, context):
         if not self.has_baseline:
             logger.warning("No baseline data available, skipping comparison analysis.")
             return
+
+        logger.info("Report output path: %s", self.output_path)
 
         for rank_id, data in self.rank_data_map.items():
             self._reset_reports(rank_id)
@@ -210,6 +236,12 @@ class ClusterCompareBaseline(
             comparison = self.compare_by_parallel_type(current_result, baseline_result)
             if comparison.empty or current_linearity.empty or baseline_linearity.empty:
                 self._record_text("当前 rank 缺少可对比的线性度数据，跳过后续诊断。")
+                logger.info(
+                    "rank %s: text_reports=%s, operator_reports=%s",
+                    rank_id,
+                    len(self.text_reports),
+                    len(self.operator_reports),
+                )
                 continue
 
             # 第一阶段：直接判断
@@ -244,6 +276,16 @@ class ClusterCompareBaseline(
                     "(如DP通信阻塞导致流水线失衡),但其表现形式不是通信净开销的增加,而是全时空泡。先按照DP问题排查,"
                     "排除步骤2 3 4之后应输出告警,重点关注调度间隙。"
                 )
+
+            logger.info(
+                "rank %s: text_reports=%s, operator_reports=%s",
+                rank_id,
+                len(self.text_reports),
+                len(self.operator_reports),
+            )
+
+        logger.info("Report output path: %s", self.output_path)
+        self.save_reports()
 
     def get_dp_domain(
         self,

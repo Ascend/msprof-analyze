@@ -158,6 +158,11 @@ class ClusterCompareDataMixin:
             if df.empty:
                 continue
 
+            # FIX: 在本 step 内按 parallelType 重新 cumcount，恢复 group_rank 列。
+            # 下游 _analyze_*_phase 依赖 row_value.group_rank 以及与 baseline 的
+            # group_rank 匹配，必须每个 step 内独立编号，不能用全局 cumcount。
+            df["group_rank"] = df.groupby("parallelType").cumcount()
+
             analyse_ret = {
                 "start_time": start_time,
                 "end_time": end_time,
