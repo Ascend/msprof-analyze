@@ -1,10 +1,10 @@
-# AICPU Operator Replacement Examples
+# AI CPU Operator Replacement Examples
 
-Some operators are executed on the AICPU of the Ascend chip due to data input type or operator implementation issues. Consequently, AI Core resources are not fully utilized, leading to poor compute performance and affecting training speed. In certain scenarios, you can modify the Python code to reduce these AICPU operators to improve training performance.
+Some operators are executed on the AI CPU of the Ascend chip due to data input type or operator implementation issues. Consequently, AI Core resources are not fully utilized, leading to poor compute performance and affecting training speed. In certain scenarios, you can modify the Python code to reduce these AI CPU operators to improve training performance.
 
-Currently, there are primarily two tuning methods for the identified AICPU operator issues:
+Currently, there are primarily two tuning methods for the identified AI CPU operator issues:
 
-- PyTorch data type conversion: Operators executed on the AICPU are converted into operators executed on AI Core units
+- PyTorch data type conversion: Operators executed on the AI CPU are converted into operators executed on AI Core units
 - Equivalent operator replacement
 
 ## 1. Type Conversion
@@ -15,7 +15,7 @@ Figure 1 Data types supported by PyTorch
 
 ![img](./figures/Pytorch_dtype.png)
 
-Perform single-operator tests on common operators such as `MUL`, `Equal`, and `TensorEqual` to identify which operators are executed on the AICPU. Then, try converting them to data types supported by AI Core units to improve efficiency.
+Perform single-operator tests on common operators such as `MUL`, `Equal`, and `TensorEqual` to identify which operators are executed on the AI CPU. Then, try converting them to data types supported by AI Core units to improve efficiency.
 
 ### 1.1 MUL
 
@@ -29,7 +29,7 @@ Data types supported by AI Core:
 float, float32, float16, dt_bf16, int32, int64, int8, uint8, complex64
 ```
 
-Data types supported by AICPU:
+Data types supported by AI CPU:
 
 ```python
 int16, complex128
@@ -47,7 +47,7 @@ Data types supported by AI Core:
 float, float32, float16, dt_bf16, bool, int32, int64, int8, uint8
 ```
 
-Data types supported by AICPU:
+Data types supported by AI CPU:
 
 ```python
 int16, complex64, complex128
@@ -65,7 +65,7 @@ Data types supported by AI Core:
 float, float32, float16, dt_bf16, float64, bool, int32, int8, uint8
 ```
 
-Data types supported by AICPU:
+Data types supported by AI CPU:
 
 ```python
 int16, int64
@@ -109,7 +109,7 @@ int16, int64
 
 ### 2.2 `IndexPut` Operator Replacement
 
-The `IndexPut` operator is used for tensor assignment and slicing. It is generally executed on the AICPU. These operations can be converted into equivalent tensor operations that are executed on Cube units, as shown in the following example:
+The `IndexPut` operator is used for tensor assignment and slicing. It is generally executed on the AI CPU. These operations can be converted into equivalent tensor operations that are executed on Cube units, as shown in the following example:
 
 ```python
 masked_input[input_mask] = 0
@@ -123,7 +123,7 @@ masked_input *= ~input_mask
 
 In this case, `masked_input` is a `float` tensor, and `input_mask` is a boolean tensor or a 0/1 matrix with the same shape as `masked_input`. Since this is a 0-assignment operation, `input_mask` is bitwise inverted before the multiplication.
 
-Taking 0-assignment as an example, the test on `float32` data with `shape = (512, 32, 64)` shows that the duration before replacement is `9.639978408813477` ms, while the duration after replacement is `0.1747608184814453` ms. As shown in the following figure, the total duration before replacement is `9.902` ms. The host delivers five operators to the device for execution, and `aclnnIndexPutImpl_IndexPut_IndexPut` is executed on the AICPU.
+Taking 0-assignment as an example, the test on `float32` data with `shape = (512, 32, 64)` shows that the duration before replacement is `9.639978408813477` ms, while the duration after replacement is `0.1747608184814453` ms. As shown in the following figure, the total duration before replacement is `9.902` ms. The host delivers five operators to the device for execution, and `aclnnIndexPutImpl_IndexPut_IndexPut` is executed on the AI CPU.
 
 Figure 7 Duration before replacement
 
@@ -137,7 +137,7 @@ Figure 8 Duration after replacement
 
 ### 2.3 `ArgMin` Operator Optimization
 
-In CANN 6.3.RC2, the `ArgMin` operator is delivered to the AICPU for execution. In CANN 7.0.RC1, it is delivered to the AI Core for execution. In this case, you are advised to upgrade the CANN package version.
+In CANN 6.3.RC2, the `ArgMin` operator is delivered to the AI CPU for execution. In CANN 7.0.RC1, it is delivered to the AI Core for execution. In this case, you are advised to upgrade the CANN package version.
 
 Testing on a tensor with `shape = (1024, 1024)` yields the following results: On CANN 6.3.RC2, the single-operator duration is 2.603 ms.
 

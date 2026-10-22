@@ -28,7 +28,7 @@ Perform the following steps:
            logger.error("Unknown export type.")
    ```
 
-   1. `mapper_func` function: queries multi-rank data and merges the results. Since data processing for each rank in a cluster is identical, the context is used to process profile data in parallel and assemble the results in sequence. You only need to implement the `self._mapper_func` function for single-rank data data processing.
+   1. `mapper_func` function: queries multi-rank data and merges the results. Since data processing for each rank in a cluster is identical, the context is used to process profile data in parallel and assemble the results in sequence. You only need to implement the `self._mapper_func` function for single-rank data processing.
 
       ```python
       def mapper_func(self, context):

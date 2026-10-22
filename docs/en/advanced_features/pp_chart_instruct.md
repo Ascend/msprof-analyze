@@ -4,7 +4,7 @@
 
 This document describes how to collect pipeline parallelism (PP) chart data, use MindStudio Profiler Analyze (msprof_analyze) to analyze the PP chart, and use MindStudio Insight to display the PP chart for data analysis.
 
-The pp chart data analysis (`pp_chart`) feature provides a visual representation of the actual pipeline layout within the PP domain, enabling the analysis of global communication as well as key forward and backward durations. Currently, PP parallelism strategies for transformer models, such as `1F1B` and `DualPipeV`, cannot be visualized.
+The PP chart data analysis (`pp_chart`) feature provides a visual representation of the actual pipeline layout within the PP domain, enabling the analysis of global communication as well as key forward and backward durations. Currently, PP parallelism strategies for transformer models, such as `1F1B` and `DualPipeV`, cannot be visualized.
 
 **Theoretical Visualization of 1F1B and DualPipeV**
 

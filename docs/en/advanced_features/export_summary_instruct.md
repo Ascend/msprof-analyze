@@ -24,7 +24,7 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
 
 **Description**
 
-Exports operator information from collected cluster profile data. This process generates `apistatistic.csv` and `kerneldetails.csv` files for each rank.
+Exports operator information from collected cluster profile data. This process generates `api_statistic.csv` and `kernel_details.csv` files for each rank.
 
 **Syntax**
 
@@ -32,7 +32,7 @@ Exports operator information from collected cluster profile data. This process g
 msprof-analyze cluster -m export_summary -d <cluster_data>
 ```
 
-**Command-line Options** 
+**Command-line Options**
 
 | Option | Required (Yes/No) | Description |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Export cluster operator information.
 msprof-analyze cluster -m export_summary -d ./xxx/cluster_data
 ```
 
-**Output Description** 
+**Output Description**
 
 The following files are generated in the `ASCEND_PROFILER_OUTPUT` directory of each rank:
 

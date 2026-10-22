@@ -33,10 +33,10 @@ MindStudio Profiler Analyze (`msprof-analyze`) is a performance analysis tool fo
 
 ## 🚀 Quick Start
 
-**10-Minute Hands-On Experience**  
+**10-Minute Hands-On Experience**
 Using ResNet-50 training as an example, this guide covers the entire process of **collecting data, running `advisor` analysis, and viewing the analysis results**. Click here to get started: [msprof-analyze Quick Start](docs/en/quick_start/msprof-analyze_quick_start.md).
 
-**Quick Command-Line Reference**  
+**Quick Command-Line Reference**
 If you are already familiar with the workflow, you can directly run the analysis commands. Examples are as follows:
 
 ```bash
@@ -66,15 +66,15 @@ For detailed instructions on using the tool, see [msprof-analyze User Guide](./d
 
 To improve the efficiency of document retrieval, we provide multiple efficient search methods:
 
-🔹 [AI Q&A (DeepWiki)](https://deepwiki.com/mindstudio-docs/master): Natural-language Q&A for quickly understanding the project architecture and relationships between modules.  
-🔹 [AI Q&A (ZRead)](https://zread.ai/mindstudio-docs/master): Provides enhanced Q&A experience and accurately locates feature usage and details.  
+🔹 [AI Q&A (DeepWiki)](https://deepwiki.com/mindstudio-docs/master): Natural-language Q&A for quickly understanding the project architecture and relationships between modules.
+🔹 [AI Q&A (ZRead)](https://zread.ai/mindstudio-docs/master): Provides enhanced Q&A experience and accurately locates feature usage and details.
 🔹 [Exact Search (ReadTheDocs)](https://mindstudio-docs-master.readthedocs.io): Supports full-text keyword searches for direct access to information such as APIs, parameters, and error messages.
 
 ## ⚖️ References
 
-🔹 [Release Notes](https://gitcode.com/Ascend/msprof-analyze/releases)  
-🔹 [License Notice](docs/en/legal/license_notice.md)  
-🔹 [Security Statement](docs/en/legal/security_statement.md)  
+🔹 [Release Notes](https://gitcode.com/Ascend/msprof-analyze/releases)
+🔹 [License Notice](docs/en/legal/license_notice.md)
+🔹 [Security Statement](docs/en/legal/security_statement.md)
 🔹 [Disclaimer](docs/en/legal/disclaimer.md)
 
 ## 🤝 Suggestions and Feedback
@@ -89,10 +89,6 @@ You are also welcome to participate in the [satisfaction survey](https://rdccucd
 
 ## 🙏 Acknowledgments
 
-This tool was jointly contributed by the following Huawei departments:
-🔹 Ascend Computing MindStudio Development Department  
-🔹 Ascend Computing Ecosystem Enablement Department  
-🔹 Huawei Cloud AI Compute Service  
-🔹 2012 Network Laboratories
+This tool is jointly contributed by Huawei Technologies Co., Ltd. and developers.
 
-Thank you to everyone in the community for your PRs. We warmly welcome your contributions to `msprof-analyze`.
+Thank you for every PR from the community. Contributions are welcome!

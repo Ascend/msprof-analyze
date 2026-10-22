@@ -100,7 +100,7 @@ profiling_data/
 <!-- npu="950" id1 -->
 ### 2.4 Constraints
 
-For CCU scenarios on 950PR&950DT products, the communication-related analysis features do not provide meaningful results because communication matrix and communication operator bandwidth data cannot be collected.
+For CCU scenarios on Ascend 950PR&950DT products, the communication-related analysis features do not provide meaningful results because communication matrix and communication operator bandwidth data cannot be collected.
 <!-- end id1 -->
 
 ## 3. Feature Introduction
