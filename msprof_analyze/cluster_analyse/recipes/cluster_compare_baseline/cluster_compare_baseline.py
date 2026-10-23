@@ -36,6 +36,18 @@ logger = get_logger()
 class ClusterCompareBaseline(
     ClusterCompareReportMixin, ClusterCompareMetricsMixin, ClusterCompareDataMixin, BaseRecipeAnalysis
 ):
+    """
+    Cluster-level baseline comparison recipe.
+
+    Current status:
+        - The high-level three-stage comparison in ``run()`` is implemented:
+          DP-domain check, CP/TP-domain check, and unexplained-idle detection.
+        - The four-phase per-step fine-grained diagnosis (forward,
+          forward-backward, backward-gradient, optimizer) is NOT yet wired
+          into ``run()``; only the DP-domain entry point ``get_dp_domain()``
+          exists and is triggered from the DP-domain branch.
+    """
+
     step_columns = ["id", "startNs", "endNs"]
     parallel_types = [("ep1",), ("ep2",), ("dp",), ("dp_cp",), ("pp",), ("tp",), ("ep_dp",), ("tp_cp",), ("cp",)]
     PARALLEL_COL_NAME = "parallelType"
@@ -226,7 +238,7 @@ class ClusterCompareBaseline(
             baseline_linearity = self.get_linearity_df(baseline, self._recipe_name, current_min_step)
             current_linearity = self.get_linearity_df(current, self._recipe_name, current_min_step)
 
-            # 按 Rank_id 和 stepId 分组，对duration求和
+            # Aggregate the total time without communication blackout per parallel type.
             baseline_result = self.sum_by_columns(
                 baseline_linearity, group_cols=["parallelType"], sum_col="totalTimeWithoutCommunicationBlackout"
             )
@@ -244,11 +256,25 @@ class ClusterCompareBaseline(
                 )
                 continue
 
-            # 第一阶段：直接判断
+            # ---------------------------------------------------------------
+            # Stage 1: coarse-grained DP-domain check.
+            # If the summed degradation (diff_percent) of dp / dp_cp / ep_dp
+            # exceeds 70%, trigger the per-step DP-domain deep dive.
+            # NOTE: The four-phase fine-grained diagnosis (forward,
+            # forward-backward, backward-gradient, optimizer) is NOT yet wired
+            # into run(); only the DP-domain entry point is invoked here.
+            # ---------------------------------------------------------------
             if comparison[comparison["parallelType"].isin(["dp", "dp_cp", "ep_dp"])]["diff_percent"].sum() > 70:
                 continue
 
-            # 第二阶段：判断CP和TP
+            # ---------------------------------------------------------------
+            # Stage 2: CP / TP-domain check.
+            # Compare the unmasked-communication ratio and net overhead of all
+            # non-DP parallel types between the current and baseline runs.
+            # A degradation above 70% together with a positive net overhead
+            # and an unmasked-ratio delta larger than 0.1 indicates that
+            # resource contention has spread beyond the DP domain.
+            # ---------------------------------------------------------------
             current_unmask = current_linearity[~current_linearity["parallelType"].str.contains("dp")][
                 "ratioOfUnmaskedCommunication"
             ].sum()
@@ -265,7 +291,14 @@ class ClusterCompareBaseline(
                     self._record_text("EP域的AllToAll通信对全局负载不均和网络拥塞及其敏感,")
                     self._record_text("若TP域也出现异常,则表明资源竞争已波及所有通信域(CP、TP等)。")
 
-            # 阶段三：判断
+            # ---------------------------------------------------------------
+            # Stage 3: unexplained-idle detection.
+            # Subtract the net overhead explained by the communication-domain
+            # model from the total step-time difference. If more than 10% of
+            # the step-time difference remains unexplained, it usually points
+            # to pipeline-parallelism bubbles, scheduling gaps, or
+            # framework-level synchronization waits.
+            # ---------------------------------------------------------------
             step_time_diff = current_step_time - baseline_step_time
             if self._safe_divide(comparison["diff"].sum() - step_time_diff, step_time_diff) > 0.1:
                 self._record_text("【问题】: 该空闲未被任何通信域的净开销模型捕获。")
