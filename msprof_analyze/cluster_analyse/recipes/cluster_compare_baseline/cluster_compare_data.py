@@ -32,9 +32,8 @@ class ClusterCompareDataMixin:
     """
     Data-classification mixin for the cluster baseline comparison recipe.
 
-    This mixin is responsible for partitioning the communication operators of
-    each profiling step into four phase buckets that the analysis layer
-    (``ClusterCompareBaseline``) consumes:
+    This mixin partitions the communication operators of each profiling step
+    into four phase buckets:
 
         - forward_ret              : forward-phase communication ops
         - forward_backward_ret     : ops in the forward->backward transition
@@ -45,10 +44,10 @@ class ClusterCompareDataMixin:
     as comparison anchors.
 
     NOTE:
-        ``_analyze_data_by_step`` relies on attributes provided by the composing
-        class (``step_columns`` / ``parallel_types`` / ``PARALLEL_COL_NAME``).
-        User-visible report text is emitted by ``ClusterCompareReportMixin``,
-        not by this mixin; here only debug-level logging is produced.
+        ``_analyze_data_by_step`` is currently UNREFERENCED by
+        ``ClusterCompareBaseline.run()``. It is kept here for the planned
+        four-phase per-step diagnosis and will be wired into the Stage 1
+        DP-domain branch in a follow-up change.
     """
 
     def _get_step_df(self, data_map):
@@ -82,9 +81,8 @@ class ClusterCompareDataMixin:
         """
         Return the rank count of a parallel group, or 0 if not found.
 
-        The group information table is expected to contain ``group_name`` and
-        ``rank_count`` columns; missing table/columns yield 0 so that the
-        downstream comparison degrades gracefully.
+        Missing table/columns yield 0 so that the downstream comparison
+        degrades gracefully.
         """
         if group_info_df is None or group_info_df.empty:
             return 0
@@ -97,10 +95,9 @@ class ClusterCompareDataMixin:
         """
         Compute the linearity of communication operators.
 
-        Delegates to the shared ``LinearityUtils.compute_linearity_df`` helper,
-        forwarding the composing class's ``parallel_types`` / ``step_columns`` /
-        ``PARALLEL_COL_NAME``. ``use_merge`` is kept as False to preserve the
-        original per-operator (non-merged) semantics.
+        Delegates to the shared ``LinearityUtils.compute_linearity_df`` helper.
+        ``use_merge`` is kept as False to preserve the original per-operator
+        (non-merged) semantics.
         """
         return LinearityUtils.compute_linearity_df(
             data_map=data_map,
@@ -135,6 +132,9 @@ class ClusterCompareDataMixin:
         """
         Classify communication operators per step into four phase buckets.
 
+        NOTE: currently unreferenced by ``ClusterCompareBaseline.run()``;
+        reserved for the planned four-phase per-step diagnosis.
+
         For every step, the returned dict contains:
             start_time / end_time            : step boundaries (ns)
             max_dp_rank / max_dp_cp_rank /
@@ -143,9 +143,6 @@ class ClusterCompareDataMixin:
             forward_backward_ret             : forward->backward transition ops
             backward_gradient_ret            : backward gradient (reduceScatter) ops
             backward_optimizer_ret           : optimizer-phase ops
-
-        Only the four buckets are returned; callers that need the full
-        communication DataFrame must fetch it themselves.
         """
         step_df, profiler_db_path = self._get_step_df(data_map)
         step_range = data_map.get(Constant.STEP_RANGE) if data_map else None
@@ -166,8 +163,7 @@ class ClusterCompareDataMixin:
             return {}
 
         # Sort once by startNs outside the loop, then use searchsorted inside
-        # the loop to slice the per-step candidates. This avoids re-filtering
-        # the full table and re-sorting for every step.
+        # the loop to slice per-step candidates.
         communication_df = communication_df.sort_values("startNs").reset_index(drop=True)
         start_ns_arr = communication_df["startNs"].to_numpy()
 
@@ -190,23 +186,19 @@ class ClusterCompareDataMixin:
             if end_time - start_time == 0:
                 continue
 
-            # Locate candidates via binary search on startNs, then filter by the
-            # endNs upper bound so only ops fully contained in this step remain.
             left = start_ns_arr.searchsorted(start_time, side="left")
             right = start_ns_arr.searchsorted(end_time, side="right")
             candidate = communication_df.iloc[left:right]
             df = candidate[candidate["endNs"] <= end_time].copy()
-            # communication_df is already sorted by startNs; slicing preserves
-            # the order, so no further sort is needed here.
             df = df.reset_index(drop=True)
 
             if df.empty:
                 continue
 
             # FIX: recompute cumcount per step so ``group_rank`` is restored.
-            # Downstream ``_analyze_*_phase`` relies on ``row_value.group_rank``
-            # and matches it against the baseline; the numbering must be per
-            # step rather than global.
+            # The planned per-phase analysis (not yet wired in) relies on
+            # ``row_value.group_rank`` and matches it against the baseline; the
+            # numbering must be per step rather than global.
             df["group_rank"] = df.groupby("parallelType").cumcount()
 
             analyse_ret = {
@@ -223,11 +215,8 @@ class ClusterCompareDataMixin:
 
             logger.debug("========== Step %s ==========", step_id)
 
-            # ---------------------------------------------------------------
-            # Bucket 1 (forward phase): allGather ops of dp_cp / ep_dp that
-            # finish before the first TP allReduce starts. The start of that
-            # first TP allReduce is treated as the forward/backward boundary.
-            # ---------------------------------------------------------------
+            # Bucket 1 (forward phase): dp_cp / ep_dp allGather ops finishing
+            # before the first TP allReduce starts.
             tp_allReduce = df[
                 (df["parallelType"] == "tp") & (df["opType"].str.contains("allReduce", na=False, regex=False))
             ]
@@ -247,14 +236,8 @@ class ClusterCompareDataMixin:
             else:
                 logger.debug("Bucket 1: no TP broadcast found")
 
-            # ---------------------------------------------------------------
-            # Determine the reference boundary between forward and backward:
-            # the startNs of the last non-allReduce TP op preceding the last
-            # large TP allReduce. If no such op exists, fall back to the startNs
-            # of that allReduce itself.
-            # NOTE: this intentionally differs from the PR description's
-            # "start of the previous op" wording; the original behavior is kept.
-            # ---------------------------------------------------------------
+            # Reference boundary between forward and backward: startNs of the
+            # last non-allReduce TP op preceding the last large TP allReduce.
             tp_reference_end = None
             tp_allreduce = df[
                 (df["parallelType"] == "tp")
@@ -271,20 +254,14 @@ class ClusterCompareDataMixin:
                 ]
                 # If there is no non-allReduce TP op before the last large
                 # allReduce, fall back to that allReduce's own startNs.
-                # NOTE: this intentionally differs from the PR description's
-                # "start of the previous op" wording; the original behavior is kept.
                 tp_reference_end = (
                     tp_non_allreduce.iloc[-1]["startNs"]
                     if not tp_non_allreduce.empty
                     else df.loc[last_allreduce_idx, "startNs"]
                 )
 
-                # -----------------------------------------------------------
-                # Bucket 3 (backward gradient): reduceScatter ops of
-                # dp_cp / ep_dp that start after the TP reference boundary.
-                # The upper bound (endNs < end_time) is added for consistency
-                # with buckets 1/2/4 so ops never leak across step boundaries.
-                # -----------------------------------------------------------
+                # Bucket 3 (backward gradient): dp_cp / ep_dp reduceScatter ops
+                # starting after the TP reference boundary.
                 dp_ep_reduce_scatter = df[
                     (df["parallelType"].isin(["dp_cp", "ep_dp"]))
                     & (df["opType"].str.contains("reduceScatter", na=False, regex=False))
@@ -297,8 +274,6 @@ class ClusterCompareDataMixin:
                     first_start = dp_ep_reduce_scatter.iloc[0]["startNs"]
                     logger.debug("Start time of the first qualifying reduceScatter: %s", first_start)
 
-                    # Apply the same endNs < end_time upper bound as buckets
-                    # 1/2/4 to avoid counting across step boundaries.
                     result3 = df[
                         (df["parallelType"].isin(["dp_cp", "ep_dp"]))
                         & (df["opType"].str.contains("reduceScatter", na=False, regex=False))
@@ -314,10 +289,8 @@ class ClusterCompareDataMixin:
             else:
                 logger.debug("No allReduce op found in the TP domain")
 
-            # ---------------------------------------------------------------
             # Bucket 4 (optimizer phase): after the TP reference boundary,
-            # allGather of dp_cp / ep_dp, or allReduce of dp.
-            # ---------------------------------------------------------------
+            # dp_cp / ep_dp allGather, or dp allReduce.
             if tp_reference_end is not None:
                 result4 = df[
                     (
@@ -340,12 +313,8 @@ class ClusterCompareDataMixin:
             else:
                 logger.debug("Bucket 4: no TP allReduce event found")
 
-            # ---------------------------------------------------------------
             # Bucket 2 (forward->backward transition): ops in the window
-            # (forward_end, tp_reference_end), i.e. dp_cp / ep_dp allGather or
-            # reduceScatter, or dp allReduce. This window only makes sense when
-            # bucket 1 is non-empty, since forward_end comes from bucket 1.
-            # ---------------------------------------------------------------
+            # (forward_end, tp_reference_end).
             if not result1.empty:
                 forward_end = result1["endNs"].max()
                 if tp_reference_end is not None:
