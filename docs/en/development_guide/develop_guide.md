@@ -47,7 +47,7 @@ msprof-analyze includes a [devcontainer](https://containers.dev/) development en
 
 ### 2.2 Method 2: Manual Environment Configuration
 
-Follow the [msprof-analyze Installation Guide - Source Installation](../install_guide/msprof-analyze_install_guide.md#231-environment-preparation) section to set up the build and test environment.
+Follow the [msprof-analyze Installation Guide - Source Installation](../install_guide/msprof-analyze_install_guide.md#231-environment-setup) section to set up the build and test environment.
 
 > **Note:** The build method of the environment image and the associated software versions are maintained in the MindStudio unified image creation guide. This repository does not define them again.
 
@@ -175,7 +175,7 @@ When adding a Recipe, follow the existing rules:
 
 For detailed development instructions, see:
 
-- `docs/zh/advanced_features/custom_analysis_guide.md`
+- `docs/en/advanced_features/custom_analysis_guide.md`
 
 ### 3.5 Common Local Run Commands
 
@@ -274,13 +274,13 @@ After feature development is complete, if the change affects user operations or 
 
 | Change Type | Document to Update |
 | --- | --- |
-| Installation, compilation, or upgrade method | `docs/zh/install_guide/msprof-analyze_install_guide.md` |
-| Quick start workflow | `docs/zh/quick_start/msprof-analyze_quick_start.md` |
-| Advisor features | `docs/zh/user_guide/advisor_instruct.md` |
-| Compare features | `docs/zh/user_guide/compare_tool_instruct.md` |
-| Cluster features | `docs/zh/user_guide/cluster_analyse_instruct.md` |
-| Recipe extension capabilities | `docs/zh/advanced_features/README.md` |
-| Custom Recipe development method | `docs/zh/advanced_features/custom_analysis_guide.md` |
+| Installation, compilation, or upgrade method | `docs/en/install_guide/msprof-analyze_install_guide.md` |
+| Quick start workflow | `docs/en/quick_start/msprof-analyze_quick_start.md` |
+| Advisor features | `docs/en/user_guide/advisor_instruct.md` |
+| Compare features | `docs/en/user_guide/compare_tool_instruct.md` |
+| Cluster features | `docs/en/user_guide/cluster_analyse_instruct.md` |
+| Recipe extension capabilities | `docs/en/advanced_features/README.md` |
+| Custom Recipe development method | `docs/en/advanced_features/custom_analysis_guide.md` |
 | Release information | `https://gitcode.com/Ascend/msprof-analyze/releases` |
 
 ## 6. Submission Process Recommendations

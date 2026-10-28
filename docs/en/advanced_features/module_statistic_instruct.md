@@ -174,7 +174,7 @@ def train():
         export_type=[
             torch_npu.profiler.ExportType.Text,
             torch_npu.profiler.ExportType.Db
-        ],  # The export type must include db.
+        ],  # The export_type must include db.
     )
 
     prof = torch_npu.profiler.profile(

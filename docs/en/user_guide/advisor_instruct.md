@@ -45,9 +45,9 @@ Install the `msprof-analyze` tool. For details, see the [msprof-analyze Installa
 
 **Constraints**
 
-- CANN versions earlier than 8.0RC1 support only the analysis of text-format files. CANN 8.0RC1 and later versions support analysis of collected profile data in both `text` and `db` formats.
+- CANN versions earlier than 8.0.RC1 support only the analysis of text-format files. CANN 8.0.RC1 and later versions support analysis of collected profile data in both `text` and `db` formats.
 <!-- npu="950" id1 -->
-- For CCU scenarios on the 950PR&950DT products, the `slow rank`, `slow link`, and `communication` analysis features do not provide meaningful results because communication matrix data and communication operator bandwidth data cannot be collected.
+- For CCU scenarios on the Ascend 950PR&950DT products, the `slow rank`, `slow link`, and `communication` analysis features do not provide meaningful results because communication matrix data and communication operator bandwidth data cannot be collected.
 <!-- end id1 -->
 
 ## 4. Feature Introduction (`advisor` Command-line Mode)
