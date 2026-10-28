@@ -40,15 +40,19 @@ class ClusterCompareDataMixin:
         - backward_gradient_ret    : backward gradient (reduceScatter) ops
         - backward_optimizer_ret   : optimizer-phase communication ops
 
-    It also provides the linearity DataFrame and the total step duration used
-    as comparison anchors.
-
-    NOTE:
-        ``_analyze_data_by_step`` is currently UNREFERENCED by
-        ``ClusterCompareBaseline.run()``. It is kept here for the planned
-        four-phase per-step diagnosis and will be wired into the Stage 1
-        DP-domain branch in a follow-up change.
+    ``group_rank`` is recomputed inside each bucket so that the four-phase
+    diagnosis can match current vs baseline operators by their bucket-local
+    ordering, not by their position in the full step.
     """
+
+    @staticmethod
+    def _reindex_group_rank(bucket):
+        """Reset ``group_rank`` to a per-parallelType cumcount within the bucket."""
+        if bucket is None or bucket.empty:
+            return bucket
+        bucket = bucket.reset_index(drop=True)
+        bucket["group_rank"] = bucket.groupby("parallelType").cumcount()
+        return bucket
 
     def _get_step_df(self, data_map):
         """
@@ -132,9 +136,6 @@ class ClusterCompareDataMixin:
         """
         Classify communication operators per step into four phase buckets.
 
-        NOTE: currently unreferenced by ``ClusterCompareBaseline.run()``;
-        reserved for the planned four-phase per-step diagnosis.
-
         For every step, the returned dict contains:
             start_time / end_time            : step boundaries (ns)
             max_dp_rank / max_dp_cp_rank /
@@ -143,6 +144,9 @@ class ClusterCompareDataMixin:
             forward_backward_ret             : forward->backward transition ops
             backward_gradient_ret            : backward gradient (reduceScatter) ops
             backward_optimizer_ret           : optimizer-phase ops
+
+        Buckets only contain dp / dp_cp / ep_dp operators, matching the
+        ``max_*_rank`` keys returned here.
         """
         step_df, profiler_db_path = self._get_step_df(data_map)
         step_range = data_map.get(Constant.STEP_RANGE) if data_map else None
@@ -195,10 +199,6 @@ class ClusterCompareDataMixin:
             if df.empty:
                 continue
 
-            # FIX: recompute cumcount per step so ``group_rank`` is restored.
-            # The planned per-phase analysis (not yet wired in) relies on
-            # ``row_value.group_rank`` and matches it against the baseline; the
-            # numbering must be per step rather than global.
             df["group_rank"] = df.groupby("parallelType").cumcount()
 
             analyse_ret = {
@@ -231,7 +231,7 @@ class ClusterCompareDataMixin:
                 ].copy()
 
                 if not result1.empty:
-                    analyse_ret["forward_ret"] = result1
+                    analyse_ret["forward_ret"] = self._reindex_group_rank(result1)
                 logger.debug("Bucket 1 result: %s ops", len(result1))
             else:
                 logger.debug("Bucket 1: no TP broadcast found")
@@ -252,8 +252,6 @@ class ClusterCompareDataMixin:
                     (prev_data["parallelType"] == "tp")
                     & (~prev_data["opType"].str.contains("allReduce", na=False, regex=False))
                 ]
-                # If there is no non-allReduce TP op before the last large
-                # allReduce, fall back to that allReduce's own startNs.
                 tp_reference_end = (
                     tp_non_allreduce.iloc[-1]["startNs"]
                     if not tp_non_allreduce.empty
@@ -282,7 +280,7 @@ class ClusterCompareDataMixin:
                     ].copy()
 
                     if not result3.empty:
-                        analyse_ret["backward_gradient_ret"] = result3
+                        analyse_ret["backward_gradient_ret"] = self._reindex_group_rank(result3)
                     logger.debug("Bucket 3 result: %s ops", len(result3))
                 else:
                     logger.debug("Bucket 3: no reduceScatter still running after the TP phase")
@@ -308,7 +306,7 @@ class ClusterCompareDataMixin:
                 ].copy()
 
                 if not result4.empty:
-                    analyse_ret["backward_optimizer_ret"] = result4
+                    analyse_ret["backward_optimizer_ret"] = self._reindex_group_rank(result4)
                 logger.debug("Bucket 4 result: %s ops", len(result4))
             else:
                 logger.debug("Bucket 4: no TP allReduce event found")
@@ -335,7 +333,7 @@ class ClusterCompareDataMixin:
                     ].copy()
 
                     if not result2.empty:
-                        analyse_ret["forward_backward_ret"] = result2
+                        analyse_ret["forward_backward_ret"] = self._reindex_group_rank(result2)
                     logger.debug("Bucket 2 result: %s ops", len(result2))
                 else:
                     logger.debug("Bucket 2: no TP allReduce event found")
