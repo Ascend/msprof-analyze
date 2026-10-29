@@ -182,3 +182,28 @@ class TestCommMatrixAnalysis(unittest.TestCase):
     def test_dump_db_when_called_then_raise_runtime_error(self):
         with self.assertRaises(RuntimeError):
             self.analysis.dump_db()
+
+    @patch('msprof_analyze.cluster_analyse.analysis.comm_matrix_analysis.increase_shared_value')
+    def test_no_matrix_generates_no_file_for_coarse_or_detailed_time(self, mock_increase):
+        for value in (-1, 0.5):
+            with self.subTest(breakdown=value):
+                params = {
+                    Constant.DATA_TYPE: Constant.TEXT,
+                    Constant.ANALYSIS_MODE: Constant.ALL,
+                    Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.test_dir,
+                    Constant.COMM_DATA_DICT: {Constant.COMMUNICATION_OPS: [{
+                        Constant.COMM_OP_INFO: {Constant.COMMUNICATION_TIME_INFO: {
+                            Constant.ELAPSE_TIME_MS: 1,
+                            Constant.TRANSIT_TIME_MS: value,
+                            Constant.WAIT_TIME_MS: value,
+                            Constant.SYNCHRONIZATION_TIME_MS: value,
+                            Constant.IDLE_TIME_MS: value,
+                        }},
+                    }]},
+                }
+                analysis = CommMatrixAnalysis(params)
+                with patch.object(analysis, 'dump_data') as dump:
+                    analysis.run(MagicMock(), MagicMock())
+                dump.assert_not_called()
+                self.assertFalse(os.path.exists(os.path.join(self.output_path, 'cluster_communication_matrix.json')))
+        self.assertEqual(mock_increase.call_count, 2)
