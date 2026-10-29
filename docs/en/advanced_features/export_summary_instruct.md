@@ -29,7 +29,7 @@ Exports operator information from collected cluster profile data. This process g
 **Syntax**
 
 ```bash
-msprof-analyze cluster -m export_summary -d <cluster_data> 
+msprof-analyze cluster -m export_summary -d <cluster_data>
 ```
 
 **Command-line Options** 
@@ -46,7 +46,7 @@ For details about more options, see [Command-line Options and Parameters](./READ
 Export cluster operator information.
 
 ```bash
-msprof-analyze cluster -m export_summary -d ./xxx/cluster_data 
+msprof-analyze cluster -m export_summary -d ./xxx/cluster_data
 ```
 
 **Output Description** 
@@ -94,7 +94,7 @@ The following table describes fields in the kernel details table.
 | input_data_types | TEXT | Input data type |
 | output_data_types | TEXT | Output data type |
 
-## 4.3 Output Analysis
+### 4.3 Output Analysis
 
 * Use `api_statistic.csv` to analyze API call frequency and execution duration distribution to identify high-frequency or time-consuming APIs.
 * Use `kernel_details.csv` to analyze operator execution details, including input/output shapes and data types.

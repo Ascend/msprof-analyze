@@ -127,13 +127,13 @@ masked_input *= ~input_mask
 
 **图7** 替换前耗时
 
-![img](./figures/替换前耗时.png)
+![img](./figures/duration_before_replacement.png)
 
 替换后，总体耗时226.131us。下发三个执行算子，均执行在AI Core上。
 
 **图8** 替换后耗时
 
-![img](./figures/替换后耗时.png)
+![img](./figures/duration_after_replacement.png)
 
 ### 2.3 ArgMin算子优化
 

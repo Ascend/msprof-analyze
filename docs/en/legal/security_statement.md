@@ -14,6 +14,8 @@ Enable **address space layout randomization** (ASLR) (level 2) in the system. Ru
 
  3. All tools in this repository are designed to run with minimal permissions. For security reasons, do not use `root` or other privileged accounts. Always install and execute tools as a regular user.
 
+ 4. This repository provides reference VS Code and devcontainer configurations for development and debugging in a secure environment only. Check the configuration security and adjust it as needed.
+
 ## 3. File Permission Control
 
  1. When providing input files to the tool, it is recommended that the file owner matches the process owner of the tool and that file permissions restrict write access for `group` and `others`. By default, tool files written to the drive are not writable by others. You can manually control the permissions for the generated files as needed.

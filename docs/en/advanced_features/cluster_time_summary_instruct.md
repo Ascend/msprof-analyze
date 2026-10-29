@@ -30,7 +30,7 @@ Analyzes the collected cluster data by using the `cluster_time_summary` feature 
 msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 ```
 
-**Command-line Options** 
+**Command-line Options**
 
 | Option | Required (Yes/No) | Description |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Perform fine-grained breakdown of cluster profile data.
 msprof-analyze -m cluster_time_summary -d ./xxx/cluster_data -o ./xxx/output_path
 ```
 
-**Output Description** 
+**Output Description**
 
 - When `--export_type` is set to `db`, the `cluster_analysis_output/cluster_analysis.db` file is generated under the directory specified by `-o`, and the `ClusterTimeSummary` table is generated in this file.
 - When `--export_type` is set to `text`, the `cluster_analysis_output/ClusterTimeSummary/cluster_time_summary_{timestamp}.csv` file is generated under the directory specified by `-o`.

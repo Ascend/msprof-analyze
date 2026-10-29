@@ -31,12 +31,12 @@ Copy the profile data of all nodes to an environment. The profile data must be p
 │   ├── PROF_XXXXX    # Profile data of a single rank.
 │       ├── SUMMARY
 │           ├── op_summary_XX.csv   # op_summary table used for parsing.
-|   ......             
+|   ......
 ```
 
-## 3. Function
+## 3. Cluster Operator Duration Analysis
 
-**Description**
+**Function**
 
 Collects and displays statistics for the top N operators with the fastest, slowest, and average duration, as well as the highest variance, on each rank.
 
@@ -52,16 +52,16 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 
 **Command-line Options**
 
-| Option| Required (Yes/No)| Description                                             |
+| Option| Mandatory (Yes/No)| Description                                             |
 | ---- | -------- | ------------------------------------------------- |
 | -d   | Yes     | Specifies the profile data directory for cluster scenarios. Enter the parent directory of the `node*` directories.<br>&#8226; If `op_summary` does not exist in some directories, no information is displayed and no error is reported.<br>&#8226; If no `op_summary` data exists in the specified directory, an error is reported indicating that the data files cannot be found.<br>&#8226; If data in the `op_summary` column of a file is incorrect or cannot be read, the specific faulty file is identified.|
-| -t   | Yes     | Specifies the output file type for the analysis results. The values can be: `html` (default), `csv`, or `all`.<br>If the configuration is incorrect, an error message is displayed along with the correct configuration format.|
+| -t   | No      | Specifies the output file type for the analysis results. The values can be: `html` (default), `csv`, or `all`.<br>If the configuration is incorrect, an error message is displayed along with the correct configuration format.|
 | -n   | No     | (HTML only) Specifies the number of top N (default: `10`) operators to be displayed based on average duration. Values exceeding 30 may increase processing time.<br>&#8226; The value must be greater than 0. If a value less than or equal to 0 is entered, data for only one operator is exported by default.<br>&#8226; If the value specified exceeds the total number of operators, the total number of operators is used.|
 
 **Example**
 
 ```bash
-python3 cluster_prof_info_analysis.py -d ./cluster_data -t csv -n 5
+python3 cluster_prof_info_analysis.py -d ./cluster_data -t html -n 5
 ```
 
 ## 4. Output File Description

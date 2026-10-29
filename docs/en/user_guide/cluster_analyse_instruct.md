@@ -97,9 +97,11 @@ profiling_data/
     └── profiler_info_*.json
 ```
 
+<!-- npu="950" id1 -->
 ### 2.4 Constraints
 
-For CCU scenarios on Ascend 950 products, the communication-related analysis features do not provide meaningful results because communication matrix and communication operator bandwidth data cannot be collected.
+For CCU scenarios on 950PR&950DT products, the communication-related analysis features do not provide meaningful results because communication matrix and communication operator bandwidth data cannot be collected.
+<!-- end id1 -->
 
 ## 3. Feature Introduction
 
@@ -186,12 +188,12 @@ You are advised to use MindStudio Insight to import the generated `cluster_analy
 
 ![img](../figures/cluster_summary.png)
     <div style="text-align: center;">
-    **Figure 1** Cluster computation/communication overview
+    Figure 1 Cluster computation/communication overview
     </div>
 
 ![img](../figures/cluster_communication_matrix.png)
     <div style="text-align: center;">
-    **Figure 2** Cluster communication matrix
+    Figure 2 Cluster communication matrix
     </div>
 
 ### 4.3 Fields in Deliverables
