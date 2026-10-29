@@ -49,13 +49,18 @@ class ClusterCompareBaseline(
 
     Step alignment:
         Both current and baseline linearity are filtered by ``current_min_step``
-        (legacy behavior), so the two sides are aligned on the same step id.
+        (legacy behavior). If baseline has no data for ``current_min_step``,
+        ``baseline_linearity`` is empty and the rank is skipped explicitly.
 
     Report layout:
         ``text_reports`` is reordered at the end of each rank so the .txt
         follows header -> four_phase -> stage2 -> stage3, independent of the
         execution order. The .txt itself is still a plain join of
         ``text_reports``.
+
+    Operator reports:
+        Per-rank ``operator_reports`` are accumulated across ranks and dumped
+        once after the loop, so a multi-rank run does not lose earlier ranks.
     """
 
     step_columns = ["id", "startNs", "endNs"]
@@ -187,12 +192,19 @@ class ClusterCompareBaseline(
         FileManager.create_common_file(text_path, content)
         logger.info("Cluster compare baseline text report saved to %s", text_path)
 
-    def save_operator_report(self):
-        """Dump the accumulated operator-level findings into the DB table."""
-        if not self.operator_reports:
+    def save_operator_report(self, operator_reports=None):
+        """
+        Dump the accumulated operator-level findings into the DB table.
+
+        ``operator_reports`` can be passed explicitly so multi-rank runs do not
+        rely on the per-rank ``self.operator_reports`` buffer, which
+        ``_reset_reports`` clears at the start of each rank.
+        """
+        reports = self.operator_reports if operator_reports is None else operator_reports
+        if not reports:
             return
         self.dump_data(
-            data=pd.DataFrame(self.operator_reports),
+            data=pd.DataFrame(reports),
             file_name=Constant.DB_CLUSTER_COMMUNICATION_ANALYZER,
             table_name=Constant.TABLE_CLUSTER_COMPARE_BASELINE_OPERATOR,
             index=False,
@@ -206,6 +218,7 @@ class ClusterCompareBaseline(
             return
 
         logger.info("Report output path: %s", self.output_path)
+        all_operator_reports = []
 
         for rank_id, data in self.rank_data_map.items():
             self._reset_reports(rank_id)
@@ -227,8 +240,14 @@ class ClusterCompareBaseline(
             )
             comparison = self.compare_by_parallel_type(current_result, baseline_result)
             if comparison.empty or current_linearity.empty or baseline_linearity.empty:
-                self._record_text("当前 rank 缺少可对比的线性度数据，跳过后续诊断。")
+                # Explicitly note when the baseline side has no data for
+                # current_min_step; this is the legacy fallback path.
+                if baseline_linearity.empty and not current_linearity.empty:
+                    self._record_text(f"baseline 侧没有 step {current_min_step} 的线性度数据，跳过该 rank。")
+                else:
+                    self._record_text("当前 rank 缺少可对比的线性度数据，跳过后续诊断。")
                 self._save_text_report(rank_id)
+                all_operator_reports.extend(self.operator_reports)
                 continue
 
             dp_related = ["dp", "dp_cp", "ep_dp"]
@@ -297,16 +316,24 @@ class ClusterCompareBaseline(
             self.text_reports[four_phase_start:four_phase_start] = four_phase_lines
 
             self._save_text_report(rank_id)
+            all_operator_reports.extend(self.operator_reports)
 
-        self.save_operator_report()
+        self.save_operator_report(all_operator_reports)
 
     @staticmethod
     def _get_domains(current_value, baseline_value, parallel_type):
-        """Return (current_domain, baseline_domain); either may be None."""
-        return (
-            current_value.get(f"max_{parallel_type}_rank"),
-            baseline_value.get(f"max_{parallel_type}_rank"),
-        )
+        """
+        Return (current_domain, baseline_domain). A missing or zero rank count
+        is returned as None so callers can skip the op instead of feeding 0
+        into comm_lower_bound (which would raise ValueError).
+        """
+        current_domain = current_value.get(f"max_{parallel_type}_rank")
+        baseline_domain = baseline_value.get(f"max_{parallel_type}_rank")
+        if not current_domain:
+            current_domain = None
+        if not baseline_domain:
+            baseline_domain = None
+        return current_domain, baseline_domain
 
     def _record_phase_operator(
         self,
@@ -375,14 +402,22 @@ class ClusterCompareBaseline(
     def _analyze_forward_phase(self, step_id, current_value, baseline_value):
         self._record_text("[四阶段-1] forward：")
         operator_rows = []
-        for row_value in current_value["forward_ret"].itertuples():
+        current_forward = current_value.get("forward_ret")
+        if current_forward is None or current_forward.empty:
+            self._record_operator_table("阶段一算子评估表：", operator_rows)
+            return
+        baseline_forward = baseline_value.get("forward_ret")
+        if baseline_forward is None or baseline_forward.empty:
+            self._record_operator_table("阶段一算子评估表：", operator_rows)
+            return
+
+        for row_value in current_forward.itertuples():
             parallel_type = row_value.parallelType
             current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
             current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if current_domain is None or baseline_domain is None:
+            if not current_domain or not baseline_domain:
                 continue
 
-            baseline_forward = baseline_value["forward_ret"]
             match = baseline_forward.loc[
                 (baseline_forward["group_rank"] == row_value.group_rank)
                 & (baseline_forward["parallelType"].isin([parallel_type]))
@@ -462,7 +497,10 @@ class ClusterCompareBaseline(
             self._record_operator_table("阶段二算子评估表：", operator_rows)
             return
 
-        current_fb_df = current_value["forward_backward_ret"]
+        current_fb_df = current_value.get("forward_backward_ret")
+        if current_fb_df is None or current_fb_df.empty:
+            self._record_operator_table("阶段二算子评估表：", operator_rows)
+            return
         operator_dp_df = current_fb_df[
             (current_fb_df["parallelType"].isin(["dp"])) & (current_fb_df["opType"].str.contains("allReduce", na=False))
         ]
@@ -478,14 +516,18 @@ class ClusterCompareBaseline(
             self._record_text("【判定】:预取阻塞计算 (Prefetch-Compute Overlap劣化)。")
             self._record_text("【建议】:增大 Micro Batch Size ; 调整参数预取深度 (Prefetch Depth)。")
 
+        baseline_fb_df = baseline_value.get("forward_backward_ret")
+        if baseline_fb_df is None or baseline_fb_df.empty:
+            self._record_operator_table("阶段二算子评估表：", operator_rows)
+            return
+
         for row_value in operator_dp_df.itertuples():
             parallel_type = row_value.parallelType
             current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
             current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if current_domain is None or baseline_domain is None:
+            if not current_domain or not baseline_domain:
                 continue
 
-            baseline_fb_df = baseline_value["forward_backward_ret"]
             match = baseline_fb_df.loc[
                 (baseline_fb_df["group_rank"] == row_value.group_rank)
                 & (baseline_fb_df["parallelType"].isin([parallel_type]))
@@ -530,8 +572,13 @@ class ClusterCompareBaseline(
     def _analyze_backward_gradient_phase(self, step_id, current_value, baseline_value):
         self._record_text("[四阶段-3] backward gradient：")
         operator_rows = []
-        backward_gradient_df = current_value["backward_gradient_ret"]
+        backward_gradient_df = current_value.get("backward_gradient_ret")
         if backward_gradient_df is None or backward_gradient_df.empty:
+            return
+
+        baseline_gradient = baseline_value.get("backward_gradient_ret")
+        if baseline_gradient is None or baseline_gradient.empty:
+            self._record_operator_table("阶段三算子评估表：", operator_rows)
             return
 
         operator_bp_df = backward_gradient_df[
@@ -542,12 +589,9 @@ class ClusterCompareBaseline(
             parallel_type = row_value.parallelType
             current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
             current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if current_domain is None or baseline_domain is None:
+            if not current_domain or not baseline_domain:
                 continue
 
-            baseline_gradient = baseline_value["backward_gradient_ret"]
-            if baseline_gradient.empty:
-                continue
             match = baseline_gradient.loc[
                 (baseline_gradient["group_rank"] == row_value.group_rank)
                 & (baseline_gradient["parallelType"].isin([parallel_type]))
@@ -603,7 +647,7 @@ class ClusterCompareBaseline(
     def _analyze_optimizer_phase(self, step_id, current_value, baseline_value, step_duration):
         self._record_text("[四阶段-4] optimizer：")
         operator_rows = []
-        current_optimizer_df = current_value["backward_optimizer_ret"]
+        current_optimizer_df = current_value.get("backward_optimizer_ret")
         if current_optimizer_df is None or current_optimizer_df.empty:
             return
 
@@ -620,14 +664,19 @@ class ClusterCompareBaseline(
             (current_optimizer_df["parallelType"].isin(["dp"]))
             & (current_optimizer_df["opType"].str.contains("allReduce", na=False))
         ]
+
+        baseline_optimizer = baseline_value.get("backward_optimizer_ret")
+        if baseline_optimizer is None or baseline_optimizer.empty:
+            self._record_operator_table("阶段四算子评估表：", operator_rows)
+            return
+
         for row_value in operator_optimizer_df.itertuples():
             parallel_type = row_value.parallelType
             current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
             current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if current_domain is None or baseline_domain is None:
+            if not current_domain or not baseline_domain:
                 continue
 
-            baseline_optimizer = baseline_value["backward_optimizer_ret"]
             match = baseline_optimizer.loc[
                 (baseline_optimizer["group_rank"] == row_value.group_rank)
                 & (baseline_optimizer["parallelType"].isin([parallel_type]))

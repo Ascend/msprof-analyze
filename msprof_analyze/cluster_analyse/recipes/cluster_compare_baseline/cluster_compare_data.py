@@ -43,7 +43,14 @@ class ClusterCompareDataMixin:
     ``group_rank`` is recomputed inside each bucket so that the four-phase
     diagnosis can match current vs baseline operators by their bucket-local
     ordering, not by their position in the full step.
+
+    Empty buckets are initialized with the expected columns so consumers can
+    access columns safely even when a bucket is empty.
     """
+
+    # Columns present in every non-trivial bucket. Kept in one place so the
+    # empty-bucket initialization stays in sync with the populated buckets.
+    BUCKET_COLUMNS = ["parallelType", "opType", "dataType", "count", "startNs", "endNs", "group_rank"]
 
     @staticmethod
     def _reindex_group_rank(bucket):
@@ -53,6 +60,11 @@ class ClusterCompareDataMixin:
         bucket = bucket.reset_index(drop=True)
         bucket["group_rank"] = bucket.groupby("parallelType").cumcount()
         return bucket
+
+    @classmethod
+    def _empty_bucket(cls):
+        """Return an empty bucket with the expected columns pre-initialized."""
+        return pd.DataFrame(columns=cls.BUCKET_COLUMNS)
 
     def _get_step_df(self, data_map):
         """
@@ -146,7 +158,8 @@ class ClusterCompareDataMixin:
             backward_optimizer_ret           : optimizer-phase ops
 
         Buckets only contain dp / dp_cp / ep_dp operators, matching the
-        ``max_*_rank`` keys returned here.
+        ``max_*_rank`` keys returned here. Empty buckets are pre-initialized
+        with the expected columns.
         """
         step_df, profiler_db_path = self._get_step_df(data_map)
         step_range = data_map.get(Constant.STEP_RANGE) if data_map else None
@@ -179,10 +192,6 @@ class ClusterCompareDataMixin:
 
         dict_ret = {}
         for _, step_row in step_df.iterrows():
-            result1 = pd.DataFrame()
-            result2 = pd.DataFrame()
-            result3 = pd.DataFrame()
-            result4 = pd.DataFrame()
             start_time = step_row["startNs"]
             end_time = step_row["endNs"]
             step_id = step_row["id"]
@@ -207,10 +216,10 @@ class ClusterCompareDataMixin:
                 "max_dp_rank": max_dp_rank,
                 "max_dp_cp_rank": max_dp_cp_rank,
                 "max_ep_dp_rank": max_ep_dp_rank,
-                "forward_ret": pd.DataFrame(),
-                "forward_backward_ret": pd.DataFrame(),
-                "backward_gradient_ret": pd.DataFrame(),
-                "backward_optimizer_ret": pd.DataFrame(),
+                "forward_ret": self._empty_bucket(),
+                "forward_backward_ret": self._empty_bucket(),
+                "backward_gradient_ret": self._empty_bucket(),
+                "backward_optimizer_ret": self._empty_bucket(),
             }
 
             logger.debug("========== Step %s ==========", step_id)
@@ -222,7 +231,7 @@ class ClusterCompareDataMixin:
             ]
             if not tp_allReduce.empty:
                 tp_allReduce_start = tp_allReduce["startNs"].min()
-                logger.debug("End time of the first TP broadcast: %s", tp_allReduce_start)
+                logger.debug("Start time of the first TP allReduce: %s", tp_allReduce_start)
 
                 result1 = df[
                     (df["parallelType"].isin(["dp_cp", "ep_dp"]))
