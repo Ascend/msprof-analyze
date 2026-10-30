@@ -32,6 +32,21 @@ from msprof_analyze.cluster_analyse.common_func.linearity_utils import Linearity
 
 logger = get_logger()
 
+# Shared conclusion texts (single source of truth for repeated sentences).
+CONCLUSION_ALGO_OR_LINK = "通信算法选择不当, 或参数面链路冲突"
+SUGGESTION_ALGO_OR_LINK = (
+    "按拓扑自适应选择通信算法 (如 Hierarchical AllGather); "
+    "降低DP域大小, 减少跨亲和组流量; "
+    "优化部署亲和性, 确保同节点/同框内通信优先; "
+    "确认是否开启 TACO-ranktable 及 routeplan"
+)
+CONCLUSION_BARRIER = "出现强制阻塞 (Cross-Group Synchronization Barrier)"
+SUGGESTION_BARRIER = "修改并行策略，减少跨域强制同步（例如拆分 CP 和 DP 的同步边界）"
+CONCLUSION_OPTIMIZER_HEAVY = "优化器通信过重（ Optimizer State Sharding Overhead ）"
+SUGGESTION_OPTIMIZER_HEAVY = (
+    "切换为更轻量的优化器分片策略 (如 ZeRO-2 替代 ZeRO-3); 或使用分片优化器 (Sharded Optimizer) 。"
+)
+
 
 class ClusterCompareBaseline(
     ClusterCompareReportMixin, ClusterCompareMetricsMixin, ClusterCompareDataMixin, BaseRecipeAnalysis
@@ -43,24 +58,23 @@ class ClusterCompareBaseline(
         - Three-stage coarse-grained comparison in ``run()``:
           DP-domain check, CP/TP-domain check, unexplained-idle detection.
         - When the DP-domain check (Stage 1) is triggered, ``get_dp_domain``
-          runs the four-phase per-step diagnosis and records operator-level
-          findings into ``operator_reports``.
+          runs the four-phase diagnosis for the given step and records
+          operator-level findings into ``operator_reports``.
         - Stage 2 and Stage 3 still run after Stage 1.
 
     Step alignment:
         Both current and baseline linearity are filtered by ``current_min_step``
-        (legacy behavior). If baseline has no data for ``current_min_step``,
-        ``baseline_linearity`` is empty and the rank is skipped explicitly.
+        (legacy behavior). If baseline has no data for that step, the rank is
+        skipped with an explicit message.
 
     Report layout:
-        ``text_reports`` is reordered at the end of each rank so the .txt
-        follows header -> four_phase -> stage2 -> stage3, independent of the
-        execution order. The .txt itself is still a plain join of
-        ``text_reports``.
+        ``text_reports`` is reordered per rank so the .txt follows
+        header -> four_phase -> stage2 -> stage3, independent of execution
+        order.
 
     Operator reports:
         Per-rank ``operator_reports`` are accumulated across ranks and dumped
-        once after the loop, so a multi-rank run does not lose earlier ranks.
+        once after the loop.
     """
 
     step_columns = ["id", "startNs", "endNs"]
@@ -68,7 +82,16 @@ class ClusterCompareBaseline(
     PARALLEL_COL_NAME = "parallelType"
     Computational_Operator_Linearity_Columns = LinearityUtils.COMPUTATIONAL_OPERATOR_LINEARITY_COLUMNS
 
+    # Named thresholds (replaces inline magic numbers).
+    DP_DEGRADE_PERCENT_THRESHOLD = 70
+    NON_DP_DEGRADE_PERCENT_THRESHOLD = 70
+    UNMASK_DELTA_THRESHOLD = 0.1
+    IDLE_RATIO_THRESHOLD = 0.1
+    FORWARD_BACKWARD_WINDOW_RATIO = 0.02
+    LINEARITY_DELTA_THRESHOLD = 0.03
+    ABNORMAL_RATIO_MULTIPLIER = 2
     SMALL_OP_COUNT_THRESHOLD = 100
+    OPTIMIZER_RATIO_DELTA_THRESHOLD = 0.0
 
     @classmethod
     def add_parser_argument(cls, parser):
@@ -193,13 +216,7 @@ class ClusterCompareBaseline(
         logger.info("Cluster compare baseline text report saved to %s", text_path)
 
     def save_operator_report(self, operator_reports=None):
-        """
-        Dump the accumulated operator-level findings into the DB table.
-
-        ``operator_reports`` can be passed explicitly so multi-rank runs do not
-        rely on the per-rank ``self.operator_reports`` buffer, which
-        ``_reset_reports`` clears at the start of each rank.
-        """
+        """Dump the accumulated operator-level findings into the DB table."""
         reports = self.operator_reports if operator_reports is None else operator_reports
         if not reports:
             return
@@ -214,6 +231,12 @@ class ClusterCompareBaseline(
         if not self.has_baseline:
             logger.warning("No baseline data available, skipping comparison analysis.")
             self._record_text("未提供或无法加载基线数据（--baseline_profiling_path），本次未执行对比。")
+            self._save_text_report()
+            return
+
+        if not self.rank_data_map:
+            logger.warning("Baseline data exists but no shared rank with current data; nothing to compare.")
+            self._record_text("基线数据存在，但当前数据与基线没有共同的 rank，未执行对比。")
             self._save_text_report()
             return
 
@@ -240,8 +263,6 @@ class ClusterCompareBaseline(
             )
             comparison = self.compare_by_parallel_type(current_result, baseline_result)
             if comparison.empty or current_linearity.empty or baseline_linearity.empty:
-                # Explicitly note when the baseline side has no data for
-                # current_min_step; this is the legacy fallback path.
                 if baseline_linearity.empty and not current_linearity.empty:
                     self._record_text(f"baseline 侧没有 step {current_min_step} 的线性度数据，跳过该 rank。")
                 else:
@@ -254,8 +275,8 @@ class ClusterCompareBaseline(
             dp_mask = comparison["parallelType"].isin(dp_related)
             non_dp_mask = ~dp_mask
 
-            # Stage 1: DP-domain check. Stage 2/3 still run afterwards.
-            if comparison.loc[dp_mask, "diff_percent"].sum() > 70:
+            # Stage 1
+            if comparison.loc[dp_mask, "diff_percent"].sum() > self.DP_DEGRADE_PERCENT_THRESHOLD:
                 self._record_text("【判定】: DP 相关域（dp/dp_cp/ep_dp）劣化显著，启动四阶段逐 step 诊断。")
                 four_phase_start = len(self.text_reports)
                 self.get_dp_domain(
@@ -267,7 +288,7 @@ class ClusterCompareBaseline(
                 four_phase_start = len(self.text_reports)
                 four_phase_lines = []
 
-            # Stage 2: CP / TP-domain check.
+            # Stage 2
             current_unmask = current_linearity[~current_linearity["parallelType"].str.contains("dp", na=False)][
                 "ratioOfUnmaskedCommunication"
             ].sum()
@@ -277,8 +298,8 @@ class ClusterCompareBaseline(
             reaction_condition_one = comparison.loc[non_dp_mask, "diff"].sum()
             reaction_condition_two = current_unmask - base_unmask
 
-            if comparison.loc[non_dp_mask, "diff_percent"].sum() > 70:
-                if reaction_condition_one > 0 and reaction_condition_two > 0.1:
+            if comparison.loc[non_dp_mask, "diff_percent"].sum() > self.NON_DP_DEGRADE_PERCENT_THRESHOLD:
+                if reaction_condition_one > 0 and reaction_condition_two > self.UNMASK_DELTA_THRESHOLD:
                     bad = comparison[non_dp_mask & (comparison["diff_percent"] > 0)]
                     for _, row in bad.iterrows():
                         self._record_text(
@@ -289,7 +310,7 @@ class ClusterCompareBaseline(
                         "PP 域对流水线延迟最敏感，EP 域的 AllToAll 对负载不均和网络拥塞敏感。"
                     )
 
-            # Stage 3 (idle): unexplained-idle detection.
+            # Stage 3
             step_time_diff = current_step_time - baseline_step_time
             logger.info(
                 "Stage3 inputs: current_min_step=%s current_step_time=%s baseline_step_time=%s "
@@ -303,7 +324,9 @@ class ClusterCompareBaseline(
             )
             if step_time_diff <= 0:
                 self._record_text("当前 step 时长不大于基线，跳过未解释空闲分析。")
-            elif self._safe_divide(comparison["diff"].sum() - step_time_diff, step_time_diff) > 0.1:
+            elif (
+                self._safe_divide(comparison["diff"].sum() - step_time_diff, step_time_diff) > self.IDLE_RATIO_THRESHOLD
+            ):
                 self._record_text("【空闲分析】: 该空闲未被任何通信域的净开销模型捕获。")
                 self._record_text(
                     "【建议】: 常见原因包括:流水线并行气泡、调度间隙、框架层同步等待等。虽然这些空闲通常由DP域问题间接引发"
@@ -311,10 +334,7 @@ class ClusterCompareBaseline(
                     "排除步骤2 3 4之后应输出告警,重点关注调度间隙。"
                 )
 
-            # Re-insert the four-phase block before the Stage 2/3 text so the
-            # .txt order is header -> four_phase -> stage2 -> stage3.
             self.text_reports[four_phase_start:four_phase_start] = four_phase_lines
-
             self._save_text_report(rank_id)
             all_operator_reports.extend(self.operator_reports)
 
@@ -322,11 +342,7 @@ class ClusterCompareBaseline(
 
     @staticmethod
     def _get_domains(current_value, baseline_value, parallel_type):
-        """
-        Return (current_domain, baseline_domain). A missing or zero rank count
-        is returned as None so callers can skip the op instead of feeding 0
-        into comm_lower_bound (which would raise ValueError).
-        """
+        """Return (current_domain, baseline_domain); zero is normalized to None."""
         current_domain = current_value.get(f"max_{parallel_type}_rank")
         baseline_domain = baseline_value.get(f"max_{parallel_type}_rank")
         if not current_domain:
@@ -372,6 +388,104 @@ class ClusterCompareBaseline(
             suggestion=suggestion,
         )
 
+    def _evaluate_phase_operators(
+        self,
+        step_id,
+        phase,
+        title,
+        current_df,
+        baseline_df,
+        current_value,
+        baseline_value,
+        filter_mask,
+        conclusion,
+        suggestion,
+        require_count_domain_match=True,
+        count_filter=None,
+    ):
+        """
+        Shared flow for the four phases: iterate current ops, match baseline
+        ops, compute ratios, record operator rows, and emit the conclusion
+        once (outside the operator loop).
+
+        ``filter_mask`` selects the phase's operators from ``current_df``.
+        ``require_count_domain_match`` adds the ``count * domain`` equality to
+        the baseline match; use it only for phases whose ``count`` scales with
+        the parallel domain (forward / backward gradient), not for the small
+        ``dp allReduce`` ops in forward-backward / optimizer.
+        ``count_filter`` optionally skips operators by count.
+        """
+        if title:
+            self._record_text(title)
+        operator_rows = []
+
+        if current_df is None or current_df.empty or baseline_df is None or baseline_df.empty:
+            self._record_operator_table(f"{phase}算子评估表：", operator_rows)
+            return operator_rows
+
+        filtered = current_df[filter_mask(current_df)]
+        any_abnormal = False
+
+        for row_value in filtered.itertuples():
+            parallel_type = row_value.parallelType
+            current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
+            current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
+            if not current_domain or not baseline_domain:
+                continue
+
+            if count_filter is not None and not count_filter(row_value.count):
+                continue
+
+            match_mask = (
+                (baseline_df["group_rank"] == row_value.group_rank)
+                & (baseline_df["parallelType"].isin([parallel_type]))
+                & (baseline_df["opType"].str.contains(current_opType, na=False))
+            )
+            if require_count_domain_match:
+                match_mask = match_mask & (baseline_df["count"] * baseline_domain == row_value.count * current_domain)
+            match = baseline_df.loc[match_mask].reset_index(drop=True)
+            if match.empty:
+                continue
+
+            current_duration = self._ns_to_ms(row_value.endNs - row_value.startNs)
+            baseline_duration = self._ns_to_ms(match["endNs"].values[0] - match["startNs"].values[0])
+            ratio_dict = self.comm_lower_bound(
+                row_value.count,
+                baseline_duration,
+                baseline_domain,
+                current_domain,
+                datatype=row_value.dataType,
+                op_type=current_opType,
+            )
+            actual_ratio = self._safe_divide(current_duration, baseline_duration)
+            is_abnormal = actual_ratio >= self.ABNORMAL_RATIO_MULTIPLIER * ratio_dict["ratio"]
+            if is_abnormal:
+                any_abnormal = True
+
+            operator_rows.append(
+                self._record_phase_operator(
+                    step_id=step_id,
+                    phase=phase,
+                    row_value=row_value,
+                    current_domain=current_domain,
+                    baseline_domain=baseline_domain,
+                    current_duration=current_duration,
+                    baseline_duration=baseline_duration,
+                    actual_ratio=actual_ratio,
+                    theoretical_ratio=ratio_dict["ratio"],
+                    is_abnormal=is_abnormal,
+                    conclusion=conclusion if is_abnormal else "",
+                    suggestion=suggestion if is_abnormal else "",
+                )
+            )
+
+        if any_abnormal:
+            self._record_text(f"【异常原因（当前版本）】{phase}: {conclusion}")
+            self._record_text(f"【优化建议】{phase}: {suggestion}")
+
+        self._record_operator_table(f"{phase}算子评估表：", operator_rows)
+        return operator_rows
+
     def get_dp_domain(
         self,
         current_linearity,
@@ -381,7 +495,12 @@ class ClusterCompareBaseline(
         current_min_step,
         analysis_class,
     ):
-        """Run the four-phase diagnosis for each comparable step."""
+        """
+        Run the four-phase diagnosis for the given step id.
+
+        ``current_min_step`` is a single step id; ``_analyze_data_by_step``
+        keeps only that step, so this method processes one step per call.
+        """
         current_results = self._analyze_data_by_step(current_data_map, analysis_class, current_min_step)
         baseline_results = self._analyze_data_by_step(baseline_data_map, f"{analysis_class}_baseline", current_min_step)
 
@@ -400,86 +519,32 @@ class ClusterCompareBaseline(
             self._analyze_optimizer_phase(step_id, current_value, baseline_value, step_duration)
 
     def _analyze_forward_phase(self, step_id, current_value, baseline_value):
-        self._record_text("[四阶段-1] forward：")
-        operator_rows = []
-        current_forward = current_value.get("forward_ret")
-        if current_forward is None or current_forward.empty:
-            self._record_operator_table("阶段一算子评估表：", operator_rows)
-            return
-        baseline_forward = baseline_value.get("forward_ret")
-        if baseline_forward is None or baseline_forward.empty:
-            self._record_operator_table("阶段一算子评估表：", operator_rows)
-            return
-
-        for row_value in current_forward.itertuples():
-            parallel_type = row_value.parallelType
-            current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
-            current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if not current_domain or not baseline_domain:
-                continue
-
-            match = baseline_forward.loc[
-                (baseline_forward["group_rank"] == row_value.group_rank)
-                & (baseline_forward["parallelType"].isin([parallel_type]))
-                & (baseline_forward["count"] * baseline_domain == row_value.count * current_domain)
-                & (baseline_forward["opType"].str.contains(current_opType, na=False)),
-            ].reset_index(drop=True)
-            if match.empty:
-                continue
-
-            current_duration = self._ns_to_ms(row_value.endNs - row_value.startNs)
-            baseline_duration = self._ns_to_ms(match["endNs"].values[0] - match["startNs"].values[0])
-            ratio_dict = self.comm_lower_bound(
-                row_value.count,
-                baseline_duration,
-                baseline_domain,
-                current_domain,
-                datatype=row_value.dataType,
-                op_type=current_opType,
-            )
-            actual_ratio = self._safe_divide(current_duration, baseline_duration)
-            is_abnormal = actual_ratio >= 2 * ratio_dict["ratio"]
-            operator_rows.append(
-                self._record_phase_operator(
-                    step_id=step_id,
-                    phase="阶段一",
-                    row_value=row_value,
-                    current_domain=current_domain,
-                    baseline_domain=baseline_domain,
-                    current_duration=current_duration,
-                    baseline_duration=baseline_duration,
-                    actual_ratio=actual_ratio,
-                    theoretical_ratio=ratio_dict["ratio"],
-                    is_abnormal=is_abnormal,
-                    conclusion="通信算法选择不当, 或参数面链路冲突" if is_abnormal else "",
-                    suggestion=(
-                        "按拓扑自适应选择通信算法; 降低DP域大小; 优化部署亲和性; "
-                        "确认是否开启 TACO-ranktable 及 routeplan"
-                    )
-                    if is_abnormal
-                    else "",
-                )
-            )
-            if is_abnormal:
-                self._record_text("【异常原因（当前版本）】: 通信算法选择不当, 或参数面链路冲突.")
-                self._record_text(
-                    "【优化建议】: 按拓扑自适应选择通信算法 (如 Hierarchical AllGather); "
-                    "降低DP域大小, 减少跨亲和组流量; "
-                    "优化部署亲和性, 确保同节点/同框内通信优先; "
-                    "确认是否开启 TACO-ranktable 及 routeplan"
-                )
-        self._record_operator_table("阶段一算子评估表：", operator_rows)
+        self._evaluate_phase_operators(
+            step_id=step_id,
+            phase="阶段一",
+            title="[四阶段-1] forward：",
+            current_df=current_value.get("forward_ret"),
+            baseline_df=baseline_value.get("forward_ret"),
+            current_value=current_value,
+            baseline_value=baseline_value,
+            filter_mask=lambda df: df["parallelType"].isin(self.PHASE_FILTERS["forward"][0])
+            & df["opType"].str.contains("allGather", na=False),
+            conclusion=CONCLUSION_ALGO_OR_LINK,
+            suggestion=SUGGESTION_ALGO_OR_LINK,
+            require_count_domain_match=True,
+            count_filter=None,
+        )
 
     def _analyze_forward_backward_phase(
         self, step_id, current_value, baseline_value, current_mask_df, baseline_mask_df, step_duration
     ):
-        self._record_text("[四阶段-2] forward-backward：")
         forward_ret = current_value.get("forward_ret")
         if forward_ret is None or forward_ret.empty:
+            self._record_text("[四阶段-2] forward-backward：")
             self._record_text("未找到前向阶段算子数据，跳过阶段二分析。")
+            self._record_operator_table("阶段二算子评估表：", [])
             return
 
-        operator_rows = []
         phase_forward_end = forward_ret["endNs"].max()
         backward_starts = []
         for key in ("backward_gradient_ret", "backward_optimizer_ret"):
@@ -488,232 +553,102 @@ class ClusterCompareBaseline(
                 backward_starts.append(df["startNs"].min())
 
         if not backward_starts:
+            self._record_text("[四阶段-2] forward-backward：")
             self._record_text("没有找到 Backward 阶段开始时间！")
-            self._record_operator_table("阶段二算子评估表：", operator_rows)
+            self._record_operator_table("阶段二算子评估表：", [])
             return
 
-        current_forward_backward_duration = min(backward_starts) - phase_forward_end
-        if self._safe_divide(current_forward_backward_duration, step_duration) <= 0.02:
-            self._record_operator_table("阶段二算子评估表：", operator_rows)
+        window = min(backward_starts) - phase_forward_end
+        if self._safe_divide(window, step_duration) <= self.FORWARD_BACKWARD_WINDOW_RATIO:
+            self._record_text("[四阶段-2] forward-backward：")
+            self._record_operator_table("阶段二算子评估表：", [])
             return
 
-        current_fb_df = current_value.get("forward_backward_ret")
-        if current_fb_df is None or current_fb_df.empty:
-            self._record_operator_table("阶段二算子评估表：", operator_rows)
-            return
-        operator_dp_df = current_fb_df[
-            (current_fb_df["parallelType"].isin(["dp"])) & (current_fb_df["opType"].str.contains("allReduce", na=False))
-        ]
-
+        self._record_text("[四阶段-2] forward-backward：")
         tp_delta = self._linearity_ratio(current_mask_df, step_id, "tp") - self._linearity_ratio(
             baseline_mask_df, step_id, "tp"
         )
         tp_cp_delta = self._linearity_ratio(current_mask_df, step_id, "tp_cp") - self._linearity_ratio(
             baseline_mask_df, step_id, "tp_cp"
         )
-        if tp_delta >= 0.03 and tp_cp_delta >= 0.03:
+        if tp_delta >= self.LINEARITY_DELTA_THRESHOLD and tp_cp_delta >= self.LINEARITY_DELTA_THRESHOLD:
             self._record_text(f"tp 未掩盖率差值: {tp_delta}, tp_cp 未掩盖率差值: {tp_cp_delta}")
             self._record_text("【判定】:预取阻塞计算 (Prefetch-Compute Overlap劣化)。")
             self._record_text("【建议】:增大 Micro Batch Size ; 调整参数预取深度 (Prefetch Depth)。")
 
-        baseline_fb_df = baseline_value.get("forward_backward_ret")
-        if baseline_fb_df is None or baseline_fb_df.empty:
-            self._record_operator_table("阶段二算子评估表：", operator_rows)
-            return
-
-        for row_value in operator_dp_df.itertuples():
-            parallel_type = row_value.parallelType
-            current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
-            current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if not current_domain or not baseline_domain:
-                continue
-
-            match = baseline_fb_df.loc[
-                (baseline_fb_df["group_rank"] == row_value.group_rank)
-                & (baseline_fb_df["parallelType"].isin([parallel_type]))
-                & (baseline_fb_df["opType"].str.contains(current_opType, na=False))
-            ].reset_index(drop=True)
-            if match.empty or row_value.count >= self.SMALL_OP_COUNT_THRESHOLD:
-                continue
-
-            current_duration = self._ns_to_ms(row_value.endNs - row_value.startNs)
-            baseline_duration = self._ns_to_ms(match["endNs"].values[0] - match["startNs"].values[0])
-            ratio_dict = self.comm_lower_bound(
-                row_value.count,
-                baseline_duration,
-                baseline_domain,
-                current_domain,
-                datatype=row_value.dataType,
-                op_type=current_opType,
-            )
-            actual_ratio = self._safe_divide(current_duration, baseline_duration)
-            is_abnormal = actual_ratio >= 2 * ratio_dict["ratio"]
-            operator_rows.append(
-                self._record_phase_operator(
-                    step_id=step_id,
-                    phase="阶段二",
-                    row_value=row_value,
-                    current_domain=current_domain,
-                    baseline_domain=baseline_domain,
-                    current_duration=current_duration,
-                    baseline_duration=baseline_duration,
-                    actual_ratio=actual_ratio,
-                    theoretical_ratio=ratio_dict["ratio"],
-                    is_abnormal=is_abnormal,
-                    conclusion="出现强制阻塞 (Cross-Group Synchronization Barrier)" if is_abnormal else "",
-                    suggestion="修改并行策略，减少跨域强制同步（例如拆分 CP 和 DP 的同步边界）" if is_abnormal else "",
-                )
-            )
-            if is_abnormal:
-                self._record_text("【判定】：出现强制阻塞 (Cross-Group Synchronization Barrier)。")
-                self._record_text("【建议】：修改并行策略，减少跨域强制同步（例如拆分 CP 和 DP 的同步边界）。")
-        self._record_operator_table("阶段二算子评估表：", operator_rows)
+        # Phase 2 diagnoses dp allReduce only; see PHASE_FILTERS.
+        self._evaluate_phase_operators(
+            step_id=step_id,
+            phase="阶段二",
+            title="",
+            current_df=current_value.get("forward_backward_ret"),
+            baseline_df=baseline_value.get("forward_backward_ret"),
+            current_value=current_value,
+            baseline_value=baseline_value,
+            filter_mask=lambda df: df["parallelType"].isin(self.PHASE_FILTERS["forward_backward"][0])
+            & df["opType"].str.contains("allReduce", na=False),
+            conclusion=CONCLUSION_BARRIER,
+            suggestion=SUGGESTION_BARRIER,
+            require_count_domain_match=False,  # dp allReduce count does not scale with domain
+            count_filter=lambda c: c < self.SMALL_OP_COUNT_THRESHOLD,
+        )
 
     def _analyze_backward_gradient_phase(self, step_id, current_value, baseline_value):
-        self._record_text("[四阶段-3] backward gradient：")
-        operator_rows = []
-        backward_gradient_df = current_value.get("backward_gradient_ret")
-        if backward_gradient_df is None or backward_gradient_df.empty:
-            return
-
-        baseline_gradient = baseline_value.get("backward_gradient_ret")
-        if baseline_gradient is None or baseline_gradient.empty:
-            self._record_operator_table("阶段三算子评估表：", operator_rows)
-            return
-
-        operator_bp_df = backward_gradient_df[
-            (backward_gradient_df["parallelType"].isin(["dp", "dp_cp", "ep_dp"]))
-            & (backward_gradient_df["opType"].str.contains("reduceScatter", na=False))
-        ]
-        for row_value in operator_bp_df.itertuples():
-            parallel_type = row_value.parallelType
-            current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
-            current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if not current_domain or not baseline_domain:
-                continue
-
-            match = baseline_gradient.loc[
-                (baseline_gradient["group_rank"] == row_value.group_rank)
-                & (baseline_gradient["parallelType"].isin([parallel_type]))
-                & (baseline_gradient["count"] * baseline_domain == row_value.count * current_domain)
-                & (baseline_gradient["opType"].str.contains(current_opType, na=False))
-            ].reset_index(drop=True)
-            if match.empty:
-                continue
-
-            current_duration = self._ns_to_ms(row_value.endNs - row_value.startNs)
-            baseline_duration = self._ns_to_ms(match["endNs"].values[0] - match["startNs"].values[0])
-            ratio_dict = self.comm_lower_bound(
-                row_value.count,
-                baseline_duration,
-                baseline_domain,
-                current_domain,
-                datatype=row_value.dataType,
-                op_type=current_opType,
-            )
-            actual_ratio = self._safe_divide(current_duration, baseline_duration)
-            is_abnormal = actual_ratio >= 2 * ratio_dict["ratio"]
-            operator_rows.append(
-                self._record_phase_operator(
-                    step_id=step_id,
-                    phase="阶段三",
-                    row_value=row_value,
-                    current_domain=current_domain,
-                    baseline_domain=baseline_domain,
-                    current_duration=current_duration,
-                    baseline_duration=baseline_duration,
-                    actual_ratio=actual_ratio,
-                    theoretical_ratio=ratio_dict["ratio"],
-                    is_abnormal=is_abnormal,
-                    conclusion="通信算法选择不当，或者参数面链路冲突" if is_abnormal else "",
-                    suggestion=(
-                        "按拓扑自适应选择通信算法; 降低DP域大小; 优化部署的亲和性; "
-                        "确认是否开启 TACO-ranktable 及 routeplan"
-                    )
-                    if is_abnormal
-                    else "",
-                )
-            )
-            if is_abnormal:
-                self._record_text("【异常原因（当前版本）】：通信算法选择不当，或者参数面链路冲突。")
-                self._record_text(
-                    "【优化建议】: 按拓扑自适应选择通信算法(如 Herarchical AllGather); "
-                    "降低DP域大小, 减少跨亲和组流量; "
-                    "优化部署的亲和性，确保同节点/同框内通信优先; "
-                    "确认是否开启 TACO-ranktable 及 routeplan。"
-                )
-        self._record_operator_table("阶段三算子评估表：", operator_rows)
+        self._evaluate_phase_operators(
+            step_id=step_id,
+            phase="阶段三",
+            title="[四阶段-3] backward gradient：",
+            current_df=current_value.get("backward_gradient_ret"),
+            baseline_df=baseline_value.get("backward_gradient_ret"),
+            current_value=current_value,
+            baseline_value=baseline_value,
+            filter_mask=lambda df: df["parallelType"].isin(self.PHASE_FILTERS["backward_gradient"][0])
+            & df["opType"].str.contains("reduceScatter", na=False),
+            conclusion=CONCLUSION_ALGO_OR_LINK,
+            suggestion=SUGGESTION_ALGO_OR_LINK,
+            require_count_domain_match=True,
+            count_filter=None,
+        )
 
     def _analyze_optimizer_phase(self, step_id, current_value, baseline_value, step_duration):
         self._record_text("[四阶段-4] optimizer：")
-        operator_rows = []
         current_optimizer_df = current_value.get("backward_optimizer_ret")
+        baseline_optimizer_df = baseline_value.get("backward_optimizer_ret")
+
         if current_optimizer_df is None or current_optimizer_df.empty:
+            self._record_operator_table("阶段四算子评估表：", [])
+            return
+        if baseline_optimizer_df is None or baseline_optimizer_df.empty:
+            self._record_operator_table("阶段四算子评估表：", [])
             return
 
-        current_optimizer_df = current_optimizer_df.copy()
-        current_optimizer_df["duration"] = current_optimizer_df["endNs"] - current_optimizer_df["startNs"]
-        if self._safe_divide(current_optimizer_df["duration"].sum(), step_duration) <= 0.02:
-            return
+        current_df = current_optimizer_df.copy()
+        current_df["duration"] = current_df["endNs"] - current_df["startNs"]
+        current_ratio = self._safe_divide(current_df["duration"].sum(), step_duration)
 
-        self._record_text("【判定】：优化器通信过重（ Optimizer State Sharding Overhead ）。")
-        self._record_text(
-            "【建议】：切换为更轻量的优化器分片策略 (如 ZeRO-2 替代 ZeRO-3); 或使用分片优化器 (Sharded Optimizer) 。"
+        baseline_df = baseline_optimizer_df.copy()
+        baseline_df["duration"] = baseline_df["endNs"] - baseline_df["startNs"]
+        baseline_ratio = self._safe_divide(baseline_df["duration"].sum(), step_duration)
+
+        if current_ratio - baseline_ratio > self.OPTIMIZER_RATIO_DELTA_THRESHOLD:
+            self._record_text(
+                f"【判定】：{CONCLUSION_OPTIMIZER_HEAVY} (current={current_ratio:.3f}, baseline={baseline_ratio:.3f})"
+            )
+            self._record_text(f"【建议】：{SUGGESTION_OPTIMIZER_HEAVY}")
+
+        # Phase 4 diagnoses dp allReduce only; see PHASE_FILTERS.
+        self._evaluate_phase_operators(
+            step_id=step_id,
+            phase="阶段四",
+            title="",
+            current_df=current_optimizer_df,
+            baseline_df=baseline_optimizer_df,
+            current_value=current_value,
+            baseline_value=baseline_value,
+            filter_mask=lambda df: df["parallelType"].isin(self.PHASE_FILTERS["optimizer"][0])
+            & df["opType"].str.contains("allReduce", na=False),
+            conclusion=CONCLUSION_BARRIER,
+            suggestion=SUGGESTION_BARRIER,
+            require_count_domain_match=False,
+            count_filter=None,
         )
-        operator_optimizer_df = current_optimizer_df[
-            (current_optimizer_df["parallelType"].isin(["dp"]))
-            & (current_optimizer_df["opType"].str.contains("allReduce", na=False))
-        ]
-
-        baseline_optimizer = baseline_value.get("backward_optimizer_ret")
-        if baseline_optimizer is None or baseline_optimizer.empty:
-            self._record_operator_table("阶段四算子评估表：", operator_rows)
-            return
-
-        for row_value in operator_optimizer_df.itertuples():
-            parallel_type = row_value.parallelType
-            current_opType = row_value.opType.replace("hcom_", "").rstrip("_")
-            current_domain, baseline_domain = self._get_domains(current_value, baseline_value, parallel_type)
-            if not current_domain or not baseline_domain:
-                continue
-
-            match = baseline_optimizer.loc[
-                (baseline_optimizer["group_rank"] == row_value.group_rank)
-                & (baseline_optimizer["parallelType"].isin([parallel_type]))
-                & (baseline_optimizer["opType"].str.contains(current_opType, na=False))
-            ].reset_index(drop=True)
-            if match.empty or row_value.count >= self.SMALL_OP_COUNT_THRESHOLD:
-                continue
-
-            current_duration = self._ns_to_ms(row_value.endNs - row_value.startNs)
-            baseline_duration = self._ns_to_ms(match["endNs"].values[0] - match["startNs"].values[0])
-            ratio_dict = self.comm_lower_bound(
-                row_value.count,
-                baseline_duration,
-                baseline_domain,
-                current_domain,
-                datatype=row_value.dataType,
-                op_type=current_opType,
-            )
-            actual_ratio = self._safe_divide(current_duration, baseline_duration)
-            is_abnormal = actual_ratio >= 2 * ratio_dict["ratio"]
-            operator_rows.append(
-                self._record_phase_operator(
-                    step_id=step_id,
-                    phase="阶段四",
-                    row_value=row_value,
-                    current_domain=current_domain,
-                    baseline_domain=baseline_domain,
-                    current_duration=current_duration,
-                    baseline_duration=baseline_duration,
-                    actual_ratio=actual_ratio,
-                    theoretical_ratio=ratio_dict["ratio"],
-                    is_abnormal=is_abnormal,
-                    conclusion="出现强制阻塞 (Cross-Group Synchronization Barrier)" if is_abnormal else "",
-                    suggestion="修改并行策略，减少跨域强制同步（例如拆分 CP 与 DP 的同步时间）" if is_abnormal else "",
-                )
-            )
-            if is_abnormal:
-                self._record_text("【判定】：出现强制阻塞 (Cross-Group Synchronization Barrier)。")
-                self._record_text("【建议】：修改并行策略，减少跨域强制同步（例如拆分 CP 与 DP 的同步时间）。")
-        self._record_operator_table("阶段四算子评估表：", operator_rows)
