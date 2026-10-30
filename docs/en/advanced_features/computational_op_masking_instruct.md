@@ -28,7 +28,7 @@ Analyzes the collected cluster data by using the `computational_op_masking` feat
 msprof-analyze -m computational_op_masking [--export_type <export_type>] [--step_id <step_id>] [--parallel_types <parallel_types>] -d <cluster_data> [-o <output_path>]
 ```
 
-**Command-line Options** 
+**Command-line Options**
 
 | Option | Required (Yes/No) | Description |
 |--------|-------------------|-------------|
@@ -49,7 +49,7 @@ Perform operator overlap linearity analysis of cluster profile data.
 msprof-analyze -m computational_op_masking --export_type db --step_id 11 --parallel_types "edp,dp;dp;edp" -d ./xxx/cluster_data -o ./xxx/output_path
 ```
 
-**Output Description** 
+**Output Description**
 
 The `cluster_analysis_output/cluster_analysis.db` file is generated under the directory specified by `-o`, and the `ComputationalOperatorMaskingLinearity` table is generated in this file. For details about the output files, see [Output File Description](#4-output-file-description).
 

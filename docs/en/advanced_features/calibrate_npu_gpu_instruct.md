@@ -97,9 +97,11 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
 
    **Key Configuration Description**
 
-   * **Environment variable**: Use `VLLM_TORCH_PROFILER_DIR` to set the profile data output directory.
-   **Instrumentation configuration:** Modify the vLLM-Ascend code to set `msprof_tx=True` and `export_type=['text', 'db']` in `experimental_config`.
-   **eager mode**: Currently, only eager mode is supported. Use `--enforce-eager` to ensure operators are executed one by one.
+   - **Environment variable**: Use `VLLM_TORCH_PROFILER_DIR` to set the profile data output directory.
+
+   - **Instrumentation configuration:** Modify the vLLM-Ascend code to set `mstx=True` and `export_type=['text', 'db']` in `experimental_config`.
+
+   - **eager mode**: Currently, only eager mode is supported. Use `--enforce-eager` to ensure operators are executed one by one.
 
 3. Data File Requirements
 

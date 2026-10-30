@@ -117,7 +117,7 @@ python3 build.py test
 执行如下命令进行性能工具安装。
 
 ```bash
-pip3 install ./msprof_analyze-{version}-py3-none-any.whl
+pip3 install ./artifacts/msprof_analyze-{version}-py3-none-any.whl
 ```
 
 ## 3. 验证安装

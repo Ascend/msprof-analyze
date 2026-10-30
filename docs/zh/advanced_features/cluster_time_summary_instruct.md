@@ -30,7 +30,7 @@ msprof-analyze需要传入采集的性能数据文件夹，如何采集性能数
 msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 ```
 
-**参数说明**  
+**参数说明**
 
 | 参数 | 可选/必选 | 说明                                                     |
 | ---- | --------- | -------------------------------------------------------- |
@@ -49,7 +49,7 @@ msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 msprof-analyze -m cluster_time_summary -d ./xxx/cluster_data -o ./xxx/output_path
 ```
 
-**输出说明**  
+**输出说明**
 
 * 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`ClusterTimeSummary`表。
 * 当--export_type设置为text时，在-o参数指定路径下生成`cluster_analysis_output/ClusterTimeSummary/cluster_time_summary_{timestamp}.csv`文件。

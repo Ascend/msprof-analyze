@@ -68,7 +68,7 @@ msprof-analyze compare \
 
 - 当`Computing Time`耗时增大，分析**算子性能**。
 - 当`Uncovered Communication Time`耗时增大，分析**通信性能**。若通信性能分析没有劣化的通信算子，代表通信与计算的并行度较差，继续进行NPU的集群性能分析。
-- 当终端总体性能打印中的`Mem Usage`增大，分析**算子内存**。若没有明显占用较大的算子，则代表算子内存申请量没有差异，问题在于内存的释放（持有时间过久），可以使用TensorBoard或MindStudio insight继续进行NPU内存的分析。
+- 当终端总体性能打印中的`Mem Usage`增大，分析**算子内存**。若没有明显占用较大的算子，则代表算子内存申请量没有差异，问题在于内存的释放（持有时间过久），可以使用TensorBoard或MindStudio Insight继续进行NPU内存的分析。
 
 **第二步：计算劣化看算子性能**
 
