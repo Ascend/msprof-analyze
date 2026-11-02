@@ -67,22 +67,22 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    ```bash
    #!/bin/bash
 
-   # eager mode
-   # Use the profiler capability of vLLM. To support MSTX, modify vllm-ascend/vllm_ascend/worker/worker_v1.py.
+   # Eager mode
+   # Use the vLLM profiler capability. To support mstx, modify vllm-ascend/vllm_ascend/worker/worker_v1.py
    # - Set mstx in experimental_config to True to enable custom instrumentation.
-   # - Add db to export_type.
-   # - Set enforce_eager to True during vLLM inference.
+   # - Add db to the data export type export_type.
+   # - Enable enforce_eager=True during vLLM inference.
 
    dir_model="/path/to/model"
    dir_output_prof="/path/to/model_profile_npu"
 
-   # Use the VLLM_TORCH_PROFILER_DIR environment variable to enable profile data collection and specify the profile data output directory. This variable can also be set directly in the terminal.
+   # Enable performance data collection by using the VLLM_TORCH_PROFILER_DIR environment variable to set the profile data storage path. You can also set this environment variable in the terminal.
    export VLLM_TORCH_PROFILER_DIR=${dir_output_prof}
    export ASCEND_RT_VISIBLE_DEVICES=0,1
 
    echo "Start Profiling"
-   # Modify the benchmark code to add MSTX instrumentation.
-   # Add a profile option to start llm.start_profile().
+   # Modify the benchmark code to add mstx instrumentation.
+   # Add the profile option to start llm.start_profile().
    vllm bench latency \
        --enforce-eager \
        --model ${dir_model} \
@@ -98,8 +98,8 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    **Key Configuration Description**
 
    * **Environment variable**: Use `VLLM_TORCH_PROFILER_DIR` to set the profile data output directory.
-   **Instrumentation configuration:** Modify the vLLM-Ascend code to set `msprof_tx=True` and `export_type=['text', 'db']` in `experimental_config`.
-   **eager mode**: Currently, only eager mode is supported. Use `--enforce-eager` to ensure operators are executed one by one.
+   * **Instrumentation configuration:** Modify the vLLM-Ascend code to set `mstx=True` and `export_type=['text', 'db']` in `experimental_config`.
+   * **eager mode**: Currently, only eager mode is supported. Use `--enforce-eager` to ensure operators are executed one by one.
 
 3. Data File Requirements
 
@@ -211,22 +211,22 @@ from vllm.sampling_params import BeamSearchParams
 # --- START OF INJECTION ---
 -import nvtx
 +import torch_npu
-+import torch_nn as nn
++import torch.nn as nn
 import torch.cuda.profiler as cuda_profiler
 original_call = nn.Module.__call__
 
 def custom_call(self, *args, **kwargs):
-+   # Customize the call method and add MSTX instrumentation.
++   # Custom call method that adds msTX instrumentation.
     module_name = self.__class__.__name__
 -    nvtx.push_range(module_name)
-+    mstx_id = torch_npu.npu.mstx.range_start(module_name, domain="Module")    # Start module instrumentation with domain set to Module
++    mstx_id = torch_npu.npu.mstx.range_start(module_name, domain="Module")    # Start Module instrumentation and set the domain to Module.
     tmp = original_call(self, *args, **kwargs)
 -    nvtx.pop_range()
-+    torch_npu.npu.mstx.range_end(mstx_id, domain="Module")    # End module instrumentation with domain set to Module
++    torch_npu.npu.mstx.range_end(mstx_id, domain="Module")    # End Module instrumentation and set the domain to Module.
     return tmp
 nn.Module.__call__ = custom_call
 -# --- END OF INJECTION ---
-+# Replace the default call method
++# Replace the default call method.
 
 ... # original code
 

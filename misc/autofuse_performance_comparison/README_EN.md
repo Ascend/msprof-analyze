@@ -12,7 +12,7 @@ Only the TensorFlow framework is supported.
 
 **Environment Setup**
 
-- **Hardware**: For hardware environment requirements, see [Ascend Product Models](https://www.hiascend.com/document/detail/en/AscendFAQ/ProduTech/productform/hardwaredesc_0001.html).
+- **Hardware**: For hardware environment requirements, see [Ascend Product Models](https://www.hiascend.com/document/detail/en/Glossary/productform/hardwaredesc_0001.html).
 
 - **Software**: Install the matching CANN Toolkit and ops packages, and then configure CANN environment variables. For details, see [CANN Quick Installation Guide](https://www.hiascend.com/en/cann/download).
 

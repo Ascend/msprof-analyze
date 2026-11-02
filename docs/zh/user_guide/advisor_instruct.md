@@ -393,8 +393,8 @@ Fusible Operator Analysis解析结果打印展示并保存在`mstt_advisor_{time
 
 | 字段 | 说明 |
 | --- | --- |
-| start index | 序列起始算子在kernel details.csv或op_summary.csv中索引位置（不包含表头，起始索引为0）。 |
-| end index | 序列末尾算子在kernel details.csv或op_summary.csv中索引位置。 |
+| start index | 序列起始算子在kernel_details.csv或op_summary.csv中索引位置（不包含表头，起始索引为0）。 |
+| end index | 序列末尾算子在kernel_details.csv或op_summary.csv中索引位置。 |
 | total time(us) | 算子序列总耗时（包含算子间隙），单位us。 |
 | execution time(us) | 序列中算子执行总耗时，单位us。 |
 | mte time(us) | 序列中算子搬运总耗时，单位us。 |

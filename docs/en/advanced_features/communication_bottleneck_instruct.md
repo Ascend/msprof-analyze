@@ -55,15 +55,15 @@ For details about more options, see [Command-line Options and Parameters](./READ
 
 2. Perform communication bottleneck analysis to analyze the 10 communication operations with the longest execution durations in rank 0.
 
-```bash
-msprof-analyze -m communication_bottleneck -d ./xxx/cluster_data -o ./xxx/output_path --rank_id 0 --top_num 10
-```
+   ```bash
+   msprof-analyze -m communication_bottleneck -d ./xxx/cluster_data -o ./xxx/output_path --rank_id 0 --top_num 10
+   ```
 
-## Configuration Description<a name="config_json"></a>
+**Configuration Description**<a name="config_json"></a>
 
 The `communication_bottleneck` feature supports custom analysis thresholds by using a configuration file. The configuration file is as follows:
 
-```text
+```bash
 msprof_analyze/cluster_analyse/recipes/communication_bottleneck/config.json
 ```
 
@@ -89,10 +89,10 @@ The following table describes parameters in this file.
 | start_ns_shifted | No| Start time shift threshold. If the actual shift is less than this value (approximately 1 ms), the start time is considered aligned. The value is of the `int` type and the default value is `1000000` (ns).|
 | device_bound_proportion | No| Proportion threshold for device-bound issues. If the proportion of device-bound issues exceeds this value, it is identified as a device-side bottleneck. The value is of the `float` type and the default value is `0.5` (0.5%).|
 
-## Output Description
+**Output Description**
 
-- When `--export_type` is set to `db`, the `cluster_analysis_output/cluster_analysis.db` file is generated under the directory specified by `-o`, and the `CommunicationBottleneck` table is generated in this file.
-- When `--export_type` is set to `text`, the `cluster_analysis_output/CommunicationBottleneckAnalysis/communication_bottleneck.csv` file is generated under the directory specified by `-o`.
+ - When `--export_type` is set to `db`, the `cluster_analysis_output/cluster_analysis.db` file is generated under the directory specified by `-o`, and the `CommunicationBottleneck` table is generated in this file.
+ - When `--export_type` is set to `text`, the `cluster_analysis_output/CommunicationBottleneckAnalysis/communication_bottleneck.csv` file is generated under the directory specified by `-o`.
 
 For details about the output files, see [Output File Description](#4-output-file-description).
 
@@ -122,6 +122,6 @@ The following table describes fields in this CSV file.
 | End Time(us)     | End timestamp (`TEXT` type) of the communication operator on the target rank (μs)|
 | Duration(us)     | Duration (`REAL` type) of the communication operator on the target rank (μs)|
 | Communication Op | Name (`TEXT` type) of the communication operator                |
-| Slow Rank ID     | Slow rank ID (`INTEGER` type) (valid when fast and slow ranks exist)                 |
-| Fast Rank ID     | Fast rank ID (`INTEGER` type) (valid when fast and slow ranks exist)                 |
+| Slow Rank ID     | Slow rank ID (`INTEGER` type) (valid when a slow rank exists)                 |
+| Fast Rank ID     | Fast rank ID (`INTEGER` type) (valid when a fast rank exists)                 |
 | Reason           | Analysis result (`TEXT` type)            |

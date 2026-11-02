@@ -46,7 +46,9 @@ Install the `msprof-analyze` tool. For details, see the [msprof-analyze Installa
 **Constraints**
 
 - CANN versions earlier than 8.0RC1 support only the analysis of text-format files. CANN 8.0RC1 and later versions support analysis of collected profile data in both `text` and `db` formats.
-- For CCU scenarios on the Ascend 950 products, the `slow rank`, `slow link`, and `communication` analysis features do not provide meaningful results because communication matrix data and communication operator bandwidth data cannot be collected.
+<!-- npu="950" id1 -->
+- For CCU scenarios on the 950PR&950DT products, the `slow rank`, `slow link`, and `communication` analysis features do not provide meaningful results because communication matrix data and communication operator bandwidth data cannot be collected.
+<!-- end id1 -->
 
 ## 4. Feature Introduction (`advisor` Command-line Mode)
 
@@ -126,7 +128,7 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 | `--force` | No | Forces `advisor` to run. When specified, the following checks are skipped: ownership check (allowing execution even if the current user is not the owner of the specified directory or files) and file size check (allowing execution even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB). Specifying this option enables forced execution. If not specified, forced execution is disabled by default. |
 | `-l` `--language` | No | Specifies the language of the analysis results. Valid values: `cn` (Chinese, default) or `en` (English). |
 | `--debug` | No | Enables detailed stack trace information when a tool error occurs. Specifying this option enables debug mode. If not specified, debug mode is disabled by default. |
-| `-h`, `-H` `--help` | No | Displays help information for the subcommands and options of the current command. |
+| `-h` or `--help` | No | Displays help information for the subcommands and options of the current command. |
 
 #### 4.3.3 Environment and Version configuration
 
@@ -224,7 +226,7 @@ The following figure shows an example of **Environment Variable Issues** in the 
 
 ![env\_var.png](../figures/env_var.png)
 
-For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/900/maintenref/envvar/envref_07_0031.html).
+For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html).
 
 The following figures show examples of the **Overall Summary** analysis in a single-rank scenario without a benchmark.
 
@@ -419,7 +421,7 @@ An example of **Synchronize Stream Issues** is shown below. Modify the correspon
 
 ![schedule_2](../figures/schedule_2.png)
 
-For details about the `ASCEND_LAUNCH_BLOCKING` environment variable shown in the preceding figure, see [`ASCEND_LAUNCH_BLOCKING`](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/api/environment_variable/ASCEND_LAUNCH_BLOCKING.md).
+For details about the `ASCEND_LAUNCH_BLOCKING` environment variable shown in the preceding figure, see [`ASCEND_LAUNCH_BLOCKING`](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/api/environment_variable/op_execution/ASCEND_LAUNCH_BLOCKING.md).
 
 An example of **Operator Dispatch Issues** is shown below. Add the following code at the beginning of the execution script to eliminate `aclopCompile`:
 
