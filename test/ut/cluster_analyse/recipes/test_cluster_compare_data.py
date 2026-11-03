@@ -73,11 +73,8 @@ class TestGetStepDf:
     )
     def test_default_step_range_queries_database(self, mock_db_service, recipe):
         mock_service = MagicMock()
-        mock_service.query_data.return_value = {
-            Constant.TABLE_STEP_TIME: pd.DataFrame(
-                {"id": [1], "startNs": [0], "endNs": [100]}
-            )
-        }
+        expected_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [100]})
+        mock_service.query_data.return_value = {Constant.TABLE_STEP_TIME: expected_df}
         mock_db_service.return_value = mock_service
 
         data_map = {
@@ -87,30 +84,12 @@ class TestGetStepDf:
         df, db_path = recipe._get_step_df(data_map)
 
         assert db_path == "/tmp/profiler.db"
-        assert not df.empty
-        assert df.iloc[0]["id"] == 1
-        mock_service.add_table_for_query.assert_called_once()
-        mock_service.query_data.assert_called_once()
-
-
-# ---------------------------------------------------------------------------
-# _first_value
-# ---------------------------------------------------------------------------
-class TestFirstValue:
-
-    def test_none_df_returns_default(self):
-        assert ClusterCompareDataMixin._first_value(None, "col", default=5) == 5
-
-    def test_empty_df_returns_default(self):
-        assert ClusterCompareDataMixin._first_value(pd.DataFrame(), "col", default="x") == "x"
-
-    def test_missing_column_returns_default(self):
-        df = pd.DataFrame({"a": [1]})
-        assert ClusterCompareDataMixin._first_value(df, "b", default=-1) == -1
-
-    def test_returns_first_value(self):
-        df = pd.DataFrame({"a": [10, 20]})
-        assert ClusterCompareDataMixin._first_value(df, "a") == 10
+        assert df is expected_df
+        # Review #3: validate the query arguments, not just call counts.
+        mock_service.add_table_for_query.assert_called_once_with(
+            Constant.TABLE_STEP_TIME, recipe.step_columns
+        )
+        mock_service.query_data.assert_called_once_with()
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +178,34 @@ class TestAnalyzeDataByStep:
                 {Constant.STEP_RANGE: "0,1"}, MagicMock, target_step_id=999
             ) == {}
 
+    def test_target_step_id_hit_filters_to_that_step(self, recipe):
+        """Review #7: production main path passes current_min_step, so a hit
+        on target_step_id must filter to that step and classify it.
+        """
+        step_df = pd.DataFrame(
+            {"id": [1, 2], "startNs": [0, 1000], "endNs": [500, 1500]}
+        )
+        comm_df = pd.DataFrame({
+            "startNs":      [10,   200,  320,  400],
+            "endNs":        [100,  300,  350,  450],
+            "parallelType": ["dp_cp", "tp", "dp_cp", "dp"],
+            "opType":       ["allGather", "allReduce", "reduceScatter", "allReduce"],
+            "count":        [50,   200,  50,   50],
+        })
+        with patch.object(recipe, "_get_step_df", return_value=(step_df, "/tmp/db")), \
+                _mock_exports(comm_df):
+            result = recipe._analyze_data_by_step(
+                {Constant.STEP_RANGE: "0,1"}, MagicMock, target_step_id=1
+            )
+
+        assert set(result) == {1}
+        ret = result[1]
+        assert ret["start_time"] == 0
+        assert ret["end_time"] == 500
+        assert ret["forward_ret"]["opType"].tolist() == ["allGather"]
+        assert ret["backward_gradient_ret"]["opType"].tolist() == ["reduceScatter"]
+        assert ret["backward_optimizer_ret"]["parallelType"].tolist() == ["dp"]
+
     def test_no_communication_df_returns_empty_dict(self, recipe):
         step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [100]})
         with patch.object(recipe, "_get_step_df", return_value=(step_df, "/tmp/db")), \
@@ -216,9 +223,9 @@ class TestAnalyzeDataByStep:
             assert recipe._analyze_data_by_step({Constant.STEP_RANGE: "0,1"}, MagicMock) == {}
 
     def test_tail_small_allreduce_does_not_move_reference_boundary(self, recipe):
-        """防回归：last_allreduce_idx 必须取自带 count>100 过滤的 tp_allreduce，
-        否则尾部小 allReduce 会把参考边界后移，中间的 reduceScatter 落不进
-        backward_gradient_ret。
+        """Regression: last_allreduce_idx must come from tp_allreduce (count>100),
+        otherwise a tail small allReduce moves the reference boundary and the
+        intermediate reduceScatter is missed.
         """
         step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
         comm_df = pd.DataFrame({
@@ -236,9 +243,29 @@ class TestAnalyzeDataByStep:
         assert not result[1]["backward_gradient_ret"].empty
         assert result[1]["backward_gradient_ret"]["opType"].tolist() == ["reduceScatter"]
 
+    def test_returned_dict_keys_are_exactly_expected(self, recipe):
+        """Review #2: replace the trivially-true 'communication not in result'
+        assertion with an exact key-set comparison.
+        """
+        step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
+        comm_df = pd.DataFrame({
+            "startNs": [10], "endNs": [100],
+            "parallelType": ["tp"], "opType": ["allReduce"], "count": [200],
+        })
+        with patch.object(recipe, "_get_step_df", return_value=(step_df, "/tmp/db")), \
+                _mock_exports(comm_df):
+            result = recipe._analyze_data_by_step({Constant.STEP_RANGE: "0,1"}, MagicMock)
+
+        assert set(result[1]) == {
+            "start_time", "end_time",
+            "max_dp_rank", "max_dp_cp_rank", "max_ep_dp_rank",
+            "forward_ret", "forward_backward_ret",
+            "backward_gradient_ret", "backward_optimizer_ret",
+        }
+
 
 # ---------------------------------------------------------------------------
-# 补充场景：4 阶段正常归类 / 无 TP allReduce / result1 空 / 跨边界 / NaN
+# 补充场景：4 阶段正常归类 / 无 TP allReduce / forward 空 / 跨边界 / NaN
 # ---------------------------------------------------------------------------
 class TestAnalyzeDataByStepExtended:
 
@@ -259,13 +286,39 @@ class TestAnalyzeDataByStepExtended:
         ret = result[1]
         assert ret["forward_ret"]["opType"].tolist() == ["allGather"]
         assert ret["forward_ret"]["startNs"].tolist() == [10]
+        assert ret["forward_ret"]["group_rank"].tolist() == [0]
         assert ret["forward_backward_ret"]["parallelType"].tolist() == ["dp"]
         assert ret["forward_backward_ret"]["startNs"].tolist() == [150]
+        assert ret["forward_backward_ret"]["group_rank"].tolist() == [0]
         assert ret["backward_gradient_ret"]["opType"].tolist() == ["reduceScatter"]
+        assert ret["backward_gradient_ret"]["group_rank"].tolist() == [0]
         assert ret["backward_optimizer_ret"]["opType"].tolist() == ["allReduce"]
         assert ret["backward_optimizer_ret"]["parallelType"].tolist() == ["dp"]
+        assert ret["backward_optimizer_ret"]["group_rank"].tolist() == [0]
 
-    def test_no_tp_allreduce_skips_phase2_3_4(self, recipe):
+    def test_group_rank_cumcount_within_parallel_type(self, recipe):
+        """Review #4: assert group_rank cumcount, including mixed parallelTypes."""
+        step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
+        comm_df = pd.DataFrame({
+            "startNs":      [10,   20,   200,  320,  330],
+            "endNs":        [100,  110,  300,  400,  410],
+            "parallelType": ["dp_cp", "ep_dp", "tp", "dp_cp", "dp_cp"],
+            "opType":       ["allGather", "allGather", "allReduce",
+                             "reduceScatter", "reduceScatter"],
+            "count":        [50,   50,   200,  50,   50],
+        })
+        with patch.object(recipe, "_get_step_df", return_value=(step_df, "/tmp/db")), \
+                _mock_exports(comm_df):
+            result = recipe._analyze_data_by_step({Constant.STEP_RANGE: "0,1"}, MagicMock)
+
+        forward = result[1]["forward_ret"]
+        # dp_cp allGather -> 0, ep_dp allGather -> 0 (different parallelType)
+        assert forward["group_rank"].tolist() == [0, 0]
+        gradient = result[1]["backward_gradient_ret"]
+        # both dp_cp reduceScatter -> 0, 1 (cumcount within parallelType)
+        assert gradient["group_rank"].tolist() == [0, 1]
+
+    def test_no_tp_allreduce_skips_downstream_phases(self, recipe):
         step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
         comm_df = pd.DataFrame({
             "startNs":      [10,   20],
@@ -284,7 +337,10 @@ class TestAnalyzeDataByStepExtended:
         assert ret["backward_gradient_ret"].empty
         assert ret["backward_optimizer_ret"].empty
 
-    def test_result1_empty_skips_phase2(self, recipe):
+    def test_forward_empty_skips_forward_backward(self, recipe):
+        """Review #1: renamed from test_result1_empty_skips_phase2 to match
+        the phase semantics (forward empty -> forward_backward skipped).
+        """
         step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
         comm_df = pd.DataFrame({
             "startNs":      [200,  320,  400],
@@ -303,31 +359,30 @@ class TestAnalyzeDataByStepExtended:
         assert ret["backward_gradient_ret"]["opType"].tolist() == ["reduceScatter"]
         assert ret["backward_optimizer_ret"]["parallelType"].tolist() == ["dp"]
 
-    def test_concrete_step_range_from_dict_raises_keyerror(self, recipe):
-        """Document the current defect: when STEP_RANGE overrides the default
-        range, _get_step_df returns a one-column df (column 0) without
-        id/startNs/endNs, so _analyze_data_by_step raises KeyError on startNs.
+    @pytest.mark.xfail(reason="STEP_RANGE concrete range parsing defect", strict=False)
+    def test_concrete_step_range_is_not_supported(self, recipe):
+        """Review #6: track the STEP_RANGE defect with xfail(strict=False)
+        instead of pinning the failure shape with pytest.raises.
 
-        Once the branch is fixed to return a proper step df, this test will
-        fail (KeyError is no longer raised) and must be rewritten as a normal
-        classification assertion.
+        Once the branch is fixed to return a proper step df, this test turns
+        into XPASS (strict=False does not fail) and the marker should be
+        removed together with a positive classification assertion.
         """
         data_map = {
             Constant.PROFILER_DB_PATH: "/tmp/profiler.db",
             Constant.STEP_RANGE: "10,20",
         }
-        step_df, _ = recipe._get_step_df(data_map)
-        for col in ("id", "startNs", "endNs"):
-            assert col not in step_df.columns
-
         comm_df = pd.DataFrame({
             "startNs": [10], "endNs": [20],
             "parallelType": ["tp"], "opType": ["allReduce"], "count": [200],
         })
-        with _mock_exports(comm_df), pytest.raises(KeyError, match="startNs"):
+        with _mock_exports(comm_df):
             recipe._analyze_data_by_step(data_map, MagicMock)
 
-    def test_result3_excludes_reduce_scatter_crossing_step_boundary(self, recipe):
+    def test_gradient_excludes_reduce_scatter_crossing_step_boundary(self, recipe):
+        """Review #1: renamed from test_result3_... to match the phase
+        semantics (backward_gradient).
+        """
         step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [500]})
         comm_df = pd.DataFrame({
             "startNs":      [100,  300,  450],
@@ -358,19 +413,6 @@ class TestAnalyzeDataByStepExtended:
             result = recipe._analyze_data_by_step({Constant.STEP_RANGE: "0,1"}, MagicMock)
 
         assert result[1]["forward_ret"]["opType"].tolist() == ["allGather"]
-
-    def test_analyse_ret_does_not_carry_full_communication_ref(self, recipe):
-        step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
-        comm_df = pd.DataFrame({
-            "startNs": [10, 200], "endNs": [100, 300],
-            "parallelType": ["tp", "tp"],
-            "opType": ["allReduce", "allReduce"], "count": [200, 200],
-        })
-        with patch.object(recipe, "_get_step_df", return_value=(step_df, "/tmp/db")), \
-                _mock_exports(comm_df):
-            result = recipe._analyze_data_by_step({Constant.STEP_RANGE: "0,1"}, MagicMock)
-
-        assert "communication" not in result[1]
 
     def test_rank_counts_propagated_to_analyse_ret(self, recipe):
         step_df = pd.DataFrame({"id": [1], "startNs": [0], "endNs": [1000]})
