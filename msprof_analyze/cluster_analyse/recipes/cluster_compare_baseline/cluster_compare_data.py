@@ -33,30 +33,45 @@ class ClusterCompareDataMixin:
     Data-classification mixin for the cluster baseline comparison recipe.
 
     This mixin partitions the communication operators of each profiling step
-    into four phase buckets:
+    into four phase buckets. Bucket filters are shared with the analysis side
+    via ``PHASE_FILTERS`` so both sides cannot drift apart.
 
-        - forward_ret              : forward-phase communication ops
-        - forward_backward_ret     : ops in the forward->backward transition
-        - backward_gradient_ret    : backward gradient (reduceScatter) ops
-        - backward_optimizer_ret   : optimizer-phase communication ops
-
-    It also provides the linearity DataFrame and the total step duration used
-    as comparison anchors.
-
-    NOTE:
-        ``_analyze_data_by_step`` is currently UNREFERENCED by
-        ``ClusterCompareBaseline.run()``. It is kept here for the planned
-        four-phase per-step diagnosis and will be wired into the Stage 1
-        DP-domain branch in a follow-up change.
+    Empty buckets are initialized with the expected columns so consumers can
+    access columns safely even when a bucket is empty.
     """
 
-    def _get_step_df(self, data_map):
-        """
-        Return the step-time DataFrame and the profiler DB path for a data map.
+    BUCKET_COLUMNS = ["parallelType", "opType", "dataType", "count", "startNs", "endNs", "group_rank"]
 
-        If ``STEP_RANGE`` overrides the default range, the single overridden
-        range is returned as a one-row DataFrame instead of querying the DB.
-        """
+    # Shared phase -> (parallelTypes, opType substrings) filter definition.
+    # Both the data side (bucket collection) and the analysis side (phase
+    # iteration) use this map, so collected operators are always analyzed.
+    #
+    # forward_backward / optimizer intentionally only contain dp allReduce:
+    # dp_cp / ep_dp allGather/reduceScatter are window-boundary operators and
+    # are not diagnosed in those two phases.
+    PHASE_FILTERS = {
+        "forward": (["dp_cp", "ep_dp"], ["allGather"]),
+        "forward_backward": (["dp"], ["allReduce"]),
+        "backward_gradient": (["dp", "dp_cp", "ep_dp"], ["reduceScatter"]),
+        "optimizer": (["dp"], ["allReduce"]),
+    }
+
+    @staticmethod
+    def _reindex_group_rank(bucket):
+        """Reset ``group_rank`` to a per-parallelType cumcount within the bucket."""
+        if bucket is None or bucket.empty:
+            return bucket
+        bucket = bucket.reset_index(drop=True)
+        bucket["group_rank"] = bucket.groupby("parallelType").cumcount()
+        return bucket
+
+    @classmethod
+    def _empty_bucket(cls):
+        """Return an empty bucket with the expected columns pre-initialized."""
+        return pd.DataFrame(columns=cls.BUCKET_COLUMNS)
+
+    def _get_step_df(self, data_map):
+        """Return the step-time DataFrame and the profiler DB path for a data map."""
         if not data_map:
             return pd.DataFrame(), None
 
@@ -78,12 +93,7 @@ class ClusterCompareDataMixin:
 
     @staticmethod
     def _get_rank_count(group_info_df, group_name):
-        """
-        Return the rank count of a parallel group, or 0 if not found.
-
-        Missing table/columns yield 0 so that the downstream comparison
-        degrades gracefully.
-        """
+        """Return the rank count of a parallel group, or 0 if not found."""
         if group_info_df is None or group_info_df.empty:
             return 0
         if "group_name" not in group_info_df.columns or "rank_count" not in group_info_df.columns:
@@ -92,13 +102,7 @@ class ClusterCompareDataMixin:
         return values[0] if len(values) else 0
 
     def get_linearity_df(self, data_map, analysis_class, target_step_id: int = None) -> pd.DataFrame:
-        """
-        Compute the linearity of communication operators.
-
-        Delegates to the shared ``LinearityUtils.compute_linearity_df`` helper.
-        ``use_merge`` is kept as False to preserve the original per-operator
-        (non-merged) semantics.
-        """
+        """Compute the linearity of communication operators via LinearityUtils."""
         return LinearityUtils.compute_linearity_df(
             data_map=data_map,
             analysis_class=analysis_class,
@@ -106,16 +110,11 @@ class ClusterCompareDataMixin:
             step_columns=self.step_columns,
             parallel_col_name=self.PARALLEL_COL_NAME,
             target_step_id=target_step_id,
-            use_merge=False,  # Keep the original logic: do not merge communication intervals
+            use_merge=False,
         )
 
     def get_total_step_duration(self, data_map: dict):
-        """
-        Return the shortest step duration (in ns) and its step id from ``data_map``.
-
-        The shortest step is used as the comparison anchor because it is the
-        least affected by outliers / transient stalls.
-        """
+        """Return the shortest step duration (ns) and its step id from ``data_map``."""
         step_df, profiler_db_path = self._get_step_df(data_map)
 
         if step_df is None or step_df.empty:
@@ -128,21 +127,23 @@ class ClusterCompareDataMixin:
         min_step_id = step_df.loc[min_idx, 'id']
         return min_duration, min_step_id
 
+    @classmethod
+    def _phase_filter(cls, phase, df):
+        """Return the subset of ``df`` that belongs to the given phase."""
+        parallel_types, op_substrings = cls.PHASE_FILTERS[phase]
+        mask = df["parallelType"].isin(parallel_types)
+        op_mask = pd.Series(False, index=df.index)
+        for sub in op_substrings:
+            op_mask = op_mask | df["opType"].str.contains(sub, na=False, regex=False)
+        return df[mask & op_mask].copy()
+
     def _analyze_data_by_step(self, data_map, analysis_class, target_step_id: int = None):
         """
         Classify communication operators per step into four phase buckets.
 
-        NOTE: currently unreferenced by ``ClusterCompareBaseline.run()``;
-        reserved for the planned four-phase per-step diagnosis.
-
-        For every step, the returned dict contains:
-            start_time / end_time            : step boundaries (ns)
-            max_dp_rank / max_dp_cp_rank /
-            max_ep_dp_rank                   : rank counts of the DP-related groups
-            forward_ret                      : forward-phase ops
-            forward_backward_ret             : forward->backward transition ops
-            backward_gradient_ret            : backward gradient (reduceScatter) ops
-            backward_optimizer_ret           : optimizer-phase ops
+        Bucket membership is defined by ``PHASE_FILTERS`` and shared with the
+        analysis side. Empty buckets are pre-initialized with the expected
+        columns. Only the given ``target_step_id`` is analyzed when provided.
         """
         step_df, profiler_db_path = self._get_step_df(data_map)
         step_range = data_map.get(Constant.STEP_RANGE) if data_map else None
@@ -162,8 +163,6 @@ class ClusterCompareDataMixin:
             logger.warning("There is no TABLE_COMMUNICATION_OP data in %s.", profiler_db_path)
             return {}
 
-        # Sort once by startNs outside the loop, then use searchsorted inside
-        # the loop to slice per-step candidates.
         communication_df = communication_df.sort_values("startNs").reset_index(drop=True)
         start_ns_arr = communication_df["startNs"].to_numpy()
 
@@ -175,10 +174,6 @@ class ClusterCompareDataMixin:
 
         dict_ret = {}
         for _, step_row in step_df.iterrows():
-            result1 = pd.DataFrame()
-            result2 = pd.DataFrame()
-            result3 = pd.DataFrame()
-            result4 = pd.DataFrame()
             start_time = step_row["startNs"]
             end_time = step_row["endNs"]
             step_id = step_row["id"]
@@ -189,16 +184,11 @@ class ClusterCompareDataMixin:
             left = start_ns_arr.searchsorted(start_time, side="left")
             right = start_ns_arr.searchsorted(end_time, side="right")
             candidate = communication_df.iloc[left:right]
-            df = candidate[candidate["endNs"] <= end_time].copy()
-            df = df.reset_index(drop=True)
+            df = candidate[candidate["endNs"] <= end_time].copy().reset_index(drop=True)
 
             if df.empty:
                 continue
 
-            # FIX: recompute cumcount per step so ``group_rank`` is restored.
-            # The planned per-phase analysis (not yet wired in) relies on
-            # ``row_value.group_rank`` and matches it against the baseline; the
-            # numbering must be per step rather than global.
             df["group_rank"] = df.groupby("parallelType").cumcount()
 
             analyse_ret = {
@@ -207,37 +197,18 @@ class ClusterCompareDataMixin:
                 "max_dp_rank": max_dp_rank,
                 "max_dp_cp_rank": max_dp_cp_rank,
                 "max_ep_dp_rank": max_ep_dp_rank,
-                "forward_ret": pd.DataFrame(),
-                "forward_backward_ret": pd.DataFrame(),
-                "backward_gradient_ret": pd.DataFrame(),
-                "backward_optimizer_ret": pd.DataFrame(),
+                "forward_ret": self._empty_bucket(),
+                "forward_backward_ret": self._empty_bucket(),
+                "backward_gradient_ret": self._empty_bucket(),
+                "backward_optimizer_ret": self._empty_bucket(),
             }
 
             logger.debug("========== Step %s ==========", step_id)
 
-            # Bucket 1 (forward phase): dp_cp / ep_dp allGather ops finishing
-            # before the first TP allReduce starts.
+            # TP reference boundary is still needed to split forward/backward.
             tp_allReduce = df[
                 (df["parallelType"] == "tp") & (df["opType"].str.contains("allReduce", na=False, regex=False))
             ]
-            if not tp_allReduce.empty:
-                tp_allReduce_start = tp_allReduce["startNs"].min()
-                logger.debug("End time of the first TP broadcast: %s", tp_allReduce_start)
-
-                result1 = df[
-                    (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                    & (df["opType"].str.contains("allGather", na=False, regex=False))
-                    & (df["endNs"] < tp_allReduce_start)
-                ].copy()
-
-                if not result1.empty:
-                    analyse_ret["forward_ret"] = result1
-                logger.debug("Bucket 1 result: %s ops", len(result1))
-            else:
-                logger.debug("Bucket 1: no TP broadcast found")
-
-            # Reference boundary between forward and backward: startNs of the
-            # last non-allReduce TP op preceding the last large TP allReduce.
             tp_reference_end = None
             tp_allreduce = df[
                 (df["parallelType"] == "tp")
@@ -252,94 +223,37 @@ class ClusterCompareDataMixin:
                     (prev_data["parallelType"] == "tp")
                     & (~prev_data["opType"].str.contains("allReduce", na=False, regex=False))
                 ]
-                # If there is no non-allReduce TP op before the last large
-                # allReduce, fall back to that allReduce's own startNs.
                 tp_reference_end = (
                     tp_non_allreduce.iloc[-1]["startNs"]
                     if not tp_non_allreduce.empty
                     else df.loc[last_allreduce_idx, "startNs"]
                 )
 
-                # Bucket 3 (backward gradient): dp_cp / ep_dp reduceScatter ops
-                # starting after the TP reference boundary.
-                dp_ep_reduce_scatter = df[
-                    (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                    & (df["opType"].str.contains("reduceScatter", na=False, regex=False))
-                    & (df["startNs"] > tp_reference_end)
-                    & (df["endNs"] < end_time)
-                ].copy()
+            forward_end = None
+            if not tp_allReduce.empty:
+                tp_allReduce_start = tp_allReduce["startNs"].min()
+                forward_bucket = self._phase_filter("forward", df)
+                forward_bucket = forward_bucket[forward_bucket["endNs"] < tp_allReduce_start]
+                if not forward_bucket.empty:
+                    analyse_ret["forward_ret"] = self._reindex_group_rank(forward_bucket)
+                    forward_end = forward_bucket["endNs"].max()
 
-                if not dp_ep_reduce_scatter.empty:
-                    dp_ep_reduce_scatter = dp_ep_reduce_scatter.sort_values("startNs")
-                    first_start = dp_ep_reduce_scatter.iloc[0]["startNs"]
-                    logger.debug("Start time of the first qualifying reduceScatter: %s", first_start)
-
-                    result3 = df[
-                        (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                        & (df["opType"].str.contains("reduceScatter", na=False, regex=False))
-                        & (df["startNs"] >= first_start)
-                        & (df["endNs"] < end_time)
-                    ].copy()
-
-                    if not result3.empty:
-                        analyse_ret["backward_gradient_ret"] = result3
-                    logger.debug("Bucket 3 result: %s ops", len(result3))
-                else:
-                    logger.debug("Bucket 3: no reduceScatter still running after the TP phase")
-            else:
-                logger.debug("No allReduce op found in the TP domain")
-
-            # Bucket 4 (optimizer phase): after the TP reference boundary,
-            # dp_cp / ep_dp allGather, or dp allReduce.
             if tp_reference_end is not None:
-                result4 = df[
-                    (
-                        (
-                            (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                            & (df["opType"].str.contains("allGather", na=False, regex=False))
-                        )
-                        | (
-                            (df["parallelType"] == "dp")
-                            & (df["opType"].str.contains("allReduce", na=False, regex=False))
-                        )
-                    )
-                    & (df["startNs"] > tp_reference_end)
-                    & (df["endNs"] < end_time)
-                ].copy()
+                gradient_bucket = self._phase_filter("backward_gradient", df)
+                gradient_bucket = gradient_bucket[gradient_bucket["startNs"] > tp_reference_end]
+                if not gradient_bucket.empty:
+                    analyse_ret["backward_gradient_ret"] = self._reindex_group_rank(gradient_bucket)
 
-                if not result4.empty:
-                    analyse_ret["backward_optimizer_ret"] = result4
-                logger.debug("Bucket 4 result: %s ops", len(result4))
-            else:
-                logger.debug("Bucket 4: no TP allReduce event found")
+                optimizer_bucket = self._phase_filter("optimizer", df)
+                optimizer_bucket = optimizer_bucket[optimizer_bucket["startNs"] > tp_reference_end]
+                if not optimizer_bucket.empty:
+                    analyse_ret["backward_optimizer_ret"] = self._reindex_group_rank(optimizer_bucket)
 
-            # Bucket 2 (forward->backward transition): ops in the window
-            # (forward_end, tp_reference_end).
-            if not result1.empty:
-                forward_end = result1["endNs"].max()
-                if tp_reference_end is not None:
-                    logger.debug("Bucket 2 window: forward_end=%s, backward_start=%s", forward_end, tp_reference_end)
+            if forward_end is not None and tp_reference_end is not None:
+                fb_bucket = self._phase_filter("forward_backward", df)
+                fb_bucket = fb_bucket[(fb_bucket["startNs"] > forward_end) & (fb_bucket["endNs"] < tp_reference_end)]
+                if not fb_bucket.empty:
+                    analyse_ret["forward_backward_ret"] = self._reindex_group_rank(fb_bucket)
 
-                    result2 = df[
-                        (
-                            (
-                                (df["parallelType"].isin(["dp_cp", "ep_dp"]))
-                                & (df["opType"].str.contains("allGather|reduceScatter", na=False, regex=False))
-                            )
-                            | (
-                                (df["parallelType"] == "dp")
-                                & (df["opType"].str.contains("allReduce", na=False, regex=False))
-                            )
-                        )
-                        & ((df["startNs"] > forward_end) & (df["endNs"] < tp_reference_end))
-                    ].copy()
-
-                    if not result2.empty:
-                        analyse_ret["forward_backward_ret"] = result2
-                    logger.debug("Bucket 2 result: %s ops", len(result2))
-                else:
-                    logger.debug("Bucket 2: no TP allReduce event found")
-            else:
-                logger.debug("Bucket 2: cannot determine forward_end because bucket 1 is empty")
             dict_ret[step_id] = analyse_ret
         return dict_ret
