@@ -190,7 +190,7 @@ if __name__ == "__main__":
 EOF
 ```
 
-> [!CAUTION] Caution
+> [!CAUTION]
 >
 > The above script automatically finds an idle NPU and runs on it. To specify an NPU, change `device = f"npu:{find_idle_npu()}"` to the actual device number, such as `device = "npu:0"`.
 
@@ -320,7 +320,7 @@ You have now mastered the basic method for analyzing performance bottlenecks usi
 
 * [advisor](../user_guide/advisor_instruct.md)
 * [compare](../user_guide/compare_tool_instruct.md)
-* [cluster_analyze](../user_guide/cluster_analyse_instruct.md)
+* [cluster_analyse](../user_guide/cluster_analyse_instruct.md)
 * [Advanced Features](../advanced_features/README.md)
 
 ## 3. Solutions for Intranet Environments Without Public Network Access

@@ -44,7 +44,7 @@ source /dev/stdin <<< "$(dev_id=$(lspci -n -D | grep -o '19e5:d[0-9a-f]\{3\}' | 
 [ -n "$MY_STUDY_VAR_CANN_IMAGE" ] && echo -e "\e[32m[PASS] Successfully identified chip [$MY_CHIP_NAME] and auto-selected image:\n    $MY_STUDY_VAR_CANN_IMAGE\e[0m"
 ```
 
-> [!NOTE]说明
+> [!NOTE]
 >
 > **命令原理**
 > 通过 `lspci` 获取 NPU 的 PCI ID，自动匹配 CANN 官方镜像，并将镜像地址赋给环境变量 `MY_STUDY_VAR_CANN_IMAGE`，供后续使用。
@@ -190,7 +190,7 @@ if __name__ == "__main__":
 EOF
 ```
 
-> [!CAUTION]注意
+> [!CAUTION]
 >
 > 上述脚本会自动查找空闲 NPU 并在该设备上执行。如需指定 NPU，请将 `device = f"npu:{find_idle_npu()}"` 修改为实际设备编号，例如 `device = "npu:0"`。
 

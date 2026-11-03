@@ -117,7 +117,7 @@ If the command returns 0 and all test cases pass, the unit tests pass.
 Run the following command to install the profiling tool:
 
 ```bash
-pip3 install ./msprof_analyze-{version}-py3-none-any.whl
+pip3 install ./artifacts/msprof_analyze-{version}-py3-none-any.whl
 ```
 
 ## 3. Verifying the Installation
