@@ -303,20 +303,28 @@ class TestAnalyzeDataByStepExtended:
         assert ret["backward_gradient_ret"]["opType"].tolist() == ["reduceScatter"]
         assert ret["backward_optimizer_ret"]["parallelType"].tolist() == ["dp"]
 
-    def test_concrete_step_range_from_dict_end_to_end(self, recipe):
-        """已知 bug：step_range != DEFAULT 时 _get_step_df 走 from_dict 直读，
-        返回的 df 缺 id/startNs/endNs，_analyze_data_by_step 会抛 KeyError。
-        本用例锁定现状，修复后改为断言正常归类。
+    def test_concrete_step_range_from_dict_raises_keyerror(self, recipe):
+        """Document the current defect: when STEP_RANGE overrides the default
+        range, _get_step_df returns a one-column df (column 0) without
+        id/startNs/endNs, so _analyze_data_by_step raises KeyError on startNs.
+
+        Once the branch is fixed to return a proper step df, this test will
+        fail (KeyError is no longer raised) and must be rewritten as a normal
+        classification assertion.
         """
         data_map = {
             Constant.PROFILER_DB_PATH: "/tmp/profiler.db",
             Constant.STEP_RANGE: "10,20",
         }
+        step_df, _ = recipe._get_step_df(data_map)
+        for col in ("id", "startNs", "endNs"):
+            assert col not in step_df.columns
+
         comm_df = pd.DataFrame({
             "startNs": [10], "endNs": [20],
             "parallelType": ["tp"], "opType": ["allReduce"], "count": [200],
         })
-        with _mock_exports(comm_df), pytest.raises(KeyError):
+        with _mock_exports(comm_df), pytest.raises(KeyError, match="startNs"):
             recipe._analyze_data_by_step(data_map, MagicMock)
 
     def test_result3_excludes_reduce_scatter_crossing_step_boundary(self, recipe):
