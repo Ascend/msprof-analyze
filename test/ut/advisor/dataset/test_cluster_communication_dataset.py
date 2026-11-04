@@ -16,9 +16,9 @@
 
 import os
 import shutil
+import unittest
 import sqlite3
 import tempfile
-import unittest
 from contextlib import closing
 from unittest.mock import patch
 from collections import defaultdict
@@ -26,48 +26,9 @@ from collections import defaultdict
 import pandas as pd
 
 from msprof_analyze.advisor.dataset.cluster.cluster_dataset import ClusterCommunicationDataset
-from msprof_analyze.prof_common.constant import Constant
 
 
 class TestClusterCommunicationDataset(unittest.TestCase):
-
-    def test_parse_db_with_missing_empty_and_populated_bandwidth_table(self):
-        with tempfile.TemporaryDirectory() as output_path:
-            self.dataset.output_path = output_path
-            output_dir = os.path.join(output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
-            os.makedirs(output_dir)
-            db_path = os.path.join(output_dir, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
-            with closing(sqlite3.connect(db_path)) as conn:
-                conn.executescript("""
-                    CREATE TABLE ClusterCommunicationTime (
-                        hccl_op_name TEXT, group_name TEXT, start_timestamp REAL,
-                        elapsed_time REAL, step TEXT, rank_id INTEGER
-                    );
-                    CREATE TABLE CommunicationGroupMapping (group_name TEXT, rank_set TEXT);
-                    INSERT INTO ClusterCommunicationTime VALUES ('allreduce', 'g0', 0, 3, 'step1', 0);
-                    INSERT INTO CommunicationGroupMapping VALUES ('g0', '0');
-                """)
-
-                self.assertFalse(self.dataset.parse_from_db())
-                self.assertFalse(self.dataset.get_data())
-                self.assertFalse(self.dataset.hccl_dict)
-
-                conn.execute("""
-                    CREATE TABLE ClusterCommunicationBandwidth (
-                        hccl_op_name TEXT, step TEXT, rank_id INTEGER, band_type TEXT,
-                        transit_time REAL, transit_size REAL, bandwidth REAL, large_packet_ratio REAL
-                    )
-                """)
-                self.assertTrue(self.dataset.parse_from_db())
-                self.assertFalse(self.dataset.get_data())
-
-                conn.execute("""
-                    INSERT INTO ClusterCommunicationBandwidth
-                    VALUES ('allreduce', 'step1', 0, 'RDMA', 2, 8, 4, 1)
-                """)
-                conn.commit()
-                self.assertTrue(self.dataset.parse_from_db())
-                self.assertEqual(self.dataset.get_data()["1_0"][self.dataset.RDMA_BANDWIDTH], 4)
 
     def tearDown(self):
         if os.path.exists(self.tmp_dir):
@@ -378,3 +339,67 @@ class TestClusterCommunicationDataset(unittest.TestCase):
         self.assertEqual(hccl_info_0.get_rdma_transmit_time(), 9.251294)
         self.assertEqual(hccl_info_0.get_rdma_transit_size(), 20.31616)
         self.assertEqual(hccl_info_0.get_rdma_bandwidth(), 2.196)
+
+    def test_parse_db_preserves_times_with_absent_empty_or_populated_bandwidth(self):
+        for bandwidth_mode in ("absent", "empty", "populated"):
+            with self.subTest(bandwidth=bandwidth_mode), tempfile.TemporaryDirectory() as output:
+                self.dataset.rank_bw_dict.clear()
+                self.dataset.hccl_dict.clear()
+                result_dir = os.path.join(output, "cluster_analysis_output")
+                os.makedirs(result_dir)
+                db_path = os.path.join(result_dir, "cluster_analysis.db")
+                times = self.test_hccl_df.drop(columns=["rank_set", "sdma_dict", "rdma_dict"])
+                # Model the actual Level0 time output when no bandwidth is available.
+                for column in (
+                    "transit_time",
+                    "wait_time",
+                    "synchronization_time",
+                    "idle_time",
+                    "wait_time_ratio",
+                    "synchronization_time_ratio",
+                ):
+                    times[column] = -1 if bandwidth_mode == "absent" else 0
+                groups = self.test_hccl_df[["rank_set", "group_name"]].drop_duplicates()
+                bandwidth = self.test_bandwidth_df.drop_duplicates("band_type").copy()
+                bandwidth["hccl_op_name"] = times.iloc[0]["hccl_op_name"]
+                bandwidth["bandwidth"] = bandwidth["transit_size"] / bandwidth["transit_time"]
+                bandwidth["large_packet_ratio"] = 0
+                with closing(sqlite3.connect(db_path)) as conn:
+                    times.to_sql("ClusterCommunicationTime", conn, index=False)
+                    groups.to_sql("CommunicationGroupMapping", conn, index=False)
+                    if bandwidth_mode != "absent":
+                        rows = bandwidth if bandwidth_mode == "populated" else bandwidth.iloc[:0]
+                        rows.to_sql("ClusterCommunicationBandwidth", conn, index=False)
+                with patch.object(self.dataset, "output_path", output):
+                    self.dataset.parse_from_db()
+                calls = self.dataset.hccl_dict['(0, 4, 8, 12)']['hcom_allGather__114_4_1']['step']
+                self.assertEqual(len(calls), 1)
+                self.assertEqual(calls[0].ts, times.iloc[0]["start_timestamp"])
+                self.assertEqual(calls[0].elapse_time, 14.370828)
+                if bandwidth_mode == "populated":
+                    self.assertEqual(calls[0].get_rdma_bandwidth(), 20.0)
+                    self.assertEqual(self.dataset.rank_bw_dict["-1_12"]["SDMA bandwidth(GB/s)"], 10.0)
+                else:
+                    self.assertEqual(calls[0].rdma_info, {})
+                    self.assertEqual(calls[0].sdma_info, {})
+                    self.assertFalse(self.dataset.rank_bw_dict)
+                with closing(sqlite3.connect(db_path)) as conn:
+                    has_bandwidth = conn.execute(
+                        "select count(*) from sqlite_master where name='ClusterCommunicationBandwidth'"
+                    ).fetchone()[0]
+                self.assertEqual(bool(has_bandwidth), bandwidth_mode != "absent")
+
+    @patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.logger')
+    @patch('msprof_analyze.prof_exports.communicaion_info_export.ClusterBandwidthInfoExport.read_export_db')
+    @patch('msprof_analyze.prof_exports.communicaion_info_export.ClusterCommunicationInfoExport.read_export_db')
+    def test_failed_or_empty_exports_do_not_raise_or_add_data(self, communication, bandwidth, logger):
+        for result in (None, pd.DataFrame()):
+            with self.subTest(result=result):
+                logger.reset_mock()
+                communication.return_value = result
+                bandwidth.return_value = result
+                self.dataset.process_bandwidth_db(None)
+                self.dataset.process_hccl_info_db(None)
+                self.assertFalse(self.dataset.rank_bw_dict)
+                self.assertFalse(self.dataset.hccl_dict)
+                self.assertEqual(logger.warning.call_count, 2 if result is None else 0)

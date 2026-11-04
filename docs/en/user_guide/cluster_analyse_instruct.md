@@ -29,7 +29,7 @@ The following sections use Ascend PyTorch Profiler as an example to describe the
 
 #### 2.2.1 Collection Configuration
 
-You are advised to set `profiler_level` to `Level1` or higher. `Level0` or lower does not collect data for small communication operators. Therefore, communication bandwidth and communication matrix information cannot be obtained, and only the `step_trace_time` durations within each cluster iteration can be aggregated.
+It is recommended to set `profiler_level` to `Level1` or higher. `Level0` and below do not collect small communication tasks, so communication bandwidth and communication matrix information cannot be obtained. In ultra-large cluster scenarios, Level0 data can also be used (supported starting from version 26.3.0); in this case, only the cluster's `step_trace_time` intra-iteration duration information and the overall duration of large communication operators are summarized.
 
 ```python
 experimental_config = torch_npu.profiler._ExperimentalConfig(
@@ -66,7 +66,7 @@ If `text`-format results are already available, they can also be used directly a
 ├── ASCEND_PROFILER_OUTPUT
     ├── step_trace_time.csv         # Iteration duration
     ├── communication.json          # Communication duration
-    └── communication_matrix.json   # Communication matrix information
+    └── communication_matrix.json   # Optional when Level0 has no matrix data
 └── profiler_info_*.json
 ```
 
@@ -264,9 +264,9 @@ Generated after parsing `db`-format profile data. It is used to support visualiz
 | `ClusterBaseInfo` | `db`-format profile data | Records basic cluster information, such as parallel strategy parameters. |
 | `ClusterStepTraceTime` | `db`-format profile data | Records the breakdown of iteration durations at the rank/stage level and corresponds to `cluster_step_trace_time.csv`. |
 | `CommunicationGroupMapping` | `db`-format profile data, with communication domain information available | Records communication domains, rank sets, and parallel group information. |
-| `ClusterCommunicationTime` | `db`-format profile data, with `communication_time` or `all` executed | Records aggregated communication operator duration information at the cluster level. |
-| `ClusterCommunicationBandwidth` | `db`-format profile data, with `communication_time` or `all` executed | Records aggregated cluster-level communication bandwidth, packet size distribution, and transmission duration information. |
-| `ClusterCommunicationMatrix` | `db`-format profile data, with `communication_matrix` or `all` executed | Records cluster-level communication matrix information between ranks. |
+| `ClusterCommunicationTime` | `db`-format profile data, with `communication_time` or `all` executed and communication duration records available | Records aggregated communication operator duration information at the cluster level. |
+| `ClusterCommunicationBandwidth` | `db`-format profile data, with `communication_time` or `all` executed and bandwidth records available | Records aggregated cluster-level communication bandwidth, packet size distribution, and transmission duration information. |
+| `ClusterCommunicationMatrix` | `db`-format profile data, with `communication_matrix` or `all` executed and matrix data available | Records cluster-level communication matrix information between ranks. |
 
 The actual tables generated depend on the collection tool, collection level, `--mode` value, and completeness of the original profile data. If a type of original data is missing, the corresponding table may not be generated.
 
@@ -312,7 +312,7 @@ The actual tables generated depend on the collection tool, collection level, `--
 | Field | Description |
 | --- | --- |
 | `step` | Step number. |
-| `type` | Communication operator type, including collective communication and point-to-point communication |
+| `rank_id` | Global rank ID |
 | `hccl_op_name` | HCCL communication operator name |
 | `group_name` | Communication domain name |
 | `start_timestamp` | Start timestamp of the communication operator, in us |
@@ -321,8 +321,10 @@ The actual tables generated depend on the collection tool, collection level, `--
 | `wait_time` | Waiting duration, in ms |
 | `synchronization_time` | Synchronization duration, in ms |
 | `idle_time` | Idle duration, in ms |
-| `synchronization_time_ratio` | Proportion of synchronization duration, ranging from 0 to 1 |
-| `wait_time_ratio` | Proportion of waiting duration, ranging from 0 to 1 |
+| `synchronization_time_ratio` | Proportion of synchronization duration, ranging from 0 to 1 when available, or -1 when unavailable |
+| `wait_time_ratio` | Proportion of waiting duration, ranging from 0 to 1 when available, or -1 when unavailable |
+
+Unavailable `transit_time`, `wait_time`, `synchronization_time`, and `idle_time` values are `-1`. Real start timestamps and elapsed times are preserved. The total uses a start timestamp of 0 and sums individual elapsed times.
 
 ##### 4.3.5.5 `ClusterCommunicationBandwidth`
 

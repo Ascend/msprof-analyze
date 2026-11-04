@@ -315,15 +315,17 @@ class ClusterCommunicationDataset(ClusterDataset):
             self.output_path, Constant.CLUSTER_ANALYSIS_OUTPUT, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER
         )
 
-        has_bandwidth = self.process_bandwidth_db(db_path)
-        has_hccl_info = self.process_hccl_info_db(db_path)
-        return has_bandwidth or has_hccl_info
+        self.process_bandwidth_db(db_path)
+        self.process_hccl_info_db(db_path)
 
     def process_hccl_info_db(self, db_path):
         export = ClusterCommunicationInfoExport(db_path)
         df = export.read_export_db()
         if df is None:
-            return False
+            logger.warning("Communication time data could not be loaded; skip HCCL parsing.")
+            return
+        if df.empty:
+            return
         df['sdma_dict'] = df['sdma_dict'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         df['rdma_dict'] = df['rdma_dict'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         for row in df.itertuples(index=False):
@@ -332,13 +334,15 @@ class ClusterCommunicationDataset(ClusterDataset):
                 group, step, row.rank_id, op_name, row.start_timestamp, row.elapsed_time, row.sdma_dict, row.rdma_dict
             )
             self.hccl_dict[group][op_name][step].append(hccl_info)
-        return True
 
     def process_bandwidth_db(self, db_path):
         export = ClusterBandwidthInfoExport(db_path)
         df = export.read_export_db()
         if df is None:
-            return False
+            logger.warning("Communication bandwidth data could not be loaded; skip bandwidth parsing.")
+            return
+        if df.empty:
+            return
         processed_steps = df['step'].astype(str).str.lower().str.lstrip('step').replace('', str(Constant.DEFAULT_STEP))
         df['step_rank'] = processed_steps + '_' + df['rank_id'].astype(str)
         bandwidth_df = (
@@ -356,4 +360,3 @@ class ClusterCommunicationDataset(ClusterDataset):
                 self.rank_bw_dict[row.step_rank][self.RDMA_SIZE_MB] = row.transit_size
                 self.rank_bw_dict[row.step_rank][self.RDMA_TIME_MS] = row.transit_time
                 self.rank_bw_dict[row.step_rank][self.RDMA_BANDWIDTH] = row.bandwidth
-        return True
