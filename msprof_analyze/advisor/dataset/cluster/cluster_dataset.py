@@ -41,6 +41,8 @@ logger = get_logger()
 
 
 class ClusterDataset(ABC, Dataset):
+    text_result_file = ""
+
     def __init__(self, collection_path, data: dict, **kwargs) -> None:
         super().__init__(collection_path, data, **kwargs)
 
@@ -48,8 +50,9 @@ class ClusterDataset(ABC, Dataset):
         """Check whether the result required by the current data type exists."""
         output_dir = os.path.join(self.output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
         if self.data_type == Constant.TEXT:
-            if os.path.isdir(output_dir):
-                logger.info("Cluster analysis output already exists (%s). Skip backend analysis.", output_dir)
+            result_path = os.path.join(output_dir, self.text_result_file)
+            if os.path.isfile(result_path):
+                logger.info("Cluster analysis output already exists (%s). Skip backend analysis.", result_path)
                 return True
             return False
 
@@ -119,6 +122,7 @@ class ClusterDataset(ABC, Dataset):
 
 @singleton
 class ClusterStepTraceTimeDataset(ClusterDataset):
+    text_result_file = Constant.CLUSTER_STEP_TIME_CSV
     RANK = "rank"
     STAGE = "stage"
 
@@ -199,11 +203,12 @@ class ClusterStepTraceTimeDataset(ClusterDataset):
             logger.error("Exception when run format_db_data：%s", e)
             self._step_dict = None
             return False
-        return True
+        return self._step_dict is not None
 
 
 @singleton
 class ClusterCommunicationDataset(ClusterDataset):
+    text_result_file = Constant.CLUSTER_COMM_JSON
     RDMA_TIME_MS = "RDMA time(ms)"
     RDMA_SIZE_MB = "RDMA size(mb)"
     SDMA_TIME_MS = "SDMA time(ms)"
@@ -310,12 +315,15 @@ class ClusterCommunicationDataset(ClusterDataset):
             self.output_path, Constant.CLUSTER_ANALYSIS_OUTPUT, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER
         )
 
-        self.process_bandwidth_db(db_path)
-        self.process_hccl_info_db(db_path)
+        has_bandwidth = self.process_bandwidth_db(db_path)
+        has_hccl_info = self.process_hccl_info_db(db_path)
+        return has_bandwidth or has_hccl_info
 
     def process_hccl_info_db(self, db_path):
         export = ClusterCommunicationInfoExport(db_path)
         df = export.read_export_db()
+        if df is None:
+            return False
         df['sdma_dict'] = df['sdma_dict'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         df['rdma_dict'] = df['rdma_dict'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         for row in df.itertuples(index=False):
@@ -324,10 +332,13 @@ class ClusterCommunicationDataset(ClusterDataset):
                 group, step, row.rank_id, op_name, row.start_timestamp, row.elapsed_time, row.sdma_dict, row.rdma_dict
             )
             self.hccl_dict[group][op_name][step].append(hccl_info)
+        return True
 
     def process_bandwidth_db(self, db_path):
         export = ClusterBandwidthInfoExport(db_path)
         df = export.read_export_db()
+        if df is None:
+            return False
         processed_steps = df['step'].astype(str).str.lower().str.lstrip('step').replace('', str(Constant.DEFAULT_STEP))
         df['step_rank'] = processed_steps + '_' + df['rank_id'].astype(str)
         bandwidth_df = (
@@ -345,3 +356,4 @@ class ClusterCommunicationDataset(ClusterDataset):
                 self.rank_bw_dict[row.step_rank][self.RDMA_SIZE_MB] = row.transit_size
                 self.rank_bw_dict[row.step_rank][self.RDMA_TIME_MS] = row.transit_time
                 self.rank_bw_dict[row.step_rank][self.RDMA_BANDWIDTH] = row.bandwidth
+        return True

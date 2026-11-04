@@ -58,15 +58,18 @@ class TestClusterAdviceBase(unittest.TestCase):
     def test_path_check_with_output_path(self):
         analysis_output = os.path.join(self.tmp_dir, "cluster_analysis_output")
         os.makedirs(analysis_output)
+        with open(os.path.join(analysis_output, "cluster_communication.json"), "w", encoding="utf-8") as result:
+            result.write("{}")
         mock_inst = MockChildClusterAdvice(self.tmp_dir)
         mock_inst.cluster_analyze = MagicMock(name="cluster_analyze")
-        mock_inst.path_check()
+        mock_inst.path_check("cluster_communication.json")
         mock_inst.cluster_analyze.assert_not_called()
 
     def test_path_check_without_output_path(self):
+        os.makedirs(os.path.join(self.tmp_dir, "cluster_analysis_output"))
         mock_inst = MockChildClusterAdvice(self.tmp_dir)
         mock_inst.cluster_analyze = MagicMock(name="cluster_analyze")
-        mock_inst.path_check()
+        mock_inst.path_check("cluster_communication.json")
         mock_inst.cluster_analyze.assert_called_once()
 
     def test_cluster_analyze_normal(self):

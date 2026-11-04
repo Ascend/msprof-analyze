@@ -16,16 +16,58 @@
 
 import os
 import shutil
+import sqlite3
+import tempfile
 import unittest
+from contextlib import closing
 from unittest.mock import patch
 from collections import defaultdict
 
 import pandas as pd
 
 from msprof_analyze.advisor.dataset.cluster.cluster_dataset import ClusterCommunicationDataset
+from msprof_analyze.prof_common.constant import Constant
 
 
 class TestClusterCommunicationDataset(unittest.TestCase):
+
+    def test_parse_db_with_missing_empty_and_populated_bandwidth_table(self):
+        with tempfile.TemporaryDirectory() as output_path:
+            self.dataset.output_path = output_path
+            output_dir = os.path.join(output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
+            os.makedirs(output_dir)
+            db_path = os.path.join(output_dir, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
+            with closing(sqlite3.connect(db_path)) as conn:
+                conn.executescript("""
+                    CREATE TABLE ClusterCommunicationTime (
+                        hccl_op_name TEXT, group_name TEXT, start_timestamp REAL,
+                        elapsed_time REAL, step TEXT, rank_id INTEGER
+                    );
+                    CREATE TABLE CommunicationGroupMapping (group_name TEXT, rank_set TEXT);
+                    INSERT INTO ClusterCommunicationTime VALUES ('allreduce', 'g0', 0, 3, 'step1', 0);
+                    INSERT INTO CommunicationGroupMapping VALUES ('g0', '0');
+                """)
+
+                self.assertFalse(self.dataset.parse_from_db())
+                self.assertFalse(self.dataset.get_data())
+                self.assertFalse(self.dataset.hccl_dict)
+
+                conn.execute("""
+                    CREATE TABLE ClusterCommunicationBandwidth (
+                        hccl_op_name TEXT, step TEXT, rank_id INTEGER, band_type TEXT,
+                        transit_time REAL, transit_size REAL, bandwidth REAL, large_packet_ratio REAL
+                    )
+                """)
+                self.assertTrue(self.dataset.parse_from_db())
+                self.assertFalse(self.dataset.get_data())
+
+                conn.execute("""
+                    INSERT INTO ClusterCommunicationBandwidth
+                    VALUES ('allreduce', 'step1', 0, 'RDMA', 2, 8, 4, 1)
+                """)
+                conn.commit()
+                self.assertTrue(self.dataset.parse_from_db())
+                self.assertEqual(self.dataset.get_data()["1_0"][self.dataset.RDMA_BANDWIDTH], 4)
 
     def tearDown(self):
         if os.path.exists(self.tmp_dir):

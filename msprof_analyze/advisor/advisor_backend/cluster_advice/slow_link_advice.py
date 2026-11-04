@@ -61,7 +61,7 @@ class SlowLinkAdvice(ClusterAdviceBase):
         return communication_json
 
     def run(self):
-        self.path_check()
+        self.path_check(Constant.CLUSTER_COMM_JSON)
         communication_json = self.load_communication_json()
         self.process(communication_json)
         self.output()
