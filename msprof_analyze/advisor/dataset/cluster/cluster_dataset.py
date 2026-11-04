@@ -316,6 +316,11 @@ class ClusterCommunicationDataset(ClusterDataset):
     def process_hccl_info_db(self, db_path):
         export = ClusterCommunicationInfoExport(db_path)
         df = export.read_export_db()
+        if df is None:
+            logger.warning("Communication time data could not be loaded; skip HCCL parsing.")
+            return
+        if df.empty:
+            return
         df['sdma_dict'] = df['sdma_dict'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         df['rdma_dict'] = df['rdma_dict'].apply(lambda x: json.loads(x) if pd.notna(x) else {})
         for row in df.itertuples(index=False):
@@ -328,6 +333,11 @@ class ClusterCommunicationDataset(ClusterDataset):
     def process_bandwidth_db(self, db_path):
         export = ClusterBandwidthInfoExport(db_path)
         df = export.read_export_db()
+        if df is None:
+            logger.warning("Communication bandwidth data could not be loaded; skip bandwidth parsing.")
+            return
+        if df.empty:
+            return
         processed_steps = df['step'].astype(str).str.lower().str.lstrip('step').replace('', str(Constant.DEFAULT_STEP))
         df['step_rank'] = processed_steps + '_' + df['rank_id'].astype(str)
         bandwidth_df = (

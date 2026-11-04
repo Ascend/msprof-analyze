@@ -27,6 +27,12 @@ logger = get_logger()
 
 class CommunicationAnalysis(BaseAnalysis):
     SAVED_JSON = "cluster_communication.json"
+    TIME_BREAKDOWN_FIELDS = (
+        Constant.TRANSIT_TIME_MS,
+        Constant.WAIT_TIME_MS,
+        Constant.SYNCHRONIZATION_TIME_MS,
+        Constant.IDLE_TIME_MS,
+    )
 
     def __init__(self, param: dict):
         super().__init__(param)
@@ -61,25 +67,49 @@ class CommunicationAnalysis(BaseAnalysis):
         }
         total_rank_dict = defaultdict(lambda: copy.deepcopy(default_value))
         total_group_rank_dict = defaultdict(lambda: copy.deepcopy(total_rank_dict))
+        time_calls = defaultdict(lambda: defaultdict(list))
         for op_name, rank_dict in communication_ops.items():
+            if op_name.startswith(Constant.TOTAL_OP_INFO):
+                continue
             group_name = op_name.split("@")[-1]
             for rank_id, communication_op_info in rank_dict.items():
                 for com_info, com_info_dict in communication_op_info.items():
                     if com_info == Constant.COMMUNICATION_TIME_INFO:
+                        self.normalize_time_info(com_info_dict)
+                        time_calls[group_name][rank_id].append(com_info_dict)
                         self.combine_time_info(com_info_dict, total_group_rank_dict[group_name][rank_id][com_info])
                     if com_info == Constant.COMMUNICATION_BANDWIDTH_INFO:
                         self.combine_bandwidth_info(com_info_dict, total_group_rank_dict[group_name][rank_id][com_info])
         for group_name, total_rank_dict in total_group_rank_dict.items():
             for rank_id in total_rank_dict:
-                self.compute_time_ratio(total_rank_dict[rank_id][Constant.COMMUNICATION_TIME_INFO])
+                total_time = total_rank_dict[rank_id][Constant.COMMUNICATION_TIME_INFO]
+                if all(total_time.get(field) == Constant.INVALID_VALUE for field in self.TIME_BREAKDOWN_FIELDS):
+                    total_time[Constant.START_TIMESTAMP] = 0
+                self.compute_time_ratio(total_time, time_calls[group_name][rank_id])
                 self.compute_bandwidth_ratio(total_rank_dict[rank_id][Constant.COMMUNICATION_BANDWIDTH_INFO])
             communication_ops[f"{Constant.TOTAL_OP_INFO}@{group_name}"] = total_rank_dict
 
+    def normalize_time_info(self, time_info):
+        for field in self.TIME_BREAKDOWN_FIELDS + (Constant.WAIT_TIME_RATIO, Constant.SYNCHRONIZATION_TIME_RATIO):
+            if time_info.get(field) is None:
+                time_info[field] = Constant.INVALID_VALUE
+        for field, ratio in (
+            (Constant.WAIT_TIME_MS, Constant.WAIT_TIME_RATIO),
+            (Constant.SYNCHRONIZATION_TIME_MS, Constant.SYNCHRONIZATION_TIME_RATIO),
+        ):
+            if Constant.INVALID_VALUE in (time_info[field], time_info[Constant.TRANSIT_TIME_MS]):
+                time_info[ratio] = Constant.INVALID_VALUE
+
     def combine_time_info(self, com_info_dict: dict, total_time_info_dict: dict):
-        ratio_list = [Constant.WAIT_TIME_RATIO, Constant.SYNCHRONIZATION_TIME_RATIO]
-        for time_info in com_info_dict:
-            if time_info not in ratio_list and time_info != Constant.START_TIMESTAMP:
-                total_time_info_dict[time_info] += com_info_dict.get(time_info)
+        excluded_fields = (Constant.WAIT_TIME_RATIO, Constant.SYNCHRONIZATION_TIME_RATIO, Constant.START_TIMESTAMP)
+        for field, value in com_info_dict.items():
+            if field in excluded_fields:
+                continue
+            if value is None or value == Constant.INVALID_VALUE:
+                total_time_info_dict.setdefault(field, Constant.INVALID_VALUE)
+                continue
+            total = total_time_info_dict.get(field, Constant.INVALID_VALUE)
+            total_time_info_dict[field] = value if total == Constant.INVALID_VALUE else total + value
 
     def combine_bandwidth_info(self, com_info_dict: dict, total_bandwidth_info_dict: dict):
         add_list = [Constant.TRANSIT_TIME_MS, Constant.TRANSIT_SIZE_MB]
@@ -97,16 +127,25 @@ class CommunicationAnalysis(BaseAnalysis):
                 if bandwidth_msg in dict_list:
                     self.combine_size_distribution(value, total_bandwidth_info_dict[transport_type].get(bandwidth_msg))
 
-    def compute_time_ratio(self, total_time_info_dict: dict):
-        total_time_info_dict[Constant.WAIT_TIME_RATIO] = self.compute_ratio(
-            total_time_info_dict.get(Constant.WAIT_TIME_MS, 0),
-            total_time_info_dict.get(Constant.WAIT_TIME_MS, 0) + total_time_info_dict.get(Constant.TRANSIT_TIME_MS, 0),
-        )
-        total_time_info_dict[Constant.SYNCHRONIZATION_TIME_RATIO] = self.compute_ratio(
-            total_time_info_dict.get(Constant.SYNCHRONIZATION_TIME_MS, 0),
-            total_time_info_dict.get(Constant.SYNCHRONIZATION_TIME_MS, 0)
-            + total_time_info_dict.get(Constant.TRANSIT_TIME_MS, 0),
-        )
+    def compute_time_ratio(self, total_time_info_dict: dict, time_calls=None):
+        if time_calls is None:
+            time_calls = [total_time_info_dict]
+        for field, ratio in (
+            (Constant.WAIT_TIME_MS, Constant.WAIT_TIME_RATIO),
+            (Constant.SYNCHRONIZATION_TIME_MS, Constant.SYNCHRONIZATION_TIME_RATIO),
+        ):
+            valid_calls = [
+                time
+                for time in time_calls
+                if time.get(field) not in (None, Constant.INVALID_VALUE)
+                and time.get(Constant.TRANSIT_TIME_MS) not in (None, Constant.INVALID_VALUE)
+            ]
+            if not valid_calls:
+                total_time_info_dict[ratio] = Constant.INVALID_VALUE
+                continue
+            numerator = sum(time[field] for time in valid_calls)
+            transit = sum(time[Constant.TRANSIT_TIME_MS] for time in valid_calls)
+            total_time_info_dict[ratio] = self.compute_ratio(numerator, numerator + transit)
 
     def compute_bandwidth_ratio(self, total_bandwidth_info_dict: dict):
         for _, bandwidth_dict in total_bandwidth_info_dict.items():

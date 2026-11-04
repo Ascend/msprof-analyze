@@ -215,3 +215,102 @@ class TestCommunicationAnalysis(unittest.TestCase):
     def test_dump_db_when_called_then_raise_runtime_error(self):
         with self.assertRaises(RuntimeError):
             self.analysis.dump_db()
+
+    def test_level0_total_and_details_keep_unavailable_values(self):
+        fields = self.analysis.TIME_BREAKDOWN_FIELDS
+        calls = {
+            f"hcom_allReduce__0_{i}_1@group": {
+                "0": {
+                    Constant.COMMUNICATION_TIME_INFO: {
+                        Constant.START_TIMESTAMP: 1000 + i * 100,
+                        Constant.ELAPSE_TIME_MS: duration,
+                        **dict.fromkeys(fields, -1),
+                        Constant.WAIT_TIME_RATIO: -1,
+                        Constant.SYNCHRONIZATION_TIME_RATIO: -1,
+                    },
+                    Constant.COMMUNICATION_BANDWIDTH_INFO: {},
+                }
+            }
+            for i, duration in enumerate((2.0, 3.0))
+        }
+        self.analysis.compute_total_info(calls)
+        total = calls["Total Op Info@group"]["0"]
+        self.assertEqual(total[Constant.COMMUNICATION_BANDWIDTH_INFO], {})
+        time = total[Constant.COMMUNICATION_TIME_INFO]
+        self.assertEqual(time[Constant.ELAPSE_TIME_MS], 5.0)
+        self.assertEqual(time[Constant.START_TIMESTAMP], 0)
+        for call in calls.values():
+            for field in fields + (Constant.WAIT_TIME_RATIO, Constant.SYNCHRONIZATION_TIME_RATIO):
+                self.assertEqual(call["0"][Constant.COMMUNICATION_TIME_INFO][field], -1)
+        self.analysis.compute_total_info(calls)
+        self.assertEqual(calls["Total Op Info@group"]["0"][Constant.COMMUNICATION_TIME_INFO][
+            Constant.ELAPSE_TIME_MS], 5.0)
+
+    def test_partial_breakdown_sums_valid_values_regardless_of_call_order(self):
+        for values in ((-1, 2.0), (2.0, -1), (None, 2.0), (2.0, None)):
+            with self.subTest(values=values):
+                calls = {
+                    f"op{i}@group": {"0": {
+                        Constant.COMMUNICATION_TIME_INFO: {
+                            Constant.ELAPSE_TIME_MS: 3.0,
+                            Constant.TRANSIT_TIME_MS: value,
+                            Constant.WAIT_TIME_MS: 1.0,
+                            Constant.SYNCHRONIZATION_TIME_MS: 0.0,
+                        },
+                        Constant.COMMUNICATION_BANDWIDTH_INFO: {},
+                    }} for i, value in enumerate(values)
+                }
+                self.analysis.compute_total_info(calls)
+                time = calls["Total Op Info@group"]["0"][Constant.COMMUNICATION_TIME_INFO]
+                self.assertEqual(time[Constant.ELAPSE_TIME_MS], 6.0)
+                self.assertEqual(time[Constant.TRANSIT_TIME_MS], 2.0)
+                self.assertEqual(time[Constant.IDLE_TIME_MS], -1)
+                self.assertEqual(time[Constant.WAIT_TIME_MS], 2.0)
+                self.assertEqual(time[Constant.SYNCHRONIZATION_TIME_MS], 0.0)
+                self.assertEqual(time[Constant.WAIT_TIME_RATIO], 0.3333)
+                self.assertEqual(time[Constant.SYNCHRONIZATION_TIME_RATIO], 0.0)
+
+    def test_real_zero_breakdown_keeps_zero_ratios(self):
+        time = dict.fromkeys(self.analysis.TIME_BREAKDOWN_FIELDS, 0)
+        self.analysis.compute_time_ratio(time)
+        self.assertEqual(time[Constant.WAIT_TIME_RATIO], 0)
+        self.assertEqual(time[Constant.SYNCHRONIZATION_TIME_RATIO], 0)
+
+    def test_detailed_total_preserves_legacy_time_fields(self):
+        time = {
+            Constant.START_TIMESTAMP: 1000,
+            Constant.ELAPSE_TIME_MS: 5,
+            Constant.TRANSIT_TIME_MS: 2,
+            Constant.WAIT_TIME_MS: 1,
+            Constant.SYNCHRONIZATION_TIME_MS: 0,
+            Constant.IDLE_TIME_MS: 2,
+            Constant.WAIT_TIME_RATIO: 0.3333,
+            Constant.SYNCHRONIZATION_TIME_RATIO: 0,
+        }
+        calls = {"hcom_allReduce__0_0_1@group": {"0": {
+            Constant.COMMUNICATION_TIME_INFO: copy.deepcopy(time),
+            Constant.COMMUNICATION_BANDWIDTH_INFO: {},
+        }}}
+        self.analysis.compute_total_info(calls)
+        total = calls["Total Op Info@group"]["0"][Constant.COMMUNICATION_TIME_INFO]
+        expected = {k: v for k, v in time.items() if k != Constant.START_TIMESTAMP}
+        self.assertEqual(dict(total), expected)
+        self.assertEqual(calls["hcom_allReduce__0_0_1@group"]["0"][Constant.COMMUNICATION_TIME_INFO], time)
+
+    def test_ratio_requires_paired_valid_calls_even_when_both_totals_exist(self):
+        calls = {
+            f"op{i}@group": {"0": {
+                Constant.COMMUNICATION_TIME_INFO: {
+                    Constant.ELAPSE_TIME_MS: 2,
+                    Constant.TRANSIT_TIME_MS: transit,
+                    Constant.WAIT_TIME_MS: wait,
+                },
+                Constant.COMMUNICATION_BANDWIDTH_INFO: {},
+            }} for i, (transit, wait) in enumerate(((1, -1), (-1, 3)))
+        }
+        self.analysis.compute_total_info(calls)
+        total = calls["Total Op Info@group"]["0"][Constant.COMMUNICATION_TIME_INFO]
+        self.assertEqual(total[Constant.ELAPSE_TIME_MS], 4)
+        self.assertEqual(total[Constant.TRANSIT_TIME_MS], 1)
+        self.assertEqual(total[Constant.WAIT_TIME_MS], 3)
+        self.assertEqual(total[Constant.WAIT_TIME_RATIO], -1)

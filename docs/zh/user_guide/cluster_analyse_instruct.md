@@ -29,7 +29,7 @@
 
 #### 2.2.1 采集配置
 
-`profiler_level` 建议设置为 `Level1` 或更高。`Level0` 及以下不会采集通信小算子，因此无法获取通信带宽和通信矩阵信息，仅能汇总集群的`step_trace_time`迭代内耗时信息。
+`profiler_level` 建议设置为 `Level1` 或更高，此时集群分析可汇总完整的通信耗时、带宽、传输矩阵信息。但在超大集群场景下，也可以使用 `Level0` 数据，此时仅汇总集群的 `step_trace_time` 迭代内耗时信息以及通信大算子的整体耗时，不包含通信带宽和传输矩阵信息。
 
 ```python
 experimental_config = torch_npu.profiler._ExperimentalConfig(
@@ -66,7 +66,7 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 ├── ASCEND_PROFILER_OUTPUT
     ├── step_trace_time.csv  # 迭代耗时
     ├── communication.json  # 通信耗时
-    └── communication_matrix.json # 通信矩阵信息
+    └── communication_matrix.json # 通信矩阵信息；Level0 无矩阵时可缺失
 └── profiler_info_*.json
 ```
 
@@ -259,14 +259,14 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 db 格式性能数据解析后生成的集群分析数据库，用于支撑 MindStudio Insight 可视化展示，也可用于后续数据库分析。集群分析生成表如下：
 
-| 表名 | 生成场景 | 用途 |
-| --- | --- | --- |
-| `ClusterBaseInfo` | db 格式性能数据 | 记录集群基础信息，例如并行策略参数。 |
-| `ClusterStepTraceTime` | db 格式性能数据 | 记录 rank/stage 维度的迭代耗时拆解信息，对应 `cluster_step_trace_time.csv`。 |
-| `CommunicationGroupMapping` | db 格式性能数据，且存在通信域信息 | 记录通信域、rank 集合和并行组信息。 |
-| `ClusterCommunicationTime` | db 格式性能数据，且执行 `communication_time` 或 `all` | 记录集群维度通信算子耗时汇总信息。 |
-| `ClusterCommunicationBandwidth` | db 格式性能数据，且执行 `communication_time` 或 `all` | 记录集群维度通信带宽、包大小分布和传输耗时汇总信息。 |
-| `ClusterCommunicationMatrix` | db 格式性能数据，且执行 `communication_matrix` 或 `all` | 记录集群维度 rank 间通信矩阵信息。 |
+| 表名 | 生成场景                                                       | 用途 |
+| --- |------------------------------------------------------------| --- |
+| `ClusterBaseInfo` | db 格式性能数据                                                  | 记录集群基础信息，例如并行策略参数。 |
+| `ClusterStepTraceTime` | db 格式性能数据                                                  | 记录 rank/stage 维度的迭代耗时拆解信息，对应 `cluster_step_trace_time.csv`。 |
+| `CommunicationGroupMapping` | db 格式性能数据，且存在通信域信息                                         | 记录通信域、rank 集合和并行组信息。 |
+| `ClusterCommunicationTime` | db 格式性能数据，且执行 `communication_time` 或 `all`                 | 记录集群维度通信算子耗时汇总信息。 |
+| `ClusterCommunicationBandwidth` | db 格式性能数据，执行 `communication_time` 或 `all`，且具备带宽记录 | 记录集群维度通信带宽、包大小分布和传输耗时汇总信息。 |
+| `ClusterCommunicationMatrix` | db 格式性能数据，执行 `communication_matrix` 或 `all`，且具备有效矩阵数据       | 记录集群维度 rank 间通信矩阵信息。 |
 
 不同采集工具、采集级别、`--mode` 取值和原始 profiling 数据完整度会影响实际生成的表。若某类原始数据缺失，对应表可能不会生成。
 
@@ -309,20 +309,22 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 ##### 4.3.5.4 `ClusterCommunicationTime`
 
-| 字段 | 说明 |
-| --- | --- |
-| `step` | Step 编号。 |
-| `type` | 通信算子类型，包含集合通信和点对点通信等类型。 |
-| `hccl_op_name` | HCCL 通信算子名称。 |
-| `group_name` | 通信域名称。 |
-| `start_timestamp` | 通信算子开始时间戳，单位 us。 |
-| `elapsed_time` | 通信算子总耗时，单位 ms。 |
-| `transit_time` | 数据传输耗时，单位 ms。 |
-| `wait_time` | 等待耗时，单位 ms。 |
-| `synchronization_time` | 同步耗时，单位 ms。 |
-| `idle_time` | 空闲耗时，单位 ms。 |
-| `synchronization_time_ratio` | 同步耗时占比，取值为 0 到 1 的小数。 |
-| `wait_time_ratio` | 等待耗时占比，取值为 0 到 1 的小数。 |
+| 字段 | 说明                                                                     |
+| --- |------------------------------------------------------------------------|
+| `step` | Step 编号。                                                               |
+| `rank_id` | 全局 rank ID。                                                            |
+| `hccl_op_name` | HCCL 通信算子名称。                                                           |
+| `group_name` | 通信域名称。                                                                 |
+| `start_timestamp` | 通信算子开始时间戳，单位 us。                                                       |
+| `elapsed_time` | 通信算子总耗时，单位 ms。                                                         |
+| `transit_time` | 数据传输耗时，单位 ms。                                                          |
+| `wait_time` | 等待耗时，单位 ms。                                                            |
+| `synchronization_time` | 同步耗时，单位 ms。                                                            |
+| `idle_time` | 空闲耗时，单位 ms。                                                            |
+| `synchronization_time_ratio` | 同步耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。 |
+| `wait_time_ratio` | 等待耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。              |
+
+配置`Level0`采集性能数据时， `transit_time`、`wait_time`、`synchronization_time`、`idle_time` 未采集，`synchronization_time_ratio`、`wait_time_ratio不可用`，均显示为`-1`。
 
 ##### 4.3.5.5 `ClusterCommunicationBandwidth`
 

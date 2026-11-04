@@ -15,6 +15,10 @@
 # -------------------------------------------------------------------------
 
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
+from msprof_analyze.prof_common.db_manager import DBManager
+from msprof_analyze.prof_common.logger import get_logger
+
+logger = get_logger()
 
 QUERY_COMMUNICATION_PTA = """
 WITH
@@ -124,6 +128,22 @@ LEFT JOIN rdma
     ON time.hccl_op_name = rdma.hccl_op_name
 """
 
+QUERY_CLUSTER_COMMUNICATION_WITHOUT_BANDWIDTH = """
+SELECT
+    group_map.rank_set,
+    time.hccl_op_name,
+    time.group_name,
+    time.start_timestamp,
+    time.elapsed_time,
+    time.step,
+    time.rank_id,
+    NULL AS sdma_dict,
+    NULL AS rdma_dict
+FROM {time_table} AS time
+JOIN {group_table} AS group_map
+    ON time.group_name = group_map.group_name
+"""
+
 QUERY_CLUSTER_BANDWIDTH = """
 SELECT
     step,
@@ -174,8 +194,26 @@ class ClusterCommunicationInfoExport(ClusterAnalysisExport):
             time_table=self.cluster_time_table, band_table=self.cluster_band_table, group_table=self.cluster_group_table
         )
 
+    def get_query(self):
+        if DBManager.check_tables_in_db(self._db_path, self.cluster_band_table):
+            return self._query
+        logger.warning("ClusterCommunicationBandwidth is absent; load communication times without bandwidth.")
+        return QUERY_CLUSTER_COMMUNICATION_WITHOUT_BANDWIDTH.format(
+            time_table=self.cluster_time_table, group_table=self.cluster_group_table
+        )
+
 
 class ClusterBandwidthInfoExport(ClusterAnalysisExport):
     def __init__(self, db_path):
         super().__init__(db_path)
         self._query = QUERY_CLUSTER_BANDWIDTH.format(band_table=self.cluster_band_table)
+
+    def get_query(self):
+        if DBManager.check_tables_in_db(self._db_path, self.cluster_band_table):
+            return self._query
+        logger.warning("ClusterCommunicationBandwidth is absent; skip bandwidth parsing.")
+        return """
+            SELECT NULL AS step, NULL AS rank_id, NULL AS band_type,
+                   NULL AS transit_time, NULL AS transit_size
+            WHERE 0
+        """
