@@ -19,6 +19,7 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 from unittest.mock import patch
 import pandas as pd
 
@@ -133,20 +134,10 @@ class TestCommunicationGroupMap(unittest.TestCase):
             self.assertTrue(recipe.communication_time.empty)
             self.assertTrue(recipe.communication_bandwidth.empty)
 
-            recipe.save_db()
-            db_path = os.path.join(recipe.output_path, "cluster_analysis.db")
-            with sqlite3.connect(db_path) as conn:
-                tables = {
-                    row[0]
-                    for row in conn.execute(
-                        "select name from sqlite_master where type='table'"
-                    )
-                }
-                self.assertIn("ClusterCommunicationTime", tables)
-                self.assertNotIn("ClusterCommunicationBandwidth", tables)
-                self.assertEqual(
-                    conn.execute("select count(*) from ClusterCommunicationTime").fetchone()[0], 0
-                )
+            with patch(NAMESPACE + ".communication_time_sum.communication_time_sum.set_json_success") as success:
+                recipe.save_db()
+            self.assertEqual(success.call_args.kwargs["msg_dict"]["tables"], [])
+            self.assertFalse(os.path.exists(os.path.join(recipe.output_path, "cluster_analysis.db")))
 
     @patch("msprof_analyze.prof_common.database_service.DatabaseService.query_data")
     def test__mapper_func_should_return_bandwidth_data_when_time_data_is_missing(self, mock_query_data):
@@ -350,7 +341,7 @@ class TestLevel0CommunicationTime(unittest.TestCase):
             with patch(NAMESPACE + ".communication_time_sum.communication_time_sum.set_json_success") as success:
                 recipe.save_db()
             self.assertEqual(success.call_args.kwargs["msg_dict"]["tables"], ["ClusterCommunicationTime"])
-            with sqlite3.connect(os.path.join(recipe.output_path, "cluster_analysis.db")) as conn:
+            with closing(sqlite3.connect(os.path.join(recipe.output_path, "cluster_analysis.db"))) as conn:
                 tables = {row[0] for row in conn.execute("select name from sqlite_master where type='table'")}
                 self.assertEqual(tables, {"ClusterCommunicationTime"})
                 self.assertEqual(conn.execute("select count(*) from ClusterCommunicationTime").fetchone()[0], 3)
@@ -374,7 +365,7 @@ class TestLevel0CommunicationTime(unittest.TestCase):
             self.assertFalse(os.path.exists(os.path.join(recipe.output_path, "cluster_communication_bandwidth.csv")))
             self.assertEqual(success.call_args.kwargs["msg_dict"]["csv_path"], [time_csv])
 
-    def test_detailed_time_keeps_legacy_empty_bandwidth_table_and_csv(self):
+    def test_detailed_time_omits_empty_bandwidth_table_and_csv(self):
         detailed = self.time_data()
         detailed[CommunicationTimeSum.TIME_BREAKDOWN_COLUMNS] = 0.0
         for export_type in (Constant.DB, Constant.TEXT):
@@ -384,17 +375,19 @@ class TestLevel0CommunicationTime(unittest.TestCase):
                     Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: output,
                 })
                 recipe.communication_time = self.compute(detailed)
-                if export_type == Constant.DB:
-                    recipe.save_db()
-                    with sqlite3.connect(os.path.join(recipe.output_path, "cluster_analysis.db")) as conn:
-                        self.assertEqual(conn.execute("select count(*) from ClusterCommunicationBandwidth").fetchone()[0], 0)
-                        columns = [r[1] for r in conn.execute("pragma table_info(ClusterCommunicationBandwidth)")]
-                        self.assertEqual(columns, recipe.BANDWIDTH_COLUMNS)
-                else:
-                    recipe.save_csv()
-                    bandwidth = pd.read_csv(os.path.join(recipe.output_path, "cluster_communication_bandwidth.csv"))
-                    self.assertTrue(bandwidth.empty)
-                    self.assertEqual(bandwidth.columns.tolist(), recipe.BANDWIDTH_COLUMNS)
+                with patch(NAMESPACE + ".communication_time_sum.communication_time_sum.set_json_success") as success:
+                    if export_type == Constant.DB:
+                        recipe.save_db()
+                        with closing(sqlite3.connect(os.path.join(recipe.output_path, "cluster_analysis.db"))) as conn:
+                            tables = {row[0] for row in conn.execute("select name from sqlite_master where type='table'")}
+                        self.assertEqual(tables, {"ClusterCommunicationTime"})
+                        self.assertEqual(success.call_args.kwargs["msg_dict"]["tables"], ["ClusterCommunicationTime"])
+                    else:
+                        recipe.save_csv()
+                        bandwidth_path = os.path.join(recipe.output_path, "cluster_communication_bandwidth.csv")
+                        self.assertFalse(os.path.exists(bandwidth_path))
+                        self.assertEqual(success.call_args.kwargs["msg_dict"]["csv_path"],
+                                         [os.path.join(recipe.output_path, "cluster_communication_time.csv")])
 
     def test_ratio_requires_paired_valid_calls_even_when_both_metric_totals_exist(self):
         data = self.time_data()
@@ -405,3 +398,63 @@ class TestLevel0CommunicationTime(unittest.TestCase):
         self.assertEqual(total["transit_time"], 1.0)
         self.assertEqual(total["wait_time"], 3.0)
         self.assertEqual(total["wait_time_ratio"], -1)
+
+
+class TestCommunicationOutput(unittest.TestCase):
+    def test_only_nonempty_results_are_written_and_reported(self):
+        for has_time, has_bandwidth in ((False, False), (True, False), (False, True), (True, True)):
+            for export_type in (Constant.DB, Constant.TEXT):
+                with (
+                    self.subTest(time=has_time, bandwidth=has_bandwidth, export=export_type),
+                    tempfile.TemporaryDirectory() as output,
+                ):
+                    recipe = CommunicationTimeSum(
+                        {
+                            Constant.EXPORT_TYPE: export_type,
+                            Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: output,
+                        }
+                    )
+                    if has_time:
+                        recipe.communication_time = pd.DataFrame([{column: 1 for column in recipe.TIME_COLUMNS}])
+                    if has_bandwidth:
+                        recipe.communication_bandwidth = pd.DataFrame(
+                            [{column: 1 for column in recipe.BANDWIDTH_COLUMNS}]
+                        )
+                    expected_tables = []
+                    expected_files = []
+                    for present, table, file_name in (
+                        (has_time, "ClusterCommunicationTime", "cluster_communication_time.csv"),
+                        (has_bandwidth, "ClusterCommunicationBandwidth", "cluster_communication_bandwidth.csv"),
+                    ):
+                        if present:
+                            expected_tables.append(table)
+                            expected_files.append(os.path.join(recipe.output_path, file_name))
+                    with patch(
+                        NAMESPACE + ".communication_time_sum.communication_time_sum.set_json_success"
+                    ) as success:
+                        if export_type == Constant.DB:
+                            recipe.save_db()
+                            self.assertEqual(success.call_args.kwargs["msg_dict"]["tables"], expected_tables)
+                            db_path = os.path.join(recipe.output_path, "cluster_analysis.db")
+                            if expected_tables:
+                                with closing(sqlite3.connect(db_path)) as conn:
+                                    tables = {
+                                        row[0]
+                                        for row in conn.execute("select name from sqlite_master where type='table'")
+                                    }
+                                    self.assertEqual(tables, set(expected_tables))
+                                    for table in tables:
+                                        self.assertEqual(
+                                            conn.execute('select count(*) from "' + table + '"').fetchone()[0], 1
+                                        )
+                            else:
+                                self.assertFalse(os.path.exists(db_path))
+                        else:
+                            recipe.save_csv()
+                            self.assertEqual(success.call_args.kwargs["msg_dict"]["csv_path"], expected_files)
+                            actual_files = {
+                                os.path.join(recipe.output_path, name) for name in os.listdir(recipe.output_path)
+                            }
+                            self.assertEqual(actual_files, set(expected_files))
+                            for csv_path in expected_files:
+                                self.assertEqual(len(pd.read_csv(csv_path)), 1)

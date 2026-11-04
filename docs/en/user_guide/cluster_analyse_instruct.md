@@ -262,8 +262,8 @@ Generated after parsing `db`-format profile data. It is used to support visualiz
 | `ClusterBaseInfo` | `db`-format profile data | Records basic cluster information, such as parallel strategy parameters. |
 | `ClusterStepTraceTime` | `db`-format profile data | Records the breakdown of iteration durations at the rank/stage level and corresponds to `cluster_step_trace_time.csv`. |
 | `CommunicationGroupMapping` | `db`-format profile data, with communication domain information available | Records communication domains, rank sets, and parallel group information. |
-| `ClusterCommunicationTime` | `db`-format profile data, with `communication_time` or `all` executed | Records aggregated communication operator duration information at the cluster level. |
-| `ClusterCommunicationBandwidth` | `db`-format profile data, with `communication_time` or `all` executed and bandwidth or detailed communication time data available | Records aggregated cluster-level communication bandwidth, packet size distribution, and transmission duration information. |
+| `ClusterCommunicationTime` | `db`-format profile data, with `communication_time` or `all` executed and communication duration records available | Records aggregated communication operator duration information at the cluster level. |
+| `ClusterCommunicationBandwidth` | `db`-format profile data, with `communication_time` or `all` executed and bandwidth records available | Records aggregated cluster-level communication bandwidth, packet size distribution, and transmission duration information. |
 | `ClusterCommunicationMatrix` | `db`-format profile data, with `communication_matrix` or `all` executed and matrix data available | Records cluster-level communication matrix information between ranks. |
 
 The actual tables generated depend on the collection tool, collection level, `--mode` value, and completeness of the original profile data. If a type of original data is missing, the corresponding table may not be generated.

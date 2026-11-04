@@ -17,6 +17,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import copy
+import json
 import os
 import shutil
 from msprof_analyze.cluster_analyse.analysis.comm_matrix_analysis import CommMatrixAnalysis
@@ -184,26 +185,64 @@ class TestCommMatrixAnalysis(unittest.TestCase):
             self.analysis.dump_db()
 
     @patch('msprof_analyze.cluster_analyse.analysis.comm_matrix_analysis.increase_shared_value')
-    def test_no_matrix_generates_no_file_for_coarse_or_detailed_time(self, mock_increase):
-        for value in (-1, 0.5):
-            with self.subTest(breakdown=value):
-                params = {
-                    Constant.DATA_TYPE: Constant.TEXT,
-                    Constant.ANALYSIS_MODE: Constant.ALL,
-                    Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.test_dir,
-                    Constant.COMM_DATA_DICT: {Constant.COMMUNICATION_OPS: [{
-                        Constant.COMM_OP_INFO: {Constant.COMMUNICATION_TIME_INFO: {
-                            Constant.ELAPSE_TIME_MS: 1,
-                            Constant.TRANSIT_TIME_MS: value,
-                            Constant.WAIT_TIME_MS: value,
-                            Constant.SYNCHRONIZATION_TIME_MS: value,
-                            Constant.IDLE_TIME_MS: value,
-                        }},
-                    }]},
-                }
-                analysis = CommMatrixAnalysis(params)
-                with patch.object(analysis, 'dump_data') as dump:
-                    analysis.run(MagicMock(), MagicMock())
-                dump.assert_not_called()
-                self.assertFalse(os.path.exists(os.path.join(self.output_path, 'cluster_communication_matrix.json')))
-        self.assertEqual(mock_increase.call_count, 2)
+    def test_empty_matrix_ops_generate_no_json(self, mock_increase):
+        analysis = CommMatrixAnalysis(
+            {
+                Constant.DATA_TYPE: Constant.TEXT,
+                Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.test_dir,
+                Constant.COMM_DATA_DICT: {Constant.MATRIX_OPS: []},
+            }
+        )
+        self.assertEqual(analysis.communication_ops, [])
+        analysis.run(MagicMock(), MagicMock())
+        self.assertFalse(os.path.exists(os.path.join(self.output_path, 'cluster_communication_matrix.json')))
+        mock_increase.assert_called_once()
+
+    @patch('msprof_analyze.cluster_analyse.analysis.comm_matrix_analysis.increase_shared_value')
+    def test_matrix_ops_generate_json_with_operator_and_group_totals(self, mock_increase):
+        group = 'group'
+        operations = [
+            {
+                Constant.COMM_OP_TYPE: Constant.COLLECTIVE,
+                Constant.GROUP_NAME: group,
+                Constant.RANK_ID: 4,
+                Constant.STEP_ID: 'step1',
+                Constant.COMM_OP_NAME: f'hcom_allReduce__0_{index}_1@{group}',
+                Constant.COMM_OP_INFO: {
+                    '0-0': {
+                        Constant.TRANSPORT_TYPE: 'LOCAL',
+                        Constant.TRANSIT_TIME_MS: duration,
+                        Constant.TRANSIT_SIZE_MB: size,
+                    }
+                },
+            }
+            for index, (duration, size) in enumerate(((2.0, 8.0), (1.0, 4.0)))
+        ]
+        analysis = CommMatrixAnalysis(
+            {
+                Constant.DATA_TYPE: Constant.TEXT,
+                Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.test_dir,
+                Constant.DATA_MAP: {},
+                Constant.COMM_DATA_DICT: {
+                    Constant.MATRIX_OPS: operations,
+                    Constant.COLLECTIVE_GROUP: {group: [4]},
+                    Constant.P2P_GROUP: {},
+                },
+            }
+        )
+        self.assertEqual(len(analysis.communication_ops), 2)
+        analysis.run(MagicMock(), MagicMock())
+        with open(os.path.join(self.output_path, 'cluster_communication_matrix.json'), encoding='utf-8') as stream:
+            data = json.load(stream)
+        operators = data['(4,)']['step1']
+        self.assertEqual(len(operators), 3)
+        for index, (duration, size) in enumerate(((2.0, 8.0), (1.0, 4.0))):
+            link = operators[f'hcom_allReduce__0_{index}_1@group']['4-4']
+            self.assertEqual(link[Constant.TRANSIT_TIME_MS], duration)
+            self.assertEqual(link[Constant.TRANSIT_SIZE_MB], size)
+            self.assertEqual(link[Constant.BANDWIDTH_GB_S], 4.0)
+        total = operators['Total Op Info@group']['4-4']
+        self.assertEqual(total[Constant.TRANSIT_TIME_MS], 3.0)
+        self.assertEqual(total[Constant.TRANSIT_SIZE_MB], 12.0)
+        self.assertEqual(total[Constant.BANDWIDTH_GB_S], 4.0)
+        mock_increase.assert_called_once()

@@ -114,7 +114,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         mapper_res_time = list(item[0] for item in mapper_res if item[0] is not None)
         mapper_res_bw = list(item[1] for item in mapper_res if item[1] is not None)
         if not mapper_res_time and not mapper_res_bw:
-            logger.warning("Mapper data is None, generating empty tables.")
+            logger.warning("Mapper data is None, skipping empty results.")
             return
         cluster_db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
         data_service = DatabaseService(cluster_db_path, None)
@@ -125,7 +125,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         rank_set_df = df_dict.get(self.TABLE_COMMUNICATION_GROUP_MAPPING, None)
         if rank_set_df is None or rank_set_df.empty:
             logger.warning(
-                "There is no %s data in %s, generating empty tables.",
+                "There is no %s data in %s, skipping empty results.",
                 self.TABLE_COMMUNICATION_GROUP_MAPPING,
                 cluster_db_path,
             )
@@ -139,11 +139,14 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
             self._compute_bandwidth_info(communication_bandwidth, rank_set_df)
 
     def save_db(self):
-        self._dump_data_to_db(self.communication_time, self.TABLE_CLUSTER_COMM_TIME)
-        tables = [self.TABLE_CLUSTER_COMM_TIME]
-        if self._should_export_bandwidth():
-            self._dump_data_to_db(self.communication_bandwidth, self.TABLE_CLUSTER_COMM_BANDWIDTH)
-            tables.append(self.TABLE_CLUSTER_COMM_BANDWIDTH)
+        tables = []
+        for data, table in (
+            (self.communication_time, self.TABLE_CLUSTER_COMM_TIME),
+            (self.communication_bandwidth, self.TABLE_CLUSTER_COMM_BANDWIDTH),
+        ):
+            if not data.empty:
+                self._dump_data_to_db(data, table)
+                tables.append(table)
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
@@ -152,19 +155,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
             suggestion=self.SUGGESTION,
         )
 
-    def _should_export_bandwidth(self):
-        # Detailed communication data retains the legacy empty bandwidth output.
-        has_breakdown = (
-            not self.communication_time.empty
-            and self.communication_time[self.TIME_BREAKDOWN_COLUMNS].ne(Constant.INVALID_VALUE).any().any()
-        )
-        return not self.communication_bandwidth.empty or has_breakdown
-
     def _dump_data_to_db(self, data, table_name):
-        if data is None:
-            data = pd.DataFrame(
-                columns=self.TIME_COLUMNS if table_name == self.TABLE_CLUSTER_COMM_TIME else self.BANDWIDTH_COLUMNS
-            )
         result_db = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
         logger.info("Exporting data to database: %s, table: %s", result_db, table_name)
         conn, cursor = DBManager.create_connect_db(result_db)
@@ -172,20 +163,20 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         DBManager.destroy_db_connect(conn, cursor)
 
     def save_csv(self):
-        self._dump_data_to_csv(self.communication_time, "cluster_communication_time.csv")
-        csv_paths = [os.path.join(self.output_path, "cluster_communication_time.csv")]
-        bandwidth_path = os.path.join(self.output_path, "cluster_communication_bandwidth.csv")
-        if self._should_export_bandwidth():
-            self._dump_data_to_csv(self.communication_bandwidth, "cluster_communication_bandwidth.csv")
-            csv_paths.append(bandwidth_path)
+        csv_paths = []
+        for data, file_name in (
+            (self.communication_time, "cluster_communication_time.csv"),
+            (self.communication_bandwidth, "cluster_communication_bandwidth.csv"),
+        ):
+            if not data.empty:
+                self._dump_data_to_csv(data, file_name)
+                csv_paths.append(os.path.join(self.output_path, file_name))
         set_json_success(
             msg_dict={"csv_path": csv_paths},
             suggestion=self.SUGGESTION,
         )
 
     def _dump_data_to_csv(self, data, file_name):
-        if data is None:
-            data = pd.DataFrame(columns=self.TIME_COLUMNS if "time" in file_name else self.BANDWIDTH_COLUMNS)
         result_csv = os.path.join(self.output_path, file_name)
         logger.info("Exporting data to CSV file: %s", result_csv)
         FileManager.create_csv_from_dataframe(result_csv, data, index=False)
