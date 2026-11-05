@@ -23,6 +23,7 @@ from msprof_analyze.prof_common.file_manager import FileManager
 
 
 class SlowLinkAdvice(ClusterAdviceBase):
+    result_file = Constant.CLUSTER_COMM_JSON
     RDMA_TIME_MS = "RDMA time(ms)"
     RDMA_SIZE_MB = "RDMA size(mb)"
     SDMA_TIME_MS = "SDMA time(ms)"
@@ -61,7 +62,7 @@ class SlowLinkAdvice(ClusterAdviceBase):
         return communication_json
 
     def run(self):
-        self.path_check(Constant.CLUSTER_COMM_JSON)
+        self.path_check()
         communication_json = self.load_communication_json()
         self.process(communication_json)
         self.output()

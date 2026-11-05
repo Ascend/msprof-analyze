@@ -58,9 +58,18 @@ class TestClusterDataset(unittest.TestCase):
             result.write("{}")
         self.assertTrue(self.dataset.is_cluster_analysis_result_exist())
 
+    def test_text_result_file_is_required_for_text_data(self):
+        self.dataset.data_type = Constant.TEXT
+        self.dataset.text_result_file = ClusterDataset.text_result_file
+        with patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.Interface') as backend:
+            with self.assertRaisesRegex(NotImplementedError, "MockClusterDataset must define text_result_file"):
+                self.dataset.cluster_analyze()
+            backend.assert_not_called()
+
     @patch('os.path.isfile')
     def test_is_cluster_analysis_result_exist_for_db(self, mock_isfile):
         self.dataset.data_type = Constant.DB
+        self.dataset.text_result_file = None
         mock_isfile.return_value = True
 
         self.assertTrue(self.dataset.is_cluster_analysis_result_exist())

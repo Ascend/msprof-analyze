@@ -20,9 +20,15 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 from msprof_analyze.advisor.advisor_backend.cluster_advice.cluster_advice_base import ClusterAdviceBase
+from msprof_analyze.advisor.advisor_backend.cluster_advice.slow_link_advice import SlowLinkAdvice
+from msprof_analyze.advisor.advisor_backend.cluster_advice.slow_rank_advice import SlowRankAdvice
+from msprof_analyze.advisor.advisor_backend.cluster_advice.kernel_cluster_advice import KernelClusterAdvice
+from msprof_analyze.advisor.advisor_backend.cluster_advice.cluster_pipeline_advice import ClusterPipelineAdvice
+from msprof_analyze.prof_common.constant import Constant
 
 
 class MockChildClusterAdvice(ClusterAdviceBase):
+    result_file = Constant.CLUSTER_COMM_JSON
 
     def __init__(self, collection_path: str):
         super().__init__(collection_path)
@@ -62,15 +68,41 @@ class TestClusterAdviceBase(unittest.TestCase):
             result.write("{}")
         mock_inst = MockChildClusterAdvice(self.tmp_dir)
         mock_inst.cluster_analyze = MagicMock(name="cluster_analyze")
-        mock_inst.path_check("cluster_communication.json")
+        mock_inst.path_check()
         mock_inst.cluster_analyze.assert_not_called()
 
     def test_path_check_without_output_path(self):
         os.makedirs(os.path.join(self.tmp_dir, "cluster_analysis_output"))
         mock_inst = MockChildClusterAdvice(self.tmp_dir)
         mock_inst.cluster_analyze = MagicMock(name="cluster_analyze")
-        mock_inst.path_check("cluster_communication.json")
+        mock_inst.path_check()
         mock_inst.cluster_analyze.assert_called_once()
+
+    def test_path_check_uses_each_advice_result_file(self):
+        output_dir = os.path.join(self.tmp_dir, Constant.CLUSTER_ANALYSIS_OUTPUT)
+        os.makedirs(output_dir)
+        with open(os.path.join(output_dir, Constant.CLUSTER_COMM_JSON), "w", encoding="utf-8") as result:
+            result.write("{}")
+        for advice_cls in (SlowLinkAdvice, SlowRankAdvice):
+            with self.subTest(advice=advice_cls.__name__):
+                advice = advice_cls(self.tmp_dir)
+                advice.cluster_analyze = MagicMock()
+                advice.path_check()
+                self.assertEqual(advice.cluster_analyze.call_count, int(advice_cls is SlowRankAdvice))
+
+    def test_path_check_preserves_directory_reuse_for_other_advice(self):
+        output_dir = os.path.join(self.tmp_dir, Constant.CLUSTER_ANALYSIS_OUTPUT)
+        for advice_cls in (KernelClusterAdvice, ClusterPipelineAdvice):
+            with self.subTest(advice=advice_cls.__name__):
+                advice = advice_cls(self.tmp_dir, {})
+                advice.cluster_analyze = MagicMock()
+                advice.path_check()
+                advice.cluster_analyze.assert_called_once()
+                os.makedirs(output_dir)
+                advice.cluster_analyze.reset_mock()
+                advice.path_check()
+                advice.cluster_analyze.assert_not_called()
+                os.rmdir(output_dir)
 
     def test_cluster_analyze_normal(self):
         mock_inst = MockChildClusterAdvice(self.tmp_dir)

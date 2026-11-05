@@ -41,7 +41,7 @@ logger = get_logger()
 
 
 class ClusterDataset(ABC, Dataset):
-    text_result_file = ""
+    text_result_file = None
 
     def __init__(self, collection_path, data: dict, **kwargs) -> None:
         super().__init__(collection_path, data, **kwargs)
@@ -50,6 +50,8 @@ class ClusterDataset(ABC, Dataset):
         """Check whether the result required by the current data type exists."""
         output_dir = os.path.join(self.output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
         if self.data_type == Constant.TEXT:
+            if not self.text_result_file:
+                raise NotImplementedError(f"{self.__class__.__name__} must define text_result_file")
             result_path = os.path.join(output_dir, self.text_result_file)
             if os.path.isfile(result_path):
                 logger.info("Cluster analysis output already exists (%s). Skip backend analysis.", result_path)
