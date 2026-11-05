@@ -44,7 +44,9 @@ class PytorchDataPreprocessor(DataPreprocessor):
             logger.warning(
                 "Failed to get rank_id for some paths."
                 "Affected paths: %s\n"
-                "Expected to get rank_id from profiler_info_{rank_id}.json",
+                "Expected to get rank_id from profiler_info_{rank_id}.json. "
+                "For details, see %s.",
                 unknown_rank_paths,
+                Constant.CLUSTER_DATA_PREPARATION_DOC_URL,
             )
         return self.data_map
