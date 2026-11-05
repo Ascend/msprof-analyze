@@ -3,7 +3,7 @@ pytest-cov==3.0.0
 pytest-mock==3.10.0
 pytest-cookies==0.6.1
 mock==4.0.3
-click
+click>=8.1.0
 networkx
 jinja2
 PyYaml
