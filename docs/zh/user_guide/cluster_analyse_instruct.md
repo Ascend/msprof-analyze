@@ -1,4 +1,4 @@
-﻿# 集群分析工具
+# 集群分析工具
 
 ## 1. 简介
 
@@ -55,6 +55,8 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 
 > [!NOTE]
 >
+> `analysis.db` 仅当采集时开启通信数据才会生成。若未采集该数据，`msprof-analyze` 分析时提示 `missing analysis DB file`，详见 [missing analysis DB file (analysis.db) for N rank(s)](../support/faq.md)。
+>
 > 对于超大集群性能数据需要汇总分析的场景，由于数据量较大，转存的代价高，支持单独保存 `analysis.db` 和 `profiler_info_*.json` 文件（须保留原有目录结构）进行 `msprof-analyze cluster` 分析，以此节省文件转储耗时，完成基本的性能分析。
 
 ##### 2.2.2.2 text 格式性能数据
@@ -75,7 +77,8 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 集群分析时，`-d` 参数应指向集群性能数据根目录，根目录下需包含多张卡、同一次采集得到的 profiling 子目录。为保证分析结果准确，集群路径需满足：
 
 * 只包含同一次采集的全量卡数据，避免混入不同批次或缺失部分 rank；
-* 各卡目录层级和命名保持完整，便于工具正确识别 rank 关系。
+* 每张卡对应一个 profiling 子目录，目录名保持采集工具生成的原始格式（如 Ascend PyTorch Profiler 的 `_ascend_pt`、MindSpore Profiler 的 `_ascend_ms`），不要重命名；
+* 每个子目录内保留 `ASCEND_PROFILER_OUTPUT` 目录和 `profiler_info_{rank_id}.json` 文件，工具据此识别 rank，无需在目录名中额外添加 rank 标识。
 
 若混入不同批次数据或缺失部分 rank，通信矩阵的 `src_rank`、`dst_rank` 映射可能不准确，并伴有 warning 输出。
 

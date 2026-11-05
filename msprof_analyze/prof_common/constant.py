@@ -399,6 +399,10 @@ class Constant:
         "communication.json",
         "communication_matrix.json",
     ]
+    CLUSTER_DATA_PREPARATION_DOC_URL = (
+        "https://gitcode.com/Ascend/msprof-analyze/blob/master/docs/zh/user_guide/"
+        "cluster_analyse_instruct.md#22-数据准备"
+    )
     ANALYSIS_OUTPUT_PATH = "ANALYSIS_OUTPUT_PATH"
     DEFAULT_RANK_FOR_PROFILING_ANALYSIS = 0
     PROFILER_INFO_FILE_PATTERN = r"profiler_info_(\d+)\.json"

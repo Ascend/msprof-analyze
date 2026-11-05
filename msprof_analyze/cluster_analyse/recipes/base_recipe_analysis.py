@@ -277,11 +277,12 @@ class BaseRecipeAnalysis(ABC):
             db_name = self.DB_DISPLAY_NAMES.get(db_key, db_key)
             rank_summary = self._format_rank_summary(missing_rank_ids)
             logger.warning(
-                "%s: missing %s for %d rank(s) [%s]; these ranks will be skipped.",
+                "%s: missing %s for %d rank(s) [%s]; these ranks will be skipped. For details, see %s.",
                 self._recipe_name,
                 db_name,
                 len(missing_rank_ids),
                 rank_summary,
+                Constant.CLUSTER_DATA_PREPARATION_DOC_URL,
             )
         return db_paths
 
