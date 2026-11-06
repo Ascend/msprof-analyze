@@ -55,9 +55,8 @@ class MindsporeDataPreprocessor(DataPreprocessor):
         self.data_map = self.postprocess_data_map(rank_id_map, Constant.MINDSPORE)
         if unknown_rank_paths:
             logger.warning(
-                "Failed to get rank_id for some paths."
-                "Affected paths: %s\n"
-                "Expected to get rank_id from profiler_info_{rank_id}.json. "
+                "Cannot determine rank_id for the following paths: %s. "
+                "Reason: profiler_info_{rank_id}.json is missing or invalid. "
                 "For details, see %s.",
                 unknown_rank_paths,
                 Constant.CLUSTER_DATA_PREPARATION_DOC_URL,

@@ -17,11 +17,11 @@
 3. 检查目录结构是否符合 [集群输入目录要求](../user_guide/cluster_analyse_instruct.md#23-集群输入目录要求)：`-d` 指向集群根目录，每张卡对应一个 profiling 子目录，目录内保留 `ASCEND_PROFILER_OUTPUT` 和 `profiler_info_{rank_id}.json`。
 4. 若确认已开启通信数据采集，检查数据转储或拷贝过程是否遗漏 `analysis.db`（例如仅拷贝了 `ascend_pytorch_profiler_{rank_id}.db`），以及是否为每个 rank 保留了完整的同名文件。
 
-## 集群分析时提示 Failed to get rank_id for some paths
+## 集群分析时提示 Cannot determine rank_id for the following paths
 
 ### 故障现象
 
-执行 `msprof-analyze cluster -d <profiling_path>` 后输出 `Failed to get rank_id for some paths. Affected paths: [...]`，警告中列出的路径不会参与后续分析。
+执行 `msprof-analyze cluster -d <profiling_path>` 后输出 `Cannot determine rank_id for the following paths: [...]. Reason: profiler_info_{rank_id}.json is missing or invalid.`，警告中列出的路径不会被用于分析。若随后日志仍输出 `Finish allocate profiling data: N ranks`，说明分析使用的是其余可识别目录的数据（例如 msProf 数据），本次分析结果不包含这些路径的数据。
 
 ### 故障原因
 
