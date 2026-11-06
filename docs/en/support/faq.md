@@ -17,11 +17,11 @@ After running `msprof-analyze cluster -d <profiling_path>`, the message `missing
 3. Check whether the directory structure meets the [cluster input directory requirements](../user_guide/cluster_analyse_instruct.md#23-requirements-for-the-cluster-input-directory): `-d` points to the cluster root directory, each device has one profiling subdirectory, and each subdirectory retains `ASCEND_PROFILER_OUTPUT` and `profiler_info_{rank_id}.json`.
 4. If communication data collection is enabled, check whether `analysis.db` is missing during data transfer or copy (for example, only `ascend_pytorch_profiler_{rank_id}.db` is copied), and whether the complete set of files with the same name is retained for each rank.
 
-## "Failed to get rank_id for some paths" is reported during cluster analysis
+## "Cannot determine rank_id for the following paths" is reported during cluster analysis
 
 ### Symptom
 
-After running `msprof-analyze cluster -d <profiling_path>`, the message `Failed to get rank_id for some paths. Affected paths: [...]` is printed, and the paths listed in the warning are excluded from subsequent analysis.
+After running `msprof-analyze cluster -d <profiling_path>`, the message `Cannot determine rank_id for the following paths: [...]. Reason: profiler_info_{rank_id}.json is missing or invalid.` is printed. The listed paths are not used for analysis. If `Finish allocate profiling data: N ranks` is still printed afterwards, the analysis uses data from the remaining identifiable directories (for example, msProf data), and the analysis result does not include the data of these paths.
 
 ### Cause
 
