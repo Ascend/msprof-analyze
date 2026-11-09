@@ -38,11 +38,11 @@ Only the TensorFlow framework is supported.
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
 
-    For details, see [AutoFuse Enabling Method](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/programug/graphdevg/autofuse_1_0004.html).
+    For details, see [AutoFuse Enabling Method](https://gitcode.com/cann/ge/blob/9.2.0/docs/en/user_guides/graph_dev/autofuse/autofuse_enable.md).
 
 2. Run the TensorFlow model with both data dump and automatic fusion enabled to obtain the dump data and computational graph files whose names end with `_Build.txt`.
 
-    1. To enable data dump, see [Preparing NPU-side Dump Data and Computational Graph Files](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html).
+    1. To enable data dump, see [Preparing NPU-side Dump Data and Computational Graph Files](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/920/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html).
 
     2. To enable graph dump, set the following environment variables:
 
@@ -53,11 +53,11 @@ Only the TensorFlow framework is supported.
         export DUMP_GRAPH_PATH=<dump_path>
         ```
 
-        For details about these environment variables, see [Environment Variable List](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0001.html).
+        For details about these environment variables, see [Environment Variable List](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/920/maintenref/envvar/envref_07_0001.html).
 
 3. Process the data.
 
-   1. Convert the dump data files into .npy files to obtain the inputs and outputs of the fused operators. For details, see section [Converting Dump File Formats](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html).
+   1. Convert the dump data files into .npy files to obtain the inputs and outputs of the fused operators. For details, see section [Converting Dump File Formats](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/920/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html).
 
       For example, converting `AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365` generates the following .npy files: `AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.0.npy`, `AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.1.npy`, and `AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.output.0.npy`.
 
