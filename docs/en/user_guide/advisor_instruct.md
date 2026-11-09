@@ -226,7 +226,7 @@ The following figure shows an example of **Environment Variable Issues** in the 
 
 ![env\_var.png](../figures/env_var.png)
 
-For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html).
+For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://gitcode.com/cann/docs/blob/9.2.0/docs/en/env-vars/ACLNN_CACHE_LIMIT.md).
 
 The following figures show examples of the **Overall Summary** analysis in a single-rank scenario without a benchmark.
 
@@ -434,7 +434,7 @@ For details about the APIs, see [`torch_npu.npu.set_compile_mode`](https://gitco
 
 ![Input image description](../figures/schedule_1.png)
 
-For details about the `aclopCompileAndExecute` API shown in the preceding figure, see [`aclopCompileAndExecute`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/ascendgraphapi/aclcppdevg_03_0251.html).
+For details about the `aclopCompileAndExecute` API shown in the preceding figure, see [`aclopCompileAndExecute`](https://gitcode.com/cann/ge/blob/9.2.0/docs/en/api/graph_engine_api/c/acl/aclopCompileAndExecute.md).
 
 #### 5.4.4 `memory` and `dataloader` Quick Reference
 

@@ -38,11 +38,11 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
 
-    自动融合开关的更多介绍，请参见《[AutoFuse开启方式](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/programug/graphdevg/autofuse_1_0060.html)》。
+    自动融合开关的更多介绍，请参见《[AutoFuse开启方式](https://gitcode.com/cann/ge/blob/9.2.0/docs/zh/user_guides/graph_dev/autofuse/autofuse_enable.md)》。
 
 2. TensorFlow模型运行时开启datadump和自动融合，获取datadump数据和Build图。
 
-    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
+    1. 开启datadump，请参见《[准备NPU侧dump数据和计算图文件](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/920/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0007.html)》。
 
     2. 开启graphdump，可设置以下几个环境变量：
 
@@ -53,11 +53,11 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
         export DUMP_GRAPH_PATH=<dump_path>
         ```
 
-        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0001.html)》。
+        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://gitcode.com/cann/docs/blob/9.2.0/docs/zh/env-vars/intro.md)》。
 
 3. 数据处理。
 
-   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
+   1. dump数据文件转换成npy文件，可以得到对应融合算子的输入和输出，请参见《[dump数据文件Format转换](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/920/devaids/ModelAccuracyAnalyzer/atlasaccuracy_16_0054.html)》。
 
       例如AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365转换为npy文件可以得到AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.0.npy、AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.input.1.npy和AscBackend.autofuse_pointwise_0_Abs_Add.1.59.1767681027598365.output.0.npy。
 
