@@ -62,6 +62,10 @@ pip install -U msprof-analyze
 
 工具的详细使用方法，请参见 《[msprof-analyze 使用指南](./docs/zh/user_guide/cluster_analyse_instruct.md)》。
 
+## 💡 典型案例
+
+超大规模集群性能数据的采集、汇总、分析及可视化定位流程，请参见《[超大规模集群性能数据采集与分析](docs/zh/best_practices/large_scale_cluster_profiling_guide.md)》。
+
 ## 🌌 智能检索
 
 为提升文档查阅效率，我们提供多种高效检索方式：
