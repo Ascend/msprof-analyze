@@ -27,6 +27,8 @@ logger = get_logger()
 
 
 class ClusterAdviceBase(AdviceBase):
+    result_file = None
+
     @staticmethod
     def compute_max_gap_ratio(data: list, mean: float):
         if data and not isclose(mean, 0):
@@ -34,19 +36,17 @@ class ClusterAdviceBase(AdviceBase):
         return 0
 
     def path_check(self):
-        """
-        check whether input path is valid
-        """
-        for file in os.listdir(self.collection_path):
-            if file == 'cluster_analysis_output':
-                logger.info("Cluster has been analyzed because of the existence of cluster analysis output directory.")
-                logger.info("Skip Cluster analyze backend.")
-                return
+        output_dir = os.path.join(self.collection_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
+        result_path = os.path.join(output_dir, self.result_file) if self.result_file else output_dir
+        result_exists = os.path.isfile(result_path) if self.result_file else os.path.isdir(output_dir)
+        if result_exists:
+            logger.info("Cluster analysis output already exists (%s). Skip backend analysis.", result_path)
+            return
         logger.info("cluster analysis is in the process, please wait...")
         self.cluster_analyze()
 
     def cluster_analyze(self):
-        parameter = {Constant.COLLECTION_PATH: self.collection_path, Constant.ANALYSIS_MODE: "all"}
+        parameter = {Constant.PROFILING_PATH: self.collection_path, Constant.MODE: "all"}
         try:
             Interface(parameter).run()
         except Exception as e:

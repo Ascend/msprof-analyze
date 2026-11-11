@@ -55,6 +55,7 @@ class BaseStatsExport(ABC):
         return self._query
 
     def read_export_db(self):
+        conn = cursor = None
         try:
             if not self._db_path:
                 logger.error("db path is None.")
@@ -71,11 +72,13 @@ class BaseStatsExport(ABC):
                 data = pd.read_sql(query, conn, params=self._param)
             else:
                 data = pd.read_sql(query, conn)
-            DBManager.destroy_db_connect(conn, cursor)
             return data
         except Exception as e:
             logger.error("File %s read failed error: %s", self._db_path, e)
             return None
+        finally:
+            if conn is not None:
+                DBManager.destroy_db_connect(conn, cursor)
 
     def _build_param_list(self):
         """Build parameter list from param_dict according to param_order."""

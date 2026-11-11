@@ -23,6 +23,7 @@ from msprof_analyze.prof_common.file_manager import FileManager
 
 
 class SlowLinkAdvice(ClusterAdviceBase):
+    result_file = Constant.CLUSTER_COMM_JSON
     RDMA_TIME_MS = "RDMA time(ms)"
     RDMA_SIZE_MB = "RDMA size(mb)"
     SDMA_TIME_MS = "SDMA time(ms)"

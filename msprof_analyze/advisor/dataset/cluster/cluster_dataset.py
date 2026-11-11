@@ -41,6 +41,8 @@ logger = get_logger()
 
 
 class ClusterDataset(ABC, Dataset):
+    text_result_file = None
+
     def __init__(self, collection_path, data: dict, **kwargs) -> None:
         super().__init__(collection_path, data, **kwargs)
 
@@ -48,8 +50,11 @@ class ClusterDataset(ABC, Dataset):
         """Check whether the result required by the current data type exists."""
         output_dir = os.path.join(self.output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
         if self.data_type == Constant.TEXT:
-            if os.path.isdir(output_dir):
-                logger.info("Cluster analysis output already exists (%s). Skip backend analysis.", output_dir)
+            if not self.text_result_file:
+                raise NotImplementedError(f"{self.__class__.__name__} must define text_result_file")
+            result_path = os.path.join(output_dir, self.text_result_file)
+            if os.path.isfile(result_path):
+                logger.info("Cluster analysis output already exists (%s). Skip backend analysis.", result_path)
                 return True
             return False
 
@@ -119,6 +124,7 @@ class ClusterDataset(ABC, Dataset):
 
 @singleton
 class ClusterStepTraceTimeDataset(ClusterDataset):
+    text_result_file = Constant.CLUSTER_STEP_TIME_CSV
     RANK = "rank"
     STAGE = "stage"
 
@@ -199,11 +205,12 @@ class ClusterStepTraceTimeDataset(ClusterDataset):
             logger.error("Exception when run format_db_data：%s", e)
             self._step_dict = None
             return False
-        return True
+        return self._step_dict is not None
 
 
 @singleton
 class ClusterCommunicationDataset(ClusterDataset):
+    text_result_file = Constant.CLUSTER_COMM_JSON
     RDMA_TIME_MS = "RDMA time(ms)"
     RDMA_SIZE_MB = "RDMA size(mb)"
     SDMA_TIME_MS = "SDMA time(ms)"

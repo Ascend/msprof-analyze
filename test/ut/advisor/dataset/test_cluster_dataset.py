@@ -23,6 +23,8 @@ from msprof_analyze.advisor.dataset.cluster.cluster_dataset import ClusterDatase
 
 
 class MockClusterDataset(ClusterDataset):
+    text_result_file = Constant.CLUSTER_COMM_JSON
+
     def parse_from_text(self):
         return True
 
@@ -47,26 +49,27 @@ class TestClusterDataset(unittest.TestCase):
         if os.path.exists(self.test_collection_path):
             shutil.rmtree(self.test_collection_path)
 
-    @patch('os.path.isdir')
-    @patch('os.path.isfile')
-    def test_is_cluster_analysis_result_exist_for_text(self, mock_isfile, mock_isdir):
+    def test_is_cluster_analysis_result_exist_for_text(self):
         self.dataset.data_type = Constant.TEXT
-        mock_isdir.return_value = True
-
-        self.assertTrue(self.dataset.is_cluster_analysis_result_exist())
-        expected_path = os.path.join(
-            self.dataset.output_path,
-            Constant.CLUSTER_ANALYSIS_OUTPUT,
-        )
-        mock_isdir.assert_called_once_with(expected_path)
-        mock_isfile.assert_not_called()
-
-        mock_isdir.return_value = False
+        output_dir = os.path.join(self.dataset.output_path, Constant.CLUSTER_ANALYSIS_OUTPUT)
+        os.makedirs(output_dir, exist_ok=True)
         self.assertFalse(self.dataset.is_cluster_analysis_result_exist())
+        with open(os.path.join(output_dir, Constant.CLUSTER_COMM_JSON), "w", encoding="utf-8") as result:
+            result.write("{}")
+        self.assertTrue(self.dataset.is_cluster_analysis_result_exist())
+
+    def test_text_result_file_is_required_for_text_data(self):
+        self.dataset.data_type = Constant.TEXT
+        self.dataset.text_result_file = ClusterDataset.text_result_file
+        with patch('msprof_analyze.advisor.dataset.cluster.cluster_dataset.Interface') as backend:
+            with self.assertRaisesRegex(NotImplementedError, "MockClusterDataset must define text_result_file"):
+                self.dataset.cluster_analyze()
+            backend.assert_not_called()
 
     @patch('os.path.isfile')
     def test_is_cluster_analysis_result_exist_for_db(self, mock_isfile):
         self.dataset.data_type = Constant.DB
+        self.dataset.text_result_file = None
         mock_isfile.return_value = True
 
         self.assertTrue(self.dataset.is_cluster_analysis_result_exist())

@@ -49,8 +49,8 @@ class SlowRankAnalyzer(BaseAnalyzer):
         super().__init__(collection_path, n_processes, **kwargs)
         key = ClusterStepTraceTimeDataset.get_key()
         self.step_trace_class = self.get_first_data_by_key(self.dataset_list, key)
-        self.step_trace_dict = self.step_trace_class.get_data()
-        self.stages = self.step_trace_class.get_stages()
+        self.step_trace_dict = self.step_trace_class.get_data() if self.step_trace_class else None
+        self.stages = self.step_trace_class.get_stages() if self.step_trace_class else []
         self.result = OptimizeResult()
         self.bottelneck = ''
         self.suggestion = ''
