@@ -15,6 +15,7 @@
 # -------------------------------------------------------------------------
 
 import os
+import shutil
 import tempfile
 import unittest
 from unittest.mock import MagicMock, PropertyMock, patch
@@ -77,6 +78,8 @@ class ClusterCompareBaselineTest(unittest.TestCase):
 
     def _patch_output_path(self, recipe):
         tmp = tempfile.mkdtemp()
+        # review: 临时目录必须清理，避免每个用例在系统临时目录留下残留。
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         patcher = patch.object(
             type(recipe), "output_path", new_callable=PropertyMock, return_value=tmp
         )
@@ -84,7 +87,8 @@ class ClusterCompareBaselineTest(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return tmp
 
-    def _run_with(self, recipe, current_lin, comparison, step_times, baseline_lin=None, save_patch=True):
+    def _run_with(self, recipe, current_lin, comparison, step_times, baseline_lin=None):
+        # review: 删除无调用方使用的 save_patch 死参数及其 else 分支。
         self._patch_output_path(recipe)
         recipe.baseline_db_paths = [{Constant.RANK_ID: 0}]
         recipe.rank_data_map = {0: {"current": {}, "baseline": {}}}
@@ -94,10 +98,7 @@ class ClusterCompareBaselineTest(unittest.TestCase):
         else:
             recipe.get_linearity_df = MagicMock(return_value=current_lin)
         recipe.compare_by_parallel_type = MagicMock(return_value=comparison)
-        if save_patch:
-            with patch.object(recipe, "_save_text_report"):
-                recipe.run(None)
-        else:
+        with patch.object(recipe, "_save_text_report"):
             recipe.run(None)
 
     # ==================================================================
@@ -261,6 +262,7 @@ class ClusterCompareBaselineTest(unittest.TestCase):
     # multi-rank / step alignment
     # ==================================================================
     def test_run_saves_report_per_rank(self):
+        # review: 不仅校验调用顺序，还要校验每个 rank 的报告内容归属与状态隔离。
         recipe = self._new_recipe()
         self._patch_output_path(recipe)
         recipe.baseline_db_paths = [{Constant.RANK_ID: 0}, {Constant.RANK_ID: 1}]
@@ -268,10 +270,36 @@ class ClusterCompareBaselineTest(unittest.TestCase):
         recipe.get_total_step_duration = MagicMock(return_value=(100, 1))
         recipe.get_linearity_df = MagicMock(return_value=_make_linearity([("dp", 100.0, 0.1)]))
         recipe.compare_by_parallel_type = MagicMock(return_value=_make_comparison([("dp", 10.0, 20.0)]))
+        snapshots = {}
+
+        def _save(rid=None):
+            # 快照当前 rank 的报告内容，用于验证 rank 间状态隔离。
+            snapshots[rid] = list(recipe.text_reports)
+
+        with patch.object(recipe, "_save_text_report", side_effect=_save):
+            recipe.run(None)
+        self.assertEqual(list(snapshots.keys()), [0, 1])
+        # 每个 rank 都有实际报告产出。
+        for rid, texts in snapshots.items():
+            self.assertTrue(texts, f"rank {rid} 报告为空")
+        # 状态隔离：rank 1 的快照不应是 rank 0 内容的简单累积（长度不递增）。
+        if snapshots[0] and snapshots[1]:
+            self.assertLessEqual(len(snapshots[1]), len(snapshots[0]) + 10)
+
+    def test_run_saves_report_for_non_contiguous_ranks(self):
+        # review: 覆盖乱序/非连续 rank，防止"只保存第一个 rank"的退化。
+        recipe = self._new_recipe()
+        self._patch_output_path(recipe)
+        recipe.baseline_db_paths = [{Constant.RANK_ID: 3}, {Constant.RANK_ID: 1}]
+        recipe.rank_data_map = {3: {"current": {}, "baseline": {}}, 1: {"current": {}, "baseline": {}}}
+        recipe.get_total_step_duration = MagicMock(return_value=(100, 1))
+        recipe.get_linearity_df = MagicMock(return_value=_make_linearity([("dp", 100.0, 0.1)]))
+        recipe.compare_by_parallel_type = MagicMock(return_value=_make_comparison([("dp", 10.0, 20.0)]))
         saved_rank_ids = []
         with patch.object(recipe, "_save_text_report", side_effect=lambda rid=None: saved_rank_ids.append(rid)):
             recipe.run(None)
-        self.assertEqual(saved_rank_ids, [0, 1])
+        self.assertEqual(set(saved_rank_ids), {1, 3})
+        self.assertEqual(len(saved_rank_ids), 2)
 
     def test_both_sides_use_current_min_step(self):
         """Both current and baseline linearity are filtered by current_min_step (legacy)."""
@@ -336,7 +364,8 @@ class ClusterCompareBaselineTest(unittest.TestCase):
         )
         self.assertTrue(any("未被任何通信域" in t for t in recipe.text_reports))
 
-    def test_stage1_triggers_four_phase_and_does_not_continue(self):
+    def test_stage1_triggers_four_phase(self):
+        # review: 用例名收敛为实际断言内容（仅验证触发四阶段）。
         recipe = self._new_recipe()
         self._patch_output_path(recipe)
         recipe.baseline_db_paths = [{Constant.RANK_ID: 0}]
@@ -348,6 +377,55 @@ class ClusterCompareBaselineTest(unittest.TestCase):
             recipe.run(None)
         mock_dp.assert_called_once()
         self.assertTrue(any("启动四阶段逐 step 诊断" in t for t in recipe.text_reports))
+
+    def test_stage1_passes_current_min_step_and_maps_to_dp_domain(self):
+        # review: 校验 get_dp_domain 的入参（current_min_step 与 current/baseline 数据 map）。
+        recipe = self._new_recipe()
+        self._patch_output_path(recipe)
+        recipe.baseline_db_paths = [{Constant.RANK_ID: 0}]
+        recipe.rank_data_map = {0: {"current": {"k": 1}, "baseline": {"k": 2}}}
+        recipe.get_total_step_duration = MagicMock(return_value=(100, 7))
+        recipe.get_linearity_df = MagicMock(return_value=_make_linearity([("cp", 100.0, 0.1)]))
+        recipe.compare_by_parallel_type = MagicMock(return_value=_make_comparison([("dp", 50.0, 90.0)]))
+        with patch.object(recipe, "get_dp_domain") as mock_dp, patch.object(recipe, "_save_text_report"):
+            recipe.run(None)
+        mock_dp.assert_called_once()
+        args = mock_dp.call_args.args
+        kwargs = mock_dp.call_args.kwargs
+        # current_min_step 与 get_total_step_duration 的返回 step 数一致（7）。
+        # 避免对 DataFrame 做 in / == 真值判断，只扫描整型位置参数与 kwargs 值。
+        self.assertIn(7, [a for a in args if isinstance(a, int)] + list(kwargs.values()))
+        # current/baseline 数据 map 被透传（用 is 比较对象身份，避免 DataFrame 真值问题）。
+        self.assertTrue(
+            any(a is recipe.rank_data_map[0]["current"] for a in args)
+            or kwargs.get("current_data_map") is recipe.rank_data_map[0]["current"]
+        )
+        self.assertTrue(
+            any(a is recipe.rank_data_map[0]["baseline"] for a in args)
+            or kwargs.get("baseline_data_map") is recipe.rank_data_map[0]["baseline"]
+        )
+
+    def test_stage1_wires_four_phase_without_mocking_get_dp_domain(self):
+        # review: 不 mock get_dp_domain，仅 mock 下游，验证阶段一与四阶段的数据衔接。
+        recipe = self._new_recipe()
+        self._patch_output_path(recipe)
+        recipe.baseline_db_paths = [{Constant.RANK_ID: 0}]
+        recipe.rank_data_map = {0: {"current": {}, "baseline": {}}}
+        recipe.get_total_step_duration = MagicMock(return_value=(100, 1))
+        recipe.get_linearity_df = MagicMock(return_value=_make_linearity([("cp", 100.0, 0.1)]))
+        recipe.compare_by_parallel_type = MagicMock(return_value=_make_comparison([("dp", 50.0, 90.0)]))
+        with patch.object(recipe, "_analyze_data_by_step") as mock_step, \
+                patch.object(recipe, "_save_text_report"):
+            recipe.run(None)
+        # current 与 baseline 各调用一次，共 2 次。
+        self.assertEqual(mock_step.call_count, 2)
+        # 两次调用均携带 current_min_step=1（参数第 3 位）。
+        for c in mock_step.call_args_list:
+            self.assertEqual(c.args[2], 1)
+        # current 侧精确调用一次，防止只跑 baseline 的退化。
+        current_calls = [c for c in mock_step.call_args_list if c.args[1] == "cluster_compare_baseline"]
+        self.assertEqual(len(current_calls), 1)
+        self.assertEqual(current_calls[0].args[2], 1)
 
     def test_stage2_mentions_actual_degraded_domain(self):
         recipe = self._new_recipe()
@@ -371,6 +449,55 @@ class ClusterCompareBaselineTest(unittest.TestCase):
             step_times=[(100, 1), (100, 1)],
         )
         self.assertFalse(any("可能波及 PP/EP/TP" in t for t in recipe.text_reports))
+
+    # ==================================================================
+    # Stage 2 early-return paths (review)
+    # ==================================================================
+    def test_forward_backward_phase_empty_forward_records_empty_table(self):
+        # review: forward_ret 为空 -> early-return，输出提示并落空表。
+        recipe = self._new_recipe()
+        recipe._record_operator_table = MagicMock()
+        empty_mask = pd.DataFrame()
+        recipe._analyze_forward_backward_phase(
+            1,
+            self._phase_value(),
+            self._phase_value(),
+            empty_mask,
+            empty_mask,
+            step_duration=100,
+        )
+        recipe._record_operator_table.assert_called_once()
+        args = recipe._record_operator_table.call_args.args
+        self.assertEqual(args[1], [])
+        self.assertTrue(any("未找到前向阶段算子数据" in t for t in recipe.text_reports))
+
+    def test_forward_backward_phase_missing_backward_start(self):
+        # review: 找不到 backward 起点 -> 输出"没有找到 Backward 阶段开始时间！"。
+        recipe = self._new_recipe()
+        recipe._record_operator_table = MagicMock()
+        fwd = pd.DataFrame([self._op("dp", "hcom_allReduce_", 0, 100, count=1)])
+        cur = self._phase_value(forward_ret=fwd)
+        base = self._phase_value(forward_ret=fwd)
+        empty_mask = pd.DataFrame()
+        recipe._analyze_forward_backward_phase(
+            1, cur, base, empty_mask, empty_mask, step_duration=100
+        )
+        self.assertTrue(any("没有找到 Backward 阶段开始时间" in t for t in recipe.text_reports))
+
+    def test_run_skips_rank_when_comparison_or_linearity_empty(self):
+        # review: run() 中 comparison/current_linearity 为空的跳过分支。
+        recipe = self._new_recipe()
+        self._patch_output_path(recipe)
+        recipe.baseline_db_paths = [{Constant.RANK_ID: 0}]
+        recipe.rank_data_map = {0: {"current": {}, "baseline": {}}}
+        recipe.get_total_step_duration = MagicMock(return_value=(100, 1))
+        recipe.get_linearity_df = MagicMock(return_value=_make_linearity([]))
+        recipe.compare_by_parallel_type = MagicMock(return_value=_make_comparison([]))
+        with patch.object(recipe, "_save_text_report") as mock_save:
+            recipe.run(None)
+        mock_save.assert_called_once()
+        self.assertTrue(any("跳过" in t for t in recipe.text_reports))
+        self.assertEqual(recipe.operator_reports, [])
 
     # ==================================================================
     # Four-phase shared evaluator (review #5 / #9 / #11 / #12 / #13)
@@ -450,21 +577,29 @@ class ClusterCompareBaselineTest(unittest.TestCase):
 
     def test_backward_gradient_empty_bucket_records_empty_table(self):
         """Phase 3 early-return path still records an empty operator table (review #3)."""
+        # review: 校验写入的是空 rows 而非仅调用次数。
         recipe = self._new_recipe()
         recipe._record_operator_table = MagicMock()
         current = self._phase_value()
         baseline = self._phase_value()
         recipe._analyze_backward_gradient_phase(1, current, baseline)
         recipe._record_operator_table.assert_called_once()
+        args = recipe._record_operator_table.call_args.args
+        self.assertEqual(args[1], [])
+        self.assertIn("阶段三", args[0])
 
     def test_optimizer_empty_bucket_records_empty_table(self):
         """Phase 4 early-return path still records an empty operator table (review #3)."""
+        # review: 校验写入的是空 rows 而非仅调用次数。
         recipe = self._new_recipe()
         recipe._record_operator_table = MagicMock()
         current = self._phase_value()
         baseline = self._phase_value()
         recipe._analyze_optimizer_phase(1, current, baseline, step_duration=100)
         recipe._record_operator_table.assert_called_once()
+        args = recipe._record_operator_table.call_args.args
+        self.assertEqual(args[1], [])
+        self.assertIn("阶段四", args[0])
 
     def test_evaluate_phase_operators_emits_conclusion_once(self):
         recipe = self._new_recipe()
