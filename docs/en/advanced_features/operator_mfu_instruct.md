@@ -55,7 +55,6 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    ```
 
    > [!NOTE]
-   >
    > - `with_flops=True` enables FLOPs calculation on the collection side.
    > - `mstx=True` enables MSTX event collection. In the current collection-side implementation, automatic FLOPs recording also depends on the legacy `msprof_tx=True` parameter, so the example sets both `mstx=True` and `msprof_tx=True`.
    > - `export_type` must include `Db` because the analysis reads tables such as `MSTX_EVENTS`, `PYTORCH_API`, `COMPUTE_TASK_INFO`, and `TASK`.
@@ -91,12 +90,12 @@ msprof-analyze -m operator_mfu -d <profiling_path> [-o <output_path>] [--export_
 
 **Command-line Options**
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | ------ | ------------------ | ----------- |
-| -m | Yes | Set this option to `operator_mfu` to enable operator MFU analysis. |
-| -d | Yes | Specifies the parent directory of the cluster profile data files. |
-| -o | No | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
-| --export_type | No | Specifies the output file type. Valid values: `db` (default) and `text`. |
+| -m | Required | Set this option to `operator_mfu` to enable operator MFU analysis. |
+| -d | Required | Specifies the parent directory of the cluster profile data files. |
+| -o | Optional | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
+| --export_type | Optional | Specifies the output file type. Valid values: `db` (default) and `text`. |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
@@ -212,7 +211,7 @@ General rules:
 | `torch_npu.npu_grouped_matmul_swiglu_quant_v2` | `2 * M * K * N`, counting only the Grouped GEMM body. |
 | `torch_npu.npu_alltoallv_gmm` | Routed expert GMM: `2 * T_route * H1 * N1`. If `mm_x/mm_weight` is provided for shared experts, additionally counts `2 * BS * H2 * N2`. |
 | `torch_npu.npu_gmm_alltoallv` | Routed expert GMM: `2 * T_route * H1 * N1`. If `mm_x/mm_weight` is provided for shared experts, additionally counts `2 * BS * H2 * N2`. |
-| `torch_npu.npu_fusion_attention` | Counts only `Q @ K^T` and `P @ V`: `2 * score_elems * q_dim + 2 * score_elems * value_dim`. For common layouts, batch, head, sequence, and head dimension are parsed according to `input_layout`; for the `TND` layout, effective sequence lengths are calculated using `actual_seq_qlen/actual_seq_kvlen`. |
+| `torch_npu.npu_fusion_attention` | Counts only `Q @ K^T` and `P @ V`: `2 * score_elems * q_dim + 2 * score_elems * value_dim`. For common layouts, `batch`, `head`, `seq`, and `head_dim` are parsed according to `input_layout`; for the `TND` layout, effective sequence lengths are calculated using `actual_seq_qlen/actual_seq_kvlen`. |
 | `torch_npu.npu_fused_infer_attention_score` | Uses the same calculation logic as `npu_fusion_attention` and supports `num_heads` and `num_key_value_heads`. |
 | `torch_npu.npu_block_sparse_attention` | Counts only `Q @ K^T` and `P @ V` for valid block pairs: `2 * score_elems * q_dim + 2 * score_elems * value_dim`, where `score_elems` is the sum of `q_tokens * kv_tokens` for valid blocks in `block_sparse_mask`. |
 

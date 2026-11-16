@@ -32,13 +32,13 @@ msprof-analyze -m free_analysis -d <cluster_data> [-o <output_path>] [--export_t
 
 **Command-line Options**
 
-| Option| Mandatory (Yes/No)| Description                                    |
+| Option | Required/Optional | Description                                    |
 | ---- | --------- |----------------------------------------|
-| -m   | Yes     | Specifies the analysis mode to execute. Set it to `free_analysis` to enable idle time cause analysis.        |
-| -d   | Yes     | Specifies the cluster profile data directory.                          |
-| -o   | No     | Specifies the output directory. The default value is the directory specified by the `-d` option.                |
-| --export_type | No| Specifies the output file type. The value can be `db` (default) or `text`.             |
-| --top_num | No| Specifies the number of top idle periods to output for each rank (sorted by duration). The default value is `10`.|
+| -m   | Required | Specifies the analysis mode to execute. Set it to `free_analysis` to enable idle time cause analysis.        |
+| -d   | Required | Specifies the cluster profile data directory.                          |
+| -o   | Optional | Specifies the output directory. The default value is the directory specified by the `-d` option.                |
+| --export_type | Optional | Specifies the output file type. The value can be `db` (default) or `text`.             |
+| --top_num | Optional | Specifies the number of top idle periods to output for each rank (sorted by duration). The default value is `10`.|
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
@@ -52,7 +52,7 @@ msprof-analyze -m free_analysis -d ./xxx/cluster_data -o ./xxx/output_path --top
 
 **Output Description**
 
-* When `--export_type` is set to `db`, a `cluster_analysis.db` file is generated in the output path specified by the `-o` option. The analysis results are stored in the `FreeAnalysis` table within this database.
+* When `--export_type` is set to `db`, a `cluster_analysis_output/cluster_analysis.db` file is generated in the output path specified by the `-o` option. The analysis results are stored in the `FreeAnalysis` table within this database.
 * When `--export_type` is set to `text`, the `cluster_analysis_output/FreeAnalysis/free_analysis.csv` file is generated in the output directory specified by the `-o` option.
 
 For details, see [Output File Description](#4-output-file-description).

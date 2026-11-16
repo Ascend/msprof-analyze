@@ -125,7 +125,7 @@ Table fields
 | Q3Ns | REAL | 75th percentile of duration |
 | MaxNs | REAL | Maximum duration |
 | SumNs | REAL | Total duration |
-| Rank     | INTEGER | Rank ID                              |
+| Rank     | INTEGER | `rank_id`                            |
 
 ### 4.3 `ComputeOpPerRankStatsByOpName`
 
@@ -151,7 +151,7 @@ Table fields
 | Q3Ns | REAL | 75th percentile of duration |
 | MaxNs | REAL | Maximum duration |
 | SumNs | REAL | Total duration |
-| Rank | INTEGER | Rank ID |
+| Rank | INTEGER | `rank_id` |
 
 ## 5. `cann_api_sum`
 
@@ -202,7 +202,7 @@ Table fields
 | Q3Ns | REAL | 75th percentile of duration |
 | maxNs | REAL | Maximum duration |
 | stdev | REAL | Standard deviation of the duration |
-| rank | INTEGER | Rank ID |
+| rank | INTEGER | `rank_id` |
 
 ## 6. `hccl_sum`
 
@@ -249,7 +249,7 @@ Table fields
 | Q3Ns | REAL | 75th percentile of duration |
 | MaxNs | REAL | Maximum duration |
 | SumNs | REAL | Total duration |
-| Rank     | INTEGER | Rank ID       |
+| Rank     | INTEGER | `rank_id`     |
 
 ### 6.3 `HcclGroupNameMap`
 

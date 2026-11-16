@@ -129,9 +129,9 @@ msprof-analyze cluster -m pp_chart -d <cluster_data_path>
 
 **Command-line Options**
 
-| Option| Required (Yes/No)| Description                                             |
+| Option | Required/Optional | Description                                             |
 | ---- | --------- | ------------------------------------------------- |
-| -d   | Yes     | Specifies the directory for cluster data collected in [Data Preparation](#22-data-preparation).|
+| -d   | Required | Specifies the directory for cluster data collected in [Data Preparation](#22-data-preparation).|
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 

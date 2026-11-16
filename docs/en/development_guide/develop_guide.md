@@ -20,7 +20,7 @@ msprof-analyze includes a [devcontainer](https://containers.dev/) development en
 - Automatic pre-commit activation
 - Git identity synchronization
 
-**Prerequisites:**
+**Prerequisites**
 
 | Environment | Requirement |
 | --- | --- |
@@ -35,7 +35,7 @@ msprof-analyze includes a [devcontainer](https://containers.dev/) development en
 4. After the container starts, `post-create.sh` runs automatically to complete initialization.
 5. Press `Ctrl+Shift+P`, select `Tasks: Run Task`, and choose a build or test task.
 
-**VS Code built-in tasks:**
+**VS Code built-in tasks**
 
 | Task | Shortcut | Description |
 | --- | --- | --- |
@@ -80,7 +80,7 @@ msprof-analyze -V
 
 ### 3.2 Project Directory Description
 
-The key directories in the current repository are as follows:
+The key directories in the current repository are as follows.
 
 | Directory | Description |
 | --- | --- |
@@ -97,7 +97,7 @@ The key directories in the current repository are as follows:
 
 ### 3.3 Command-Line Entry Development
 
-The command entry of `msprof-analyze` is defined in `msprof_analyze/cli/entrance.py`. The main subcommands currently registered are as follows:
+The command entry of `msprof-analyze` is defined in `msprof_analyze/cli/entrance.py`. The main subcommands currently registered are as follows.
 
 | Subcommand | Description |
 | --- | --- |

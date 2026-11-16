@@ -38,7 +38,7 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
 
-    自动融合开关的更多介绍，请参见《[AutoFuse开启方式](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/programug/graphdevg/autofuse_1_0060.html)》。
+    自动融合开关的更多介绍，请参见《[AutoFuse开启方式](https://gitcode.com/cann/ge/blob/master/docs/zh/user_guides/graph_dev/autofuse/autofuse_enable.md)》。
 
 2. TensorFlow模型运行时开启datadump和自动融合，获取datadump数据和Build图。
 
@@ -53,7 +53,7 @@ GE自动融合性能对比，是指对开启自动融合后的融合算子融合
         export DUMP_GRAPH_PATH=<dump_path>
         ```
 
-        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0001.html)》。
+        关于这些环境变量的具体含义，请参见《[dump图文件环境变量](https://gitcode.com/cann/docs/blob/master/docs/zh/env-vars/intro.md)》。
 
 3. 数据处理。
 

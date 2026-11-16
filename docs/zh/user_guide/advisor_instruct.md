@@ -226,7 +226,7 @@ overall模块仅识别问题，不提供调优建议。
 
 ![env_var.png](../figures/env_var.png)
 
-上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
+上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://gitcode.com/cann/docs/blob/master/docs/zh/env-vars/ACLNN_CACHE_LIMIT.md)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
 
 无标杆单卡场景的overall summary分析示例如下：
 
@@ -434,7 +434,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 ![输入图片说明](../figures/schedule_1.png)
 
-上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/API/ascendgraphapi/aclcppdevg_03_0251.html)。
+上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://gitcode.com/cann/ge/blob/master/docs/zh/api/graph_engine_api/c/acl/aclopCompileAndExecute.md)。
 
 #### 5.4.4 memory/dataloader模块问题速查
 

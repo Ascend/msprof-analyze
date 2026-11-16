@@ -30,12 +30,12 @@ msprof-analyze -m cluster_time_compare_summary -d <cluster_data> --bp <base_clus
 
 **Command-line Options**
 
-| Option| Required (Yes/No)| Description                                                        |
+| Option | Required/Optional | Description                                                        |
 | ---- | --------- | ------------------------------------------------------------ |
-| -m   | Yes     | Specifies the analysis feature. Set it to `cluster_time_compare_summary` to enable fine-grained cluster duration comparison.|
-| -d   | Yes     | Specifies the parent directory of the cluster profile data files.                                    |
-| --bp | Yes     | Specifies the parent directory of the basic cluster profile data files.                                |
-| -o   | No     | Specifies the analysis result output directory. The default value is the directory specified by `-d`.                  |
+| -m   | Required | Specifies the analysis feature. Set it to `cluster_time_compare_summary` to enable fine-grained cluster duration comparison.|
+| -d   | Required | Specifies the parent directory of the cluster profile data files.                                    |
+| --bp | Required | Specifies the parent directory of the basic cluster profile data files.                                |
+| -o   | Optional | Specifies the analysis result output directory. The default value is the directory specified by `-d`.                  |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 

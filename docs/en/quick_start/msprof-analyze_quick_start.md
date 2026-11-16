@@ -24,7 +24,7 @@ This tutorial **supports only** execution in a standardized CANN container. Dire
 
 #### 2.1.1 Prerequisites
 
-Before starting, confirm that the server meets the following requirements:
+Before starting, confirm that the server meets the following requirements.
 
 | Item | Requirement | Verification Method |
 | --- | --- | --- |
