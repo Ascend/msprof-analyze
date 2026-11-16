@@ -123,7 +123,7 @@ msprof-analyze cluster -d <profiling_path> [-m <mode>] [-o output_path] [--agent
 **Script execution**
 
 ```bash
-python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--agent] [--force]
+python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--force]
 ```
 
 ### 3.3 Command-line Options
@@ -133,7 +133,7 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--ag
 | `--profiling_path` or `-d` | Required | Specifies the directory where profile data is aggregated. If `-o` is not specified, the `cluster_analysis_output` folder is automatically created in this directory after the analysis command is run to save the analysis data.  |
 | `--output_path` or `-o` | Optional | Specifies a custom output path. After the analysis command is run, the `cluster_analysis_output` folder is automatically created in this directory to save the analysis data. |
 | `--mode` or `-m` | Optional | Specifies the data parsing mode. For details about the available values, see the **Arguments for `--mode`** table. |
-| `--agent` | Optional | Outputs the analysis results in JSON format to standard output. Specifying this option enables this function. If this option is not specified, this function is disabled by default. |
+| `--agent` | Optional | CLI option that outputs analysis results as JSON to standard output. Disabled by default. |
 | `--force` | Optional | Forcibly executes `cluster`. Specifying this option forcibly skips the following checks:<br>• Ownership check: Proceed even if the current user is not the owner of the specified directory or files.<br>• File size check: Proceed even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB.<br>• Permission check: Proceed even if the read or write permissions of the specified directory or file do not meet the validation requirements.<br>Specifying this option enables forced execution, which is disabled if this option is not specified. |
 
 **Arguments for `--mode`**
@@ -142,7 +142,16 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--ag
 | --- | --- | --- |
 | `communication_matrix` | Optional | Parses communication matrix data. |
 | `communication_time` | Optional | Parses communication duration data. |
+| `cluster_statistic` | No | Aggregates cluster communication statistics from PyTorch `analysis.db` files and produces three statistics tables and two companion tables. |
 | `all` | Optional | Parses both communication matrix (`communication_matrix`) and communication duration (`communication_time`) data. The default value of `--mode` is `all`. |
+
+`cluster_statistic` requires PyTorch `analysis.db` input with discoverable rank IDs and uses `--export_type db`. It uses `--parallel_mode concurrent` by default. Use `--rank_list 0,2` to select global ranks 0 and 2 for communication statistics. The default `all` selects every discoverable rank. The mode accepts `--step_id` and includes every step from the selected ranks, as the existing DB communication modes do.
+
+The CLI supports `--agent`. The standalone script treats it as an unknown option, logs a warning, and continues. If the input directory includes communication JSON files and `analysis.db` files, the statistics use `analysis.db`.
+
+For example, run `msprof-analyze cluster -m cluster_statistic -d ./cluster_data -o ./statistic_output --agent`. The command writes `CommTimeStatistic`, `TransitStatistic`, `CommOpStatistic`, `CommunicationGroupMapping`, and `ClusterBaseInfo` to `./statistic_output/cluster_analysis_output/cluster_analysis.db`. `ClusterBaseInfo` is empty when cluster configuration is unavailable. The command replaces existing tables with these names and preserves other tables in the database.
+
+The five tables are committed individually. If a write fails, tables already committed stay in the database. A successful rerun in the same output directory updates all five tables with the new results.
 
 ### 3.4 Usage Example
 
@@ -265,13 +274,18 @@ Generated after parsing `db`-format profile data. It is used to support visualiz
 | Table | Generation Scenario | Purpose |
 | --- | --- | --- |
 | `ClusterBaseInfo` | `db`-format profile data | Records basic cluster information, such as parallel strategy parameters. |
-| `ClusterStepTraceTime` | `db`-format profile data | Records the breakdown of iteration durations at the rank/stage level and corresponds to `cluster_step_trace_time.csv`. |
-| `CommunicationGroupMapping` | `db`-format profile data, with communication domain information available | Records communication domains, rank sets, and parallel group information. |
+| `ClusterStepTraceTime` | `db`-format profile data with `communication_matrix`, `communication_time`, or `all` | Records the breakdown of iteration durations at the rank/stage level and corresponds to `cluster_step_trace_time.csv`. |
+| `CommunicationGroupMapping` | `cluster_statistic`, or another DB communication mode with communication domain information available | Records communication domains, communication types, rank sets, and parallel group information. |
 | `ClusterCommunicationTime` | `db`-format profile data, with `communication_time` or `all` executed and communication duration records available | Records aggregated communication operator duration information at the cluster level. |
 | `ClusterCommunicationBandwidth` | `db`-format profile data, with `communication_time` or `all` executed and bandwidth records available | Records aggregated cluster-level communication bandwidth, packet size distribution, and transmission duration information. |
 | `ClusterCommunicationMatrix` | `db`-format profile data, with `communication_matrix` or `all` executed and matrix data available | Records cluster-level communication matrix information between ranks. |
+| `CommTimeStatistic` | `cluster_statistic` | Aggregates communication time by step, rank, and communication domain. |
+| `TransitStatistic` | `cluster_statistic` | Aggregates transmission size, duration, bandwidth, and packet size distribution by step, rank, communication domain, and transport type. |
+| `CommOpStatistic` | `cluster_statistic` | Aggregates total duration, minimum and maximum durations and their corresponding ranks, and valid rank count by step, communication domain, and full operator name. |
 
 The actual tables generated depend on the collection tool, collection level, `--mode` value, and completeness of the original profile data. If a type of original data is missing, the corresponding table may not be generated.
+
+On success, `cluster_statistic` writes the three statistics tables, `CommunicationGroupMapping`, and `ClusterBaseInfo`. Tables with no usable records are empty, and unavailable statistics are recorded as `NULL`. Join the statistics tables to `CommunicationGroupMapping` on `group_name` to look up the communication type.
 
 ##### 4.3.5.1 `ClusterBaseInfo`
 

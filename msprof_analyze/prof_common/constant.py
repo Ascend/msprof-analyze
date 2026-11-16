@@ -459,6 +459,7 @@ class Constant:
     RECIPE_NAME = "recipe_name"
     RECIPE_CLASS = "recipe_class"
     PARALLEL_MODE = "parallel_mode"
+    CLUSTER_STATISTIC = "cluster_statistic"
     MSPROF_ANALYZE_PATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     RECIPES_PATH = os.path.join(MSPROF_ANALYZE_PATH, 'cluster_analyse', 'recipes')
 
