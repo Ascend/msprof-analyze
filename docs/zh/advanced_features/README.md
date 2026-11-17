@@ -99,6 +99,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | communication_group_map  | 集群场景通信域与并行策略呈现。       | -                                                            |
 | communication_time_sum   | 集群场景通信时间和带宽汇总分析。      | -                                                            |
 | communication_matrix_sum | 集群场景通信矩阵汇总分析。         | -                                                            |
+| cluster_statistic        | 面向超大集群，汇总通信耗时、传输指标和跨 rank 的算子耗时。 | [超大集群通信统计](./cluster_statistic_instruct.md) |
 | hccl_sum                 | 通信类算子信息汇总。            | -                                                            |
 | pp_chart                 | pp流水图数据分析，针对pp并行下各个阶段的耗时分析与可视化能力。 | [pp流水图数据分析](./pp_chart_instruct.md)           |
 | slow_rank                | 根据当前的快慢卡统计算法，展示各个rank得出的快慢卡影响次数，识别慢卡出现的原因。 | -                                                            |
@@ -141,7 +142,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 
 | 参数名                | 可选/必选 | 说明 | 适用范围 |
 | --------------------- | -------- | ---- | -------- |
-| --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
+| --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum`、`cluster_statistic` |
 | --step_id             | 可选 | 性能数据Step ID，配置后对该Step的性能数据进行分析。需配置性能数据中实际存在的Step ID，默认未配置，表示全量分析。配置示例：--step_id=1。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
 | --top_num             | 可选     | 设置TopN耗时的通信算子的数量，默认值为15，配置示例：--top_num 20。 | `hccl_sum` |
 | --exclude_op_name    | 可选     | 控制compute_op_sum结果是否包含op_name，示例：--exclude_op_name，后面不需要跟参数。 | `compute_op_sum` |

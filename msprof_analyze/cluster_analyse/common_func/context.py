@@ -18,7 +18,8 @@ import os
 import threading
 from functools import partial
 from concurrent import futures
-from collections import defaultdict
+from collections import defaultdict, deque
+from itertools import islice
 
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
@@ -46,21 +47,22 @@ class Context:
             logger.error("Failed to exit context: %s", exc_val)
 
     @classmethod
-    def create_context(cls, mode=Constant.CONCURRENT_MODE):
+    def create_context(cls, mode=Constant.CONCURRENT_MODE, **kwargs):
         if cls.ctx_map is None:
-            keys = [Constant.CONCURRENT_MODE]
-            values = [ConcurrentContext]
-            cls.ctx_map = dict(zip(keys, values))
+            cls.ctx_map = {Constant.CONCURRENT_MODE: ConcurrentContext}
 
         if mode not in cls.ctx_map:
-            raise NotImplementedError("mode must be in {}".format(keys))
+            raise NotImplementedError("mode must be in {}".format(list(cls.ctx_map)))
 
-        return cls.ctx_map[mode]()
+        return cls.ctx_map[mode](**kwargs)
 
     def launch(self, func, *args, **kwargs):
         raise NotImplementedError
 
     def map(self, func, *iterables, **kwargs):
+        raise NotImplementedError
+
+    def iter_map(self, func, iterable, max_pending):
         raise NotImplementedError
 
     def wait(self, waitable):
@@ -77,7 +79,7 @@ def init_subprocess(config_dict):
 
 
 class ConcurrentContext(Context):
-    def __init__(self, executor=None):
+    def __init__(self, executor=None, max_workers=None):
         self._mode = Constant.CONCURRENT_MODE
         super().__init__()
         self._custom = executor is None
@@ -85,7 +87,7 @@ class ConcurrentContext(Context):
             "force": AdditionalArgsManager().force,
         }
         self._executor = executor or futures.ProcessPoolExecutor(
-            max_workers=os.cpu_count(), initializer=init_subprocess, initargs=(config,)
+            max_workers=max_workers or os.cpu_count(), initializer=init_subprocess, initargs=(config,)
         )
         self.future_dict = defaultdict(list)
 
@@ -110,6 +112,24 @@ class ConcurrentContext(Context):
             logger.error(err)
             return []
         return res
+
+    def iter_map(self, func, iterable, max_pending):
+        """Yield results in input order, keeping at most max_pending tasks in flight."""
+        if max_pending < 1:
+            raise ValueError("max_pending must be positive")
+        items = iter(iterable)
+        pending = deque()
+        try:
+            for item in islice(items, max_pending):
+                pending.append(self._executor.submit(func, item))
+            for item in items:
+                yield pending.popleft().result()
+                pending.append(self._executor.submit(func, item))
+            while pending:
+                yield pending.popleft().result()
+        finally:
+            for task in pending:
+                task.cancel()
 
     def wait(self, waitable):
         return waitable

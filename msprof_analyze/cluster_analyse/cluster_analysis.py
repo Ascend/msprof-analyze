@@ -100,6 +100,14 @@ class Interface:
             data_dict.get(Constant.DATA_TYPE),
             data_dict.get(Constant.PROFILING_TYPE),
         )
+        is_statistic = self.analysis_mode == Constant.CLUSTER_STATISTIC
+        if is_statistic:
+            if self.origin_params.get(Constant.EXPORT_TYPE, Constant.DB) != Constant.DB:
+                logger.error("cluster_statistic only supports --export_type db.")
+                return
+            if not data_map or data_type != Constant.DB or prof_type != Constant.PYTORCH:
+                logger.error("cluster_statistic only supports PyTorch analysis.db input with valid rank information.")
+                return
         if not data_map:
             logger.warning("Can not get rank info or profiling data.")
             return
@@ -120,6 +128,11 @@ class Interface:
                 Constant.CLUSTER_ANALYSIS_OUTPUT_PATH: self.cluster_analysis_output_path,
             }
         )
+        if is_statistic:
+            FileManager.create_output_dir(self.cluster_analysis_output_path, is_overwrite=True)
+            params.setdefault(Constant.EXPORT_TYPE, Constant.DB)
+            AnalysisFacade(params).cluster_statistic()
+            return
         if self.analysis_mode in COMM_FEATURE_LIST:
             FileManager.create_output_dir(self.cluster_analysis_output_path, is_overwrite=(data_type == Constant.DB))
             PathManager.check_output_directory_path(self.cluster_analysis_output_path)

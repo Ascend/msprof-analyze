@@ -99,6 +99,7 @@ For details about the output deliverables of `msprof-analyze` features, see the 
 | communication_group_map | Displays communication groups and parallel strategies in cluster scenarios. | - |
 | communication_time_sum | Summarizes and analyzes communication time and bandwidth in cluster scenarios. | - |
 | communication_matrix_sum | Summarizes and analyzes communication matrices in cluster scenarios. | - |
+| cluster_statistic | Summarizes communication time, transmission metrics, and operator durations across ranks for ultra-large clusters. | [Communication Statistics for Ultra-Large Clusters](./cluster_statistic_instruct.md) |
 | hccl_sum | Summarizes information about communication operators. | - |
 | pp_chart | Analyzes and visualizes the duration for each phase of pipeline parallelism (PP). | [pp_chart](./pp_chart_instruct.md) |
 | slow_rank | Displays the number of times each rank is affected by fast and slow ranks based on the current fast/slow rank statistics algorithm and identifies the causes of slow ranks. | - |
@@ -141,7 +142,7 @@ The following table primarily describes the input, output, format, execution, an
 
 | Option | Required/Optional | Description | Applicable Scope |
 | --- | --- | --- | --- |
-| `--rank_list` | Optional | Analyzes data for specified ranks. The default value is `all`, indicating that data for all ranks is analyzed. Configure this parameter based on the actual rank IDs of the ranks. The value must be an integer greater than or equal to `0`. If a specified value exceeds the rank IDs actually used for training, only data for valid rank IDs is parsed. For example, if the current environment has rank IDs `0` to `7` but the actual training uses ranks `0` to `3`, and `--rank_list` is configured as `0,3,4` or `10`, only the data for ranks `0` and `3` is parsed. Example: `--rank_list 0,1,2`. | `cann_api_sum`, `compute_op_sum`, `hccl_sum`, `mstx_sum` |
+| `--rank_list` | Optional | Analyzes data for specified ranks. The default value is `all`, indicating that data for all ranks is analyzed. Configure this parameter based on the actual rank IDs of the ranks. The value must be an integer greater than or equal to `0`. If a specified value exceeds the rank IDs actually used for training, only data for valid rank IDs is parsed. For example, if the current environment has rank IDs `0` to `7` but the actual training uses ranks `0` to `3`, and `--rank_list` is configured as `0,3,4` or `10`, only the data for ranks `0` and `3` is parsed. Example: `--rank_list 0,1,2`. | `cann_api_sum`, `compute_op_sum`, `hccl_sum`, `mstx_sum`, `cluster_statistic` |
 | `--step_id` | Optional | Specifies the performance data Step ID for analysis. The performance data for the specified Step ID is analyzed. The specified Step ID must exist in the performance data. If not configured, all data is analyzed by default. Example: `--step_id=1`. | `cann_api_sum`, `compute_op_sum`, `hccl_sum`, `mstx_sum` |
 | `--top_num` | Optional | Sets the number of top-N time-consuming communication operators. The default value is `15`. Example: `--top_num 20`. | `hccl_sum` |
 | `--exclude_op_name` | Optional | Controls whether `op_name` is included in the `compute_op_name` results. Example: `--exclude_op_name`; no argument is required after it. | `compute_op_sum` |
