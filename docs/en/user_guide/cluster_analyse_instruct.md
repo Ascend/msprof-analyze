@@ -128,21 +128,21 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--ag
 
 ### 3.3 Command-line Options
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | ---- | --- | --- |
-| `--profiling_path` or `-d` | Yes | Specifies the directory where profile data is aggregated. If `-o` is not specified, the `cluster_analysis_output` folder is automatically created in this directory after the analysis command is run to save the analysis data.  |
-| `--output_path` or `-o` | No | Specifies a custom output path. After the analysis command is run, the `cluster_analysis_output` folder is automatically created in this directory to save the analysis data. |
-| `--mode` or `-m` | No | Specifies the data parsing mode. For details about the available values, see the **Arguments for `--mode`** table. |
-| `--agent` | No | Outputs the analysis results in JSON format to standard output. Specifying this option enables this function. If this option is not specified, this function is disabled by default. |
-| `--force` | No | Forcibly executes `cluster`. Specifying this option forcibly skips the following checks:<br>• Ownership check: Proceed even if the current user is not the owner of the specified directory or files.<br>• File size check: Proceed even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB.<br>• Permission check: Proceed even if the read or write permissions of the specified directory or file do not meet the validation requirements.<br>Specifying this option enables forced execution, which is disabled if this option is not specified. |
+| `--profiling_path` or `-d` | Required | Specifies the directory where profile data is aggregated. If `-o` is not specified, the `cluster_analysis_output` folder is automatically created in this directory after the analysis command is run to save the analysis data.  |
+| `--output_path` or `-o` | Optional | Specifies a custom output path. After the analysis command is run, the `cluster_analysis_output` folder is automatically created in this directory to save the analysis data. |
+| `--mode` or `-m` | Optional | Specifies the data parsing mode. For details about the available values, see the **Arguments for `--mode`** table. |
+| `--agent` | Optional | Outputs the analysis results in JSON format to standard output. Specifying this option enables this function. If this option is not specified, this function is disabled by default. |
+| `--force` | Optional | Forcibly executes `cluster`. Specifying this option forcibly skips the following checks:<br>• Ownership check: Proceed even if the current user is not the owner of the specified directory or files.<br>• File size check: Proceed even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB.<br>• Permission check: Proceed even if the read or write permissions of the specified directory or file do not meet the validation requirements.<br>Specifying this option enables forced execution, which is disabled if this option is not specified. |
 
 **Arguments for `--mode`**
 
-| Argument | Required (Yes/No) | Description |
+| Argument | Required/Optional | Description |
 | --- | --- | --- |
-| `communication_matrix` | No | Parses communication matrix data. |
-| `communication_time` | No | Parses communication duration data. |
-| `all` | No | Parses both communication matrix (`communication_matrix`) and communication duration (`communication_time`) data. The default value of `--mode` is `all`. |
+| `communication_matrix` | Optional | Parses communication matrix data. |
+| `communication_time` | Optional | Parses communication duration data. |
+| `all` | Optional | Parses both communication matrix (`communication_matrix`) and communication duration (`communication_time`) data. The default value of `--mode` is `all`. |
 
 ### 3.4 Usage Example
 
@@ -327,7 +327,7 @@ The actual tables generated depend on the collection tool, collection level, `--
 | `synchronization_time_ratio` | Proportion of synchronization duration, ranging from 0 to 1 when available, or -1 when unavailable |
 | `wait_time_ratio` | Proportion of waiting duration, ranging from 0 to 1 when available, or -1 when unavailable |
 
-Unavailable `transit_time`, `wait_time`, `synchronization_time`, and `idle_time` values are `-1`. Real start timestamps and elapsed times are preserved. The total uses a start timestamp of 0 and sums individual elapsed times.
+Unavailable `transit_time`, `wait_time`, `synchronization_time`, and `idle_time` values are `-1`. `synchronization_time_ratio` and `wait_time_ratio` are unavailable and are also displayed as `-1`. Real start timestamps and elapsed times are preserved. The total uses a start timestamp of 0 and sums individual elapsed times.
 
 ##### 4.3.5.5 `ClusterCommunicationBandwidth`
 

@@ -50,7 +50,7 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
        --output-len 8
    ```
 
-   **Key Option Description**
+   **Key Parameter Description**
 
    * `--stats=true`: enables Nsys to automatically generate an SQLite database file after profile data collection is complete.
    * `--trace=cuda,nvtx`: enables CUDA and NVTX tracing. NVTX markers are used for module hierarchy parsing.
@@ -121,17 +121,17 @@ Compares the prepared GPU and NPU profile data and outputs the results.
 msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> --baseline_profiling_path <gpu_profile_path> [-o <output_path>] [--export_type <export_type>] [--fuzzy_threshold <fuzzy_threshold>] [--dump_intermediate_results]
 ```
 
-**Command-line options**
+**Command-line Options**
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| -m | Yes | Specifies the analysis feature. Set it to `calibrate_npu_gpu` to enable NPU and GPU profile data breakdown and comparison. |
-| --profiling_path | Yes | Specifies the directory of the NPU profile data files. |
-| --baseline_profiling_path | Yes | Specifies the directory of the GPU profile data files. |
-| -o | No | Specifies the analysis result output directory. By default, results are saved in the directory specified by `--profiling_path`. |
-| --export_type | No | Specifies the output file type. Valid values: `db` (default) or `text`. |
-| --fuzzy_threshold | No | Specifies the fuzzy match threshold for NPU and GPU module names, which defaults to `0.8`. |
-| --dump_intermediate_results | No | Saves the intermediate analysis results (GPU/NPU profile analysis results) in the `{platform}_report_{rank_id}.xlsx` file. By default, this option is not specified, and intermediate analysis results are not saved. |
+| -m | Required | Specifies the analysis feature. Set it to `calibrate_npu_gpu` to enable NPU and GPU profile data breakdown and comparison. |
+| --profiling_path | Required | Specifies the directory of the NPU profile data files. |
+| --baseline_profiling_path | Required | Specifies the directory of the GPU profile data files. |
+| -o | Optional | Specifies the analysis result output directory. By default, results are saved in the directory specified by `--profiling_path`. |
+| --export_type | Optional | Specifies the output file type. Valid values: `db` (default) or `text`. |
+| --fuzzy_threshold | Optional | Specifies the fuzzy match threshold for NPU and GPU module names, which defaults to `0.8`. |
+| --dump_intermediate_results | Optional | Saves the intermediate analysis results (GPU/NPU profile analysis results) in the `{platform}_report_{rank_id}.xlsx` file. By default, this parameter is not specified, and intermediate analysis results are not saved. |
 
 **Example**
 

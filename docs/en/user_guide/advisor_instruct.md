@@ -114,21 +114,21 @@ msprof-analyze advisor schedule -d <profiling_path> [-o <output_path>] [-cv <can
 
 #### 4.3.1 Input and Output Configuration
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| `-d`<br>`--profiling_path` | Yes | Specifies the path to the profile data file or directory. For profile data collected using Ascend PyTorch Profiler, specify the `*_ascend_pt` profile data result directory. For profile data collected using MindSpore Profiler, specify the `*_ascend_ms` profile data result directory. For cluster data, specify the parent directory of `*_ascend_pt` or `*_ascend_ms`. |
-| `-bp`<br>`--benchmark_profiling_path` | No | Specifies the directory containing benchmark profile data for performance comparison. The profile data is collected using the profiling tool.<br>**This option is not supported by `computation` or `schedule`.** |
-| `-o`<br>`--output_path` | No | Specifies the output path for analysis results. After the `advisor` analysis is complete, the results are saved to this directory. If not specified, the current directory is used by default. |
-| `--agent` | No | Outputs analysis results in JSON format to standard output without writing them to a file. Specifying this option enables `stdout` output. If not specified, `stdout` output is disabled by default. |
+| `-d`<br>`--profiling_path` | Required | Specifies the path to the profile data file or directory. For profile data collected using Ascend PyTorch Profiler, specify the `*_ascend_pt` profile data result directory. For profile data collected using MindSpore Profiler, specify the `*_ascend_ms` profile data result directory. For cluster data, specify the parent directory of `*_ascend_pt` or `*_ascend_ms`. |
+| `-bp`<br>`--benchmark_profiling_path` | Optional | Specifies the directory containing benchmark profile data for performance comparison. The profile data is collected using the profiling tool.<br>**This option is not supported by `computation` or `schedule`.** |
+| `-o`<br>`--output_path` | Optional | Specifies the output path for analysis results. After the `advisor` analysis is complete, the results are saved to this directory. If not specified, the current directory is used by default. |
+| `--agent` | Optional | Outputs analysis results in JSON format to standard output without writing them to a file. Specifying this option enables `stdout` output. If not specified, `stdout` output is disabled by default. |
 
 #### 4.3.2 Execution Behavior Control
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| `--force` | No | Forces `advisor` to run. When specified, the following checks are skipped: ownership check (allowing execution even if the current user is not the owner of the specified directory or files) and file size check (allowing execution even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB). Specifying this option enables forced execution. If not specified, forced execution is disabled by default. |
-| `-l` `--language` | No | Specifies the language of the analysis results. Valid values: `cn` (Chinese, default) or `en` (English). |
-| `--debug` | No | Enables detailed stack trace information when a tool error occurs. Specifying this option enables debug mode. If not specified, debug mode is disabled by default. |
-| `-h` or `--help` | No | Displays help information for the subcommands and options of the current command. |
+| `--force` | Optional | Forces `advisor` to run. When specified, the following checks are skipped: ownership check (allowing execution even if the current user is not the owner of the specified directory or files) and file size check (allowing execution even if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB). Specifying this option enables forced execution. If not specified, forced execution is disabled by default. |
+| `-l` `--language` | Optional | Specifies the language of the analysis results. Valid values: `cn` (Chinese, default) or `en` (English). |
+| `--debug` | Optional | Enables detailed stack trace information when a tool error occurs. Specifying this option enables debug mode. If not specified, debug mode is disabled by default. |
+| `-h` or `--help` | Optional | Displays help information for the subcommands and options of the current command. |
 
 #### 4.3.3 Environment and Version configuration
 
@@ -226,7 +226,7 @@ The following figure shows an example of **Environment Variable Issues** in the 
 
 ![env\_var.png](../figures/env_var.png)
 
-For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html).
+For detailed information about the environment variables shown in the preceding figure, see [`ACLNN_CACHE_LIMIT`](https://gitcode.com/cann/docs/blob/master/docs/en/env-vars/ACLNN_CACHE_LIMIT.md) and [`HOST_CACHE_CAPACITY`](https://www.hiascend.com/document/detail/en/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html).
 
 The following figures show examples of the **Overall Summary** analysis in a single-rank scenario without a benchmark.
 
@@ -434,7 +434,7 @@ For details about the APIs, see [`torch_npu.npu.set_compile_mode`](https://gitco
 
 ![Input image description](../figures/schedule_1.png)
 
-For details about the `aclopCompileAndExecute` API shown in the preceding figure, see [`aclopCompileAndExecute`](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/API/ascendgraphapi/aclcppdevg_03_0251.html).
+For details about the `aclopCompileAndExecute` API shown in the preceding figure, see [`aclopCompileAndExecute`](https://gitcode.com/cann/ge/tree/master/docs/en/api/graph_engine_api/c/acl/aclopCompileAndExecute.md).
 
 #### 5.4.4 `memory` and `dataloader` Quick Reference
 

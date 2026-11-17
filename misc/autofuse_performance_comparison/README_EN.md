@@ -38,7 +38,7 @@ Only the TensorFlow framework is supported.
     export AUTOFUSE_FLAGS="--enable_autofuse=true"
     ```
 
-    For details, see [AutoFuse Enabling Method](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/latest/programug/graphdevg/autofuse_1_0004.html).
+    For details, see [AutoFuse Enabling Method](https://gitcode.com/cann/ge/tree/master/docs/en/user_guides/graph_dev/autofuse/autofuse_enable.md).
 
 2. Run the TensorFlow model with both data dump and automatic fusion enabled to obtain the dump data and computational graph files whose names end with `_Build.txt`.
 
@@ -74,7 +74,7 @@ Only the TensorFlow framework is supported.
 
 Compares operator performance before and after enabling automatic fusion. This feature is implemented using the `autofuse_performance_comparison.py` script, which is located in the `msprof-analyze/misc/autofuse_performance_comparison/autofuse_core` directory.
 
-**Precautions**
+**Notes**
 
 None
 
@@ -86,12 +86,12 @@ python3 autofuse_performance_comparison.py -f <whole_graph> -d <subgraph_dir> -p
 
 **Command-line Options**
 
-| Option| Mandatory (Yes/No)| Description|
+| Option | Required/Optional | Description |
 | ----- |-------| ----- |
-| -f<br>--whole_graph  | Yes   | Graph file in JSON format, such as `ge_proto_00000094_graph_1_Build.json`.|
-| -d<br>--subgraph_dir | Yes   | Directory storing all subgraph files in .txt format (such as `autofuse_pointwise_0_Abs_Add.txt`).|
-| -p<br>--dump_path   | Yes   | Directory storing the .npy dump data of all fused operators.|
-| -o<br>--output_path | No   | Two subdirectories, `autofuse_enabled` and `autofuse_disabled`, are generated under this path to store the performance data collected when the automatic fusion feature is enabled or disabled, respectively. It defaults to the current directory. In most cases, you do not need to examine this raw data. Simply refer to the [output results](#output-file-description).|
+| -f<br>--whole_graph  | Required | Graph file in JSON format, such as `ge_proto_00000094_graph_1_Build.json`. |
+| -d<br>--subgraph_dir | Required | Directory storing all subgraph files in .txt format (such as `autofuse_pointwise_0_Abs_Add.txt`). |
+| -p<br>--dump_path   | Required | Directory storing the .npy dump data of all fused operators. |
+| -o<br>--output_path | Optional | Two subdirectories, `autofuse_enabled` and `autofuse_disabled`, are generated under this path to store the performance data collected when the automatic fusion feature is enabled or disabled, respectively. It defaults to the current directory. In most cases, you do not need to examine this raw data. Simply refer to the [output results](#output-file-description). |
 
 **Example**
 
@@ -104,7 +104,7 @@ python3 autofuse_performance_comparison.py -f /data/graph_path/ge_proto_00000094
 
 **Output Description**
 
-After the `autofuse_performance_comparison.py` script finishes execution, an `autofuse_performance_comparison_result_{timestamp}.xlsx` file is generated in the path specified by the `-o` option. For details about the file, see [Output File Description](#output-file-description).
+After the `autofuse_performance_comparison.py` script finishes execution, an `autofuse_performance_comparison_result_{timestamp}.xlsx` file is generated in the path specified by the `-o` parameter. For details about the file, see [Output File Description](#output-file-description).
 
 ## Output File Description
 

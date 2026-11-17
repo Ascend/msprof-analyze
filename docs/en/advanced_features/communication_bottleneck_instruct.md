@@ -36,14 +36,14 @@ msprof-analyze -m communication_bottleneck -d <cluster_data> [-o <output_path>] 
 
 **Command-line Options**
 
-| Option| Required (Yes/No)| Description|
+| Option | Required/Optional | Description|
 | ---- | --------- | -------------------------------------------------------- |
-| -m   | Yes     | Specifies the analysis feature. Set it to `communication_bottleneck` to enable communication bottleneck analysis.|
-| -d   | Yes     | Specifies the parent directory of the cluster profile data files.|
-| -o   | No     | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`.|
-| --rank_id | No| Specifies the ID of the target rank to be analyzed. The default value is `0`. Analyze the communication operations of the rank and compare the execution status of all ranks.|
-| --top_num | No| Specifies the number of top N communication operations to be analyzed. The default value is `10`. This option restricts the analysis to only the N communication operations with the longest execution durations.|
-| --export_type | No| Specifies the output file type. The value can be `db` (default) or `text`.             |
+| -m   | Required | Specifies the analysis feature. Set it to `communication_bottleneck` to enable communication bottleneck analysis.|
+| -d   | Required | Specifies the parent directory of the cluster profile data files.|
+| -o   | Optional | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`.|
+| --rank_id | Optional | Specifies the ID of the target rank to be analyzed. The default value is `0`. Analyze the communication operations of the rank and compare the execution status of all ranks.|
+| --top_num | Optional | Specifies the number of top N communication operations to be analyzed. The default value is `10`. This option restricts the analysis to only the N communication operations with the longest execution durations.|
+| --export_type | Optional | Specifies the output file type. The value can be `db` (default) or `text`.             |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
@@ -82,12 +82,12 @@ The format of the configuration file is as follows:
 
 The following table describes parameters in this file.
 
-| Parameter| Required (Yes/No)| Description|
+| Parameter | Required/Optional | Description |
 | ---- | --------- | ---- |
-| slow_npu_happen | No| Ratio threshold for fast/slow rank detection. If the time difference ratio between fast and slow ranks is less than this value, no slow rank issue is identified. The value is of the `float` type and the default value is `0.05` (0.05%).|
-| diff_waiting_time | No| Wait duration difference threshold. If the device-side wait duration exceeds the host-side wait duration by more than this value (approximately 100 μs), a device-bound issue is identified. The value is of the `int` type and the default value is `100000` (ns).|
-| start_ns_shifted | No| Start time shift threshold. If the actual shift is less than this value (approximately 1 ms), the start time is considered aligned. The value is of the `int` type and the default value is `1000000` (ns).|
-| device_bound_proportion | No| Proportion threshold for device-bound issues. If the proportion of device-bound issues exceeds this value, it is identified as a device-side bottleneck. The value is of the `float` type and the default value is `0.5` (0.5%).|
+| slow_npu_happen | Optional | Ratio threshold for fast/slow rank detection. If the time difference ratio between fast and slow ranks is less than this value, no slow rank issue is identified. The value is of the `float` type and the default value is `0.05` (0.05%).|
+| diff_waiting_time | Optional | Wait duration difference threshold. If the device-side wait duration exceeds the host-side wait duration by more than this value (approximately 100 μs), a device-bound issue is identified. The value is of the `int` type and the default value is `100000` (ns).|
+| start_ns_shifted | Optional | Start time shift threshold. If the actual shift is less than this value (approximately 1 ms), the start time is considered aligned. The value is of the `int` type and the default value is `1000000` (ns).|
+| device_bound_proportion | Optional | Proportion threshold for device-bound issues. If the proportion of device-bound issues exceeds this value, it is identified as a device-side bottleneck. The value is of the `float` type and the default value is `0.5` (0.5%).|
 
 **Output Description**
 

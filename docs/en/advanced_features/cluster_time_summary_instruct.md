@@ -32,12 +32,12 @@ msprof-analyze -m cluster_time_summary -d <cluster_data> [-o <output_path>]
 
 **Command-line Options**
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| -m | Yes | Specifies the analysis feature. Set it to `cluster_time_summary` to enable fine-grained cluster profile data breakdown. |
-| -d | Yes | Specifies the parent directory of the cluster profile data files. |
-| -o | No | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
-| --export_type | No | Specifies the output file type. Valid values: `db` (default) or `text`. |
+| -m | Required | Specifies the analysis feature. Set it to `cluster_time_summary` to enable fine-grained cluster profile data breakdown. |
+| -d | Required | Specifies the parent directory of the cluster profile data files. |
+| -o | Optional | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
+| --export_type | Optional | Specifies the output file type. Valid values: `db` (default) or `text`. |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
