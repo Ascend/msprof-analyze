@@ -13,10 +13,7 @@
 # MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 # See the Mulan PSL v2 for more details.
 # -------------------------------------------------------------------------
-import json
-import sqlite3
 import time
-from contextlib import closing
 from multiprocessing import Process, Value, Lock
 from pathlib import Path
 from tqdm import tqdm
@@ -31,7 +28,6 @@ from msprof_analyze.cluster_analyse.common_func.context import init_subprocess
 from msprof_analyze.cluster_analyse.common_func.analysis_loader import get_class_from_name
 from msprof_analyze.prof_common.additional_args_manager import AdditionalArgsManager
 from msprof_analyze.prof_common.constant import Constant
-from msprof_analyze.prof_common.db_manager import DBManager
 from msprof_analyze.prof_common.json_output import set_json_success
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.path_manager import PathManager
@@ -126,52 +122,34 @@ class AnalysisFacade:
         output_dir = Path(params[Constant.CLUSTER_ANALYSIS_OUTPUT_PATH]) / Constant.CLUSTER_ANALYSIS_OUTPUT
         PathManager.check_output_directory_path(str(output_dir))
         db_path = output_dir / Constant.DB_CLUSTER_COMMUNICATION_ANALYZER
-        tables = (*recipe_type.TABLES, Constant.TABLE_COMMUNICATION_GROUP_MAPPING, Constant.TABLE_CLUSTER_BASE_INFO)
         mode = params.get(Constant.PARALLEL_MODE, Constant.CONCURRENT_MODE)
 
         if db_path.is_symlink():
             raise ValueError(
                 f"Output database is a symbolic link at {db_path}. Use -o to select another output directory."
             )
-        with closing(sqlite3.connect(str(db_path))) as connection:
-            connection.execute("PRAGMA temp_store = FILE")
-            with Context.create_context(mode, max_workers=recipe_type.MAX_PENDING_RANKS) as context:
-                with recipe_type(params, connection) as recipe:
-                    mapping_input = recipe.run(context)
-                if mapping_input is None:
-                    raise ValueError("No usable communication data for the selected ranks. See the analysis log.")
-            self._write_statistic_group_mapping(connection, mapping_input)
-            self._write_statistic_base_info(connection)
-        logger.info("Generated cluster statistics in %s.", db_path)
-        set_json_success(msg_dict={"db_path": str(db_path), "tables": list(tables)})
+        with Context.create_context(mode, max_workers=recipe_type.MAX_PENDING_RANKS) as context:
+            with recipe_type(params) as recipe:
+                tables = recipe.run(context)
+            if tables is None:
+                raise ValueError("No usable communication data for the selected ranks. See the analysis log.")
+            mapping_params = dict(params, **{Constant.RECIPE_NAME: CommunicationGroupMap.__name__})
+            with CommunicationGroupMap(mapping_params) as mapping_recipe:
+                mapping_recipe.run(context)
+                if mapping_recipe.group_df is not None and not mapping_recipe.group_df.empty:
+                    tables.append(Constant.TABLE_COMMUNICATION_GROUP_MAPPING)
+        base_info = ClusterBaseInfoAnalysis(params)
+        base_info.run()
+        if base_info.distributed_args:
+            tables.append(Constant.TABLE_CLUSTER_BASE_INFO)
 
-    def _write_statistic_group_mapping(self, connection, mapping_input):
-        recipe = CommunicationGroupMap(self.params)
-        recipe.reducer_func(mapping_input)
-        schema = DBManager.sql_generate_table("CommunicationGroupMappingMap")
-        with connection:
-            connection.execute("BEGIN IMMEDIATE")
-            connection.execute("DROP TABLE IF EXISTS CommunicationGroupMapping")
-            connection.execute(f"CREATE TABLE CommunicationGroupMapping {schema}")  # nosec B608
-            if recipe.group_df is not None:
-                connection.executemany(
-                    "INSERT INTO CommunicationGroupMapping VALUES (?, ?, ?, ?, ?)",
-                    recipe.group_df.itertuples(index=False, name=None),
-                )
-
-    def _write_statistic_base_info(self, connection):
-        schema = DBManager.sql_generate_table("ClusterBaseInfoMap")
-        analysis = ClusterBaseInfoAnalysis(self.params)
-        analysis.extract_base_info()
-        with connection:
-            connection.execute("BEGIN IMMEDIATE")
-            connection.execute("DROP TABLE IF EXISTS ClusterBaseInfo")
-            connection.execute(f"CREATE TABLE ClusterBaseInfo {schema}")  # nosec B608
-            if analysis.distributed_args:
-                connection.execute(
-                    "INSERT INTO ClusterBaseInfo VALUES (?, ?)",
-                    (Constant.DISTRIBUTED_ARGS, json.dumps(analysis.distributed_args)),
-                )
+        message = {"tables": tables}
+        if tables:
+            message["db_path"] = str(db_path)
+            logger.info("Generated cluster statistics in %s.", db_path)
+        else:
+            logger.info("No cluster statistics tables were written.")
+        set_json_success(msg_dict=message)
 
     def cluster_analyze_with_recipe(self):
         recipes = [["CommunicationGroupMap", CommunicationGroupMap]]

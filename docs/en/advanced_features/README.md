@@ -99,7 +99,7 @@ For details about the output deliverables of `msprof-analyze` features, see the 
 | communication_group_map | Displays communication groups and parallel strategies in cluster scenarios. | - |
 | communication_time_sum | Summarizes and analyzes communication time and bandwidth in cluster scenarios. | - |
 | communication_matrix_sum | Summarizes and analyzes communication matrices in cluster scenarios. | - |
-| cluster_statistic | Aggregates communication time, transmission data, and operator durations across ranks from PyTorch DB input. | [Cluster Analysis Guide](../user_guide/cluster_analyse_instruct.md) |
+| cluster_statistic | Summarizes communication time, transmission metrics, and operator durations across ranks for ultra-large clusters. | [Communication Statistics for Ultra-Large Clusters](./cluster_statistic_instruct.md) |
 | hccl_sum | Summarizes information about communication operators. | - |
 | pp_chart | Analyzes and visualizes the duration for each phase of pipeline parallelism (PP). | [pp_chart](./pp_chart_instruct.md) |
 | slow_rank | Displays the number of times each rank is affected by fast and slow ranks based on the current fast/slow rank statistics algorithm and identifies the causes of slow ranks. | - |
@@ -147,5 +147,3 @@ The following table primarily describes the input, output, format, execution, an
 | `--top_num` | Optional | Sets the number of top-N time-consuming communication operators. The default value is `15`. Example: `--top_num 20`. | `hccl_sum` |
 | `--exclude_op_name` | Optional | Controls whether `op_name` is included in the `compute_op_name` results. Example: `--exclude_op_name`; no argument is required after it. | `compute_op_sum` |
 | `--bp` | Optional | Specifies the benchmark cluster data to be compared. Example: `--bp {bp_cluster_profiling_path}` compares the data in `profiling_path` with the data in `bp_cluster_profiling_path`. | `cluster_time_compare_summary` |
-
-For DB input, the communication recipes in `all`, `communication_matrix`, `communication_time`, and `cluster_statistic` use `--rank_list` to select input ranks. These modes accept `--step_id` and include every step from the selected ranks. For text input in `all`, `communication_matrix`, and `communication_time`, communication analysis includes every discoverable rank and step regardless of either option.

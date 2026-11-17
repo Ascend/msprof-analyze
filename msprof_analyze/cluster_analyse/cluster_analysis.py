@@ -87,11 +87,6 @@ class Interface:
         return res
 
     def run(self):
-        is_statistic = self.analysis_mode == Constant.CLUSTER_STATISTIC
-        if is_statistic and self.origin_params.get(Constant.EXPORT_TYPE, Constant.DB) != Constant.DB:
-            logger.error("cluster_statistic only supports --export_type db.")
-            return
-
         PathManager.check_input_directory_path(self.collection_path)
         if os.path.exists(self.cluster_analysis_output_path):
             PathManager.check_output_directory_path(self.cluster_analysis_output_path)
@@ -105,9 +100,14 @@ class Interface:
             data_dict.get(Constant.DATA_TYPE),
             data_dict.get(Constant.PROFILING_TYPE),
         )
-        if is_statistic and (not data_map or data_type != Constant.DB or prof_type != Constant.PYTORCH):
-            logger.error("cluster_statistic only supports PyTorch analysis.db input with valid rank information.")
-            return
+        is_statistic = self.analysis_mode == Constant.CLUSTER_STATISTIC
+        if is_statistic:
+            if self.origin_params.get(Constant.EXPORT_TYPE, Constant.DB) != Constant.DB:
+                logger.error("cluster_statistic only supports --export_type db.")
+                return
+            if not data_map or data_type != Constant.DB or prof_type != Constant.PYTORCH:
+                logger.error("cluster_statistic only supports PyTorch analysis.db input with valid rank information.")
+                return
         if not data_map:
             logger.warning("Can not get rank info or profiling data.")
             return

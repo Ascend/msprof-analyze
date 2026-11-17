@@ -123,7 +123,7 @@ msprof-analyze cluster -d <profiling_path> [-m <mode>] [-o output_path] [--agent
 **脚本运行方式**
 
 ```bash
-python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--force]
+python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--agent] [--force]
 ```
 
 ### 3.3 参数说明
@@ -133,7 +133,7 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--fo
 | --profiling_path或-d | 必选      | 性能数据汇集目录。未配置-o参数时，运行分析命令之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
 | --output_path或-o    | 可选      | 自定义输出路径，运行分析命令之后会在该目录下自动创建cluster_analysis_output文件夹，保存分析数据。 |
 | --mode或-m           | 可选      | 数据解析模式，取值详见“**--mode参数说明**”表。               |
-| --agent              | 可选      | 正式 CLI 选项，将分析结果以 JSON 格式输出至标准输出。默认关闭。 |
+| --agent              | 可选      | 分析结果以json格式输出至标准输出，配置该参数表示开启，默认未配置表示关闭。 |
 | --force              | 可选      | 强制执行 cluster。配置后可强制跳过如下情况：<br>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br>&#8226; csv 文件大于 5GB、json 文件大于 10GB、db 文件大于 8GB，忽略文件过大判断直接执行。<br>&#8226; 指定目录、文件的读写权限不满足校验要求，忽略权限判断直接执行。<br>配置该参数表示开启强制执行，默认未配置表示关闭。 |
 
 --mode 参数说明：
@@ -142,16 +142,7 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--fo
 | -------------------- | --------- | ------------------------------------------------------------ |
 | communication_matrix | 可选      | 解析通信矩阵数据。                                           |
 | communication_time   | 可选      | 解析通信耗时数据。                                           |
-| cluster_statistic    | 可选      | 汇总 PyTorch `analysis.db` 中的集群通信统计，生成三张统计表和两张配套表。 |
 | all                  | 可选      | 同时解析通信矩阵communication_matrix和通信耗时数据communication_time，--mode参数默认值为all。 |
-
-`cluster_statistic` 仅支持带有可解析 rank 信息的 PyTorch `analysis.db` 输入，输出格式为 `--export_type db`，默认使用 `--parallel_mode concurrent`。`--rank_list` 选择参与通信统计的全局 rank，例如 `--rank_list 0,2`。默认值 `all` 处理全部可解析的 rank。`--step_id` 沿用 DB 通信模式的行为，通信统计包含所选 rank 的全部 step。
-
-正式 CLI 支持 `--agent`。独立脚本将它作为未知参数，记录告警后继续分析。同一目录含通信 JSON 和 `analysis.db` 时，通信统计使用 `analysis.db`。
-
-例如，运行 `msprof-analyze cluster -m cluster_statistic -d ./cluster_data -o ./statistic_output --agent`。命令将 `CommTimeStatistic`、`TransitStatistic`、`CommOpStatistic`、`CommunicationGroupMapping` 和 `ClusterBaseInfo` 写入 `./statistic_output/cluster_analysis_output/cluster_analysis.db`。缺少有效集群配置时，`ClusterBaseInfo` 为空表。同名目标表会被替换，库中的其他表保留。
-
-五张表逐表提交。写入中途失败时，已经提交的表会保留。可以在同一输出目录重跑，完成后五张表都对应本次统计。
 
 ### 3.4 使用示例
 
@@ -274,18 +265,13 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 | 表名 | 生成场景                                                       | 用途 |
 | --- |------------------------------------------------------------| --- |
 | `ClusterBaseInfo` | db 格式性能数据                                                  | 记录集群基础信息，例如并行策略参数。 |
-| `ClusterStepTraceTime` | db 格式性能数据，执行 `communication_matrix`、`communication_time` 或 `all` | 记录 rank/stage 维度的迭代耗时拆解信息，对应 `cluster_step_trace_time.csv`。 |
-| `CommunicationGroupMapping` | 执行 `cluster_statistic`，或其他 DB 通信模式下存在通信域信息 | 记录通信域、通信类型、rank 集合和并行组信息。 |
+| `ClusterStepTraceTime` | db 格式性能数据                                                  | 记录 rank/stage 维度的迭代耗时拆解信息，对应 `cluster_step_trace_time.csv`。 |
+| `CommunicationGroupMapping` | db 格式性能数据，且存在通信域信息                                         | 记录通信域、rank 集合和并行组信息。 |
 | `ClusterCommunicationTime` | db 格式性能数据，且执行 `communication_time` 或 `all`                 | 记录集群维度通信算子耗时汇总信息。 |
 | `ClusterCommunicationBandwidth` | db 格式性能数据，执行 `communication_time` 或 `all`，且具备带宽记录 | 记录集群维度通信带宽、包大小分布和传输耗时汇总信息。 |
 | `ClusterCommunicationMatrix` | db 格式性能数据，执行 `communication_matrix` 或 `all`，且具备有效矩阵数据       | 记录集群维度 rank 间通信矩阵信息。 |
-| `CommTimeStatistic` | 执行 `cluster_statistic` | 按 step、rank 和通信域汇总通信耗时。 |
-| `TransitStatistic` | 执行 `cluster_statistic` | 按 step、rank、通信域和传输类型汇总传输量、耗时、带宽和包大小分布。 |
-| `CommOpStatistic` | 执行 `cluster_statistic` | 按 step、通信域和完整算子名汇总跨 rank 的总耗时、极值及对应 rank、有效 rank 数。 |
 
 不同采集工具、采集级别、`--mode` 取值和原始 profiling 数据完整度会影响实际生成的表。若某类原始数据缺失，对应表可能不会生成。
-
-`cluster_statistic` 成功时会生成三张统计表及 `CommunicationGroupMapping`、`ClusterBaseInfo`。没有可用记录的目标表为空表，不可用的统计指标以 `NULL` 表示。三张统计表可通过 `group_name` 关联 `CommunicationGroupMapping` 获取通信类型。
 
 ##### 4.3.5.1 `ClusterBaseInfo`
 

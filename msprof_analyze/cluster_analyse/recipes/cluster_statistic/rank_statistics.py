@@ -23,8 +23,6 @@ from dataclasses import dataclass, field
 from itertools import groupby
 
 from msprof_analyze.cluster_analyse.common_func.table_constant import TableConstant
-from msprof_analyze.cluster_analyse.common_func.utils import double_hash
-from msprof_analyze.cluster_analyse.recipes.communication_group_map.communication_group_map import CommunicationGroupMap
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.db_manager import DBManager
 from msprof_analyze.prof_common.logger import get_logger
@@ -33,9 +31,9 @@ from msprof_analyze.prof_common.path_manager import PathManager
 logger = get_logger()
 
 TIME_METRICS = ("elapse_time", "transit_time", "wait_time", "synchronization_time", "idle_time")
-TIME_COLUMNS = ("step", "group_name", "hccl_op_name", "type", *TIME_METRICS)
+TIME_COLUMNS = (TableConstant.STEP, "group_name", "hccl_op_name", "type", *TIME_METRICS)
 BANDWIDTH_COLUMNS = (
-    "step",
+    TableConstant.STEP,
     "group_name",
     "transport_type",
     "hccl_op_name",
@@ -53,8 +51,6 @@ class RankStatistics:
     time_rows: list = field(default_factory=list)
     op_rows: list = field(default_factory=list)
     transit_rows: list = field(default_factory=list)
-    group_types: dict = field(default_factory=dict)
-    parallel_groups: dict = field(default_factory=dict)
     diagnostics: Counter = field(default_factory=Counter)
     readable_tables: int = 0
 
@@ -86,17 +82,11 @@ def _read_time(rows, rank_id, result):
         if not _valid_keys(step, group, op) or group_type not in COMMUNICATION_TYPES:
             result.diagnostics["invalid time record keys or type"] += 1
             continue
-        result.group_types.setdefault(group, group_type)
-
         metrics = tuple(_metric(value) for value in raw_metrics)
         current = totals_by_group.get((step, group), (0.0,) * len(TIME_METRICS))
         totals_by_group[step, group] = tuple(_add_metric(total, value) for total, value in zip(current, metrics))
 
-        elapsed = metrics[0]
-        valid_rank = rank_id if elapsed is not None else None
-        result.op_rows.append(
-            (step, group, op, elapsed, elapsed, valid_rank, elapsed, valid_rank, int(elapsed is not None))
-        )
+        result.op_rows.append((step, group, op, metrics[0]))
 
     for (step, group), totals in totals_by_group.items():
         for name, total in zip(TIME_METRICS, totals):
@@ -111,7 +101,6 @@ def _bandwidth_rows(rows, result):
         if not _valid_keys(step, group, band, op) or group_type not in COMMUNICATION_TYPES:
             result.diagnostics["invalid bandwidth record keys or type"] += 1
             continue
-        result.group_types.setdefault(group, group_type)
         yield step, group, band, op, *metrics
 
 
@@ -170,46 +159,25 @@ def _read_table(cursor, table, columns, aggregate, rank_id, db_path, order_by=""
         if not available:
             logger.warning("Rank %s: missing or unreadable %s in %s.", rank_id, table, db_path)
             return result
-        missing = set(columns) - available
-        if missing:
-            logger.warning("Rank %s: skipping %s in %s, missing fields %s.", rank_id, table, db_path, sorted(missing))
+        missing_columns = set(columns) - available
+        missing_required = missing_columns - {TableConstant.STEP}
+        if missing_required:
+            logger.warning(
+                "Rank %s: skipping %s in %s, missing fields %s.", rank_id, table, db_path, sorted(missing_required)
+            )
             return result
+        params = (Constant.TOTAL_OP_INFO,)
+        if TableConstant.STEP in missing_columns:
+            columns = tuple(f"? AS {column}" if column == TableConstant.STEP else column for column in columns)
+            params = (TableConstant.STEP, *params)
         # Identifiers and ordering are supplied by the fixed source schema.
         query = f"SELECT {', '.join(columns)} FROM {table} WHERE hccl_op_name IS NOT ? {order_by}"  # nosec B608
-        aggregate(cursor.execute(query, (Constant.TOTAL_OP_INFO,)), rank_id, result)
+        aggregate(cursor.execute(query, params), rank_id, result)
     except sqlite3.Error as err:
         logger.warning("Rank %s: cannot read %s in %s: %s", rank_id, table, db_path, err)
         return RankStatistics()
     result.readable_tables = 1
     return result
-
-
-def _read_parallel_groups(db_path, group_types):
-    if not db_path or not group_types:
-        return {}
-    try:
-        PathManager.check_input_file_path(db_path)
-        source, cursor = DBManager.create_connect_db(db_path)
-        if not source:
-            return {}
-        with closing(source), closing(cursor):
-            if not DBManager.get_table_columns_name(cursor, Constant.TABLE_META_DATA):
-                return {}
-            rows = cursor.execute("SELECT value FROM META_DATA WHERE name = ?", (Constant.PARALLEL_GROUP_INFO,))
-            groups = {}
-            for (value,) in rows:
-                for group_id, info in json.loads(value).items():
-                    group = str(double_hash(group_id))
-                    ranks = sorted(info.get(CommunicationGroupMap.GLOBAL_RANKS, []))
-                    rank_set = "(" + ",".join(str(rank) for rank in ranks) + ")"
-                    if group in group_types:
-                        groups[group] = (group_id, info.get(TableConstant.GROUP_NAME, ""), rank_set)
-            if any(not isinstance(name, str) for _, name, _ in groups.values()):
-                raise ValueError("Invalid parallel group name")
-            return groups
-    except (sqlite3.Error, OSError, RuntimeError, ValueError, TypeError, AttributeError) as err:
-        logger.warning("Cannot read optional parallel group information in %s: %s", db_path, err)
-        return {}
 
 
 def read_rank_statistics(rank_db):
@@ -240,9 +208,6 @@ def read_rank_statistics(rank_db):
         return rank_id, RankStatistics()
 
     time_stats.transit_rows = transit_stats.transit_rows
-    for group, group_type in transit_stats.group_types.items():
-        time_stats.group_types.setdefault(group, group_type)
-    time_stats.parallel_groups = _read_parallel_groups(rank_db[Constant.PROFILER_DB_PATH], time_stats.group_types)
     time_stats.diagnostics.update(transit_stats.diagnostics)
     time_stats.readable_tables += transit_stats.readable_tables
     return rank_id, time_stats
