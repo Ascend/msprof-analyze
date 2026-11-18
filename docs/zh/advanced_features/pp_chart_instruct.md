@@ -1,10 +1,12 @@
-# pp流水图数据分析
+# PP流水图数据分析
+
+本文档介绍pp流水图数据分析，涵盖pp流水图数据的采集、msprof-analyze工具分析与MindStudio Insight工具呈现，适用于需要分析pp域流水排布、通信与前向反向关键耗时的用户。
 
 ## 1. 简介
 
-本节介绍如何采集pp流水图数据、使用msprof-analyze工具分析pp流水图，以及使用MindStudio Insight工具呈现pp流水图进行数据分析。
+本节介绍如何采集PP流水图数据、使用msprof-analyze工具分析pp流水图，以及使用MindStudio Insight工具呈现pp流水图进行数据分析。
 
-**pp流水图**指的是将实际pp域内的流水排布进行可视化呈现，可以分析全局通信与前向反向关键耗时信息。对于transformer的模型1F1B、DualPipeV等pp并行策略，当前无法可视化展示。
+**PP流水图**指的是将实际PP域内的流水排布进行可视化呈现，可以分析全局通信与前向反向关键耗时信息。对于transformer的模型1F1B、DualPipeV等pp并行策略，当前无法可视化展示。
 
 **1F1B和DualPipeV的理论效果图**
 
@@ -19,7 +21,7 @@
 
 ### 2.2 数据准备
 
-通过Ascend PyTorch Profiler接口工具的mstx接口采集前向反向数据，需要先找到代码里前向反向相关函数的位置。最终在性能数据timeline上的Ascend HardWare层呈现。
+通过Ascend PyTorch Profiler接口工具的mstx采集前向反向数据，需要先找到代码里前向反向相关函数的位置。最终在性能数据timeline上的Ascend HardWare层呈现。
 
 若用户只关注pp流水图，可以设置采集参数profiler_level为Level_none；若还关注前向反向、通信以及send和recv的关联关系，设置采集参数profiler_level为Level1或更高级别。
 
@@ -115,7 +117,7 @@
 
 **功能说明**
 
-将采集到的pp流水图数据执行msprof-analyze工具分析操作。
+对采集到的pp流水图数据执行msprof-analyze工具分析操作。
 
 **注意事项**
 
@@ -162,7 +164,7 @@ msprof-analyze cluster -m pp_chart -d ./cluster_data
 
 用户无需关注该表字段的具体含义，可以直接使用MindStudio Insight呈现。MindStudio Insight工具的详细安装和操作请参见《[MindStudio Insight工具用户指南](https://gitcode.com/Ascend/msinsight/blob/master/docs/zh/user_guide/overview.md)》。
 
-在MindStudio Insight工具导入分析后的性能数据，在Summary页面点击Generate后按照如下截图配置。
+在MindStudio Insight工具中导入分析后的性能数据，在Summary页面点击Generate后按照如下截图配置。
 
 ![操作步骤](../figures/pp_chart_operation_steps.png)
 

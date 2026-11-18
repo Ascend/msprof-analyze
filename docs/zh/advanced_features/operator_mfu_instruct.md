@@ -1,5 +1,7 @@
 # 算子 MFU 分析
 
+本文档介绍算子 MFU 分析功能，通过 Profiling 数据分析算子的模型 FLOPs 利用率（MFU），帮助识别核心计算算子是否充分利用芯片理论算力，适用于需要评估算子算力利用率的用户。
+
 ## 1. 简介
 
 算子 MFU 分析（`operator_mfu`）是通过 Profiling 数据分析算子的模型 FLOPs 利用率（Model FLOPs Utilization，MFU），帮助识别核心计算算子是否充分利用芯片理论算力的功能。

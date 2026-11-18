@@ -1,5 +1,7 @@
 # 空闲时间原因分析
 
+本文档介绍空闲时间原因分析功能，对Device侧大块空闲时间进行自动分析并识别产生原因，帮助用户定位性能问题，适用于需要定位性能问题的用户。
+
 ## 1. 简介
 
 空闲时间原因分析（free_analysis）提供了对Device侧大块空闲时间的自动分析功能，能够识别空闲时间产生的原因，帮助用户定位性能问题。该功能可以识别以下情况：
@@ -71,7 +73,7 @@ msprof-analyze -m free_analysis -d ./xxx/cluster_data -o ./xxx/output_path --top
 | startTime(us) | 空闲时间开始时间戳，TEXT类型，单位为us。                  |
 | endTime(us) | 空闲时间结束时间戳，TEXT类型，单位为us。                   |
 | duration(us) | 空闲时间持续时间，REAL类型，单位为us。                   |
-| pytorchIdleTime(us) | PyTorch层idle时间，REAL类型，单位为us。无数据时可能为0或NULL。 |
+| pytorchIdleTime(us) | PyTorch层空闲时间，REAL类型，单位为us。无数据时可能为0或NULL。 |
 | cannIdleTime(us) | CANN层idle时间，REAL类型，单位为us。无数据时可能为0或NULL。  |
 | reason | 空闲原因描述，TEXT类型。                       |
 

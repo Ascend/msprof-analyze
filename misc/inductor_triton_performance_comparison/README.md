@@ -1,4 +1,6 @@
-# inductor+triton融合算子性能对比
+# inductor+Triton融合算子性能对比
+
+本文档介绍inductor+triton融合算子性能对比，通过对框架自动生成的融合算子融合前后的性能进行对比判断性能提升或下降，适用于需要评估融合算子性能的PyTorch框架开发者。
 
 ## 简介
 
@@ -24,7 +26,7 @@ inductor+triton融合算子性能对比，是指对inductor+triton框架自动�
     git clone https://gitcode.com/Ascend/msprof-analyze -b master
     ```
 
-- 安装依赖
+- 安装依赖。
 
     ```bash
     cd msprof-analyze

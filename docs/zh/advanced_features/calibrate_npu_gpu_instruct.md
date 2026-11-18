@@ -1,4 +1,6 @@
-# NPU 和 GPU 性能数据拆解比对
+# NPU和GPU性能数据拆解比对
+
+本文档介绍NPU和GPU性能数据拆解比对功能，说明自动对齐GPU与NPU的模块层次、计算相同模块下的时间比例并生成Excel格式对比报告的方法，适用于需要进行跨平台性能校准和瓶颈分析的开发者。
 
 ## 1. 简介
 
@@ -6,10 +8,10 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
 
 该功能支持：
 
-* **跨平台分析**：支持 GPU（NVIDIA）Nsys SQLite 格式和 NPU（Ascend）PyTorch Profiler DB 格式的性能数据。
-* **模块匹配**：使用规则匹配和模糊匹配（Levenshtein 距离），自动对齐 GPU 和 NPU 的模块层次结构。
-* **性能差异分析**：精确计算 GPU 与 NPU 在相同模块下的时间比例，识别性能退化点。
-* **可视化报告**：生成 Excel 格式的对比报告。
+* **跨平台分析**：支持GPU（NVIDIA）Nsys SQLite格式和NPU（Ascend）PyTorch Profiler DB格式的性能数据。
+* **模块匹配**：使用规则匹配和模糊匹配（Levenshtein 距离），自动对齐GPU和NPU的模块层次结构。
+* **性能差异分析**：精确计算GPU与NPU在相同模块下的时间比例，识别性能退化点。
+* **可视化报告**：生成Excel格式的对比报告。
 
 ## 2. 使用前准备
 
@@ -19,7 +21,7 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
 
 **数据准备**
 
-1. GPU 性能数据采集
+1. GPU性能数据采集
 
    对于 GPU 平台，推荐使用 NVIDIA Nsys 工具采集 PyTorch 模型的性能数据。以下脚本以 vLLM 推理场景为例，展示如何使用 `nsys profile` 采集 GPU 性能数据：
 
@@ -58,7 +60,7 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
    * `--capture-range=cudaProfilerApi`：捕获 `cudaProfilerStart/Stop` 范围内的性能数据。
    * `--enforce-eager`：禁用 CUDA Graph，确保算子逐条执行以便准确计时。
 
-2. NPU 性能数据采集
+2. NPU性能数据采集
 
    对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
@@ -98,22 +100,22 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
    **关键配置说明：**
 
    * **环境变量**：`VLLM_TORCH_PROFILER_DIR` 设置性能数据输出路径。
-   * **打点配置**：需修改 vLLM-Ascend 代码，在 `experimental_config` 中设置 `mstx=True` 和 `export_type=['text', 'db']`。
-   * **eager 模式**：当前只支持 eager 模式，请使用 `--enforce-eager` 确保算子逐条执行。
+   * **打点配置**：需修改vLLM-Ascend代码，在 `experimental_config` 中设置 `mstx=True` 和 `export_type=['text', 'db']`。
+   * **eager模式**：当前只支持eager模式，请使用 `--enforce-eager` 确保算子逐条执行。
 
 3. 数据文件要求
 
    确保采集到的性能数据文件满足以下要求：
 
-   * **GPU 文件**：Nsys 导出的 SQLite 文件（扩展名通常为 `.sqlite`）。
-   * **NPU 文件**：PyTorch Profiler 生成的 DB 文件（通常为 `ascend_pytorch_profiler_0.db`）。
-   * **数据完整性**：文件中必须包含完整的模块层次信息（NVTX/mstx 打点）和 Kernel 执行信息。
+   * **GPU文件**：Nsys导出的SQLite文件（扩展名通常为 `.sqlite`）。
+   * **NPU文件**：PyTorch Profiler生成的DB文件（通常为 `ascend_pytorch_profiler_0.db`）。
+   * **数据完整性**：文件中必须包含完整的模块层次信息（NVTX/mstx打点）和Kernel执行信息。
 
 ## 3. 功能介绍
 
 **功能说明**
 
-将已准备的 GPU 和 NPU 性能数据进行比对并输出比对结果。
+将已准备的GPU和NPU性能数据进行比对并输出比对结果。
 
 **命令格式**
 
@@ -135,7 +137,7 @@ msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> 
 
 **使用示例**
 
-使用以下命令执行 GPU&NPU 校准分析：
+使用以下命令执行GPU&NPU校准分析：
 
 ```bash
 msprof-analyze cluster -m calibrate_npu_gpu \
@@ -181,7 +183,7 @@ msprof-analyze cluster -m calibrate_npu_gpu \
 
 ## 5. 附录
 
-### 5.1 vllm bench latency 脚本修改
+### 5.1 vllm bench latency脚本修改
 
 下列为 GPU 环境中 `vllm/vllm/benchmarks/latency.py` 的部分代码，须将部分代码修改为适配 NPU 环境的代码，修改处高亮显示如下：
 

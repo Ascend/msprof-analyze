@@ -1,5 +1,7 @@
 # 性能比对
 
+本文档介绍compare（性能比对）功能，支持比较GPU与NPU之间、NPU与NPU之间的性能差异，将训练耗时拆分为计算、通信、调度三大维度并定位具体劣化的算子，适用于需要分析PyTorch与MindSpore训练工程性能差异的用户。
+
 ## 1. 简介
 
 compare（性能比对）功能支持比较GPU与NPU之间、NPU与NPU之间的性能差异，通过对训练耗时和内存占用的比对分析，定位到具体劣化的算子，帮助用户提升性能调优的效率。工具将训练耗时拆分为计算、通信、调度三大维度，并针对计算和通信分别进行算子级别的比对；将训练占用的总内存，拆分成算子级别的内存占用进行比对。
@@ -50,7 +52,7 @@ msprof-analyze compare \
 
 ### 2.3 结果解读
 
-比对完成后，建议先打开`performance_comparison_result_*.xlsx`，按以下顺序阅读，先定界方向，再定位具体劣化点。
+比对完成后，建议先打开`performance_comparison_result_*.xlsx`，按以下顺序阅读，先界定方向，再定位具体劣化点。
 
 **第一步：看总体性能定方向**
 
@@ -119,7 +121,7 @@ msprof-analyze compare \
 
 通过PyTorch Profiler工具采集GPU的性能数据，参考链接：[torch.profiler](https://pytorch.org/docs/stable/profiler.html)。
 
-采集样例代码参考一（推荐）：使用 schedule 控制采集时机
+采集样例代码参考一（推荐）：使用schedule控制采集时机
 
 ```python
 with torch.profiler.profile(
@@ -133,7 +135,7 @@ with torch.profiler.profile(
         prof.step()
 ```
 
-采集样例代码参考二：手动控制 start/stop
+采集样例代码参考二：手动控制start/stop
 
 ```python
 prof = torch.profiler.profile(
@@ -198,7 +200,7 @@ export_type = Db
 
 当前MindSpore场景仅支持以下两种性能数据比对：
 
-1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对；
+1. MindSpore NPU环境与PyTorch GPU环境的性能数据比对。
 2. MindSpore训练工程在NPU上、不同版本之间的性能数据比对。
 
 性能数据采集说明：使用MindSpore性能调试工具采集NPU性能数据时，建议只采集或只解析一个step的性能数据，参考链接：《[MindSpore调优工具](https://gitcode.com/Ascend/docs/blob/master/MindStudio/master/zh/menu/mindspore_profiler_user_guide.md)》。
@@ -273,9 +275,9 @@ python performance_compare.py <benchmark_profiling_path> <profiling_path> --outp
 
 | 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
-| `--disable_details` | 可选 | 隐藏明细比对，只进行统计级比对。 | 是 | 是 |
-| `--base_step` | 可选 | 基准性能数据step ID，配置后使用基准性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--comparison_step`同时配置。配置示例：`--base_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
-| `--comparison_step` | 可选 | 比对性能数据step ID，配置后使用比对性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--base_step`同时配置。配置示例：`--comparison_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
+| --disable_details | 可选 | 隐藏明细比对，只进行统计级比对。 | 是 | 是 |
+| --base_step | 可选 | 基准性能数据step ID，配置后使用基准性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--comparison_step`同时配置。配置示例：`--base_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
+| --comparison_step | 可选 | 比对性能数据step ID，配置后使用比对性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--base_step`同时配置。配置示例：`--comparison_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
 
 #### 4.3.3 比对能力开关
 
@@ -290,12 +292,12 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 | 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
-| `--enable_profiling_compare` | 可选 | 开启总体性能比对。 | 是 | 是 |
-| `--enable_operator_compare` | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见[算子比对高级参数](#434-算子比对高级参数)。 | 是 | 否 |
-| `--enable_communication_compare` | 可选 | 开启通信性能比对。 | 是 | 是 |
-| `--enable_memory_compare` | 可选 | 开启算子内存比对。该开关较耗时，建议只采集一个step的性能数据。 | 是 | 否 |
-| `--enable_kernel_compare` | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见[kernel比对高级参数](#435-kernel比对高级参数)。 | 是 | 是 |
-| `--enable_api_compare` | 可选 | 开启API性能比对。需要使用性能数据中的trace_view.json文件。 | 是 | 否 |
+| --enable_profiling_compare | 可选 | 开启总体性能比对。 | 是 | 是 |
+| --enable_operator_compare | 可选 | 开启算子性能比对。该开关较耗时，建议只采集一个step的性能数据。支持扩展参数请参见[算子比对高级参数](#434-算子比对高级参数)。 | 是 | 否 |
+| --enable_communication_compare | 可选 | 开启通信性能比对。 | 是 | 是 |
+| --enable_memory_compare | 可选 | 开启算子内存比对。该开关较耗时，建议只采集一个step的性能数据。 | 是 | 否 |
+| --enable_kernel_compare | 可选 | 开启kernel性能比对。仅针对NPU与NPU比对的场景。支持扩展参数请参见[kernel比对高级参数](#435-kernel比对高级参数)。 | 是 | 是 |
+| --enable_api_compare | 可选 | 开启API性能比对。需要使用性能数据中的trace_view.json文件。 | 是 | 否 |
 
 #### 4.3.4 算子比对高级参数
 
@@ -303,11 +305,11 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 | 参数 | 可选/必选 | 说明 |
 | --- | --- | --- |
-| `--gpu_flow_cat` | 可选 | 配置GPU trace中CPU侧算子与device kernel的连线标识，当GPU的Device Duration(us)均为0时设置。使用chrome://tracing打开GPU的json，在右上角Flow events找到连线标识，将标识配置进该参数。使用示例：`--gpu_flow_cat=async_gpu`。 |
-| `--use_input_shape` | 可选 | 开启算子精准匹配，默认关闭。使用示例：`--use_input_shape`。 |
-| `--max_kernel_num` | 可选 | 设置CPU侧算子下发的最大kernel数量，当超过设定值时工具会自动往下找子算子，直至满足条件。默认仅比对最上层算子，粒度较粗；若想要更细粒度的算子比对，可设置该参数，参数值需大于3，最小可配置为4，参数值设置越小，比对粒度越细。使用示例：`--max_kernel_num=10`。 |
-| `--op_name_map` | 可选 | 设置GPU与NPU等价的算子名称的映射关系，以字典形式存入。使用示例：`--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`。 |
-| `--disable_module` | 可选 | 算子性能比对。当前配置该参数时，无论是否采集module信息，均进行算子级别的比对。 |
+| --gpu_flow_cat | 可选 | 配置GPU trace中CPU侧算子与device kernel的连线标识，当GPU的Device Duration(us)均为0时设置。使用chrome://tracing打开GPU的json，在右上角Flow events找到连线标识，将标识配置进该参数。使用示例：`--gpu_flow_cat=async_gpu`。 |
+| --use_input_shape | 可选 | 开启算子精准匹配，默认关闭。使用示例：`--use_input_shape`。 |
+| --max_kernel_num | 可选 | 设置CPU侧算子下发的最大kernel数量，当超过设定值时工具会自动往下找子算子，直至满足条件。默认仅比对最上层算子，粒度较粗；若想要更细粒度的算子比对，可设置该参数，参数值需大于3，最小可配置为4，参数值设置越小，比对粒度越细。使用示例：`--max_kernel_num=10`。 |
+| --op_name_map | 可选 | 设置GPU与NPU等价的算子名称的映射关系，以字典形式存入。使用示例：`--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`。 |
+| --disable_module | 可选 | 算子性能比对。当前配置该参数时，无论是否采集module信息，均进行算子级别的比对。 |
 
 #### 4.3.5 kernel比对高级参数
 
@@ -315,14 +317,14 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 | 参数 | 可选/必选 | 说明 |
 | --- | --- | --- |
-| `--use_kernel_type` | 可选 | kernel比对模式。配置该开关时，使用op_statistic.csv进行比对，输出简化结果并减少比对时间；不配置该开关时，默认使用kernel_details.csv进行比对，输出完整结果。使用示例：`--use_kernel_type`。 |
+| --use_kernel_type | 可选 | kernel比对模式。配置该开关时，使用op_statistic.csv进行比对，输出简化结果并减少比对时间；不配置该开关时，默认使用kernel_details.csv进行比对，输出完整结果。使用示例：`--use_kernel_type`。 |
 
 #### 4.3.6 执行辅助参数
 
 | 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
-| `--force` | 可选 | 强制执行compare。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行；csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 | 是 | 是 |
-| `--debug` | 可选 | 工具执行报错时可打开此开关，日志将输出DEBUG级别信息，便于定位问题。配置该参数表示开启Debug，默认未配置表示关闭。 | 是 | 是 |
+| --force | 可选 | 强制执行compare。配置后可强制跳过如下情况：指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行；csv文件大于5GB、json文件大于10GB、db文件大于8GB，忽略文件过大判断直接执行。配置该参数表示开启强制执行，默认未配置表示关闭。 | 是 | 是 |
+| --debug | 可选 | 工具执行报错时可打开此开关，日志将输出DEBUG级别信息，便于定位问题。配置该参数表示开启Debug，默认未配置表示关闭。 | 是 | 是 |
 | `-h`或`--help` | 可选 | 在需要查询当前命令附属子命令或相关参数时，给出帮助建议。 | 是 | 是 |
 
 ### 4.4 使用示例
@@ -363,7 +365,7 @@ python performance_compare.py ./benchmark_profiling_path ./profiling_path --outp
 
 上图中为compare_config.ini文件当前的默认配置，即默认进行如上类型算子的性能比对。
 
-其中FA_MASK、CONV_MASK、MATMUL_MASK为GPU和NPU共有的上层应用operator的识别关键词，CUBE_MASK为底层GPU kernel cube识别的关键词，TRANS_MASK为底层NPU转换类kernel识别的关键词。
+其中FA_MASK、CONV_MASK、MATMUL_MASK为GPU和NPU共有的上层应用算子的识别关键词，CUBE_MASK为底层GPU kernel cube识别的关键词，TRANS_MASK为底层NPU转换类kernel识别的关键词。
 
 比对结果分为打印输出和performance_comparison_result_{timestamp}.xlsx两种形式输出，其中打印输出为概要信息，xlsx文件保存详细结果。
 
@@ -430,14 +432,14 @@ Index列完整字段说明：
 |                              |                                                | Matmul (Vector)                     | Matmul算子下发的所有Vector类Kernel，一般为插入的转换类算子，如TransData。                                                                                                                                      |
 |                              | Paged Attention                                |                                     | Paged Attention算子。                                                                                                                                                                      |
 |                              | Vector                                         |                                     | Vector算子。                                                                                                                                                                               |
-|                              |                                                | Vector (Trans)                      | 转换类Vector算子，主要包含Cast、Transpose、TransData算子。（仅针对NPU数据）                                                                                                                                   |
+|                              |                                                | Vector (Trans)                      | 转换类Vector算子，主要包含Cast、Transpose、TransData算子（仅针对NPU数据）。                                                                                                                                   |
 |                              |                                                | Vector ( No Trans)                  | 非转换类Vector算子。                                                                                                                                                                           |
 |                              | Cube                                           |                                     | 未识别出Flash Attention、Conv和Matmul的Cube算子。                                                                                                                                                 |
 |                              | SDMA (Tensor Move)                             |                                     | 拷贝类任务。                                                                                                                                                                                  |
 |                              | Other                                          |                                     | AICPU、DSA等其他算子。                                                                                                                                                                         |
 | Uncovered Communication Time |                                                |                                     | 通信未掩盖耗时，包含卡间等待时间。                                                                                                                                                                       |
 |                              | {group_name}: Group group_name_* Communication |                                     | 通信域，格式为：`{通信域名}: Group group_name_* Communication`，*表示通信域的编号。                                                                                                                           |
-|                              |                                                | Wait                                | 卡间同步等待耗时。（仅针对NPU数据）                                                                                                                                                                     |
+|                              |                                                | Wait                                | 卡间同步等待耗时（仅针对NPU数据）。                                                                                                                                                                     |
 |                              |                                                | Transmit                            | 通信传输耗时。                                                                                                                                                                                 |
 |                              | Uncovered Communication Overlapped             |                                     | 两个通信域之间的未被计算掩盖的并行耗时。                                                                                                                                                                    |
 |                              |                                                | {group_name} & {group_name}         | 两个通信域，比如tp & pp，表示tp域和pp域未被计算掩盖的并行耗时。                                                                                                                                                   |
@@ -580,7 +582,7 @@ ModuleCompare字段说明：
 
 按照Kernel Type（Kernel类型）和Input Shapes（输入Shape）分组统计，统计信息包括：
 
-- Total Duration(us)：总耗时，单位us。
+- Total Duration(us)：总耗时，单位μs。
 - Avg Duration(us)：平均耗时，单位us。
 - Max Duration(us)：最大耗时，单位us。
 - Min Duration(us)：最小耗时，单位us。
@@ -600,7 +602,7 @@ ModuleCompare字段说明：
 
 API比对结果在performance_comparison_result_*.xlsx中ApiCompare页呈现。
 
-按照api name（API名称）组统计，统计信息包括：
+按照api name（API名称）分组统计，统计信息包括：
 
 - Total Duration(ms)：总耗时，单位ms。
 - Self Time(ms)：Self耗时（排除掉子event），单位ms。

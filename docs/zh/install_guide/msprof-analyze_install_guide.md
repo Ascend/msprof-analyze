@@ -1,5 +1,6 @@
 # msprof-analyze 安装指南
 
+本文档介绍msprof-analyze工具在Python环境下的三种安装方式（在线安装、离线安装、源码安装），并给出安装验证、卸载与升级的操作步骤，适用于需要安装msprof-analyze进行性能分析的开发者。
 ## 1. 安装说明
 
 本工具支持[在线安装](#21-在线安装)、[离线安装](#22-离线安装)、[源码安装](#23-源码安装)三种安装方式，请根据您的实际环境选择最合适的方案。
@@ -20,7 +21,7 @@ pip install msprof-analyze
 
 如不清楚版本号可不指定，使用最新程序包。
 
-**pip**命令会自动安装最新的包及其配套依赖。
+`pip`命令会自动安装最新的包及其配套依赖。
 
 提示如下信息则表示安装成功。
 
@@ -36,7 +37,7 @@ Successfully installed msprof-analyze-{version}
 
 2. 验证whl包的完整性。
 
-   1. 在whl包所在目录执行如下命令获取whl软件包的sha256校验码。
+   1. 在whl包所在目录执行如下命令获取whl软件包的SHA256校验码。
 
       ```bash
       sha256sum {name}.whl
@@ -48,9 +49,9 @@ Successfully installed msprof-analyze-{version}
       {sha256} {name}.whl
       ```
 
-   2. 用记事本打开数字签名文件查看sha256校验码。
+   2. 用记事本打开数字签名文件查看SHA256校验码。
 
-   3. 比对两个文件的sha256校验码是否一致。
+   3. 比对两个文件的SHA256校验码是否一致。
 
       若两个校验码一致，则表示下载了正确的软件包；若不一致，请不要使用该软件包，如需支持与服务，请在论坛求助或提交技术工单。
 
@@ -114,7 +115,7 @@ python3 build.py test
 
 #### 2.3.4 安装
 
-执行如下命令进行性能工具安装。
+执行如下命令进行msprof-analyze工具安装。
 
 ```bash
 pip3 install ./artifacts/msprof_analyze-{version}-py3-none-any.whl
