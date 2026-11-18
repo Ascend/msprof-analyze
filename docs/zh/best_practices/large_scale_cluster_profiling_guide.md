@@ -11,7 +11,7 @@
 | 阶段 | 操作 | 说明                                                                                        |
 | --- | --- |-------------------------------------------------------------------------------------------|
 | 数据采集 | 使用 `torch_npu.profiler` 静态或动态采集并导出 DB | 各目标 rank 采集相同的训练迭代区间，例如连续两个 Step。采用 Level0 和精简配置控制采集开销，仅导出 DB 可减少额外 text 文件的生成、存储及后续处理负担。 |
-| 数据汇总 | 收集各节点产物并保留目录层级 | 采集完成的性能数据分别保存在集群各节点本地路径上时，需要将每个节点的数据拷贝到同一目录下，方便 `maprof-analyze` 工具统一执行分析。                |
+| 数据汇总 | 收集各节点产物并保留目录层级 | 采集完成的性能数据分别保存在集群各节点本地路径上时，需要将每个节点的数据拷贝到同一目录下，方便 `msprof-analyze` 工具统一执行分析。                |
 | 数据分析 | 执行 `msprof-analyze cluster -m all` | 汇总迭代耗时、通信域和通信耗时，输出到 `cluster_analysis_output`。                                            |
 | 问题定位 | 使用 MindStudio Insight 加载集群结果 | 导入集群结果，查看不同卡上的耗时分布，及同一通信域内的通信算子耗时缩略图，找到慢卡的候选，确定后续深挖范围。                                    |
 
@@ -31,8 +31,8 @@
 | 采集等级             | `Level0`                                                                            | 首轮采集集群耗时概览及可用的通信整体耗时                                                       |
 | 数据精简开关           | `data_simplification=True`                                                          | 导出后精简采集文件，实际保留项以当前版本产物为准                                                   |
 | 数据导出格式           | `export_type=[torch_npu.profiler.ExportType.Db]`                                    | DB 格式文件占用更小的存储空间，数据解析、分析效率更高                                               |
-| 采集事件             | `activities=[npu_profiler.ProfilerActivity.CPU, npu_profiler.ProfilerActivity.NPU]` | 采集框架和设备侧事件                                                                 |
-| AI Core 性能指标（PM） | `aic_metrics=AiCMetrics.AiCoreNone`，`l2_cache=False`                                | 关闭性能计数器和 L2 Cache 指标采集                                                     |
+| 采集事件             | `activities=[torch_npu.profiler.ProfilerActivity.CPU, torch_npu.profiler.ProfilerActivity.NPU]` | 采集框架和设备侧事件                                                                 |
+| AI Core 性能指标（PM） | `aic_metrics=torch_npu.profiler.AiCMetrics.AiCoreNone`，`l2_cache=False`                                | 关闭性能计数器和 L2 Cache 指标采集                                                     |
 | 其他配置             | `with_stack=False`，`profile_memory=False`，`record_shapes=False`                     | 关闭调用栈、内存、框架层的Shape采集，减小性能膨胀和文件大小                                           |
 
 以上参数为`torch_npu.profiler`系列接口参数，详细介绍请参见[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)。
