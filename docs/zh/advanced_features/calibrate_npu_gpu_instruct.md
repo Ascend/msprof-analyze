@@ -64,7 +64,7 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
 
    对于 NPU（Ascend）平台，需要使用 PyTorch Profiler 采集性能数据，并确保开启 `mstx` 打点功能，具体请参见《[Ascend PyTorch调优工具](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/ascend_pytorch_profiler_user_guide.md)》。
 
-   以下脚本展示如何采集 vLLM 推理的 NPU 性能数据，执行以下脚本前，须先完成[vllm bench latency 脚本修改](#51-vllm-bench-latency-脚本修改)。
+   以下脚本展示如何采集 vLLM 推理的 NPU 性能数据，执行以下脚本前，须先完成[vllm bench latency 脚本修改](#51-vllm-bench-latency脚本修改)。
 
    ```bash
    #!/bin/bash
@@ -103,7 +103,7 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
    * **打点配置**：需修改vLLM-Ascend代码，在 `experimental_config` 中设置 `mstx=True` 和 `export_type=['text', 'db']`。
    * **eager模式**：当前只支持eager模式，请使用 `--enforce-eager` 确保算子逐条执行。
 
-3. 数据文件要求
+4. 数据文件要求
 
    确保采集到的性能数据文件满足以下要求：
 
