@@ -1,0 +1,223 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  event:
+    description: Query memory events with flexible field filters
+    devices:
+      - all
+    parameters:
+      stack_bytes:
+        type: int
+        default: -1
+        required: false
+        description: "Opt-in UTF-8 byte budget per callstack text (0 for identity only; negative for unchanged full output). Not a JSON byte cap or token budget. Summary fields are present only when enabled."
+      id:
+        type: int
+        default: null
+        required: false
+        description: Event ID (negative = pre-snapshot synthetic events)
+      min_id:
+        type: int
+        default: null
+        required: false
+        description: Minimum event ID (start of range)
+      max_id:
+        type: int
+        default: null
+        required: false
+        description: Maximum event ID (end of range)
+      action:
+        type: int
+        default: null
+        required: false
+        description: Action type (0=segment_map, 1=segment_unmap, 2=segment_alloc, 3=segment_free, 4=alloc, 5=free_requested, 6=free_completed, 7=workspace_snapshot)
+      address:
+        type: int
+        default: null
+        required: false
+        description: Memory address
+      size:
+        type: int
+        default: null
+        required: false
+        description: Allocation size in bytes
+      stream:
+        type: int
+        default: null
+        required: false
+        description: CUDA/CANN stream ID
+      min_allocated:
+        type: int
+        default: null
+        required: false
+        description: Minimum total allocated bytes
+      min_active:
+        type: int
+        default: null
+        required: false
+        description: Minimum total active bytes
+      min_reserved:
+        type: int
+        default: null
+        required: false
+        description: Minimum memory pool reserved bytes
+      order_by:
+        type: str
+        default: "id"
+        required: false
+        choices: [id, action, address, size, stream, allocated, active, reserved, callstack]
+        description: Column to order by
+      order_dir:
+        type: str
+        default: "ASC"
+        required: false
+        choices: [ASC, DESC]
+        description: Sort direction (ASC or DESC)
+      limit:
+        type: int
+        default: -1
+        required: false
+        description: Maximum rows to return (-1 for unlimited)
+      offset:
+        type: int
+        default: 0
+        required: false
+        description: Number of rows to skip
+    query_variants:
+      v1: |
+        SELECT
+          id,
+          action,
+          address,
+          size,
+          stream,
+          allocated,
+          active,
+          reserved,
+          callstack
+          {% if stack_bytes >= 0 %}
+          , NULL AS stack_id,
+          CASE WHEN NULLIF(callstack, '') IS NULL THEN 'missing' ELSE 'captured' END AS stack_kind,
+          CASE WHEN NULLIF(callstack, '') IS NOT NULL THEN id END AS stack_event_id
+          {% endif %}
+        FROM {{ device_trace_table }}
+        WHERE 1=1
+          {% if id is not none %}AND id = {{ id }}{% endif %}
+          {% if min_id is not none %}AND id >= {{ min_id }}{% endif %}
+          {% if max_id is not none %}AND id <= {{ max_id }}{% endif %}
+          {% if action is not none %}AND action = {{ action }}{% endif %}
+          {% if address is not none %}AND address = {{ address }}{% endif %}
+          {% if size is not none %}AND size = {{ size }}{% endif %}
+          {% if stream is not none %}AND stream = {{ stream }}{% endif %}
+          {% if min_allocated is not none %}AND allocated >= {{ min_allocated }}{% endif %}
+          {% if min_active is not none %}AND active >= {{ min_active }}{% endif %}
+          {% if min_reserved is not none %}AND reserved >= {{ min_reserved }}{% endif %}
+        ORDER BY {{ order_by }} {{ order_dir }}{% if order_by != 'id' %}, id {{ order_dir }}{% endif %}
+        LIMIT {{ limit }}
+        {% if offset > 0 %}OFFSET {{ offset }}{% endif %}
+      v2: |
+        SELECT
+          id,
+          action,
+          address,
+          size,
+          stream,
+          allocated,
+          active,
+          reserved,
+          (
+            SELECT callstack FROM callstack
+            WHERE callstack.id = {{ device_trace_table }}.callstackId
+          ) AS callstack
+          {% if stack_bytes >= 0 %}
+          , callstackId AS stack_id,
+          CASE WHEN NULLIF((SELECT callstack FROM callstack WHERE callstack.id = {{ device_trace_table }}.callstackId), '') IS NULL THEN 'missing' ELSE 'captured' END AS stack_kind,
+          id AS stack_event_id
+          {% endif %}
+        FROM {{ device_trace_table }}
+        WHERE 1=1
+          {% if id is not none %}AND id = {{ id }}{% endif %}
+          {% if min_id is not none %}AND id >= {{ min_id }}{% endif %}
+          {% if max_id is not none %}AND id <= {{ max_id }}{% endif %}
+          {% if action is not none %}AND action = {{ action }}{% endif %}
+          {% if address is not none %}AND address = {{ address }}{% endif %}
+          {% if size is not none %}AND size = {{ size }}{% endif %}
+          {% if stream is not none %}AND stream = {{ stream }}{% endif %}
+          {% if min_allocated is not none %}AND allocated >= {{ min_allocated }}{% endif %}
+          {% if min_active is not none %}AND active >= {{ min_active }}{% endif %}
+          {% if min_reserved is not none %}AND reserved >= {{ min_reserved }}{% endif %}
+        ORDER BY {{ order_by }} {{ order_dir }}{% if order_by != 'id' %}, id {{ order_dir }}{% endif %}
+        LIMIT {{ limit }}
+        {% if offset > 0 %}OFFSET {{ offset }}{% endif %}
+    output_schema:
+      - column: source_stack_id
+        type: str
+        interpretation_limits: ["Dataset only with stack_bytes>=0 or recognized ordered-frame declaration: full generation/device/canonical text identity for both layouts, or exact raw ordered-frame identity when covered; source owner/local IDs are provenance, not grouping keys; never merge by shortened text or bare local IDs."]
+      - column: text_kind
+        type: str
+        interpretation_limits: ["Dataset source detail only: captured or missing formatted text. Independent of captured ordered raw frames; text availability never changes raw-array identity."]
+      - column: frames
+        type: list
+        interpretation_limits: ["Dataset only with stack_bytes>=0 or recognized ordered-frame declaration: ordered raw JSON objects preserving duplicates, only for explicit recognized version/schema/per-event coverage; NULL is text-only/uncovered, not reconstructed from formatted text."]
+      - column: frames_status
+        type: str
+        interpretation_limits: ["Dataset only with stack_bytes>=0 or recognized ordered-frame declaration: ordered or text_only; scope.source_coverage covers returned_events separately from result truncation."]
+      - column: id
+        type: int
+      - column: action
+        type: int
+      - column: address
+        type: hex
+      - column: size
+        type: int
+      - column: stream
+        type: int
+      - column: allocated
+        type: int
+      - column: active
+        type: int
+      - column: reserved
+        type: int
+      - column: callstack
+        type: str
+      - column: stack_id
+        type: str
+        interpretation_limits:
+          - "Opt-in stack_bytes >= 0 only. Database/device-scoped identity: v1 full-text SHA-256, v2 callstackId, or a distinct category identity for missing attribution. Never merge by shortened callstack text."
+      - column: stack_kind
+        type: str
+        interpretation_limits:
+          - "Opt-in only: captured or missing. Empty/NULL or absent joined stacks are missing; whitespace and literal synthetic-looking labels remain captured."
+      - column: stack_event_id
+        type: int
+        interpretation_limits:
+          - "Opt-in only. Retrieve full captured text with event(id=stack_event_id), omitting stack_bytes, on the same database/device."
+      - column: stack_bytes
+        type: int
+        units: bytes
+        interpretation_limits:
+          - "Opt-in only. Effective UTF-8 byte budget per callstack value, excluding JSON escaping and metadata; not a whole-response cap or model-token count."
+      - column: stack_original_bytes
+        type: int
+        units: bytes
+        interpretation_limits:
+          - "Opt-in only. Original UTF-8 callstack text length before shortening."
+      - column: stack_truncated
+        type: bool
+        interpretation_limits:
+          - "Opt-in only. Text was shortened; independent of result truncated/has_more/total_is_exact, which describe evidence rows."

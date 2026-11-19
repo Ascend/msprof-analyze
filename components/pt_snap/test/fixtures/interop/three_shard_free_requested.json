@@ -1,0 +1,82 @@
+{
+  "segments": [
+    {
+      "address": 4096,
+      "total_size": 64,
+      "stream": 7,
+      "segment_type": "small",
+      "allocated_size": 0,
+      "active_size": 0,
+      "device": 0,
+      "is_expandable": false,
+      "frames": [],
+      "blocks": [
+        {
+          "address": 4096,
+          "size": 64,
+          "requested_size": 0,
+          "state": "inactive",
+          "frames": []
+        }
+      ]
+    }
+  ],
+  "device_traces": [
+    [
+      {
+        "action": "alloc",
+        "addr": 4096,
+        "size": 16,
+        "stream": 7,
+        "frames": [
+          {
+            "filename": "synthetic_lifecycle.py",
+            "line": 10,
+            "name": "alloc"
+          },
+          {
+            "filename": "synthetic_entry.py",
+            "line": 1,
+            "name": "fixture"
+          }
+        ]
+      },
+      {
+        "action": "free_requested",
+        "addr": 4096,
+        "size": 16,
+        "stream": 7,
+        "frames": [
+          {
+            "filename": "synthetic_lifecycle.py",
+            "line": 11,
+            "name": "free_requested"
+          },
+          {
+            "filename": "synthetic_entry.py",
+            "line": 1,
+            "name": "fixture"
+          }
+        ]
+      },
+      {
+        "action": "free_completed",
+        "addr": 4096,
+        "size": 16,
+        "stream": 7,
+        "frames": [
+          {
+            "filename": "synthetic_lifecycle.py",
+            "line": 12,
+            "name": "free_completed"
+          },
+          {
+            "filename": "synthetic_entry.py",
+            "line": 1,
+            "name": "fixture"
+          }
+        ]
+      }
+    ]
+  ]
+}

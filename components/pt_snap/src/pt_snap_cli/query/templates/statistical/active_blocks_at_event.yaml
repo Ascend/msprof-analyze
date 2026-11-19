@@ -1,0 +1,130 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  active_blocks_at_event:
+    description: Query memory blocks that are active at a specific trace event
+    devices:
+      - all
+    parameters:
+      event_id:
+        type: int
+        required: true
+        description: Trace event ID used as the point-in-time lifecycle boundary
+      include_static:
+        type: bool
+        default: true
+        required: false
+        description: Include blocks without a captured allocation event (static and preexisting-live blocks)
+      min_size:
+        type: int
+        default: 0
+        required: false
+        description: Minimum block size in bytes
+      order_by:
+        type: str
+        default: "size"
+        required: false
+        choices: [size, requestedSize, allocEventId, freeEventId, id]
+        description: Sort key (size, requestedSize, allocEventId, freeEventId, id)
+      order_dir:
+        type: str
+        default: "DESC"
+        required: false
+        choices: [ASC, DESC]
+        description: Sort direction (ASC or DESC)
+      limit:
+        type: int
+        default: -1
+        required: false
+        description: Maximum rows to return (-1 for unlimited)
+      offset:
+        type: int
+        default: 0
+        required: false
+        description: Number of rows to skip
+    query: |
+      WITH active_blocks AS (
+        SELECT
+          id,
+          address,
+          size,
+          requestedSize,
+          state,
+          allocEventId,
+          freeEventId,
+          CASE
+            WHEN allocEventId = -1 AND freeEventId = -1 THEN 'static'
+            WHEN allocEventId = -1 AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }}) THEN 'preexisting_live_at_event'
+            ELSE 'dynamic_live_at_event'
+          END AS category
+        FROM {{ device_block_table }}
+        WHERE size >= {{ min_size|int }}
+          AND (
+            {% if include_static %}(allocEventId = -1 AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }})) OR{% endif %}
+            (allocEventId != -1 AND allocEventId <= {{ event_id|int }} AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }}))
+          )
+      )
+      SELECT *
+      FROM active_blocks
+      ORDER BY
+        {% if order_by == 'requestedSize' %}requestedSize
+        {% elif order_by == 'allocEventId' %}allocEventId
+        {% elif order_by == 'freeEventId' %}freeEventId
+        {% elif order_by == 'id' %}id
+        {% else %}size
+        {% endif %}
+        {% if order_dir|upper == 'ASC' %}ASC{% else %}DESC{% endif %}, id ASC
+      LIMIT {{ limit|int }}
+      {% if offset > 0 %}OFFSET {{ offset|int }}{% endif %}
+    interpretation_limits:
+      - "Dataset point-event queries prove alloc/free coverage for all filtered blocks before paging, then hydrate returned details; scope.source_coverage is separate from row truncation. Stored state is a slice observation, not necessarily state at the target event."
+    output_schema:
+      - column: lifecycle_id
+        type: str
+        interpretation_limits: ["Dataset only: generation/device/original alloc-event or stable negative lifetime identity; never address identity."]
+      - column: state_scope
+        type: str
+        interpretation_limits: ["Dataset only: slice_observation; state is not reconstructed at the requested event."]
+      - column: allocation_source
+        type: object
+        interpretation_limits: ["Dataset only: resolved original event, owning slice, full stack identity and optional covered ordered frames; NULL for unknown/preexisting or missing proof."]
+      - column: free_source
+        type: object
+        interpretation_limits: ["Dataset only: completed-free source, never free_requested; NULL for live/unknown or missing proof."]
+      - column: allocation_source_status
+        type: str
+        interpretation_limits: ["Dataset only: resolved, unknown_preexisting or missing; missing dynamic sources retain bytes/category."]
+      - column: free_source_status
+        type: str
+        interpretation_limits: ["Dataset only: resolved, live_or_unknown or missing; no recorded free does not prove a leak."]
+      - column: id
+        type: int
+      - column: address
+        type: int
+      - column: size
+        type: int
+      - column: requestedSize
+        type: int
+      - column: state
+        type: int
+      - column: allocEventId
+        type: int
+      - column: freeEventId
+        type: int
+      - column: category
+        type: str

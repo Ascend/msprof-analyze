@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "status": "complete",
+  "sourceFile": "/tmp/pt-snap-249-reviewed-fixture/three_shard_free_requested.pkl",
+  "cacheHash": "70f880e2ced8dfe4d34f6ee77f43a3969da1c07826a35243271bb02e46ce368a",
+  "eventsPerSlice": 1,
+  "devices": {
+    "0": {
+      "eventCount": 3,
+      "sliceCount": 3,
+      "readySlices": [
+        0,
+        1,
+        2
+      ],
+      "slices": [
+        {
+          "index": 0,
+          "startEventId": 0,
+          "endEventId": 0,
+          "file": "device_0/slice_00000.db",
+          "ready": true
+        },
+        {
+          "index": 1,
+          "startEventId": 1,
+          "endEventId": 1,
+          "file": "device_0/slice_00001.db",
+          "ready": true
+        },
+        {
+          "index": 2,
+          "startEventId": 2,
+          "endEventId": 2,
+          "file": "device_0/slice_00002.db",
+          "ready": true
+        }
+      ]
+    }
+  },
+  "ptSnap": {
+    "identity": {
+      "sourceSha256": "3c9513c7a8dca98d589cd82fc90ef7e177eec70b57887a1601b601f418a79f1f",
+      "requestedDevice": 0,
+      "eventsPerSlice": 1,
+      "outputFormat": "compatibility-v1",
+      "manifestContractVersion": 1,
+      "exportContractVersion": 1,
+      "referenceContractVersion": 1,
+      "metadataSchemaVersion": 1,
+      "importFormatVersion": 1,
+      "targetRevision": "101f65b877a267ffd5f66ea3834706057ba243e5"
+    },
+    "metadata": {
+      "metadata_schema_version": 1,
+      "import_format_version": 1,
+      "source_sha256": "3c9513c7a8dca98d589cd82fc90ef7e177eec70b57887a1601b601f418a79f1f",
+      "source_size": 695,
+      "source_name": "three_shard_free_requested.pkl",
+      "requested_device": 0,
+      "importer_name": "pt-snap-cli",
+      "importer_version": "0.4.0.post1.dev49",
+      "completed_at": "2026-10-11T13:37:54.547672+00:00"
+    },
+    "omittedDevices": [],
+    "members": {
+      "device_0/slice_00000.db": "51bc6b5892c2118d9501744a983bd8fe3733446b8ac064d378bfbf3890f240ef",
+      "device_0/slice_00001.db": "a6afbd48523c489452e1f6e2c6d8eaba4af655a686cbc9343c4ccb56a497c82b",
+      "device_0/slice_00002.db": "58743c54ff808ee66a461f4e0b78ab60ff020e8291e275e98e2bfcd2877e61f6"
+    }
+  }
+}

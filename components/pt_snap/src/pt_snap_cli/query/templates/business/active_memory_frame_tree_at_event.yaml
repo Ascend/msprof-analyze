@@ -1,0 +1,161 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  active_memory_frame_tree_at_event:
+    description: Decompose live memory after an event into a caller-first frame tree
+    semantics_version: 2
+    interpretation_limits:
+      - "Standalone databases require structured frame tables from import_format_version >= 3. Datasets resolve original allocation events across shards using ptSnapOrderedFrames version 1 or 2; absent, unknown or corrupt evidence contributes to missing stacks without reconstructing frames from text. Re-import to capture ordered frames."
+      - "Dataset frame_id is query-local; node_id identifies the full ordered path of filename/line/name triples. Shard-local IDs and display text are never cross-shard grouping keys. scope.source_coverage reports frame completeness separately from result row completeness."
+      - "Uses allocation stacks of blocks live after event_id: allocEventId <= event_id and freeEventId > event_id (or absent). freeEventId is free_completed, so pending-free memory remains included."
+      - "Traversal reverses the original innermost-first frame array. Node identity is the whole ordered caller path, preserving recursion and separating identical frames under different callers."
+      - "size_bytes includes descendant occupancy; self_bytes counts only allocations ending at this node. size_bytes = self_bytes + sum(direct child size_bytes). Do not sum inclusive bytes across depths."
+      - "Root totals and percentages cover every selected live block before any caller-side row cap. There is no top_n pruning. A truncated query is not a complete tree."
+      - "Static, preexisting, known-empty and missing/corrupt stacks remain separate synthetic leaves. This is active-block occupancy, not reserved memory or allocation traffic. Event IDs are ordering markers, not elapsed time."
+    parameters:
+      event_id:
+        type: int
+        required: true
+        description: Point in time after this trace event
+      include_static:
+        type: bool
+        default: true
+        description: Include static and preexisting live blocks as synthetic leaves
+      min_size:
+        type: int
+        default: 0
+        description: Minimum individual live block size in bytes
+    query: |
+      WITH RECURSIVE active_blocks AS (
+        SELECT b.size, COALESCE(b.requestedSize, 0) AS requested_size,
+               CASE WHEN b.allocEventId = -1 AND b.freeEventId = -1 THEN 'static'
+                    WHEN b.allocEventId = -1 THEN 'preexisting_live_at_event'
+                    ELSE 'dynamic_live_at_event' END AS category,
+               t.callstackId AS stack_id
+        FROM {{ device_block_table }} b
+        LEFT JOIN {{ device_trace_table }} t ON t.id = b.allocEventId
+        WHERE b.size >= {{ min_size|int }}
+          AND (b.freeEventId IS NULL OR b.freeEventId < 0 OR b.freeEventId > {{ event_id|int }})
+          AND (
+            {% if include_static %}b.allocEventId = -1 OR{% endif %}
+            (b.allocEventId != -1 AND b.allocEventId <= {{ event_id|int }})
+          )
+      ), stack_shape AS (
+        SELECT m.callstackId, m.frameCount - 1 AS last_position
+        FROM callstack_frame_manifest m
+        JOIN callstack cs ON cs.id = m.callstackId
+        LEFT JOIN callstack_frame cf ON cf.callstackId = m.callstackId
+        LEFT JOIN frame f ON f.id = cf.frameId
+        GROUP BY m.callstackId
+        HAVING typeof(m.callstackId) = 'integer'
+           AND typeof(m.frameCount) = 'integer' AND m.frameCount >= 0
+           AND COUNT(cf.callstackId) = m.frameCount
+           AND (m.frameCount = 0 OR (
+             MIN(cf.position) = 0 AND MAX(cf.position) = m.frameCount - 1
+             AND COUNT(DISTINCT cf.position) = m.frameCount
+             AND SUM(CASE WHEN typeof(cf.position) = 'integer'
+               AND typeof(cf.frameId) = 'integer' AND typeof(f.id) = 'integer'
+               AND typeof(f.filename) = 'text' AND typeof(f.line) = 'integer'
+               AND typeof(f.name) = 'text' THEN 1 ELSE 0 END) = m.frameCount
+           ))
+      ), groups AS (
+        SELECT CASE WHEN b.category = 'dynamic_live_at_event' AND s.last_position = -1
+                    THEN 'empty_callstack' ELSE b.category END AS category,
+               CASE WHEN s.last_position >= 0 THEN b.stack_id END AS stack_id,
+               s.last_position,
+               COUNT(*) AS block_count, SUM(b.size) AS size_bytes,
+               SUM(b.requested_size) AS requested_bytes
+        FROM active_blocks b
+        LEFT JOIN stack_shape s ON s.callstackId = b.stack_id
+          AND b.category = 'dynamic_live_at_event'
+        GROUP BY CASE WHEN b.category = 'dynamic_live_at_event' AND s.last_position = -1
+                      THEN 'empty_callstack' ELSE b.category END,
+                 CASE WHEN s.last_position >= 0 THEN b.stack_id END
+      ), paths AS (
+        SELECT g.stack_id, cf.position, cf.frameId AS frame_id,
+               'frame/' || cf.frameId AS node_id, 'root' AS parent_id, 1 AS depth,
+               g.block_count, g.size_bytes, g.requested_bytes
+        FROM groups g
+        JOIN callstack_frame cf ON cf.callstackId = g.stack_id
+          AND cf.position = g.last_position
+        UNION ALL
+        SELECT p.stack_id, cf.position, cf.frameId,
+               p.node_id || '/' || cf.frameId, p.node_id, p.depth + 1,
+               p.block_count, p.size_bytes, p.requested_bytes
+        FROM paths p
+        JOIN callstack_frame cf ON cf.callstackId = p.stack_id
+          AND cf.position = p.position - 1
+      ), nodes AS (
+        SELECT 'root' AS node_id, NULL AS parent_id, 0 AS depth, NULL AS frame_id,
+               'mixed' AS category, '[all active blocks]' AS label,
+               COALESCE(SUM(block_count), 0) AS block_count,
+               COALESCE(SUM(size_bytes), 0) AS size_bytes,
+               COALESCE(SUM(requested_bytes), 0) AS requested_bytes,
+               0 AS self_block_count, 0 AS self_bytes, 0 AS self_requested_bytes
+        FROM groups
+        UNION ALL
+        SELECT p.node_id, p.parent_id, p.depth, p.frame_id,
+               'dynamic_live_at_event', f.filename || ':' || f.line || ' ' || f.name,
+               SUM(p.block_count), SUM(p.size_bytes), SUM(p.requested_bytes),
+               SUM(CASE WHEN p.position = 0 THEN p.block_count ELSE 0 END),
+               SUM(CASE WHEN p.position = 0 THEN p.size_bytes ELSE 0 END),
+               SUM(CASE WHEN p.position = 0 THEN p.requested_bytes ELSE 0 END)
+        FROM paths p JOIN frame f ON f.id = p.frame_id
+        GROUP BY p.node_id
+        UNION ALL
+        SELECT CASE WHEN category = 'dynamic_live_at_event' THEN 'missing' ELSE category END,
+               'root', 1, NULL, category,
+               CASE WHEN category = 'static' THEN '[static]'
+                    WHEN category = 'preexisting_live_at_event' THEN '[preexisting live]'
+                    WHEN category = 'empty_callstack' THEN '[empty captured callstack]'
+                    ELSE '[missing callstack]' END,
+               block_count, size_bytes, requested_bytes,
+               block_count, size_bytes, requested_bytes
+        FROM groups WHERE stack_id IS NULL
+      )
+      SELECT n.node_id, n.parent_id, n.depth, n.frame_id, n.category, n.label,
+             f.filename, f.line, f.name,
+             n.block_count, n.size_bytes, n.requested_bytes,
+             n.self_block_count, n.self_bytes, n.self_requested_bytes,
+             ROUND(n.size_bytes * 100.0 / NULLIF(r.size_bytes, 0), 4) AS percent_of_total
+      FROM nodes n
+      LEFT JOIN frame f ON f.id = n.frame_id
+      CROSS JOIN nodes r
+      WHERE r.node_id = 'root'
+      ORDER BY n.depth ASC, n.parent_id ASC, n.size_bytes DESC, n.node_id ASC
+    output_schema:
+      - {column: node_id, type: str, metric_semantics: identifier}
+      - {column: parent_id, type: str, metric_semantics: identifier}
+      - {column: depth, type: int, units: count}
+      - {column: frame_id, type: int, metric_semantics: identifier}
+      - {column: category, type: str, metric_semantics: classification, scope: mixed}
+      - {column: label, type: str}
+      - {column: filename, type: str}
+      - {column: line, type: int}
+      - {column: name, type: str}
+      - {column: block_count, type: int, units: count}
+      - {column: size_bytes, type: int, units: bytes, metric_semantics: instantaneous_occupancy}
+      - {column: requested_bytes, type: int, units: bytes, metric_semantics: instantaneous_occupancy}
+      - {column: self_block_count, type: int, units: count}
+      - {column: self_bytes, type: int, units: bytes, metric_semantics: instantaneous_occupancy}
+      - {column: self_requested_bytes, type: int, units: bytes, metric_semantics: instantaneous_occupancy}
+      - column: percent_of_total
+        type: float
+        units: percent
+        metric_semantics: share_of_included_rows
+        denominator: Root size_bytes for all live blocks after include_static and min_size filtering, before caller row caps
