@@ -90,7 +90,9 @@ class BuildManager:
 
         if 'test' in self.args.command:
             if 'local' not in self.args.command:
-                self._execute_command(["pip", "install", "-r", "requirements/tests.txt"], cwd=self.project_root)
+                self._execute_command(
+                    [sys.executable, "-m", "pip", "install", "-r", "requirements/tests.txt"], cwd=self.project_root
+                )
         else:
             if 'local' not in self.args.command:
                 self._execute_command(["pip", "install", "-r", "requirements/build.txt"], cwd=self.project_root)
@@ -106,7 +108,13 @@ class BuildManager:
 
         if 'test' in self.args.command:
             # -------------------- 单元测试 --------------------
-            self._execute_command(["python3", "run_ut.py"], cwd=self.project_root / "test")
+            # setup.py imports PyYAML from the test dependencies; use that environment
+            # to install the component packages, runtime dependencies and metadata.
+            install_command = [sys.executable, "-m", "pip", "install", "--no-build-isolation", "."]
+            if 'local' in self.args.command:
+                install_command.append("--no-deps")
+            self._execute_command(install_command, cwd=self.project_root)
+            self._execute_command([sys.executable, "run_ut.py"], cwd=self.project_root / "test")
         else:
             # -------------------- 产品构建 --------------------
             logging.info("--version: %s", self.args.version)
