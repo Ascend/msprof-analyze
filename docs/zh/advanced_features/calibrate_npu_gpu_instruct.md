@@ -103,7 +103,7 @@ NPU 和 GPU 性能数据拆解比对（`calibrate_npu_gpu`）是 msprof-analyze 
    * **打点配置**：需修改vLLM-Ascend代码，在 `experimental_config` 中设置 `mstx=True` 和 `export_type=['text', 'db']`。
    * **eager模式**：当前只支持eager模式，请使用 `--enforce-eager` 确保算子逐条执行。
 
-4. 数据文件要求
+3. 数据文件要求
 
    确保采集到的性能数据文件满足以下要求：
 
