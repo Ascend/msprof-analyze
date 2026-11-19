@@ -3,5 +3,16 @@ recursive-include msprof_analyze/cli/ *
 recursive-include msprof_analyze/prof_common/ *
 recursive-include msprof_analyze/compare_tools/ *
 recursive-include msprof_analyze/cluster_analyse/ *
+recursive-include components/pt_snap *
+
+prune components/pt_snap/.hypothesis
+prune components/pt_snap/.pytest_cache
+prune components/pt_snap/.ruff_cache
+prune components/pt_snap/.tmp
+prune components/pt_snap/.pt-snap
+prune components/pt_snap/test_reports
+prune components/pt_snap/build
+prune components/pt_snap/dist
+
 global-exclude */__pycache__/*
 global-exclude *.pyc

@@ -118,15 +118,23 @@ setup(
     url=url,
     author="MindStudio",
     author_email=author_email,
-    packages=find_packages(include=["msprof_analyze*"], exclude=["test*", "misc*"]),
+    packages=(
+        find_packages(include=["msprof_analyze*"], exclude=["test*", "misc*"])
+        + find_packages("components/pt_snap/src", include=["pt_snap_cli*"])
+    ),
+    package_dir={"pt_snap_cli": "components/pt_snap/src/pt_snap_cli"},
+    package_data={
+        "pt_snap_cli": ["query/templates/*.yaml", "query/templates/*/*.yaml"],
+    },
     include_package_data=True,
-    python_requires='>=3.7',
+    python_requires='>=3.7.5',
     install_requires=requires,
     extras_require={"test": tests_requires},
     license='Apache License 2.0',
     entry_points="""
         [console_scripts]
-        msprof-analyze=msprof_analyze.cli.entrance:msprof_analyze_cli
+        msprof-analyze=msprof_analyze.cli.pt_snap_cli:main
+        pt-snap=pt_snap_cli.cli:_safe_call
     """,
 )
 
