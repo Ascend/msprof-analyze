@@ -41,7 +41,7 @@ int16, complex128
 
 ![img](./figures/Equal.png)
 
-AI Core支持的dtype。
+AI Core支持的dtype如下。
 
 ```python
 float, float32, float16, dt_bf16, bool, int32, int64, int8, uint8
@@ -145,7 +145,7 @@ ArgMin在CANN 6.3.RC2版本上算子下发到AI CPU执行，在CANN 7.0.RC1上�
 
 ![img](./figures/single_op_time_CANN63RC2.png)
 
-CAN 7.0 RC1上，单算子执行时间223.516 us。
+CANN 7.0 RC1上，单算子执行时间223.516 us。
 
 **图10** 单算子执行时间（CANN 7.0 RC1）
 

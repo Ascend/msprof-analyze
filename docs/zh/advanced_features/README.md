@@ -84,7 +84,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | freq_analysis             | 识别AI Core是否存在空闲（频率为800MHz）、异常（频率不为1800MHz或800MHz）的情况并给出分析结果。 | - |
 | ep_load_balance           | MoE负载信息汇总分析。 | - |
 | computational_op_masking  | 提供集群训练过程中不同算子耗时的掩盖计算，帮助用户找到性能瓶颈。 | [集群算子掩盖线性度分析](./computational_op_masking_instruct.md) |
-| operator_mfu              | 基于采集侧记录的算子 FLOPs 和 Device 侧 kernel 耗时，计算 kernel 级和 module 级算力利用率。 | [算子 MFU 分析](./operator_mfu_instruct.md) |
+| operator_mfu              | 基于采集侧记录的算子 FLOPs 和 Device 侧 Kernel 耗时，计算 Kernel 级和 module 级算力利用率。 | [算子 MFU 分析](./operator_mfu_instruct.md) |
 
 ##### 5.1.1.3 通信类特性
 
@@ -99,9 +99,8 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | communication_group_map  | 集群场景通信域与并行策略呈现。       | -                                                            |
 | communication_time_sum   | 集群场景通信时间和带宽汇总分析。      | -                                                            |
 | communication_matrix_sum | 集群场景通信矩阵汇总分析。         | -                                                            |
-| cluster_statistic        | 面向超大集群，汇总通信耗时、传输指标和跨 rank 的算子耗时。 | [超大集群通信统计](./cluster_statistic_instruct.md) |
 | hccl_sum                 | 通信类算子信息汇总。            | -                                                            |
-| pp_chart                 | pp流水图数据分析，针对pp并行下各个阶段的耗时分析与可视化能力。 | [pp流水图数据分析](./pp_chart_instruct.md)           |
+| pp_chart                 | PP流水图数据分析，针对PP并行下各个阶段的耗时分析与可视化能力。 | [pp流水图数据分析](./pp_chart_instruct.md)           |
 | slow_rank                | 根据当前的快慢卡统计算法，展示各个rank得出的快慢卡影响次数，识别慢卡出现的原因。 | -                                                            |
 | slow_link                | 集群异常耗时的算子汇总分析，进而识别慢卡。 | -                                                            |
 | communication_bottleneck | 对于长耗时通信算子，识别快慢卡，并推测造成通信等待的Host&Device侧操作。 | [通信瓶颈分析](./communication_bottleneck_instruct.md) |
@@ -142,7 +141,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 
 | 参数名                | 可选/必选 | 说明 | 适用范围 |
 | --------------------- | -------- | ---- | -------- |
-| --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum`、`cluster_statistic` |
+| --rank_list           | 可选     | 对特定Rank上的数据进行统计，默认值为all（表示对所有Rank进行统计），须根据实际卡的Rank ID配置。应配置为大于等于0的整数，若所配置的值大于实际训练所运行的卡的Rank ID，则仅解析合法的RankID的数据，比如当前环境Rank ID为0到7，实际训练运行0到3卡，此时若配置Rank ID为0,3,4或不存在的10等其他值，则仅解析0和3。配置示例：--rank_list 0,1,2。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
 | --step_id             | 可选 | 性能数据Step ID，配置后对该Step的性能数据进行分析。需配置性能数据中实际存在的Step ID，默认未配置，表示全量分析。配置示例：--step_id=1。 | `cann_api_sum`、`compute_op_sum`、`hccl_sum`、`mstx_sum` |
 | --top_num             | 可选     | 设置TopN耗时的通信算子的数量，默认值为15，配置示例：--top_num 20。 | `hccl_sum` |
 | --exclude_op_name    | 可选     | 控制compute_op_sum结果是否包含op_name，示例：--exclude_op_name，后面不需要跟参数。 | `compute_op_sum` |

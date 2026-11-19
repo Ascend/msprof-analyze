@@ -1,6 +1,7 @@
 # msprof-analyze 安装指南
 
 本文档介绍msprof-analyze工具在Python环境下的三种安装方式（在线安装、离线安装、源码安装），并给出安装验证、卸载与升级的操作步骤，适用于需要安装msprof-analyze进行性能分析的开发者。
+
 ## 1. 安装说明
 
 本工具支持[在线安装](#21-在线安装)、[离线安装](#22-离线安装)、[源码安装](#23-源码安装)三种安装方式，请根据您的实际环境选择最合适的方案。
@@ -25,7 +26,7 @@ pip install msprof-analyze
 
 提示如下信息则表示安装成功。
 
-```bash
+```ColdFusion
 Successfully installed msprof-analyze-{version}
 ```
 

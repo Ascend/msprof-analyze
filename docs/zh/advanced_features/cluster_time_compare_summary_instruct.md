@@ -43,7 +43,7 @@ msprof-analyze -m cluster_time_compare_summary -d <cluster_data> --bp <base_clus
 
 **使用示例**
 
-1. 执行cluster_time_summary分析能力，以进行集群耗时细粒度拆解。
+1. 执行cluster_time_summary分析能力，以进行集群性能数据细粒度拆解。
 
    cluster_time_summary分析能力详细介绍请参见《[集群性能数据细粒度拆解](./cluster_time_summary_instruct.md)》。
 

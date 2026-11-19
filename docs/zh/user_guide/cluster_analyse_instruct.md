@@ -110,7 +110,7 @@ Ascend 950PR&950DT系列产品的CCU场景下由于不支持采集通信矩阵�
 
 ## 3. 功能介绍
 
-### 3.1功能说明
+### 3.1 功能说明
 
 对输入的集群场景性能数据执行分析。
 
@@ -128,7 +128,7 @@ msprof-analyze cluster -d <profiling_path> [-m <mode>] [-o output_path] [--agent
 python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--agent] [--force]
 ```
 
-### 3.3参数说明
+### 3.3 参数说明
 
 | 参数名               | 可选/必选 | 说明                                                         |
 | -------------------- | --------- | ------------------------------------------------------------ |
@@ -162,7 +162,7 @@ msprof-analyze cluster -m all -d ./cluster_data -o ./output
 python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 ```
 
-### 3.5输出说明
+### 3.5 输出说明
 
 输出路径下生成cluster_analysis_output目录，具体结果文件介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 
@@ -201,7 +201,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
     图2 集群通信矩阵可视化呈现
     </div>
 
-### 4.3交付件字段说明
+### 4.3 交付件字段说明
 
 #### 4.3.1 cluster_step_trace_time.csv
 

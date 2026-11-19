@@ -115,7 +115,7 @@ msprof-analyze compare \
 
 使用本工具之前需要采集GPU或者NPU的性能数据，建议只采集一个step的性能数据，然后进行性能比对分析。
 
-若采集了多个step，工具默认会比对所有可用性能数据，统计结果可能同时包含预热、稳定训练和偶发抖动阶段，影响E2E耗时、通信等待和算子耗时的判断。需要固定分析某个step时，请同时配置`--base_step`和`--comparison_step`，并确保两个step分别存在于基准数据和待比对数据中。
+若采集了多个step，工具默认会比对所有可用性能数据，统计结果可能同时包含预热、稳定训练和偶发抖动阶段，影响E2E耗时、通信等待和算子耗时的判断。需要固定分析某个step时，请同时配置--base_step和--comparison_step，并确保两个step分别存在于基准数据和待比对数据中。
 
 ##### 3.2.1.1 GPU性能数据采集
 
@@ -276,8 +276,8 @@ python performance_compare.py <benchmark_profiling_path> <profiling_path> --outp
 | 参数 | 可选/必选 | 说明 | TorchNPU支持 | MindSpore支持 |
 | --- | --- | --- | --- | --- |
 | --disable_details | 可选 | 隐藏明细比对，只进行统计级比对。 | 是 | 是 |
-| --base_step | 可选 | 基准性能数据step ID，配置后使用基准性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--comparison_step`同时配置。配置示例：`--base_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
-| --comparison_step | 可选 | 比对性能数据step ID，配置后使用比对性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与`--base_step`同时配置。配置示例：`--comparison_step=1`。仅`--enable_profiling_compare`（仅Db数据）、`--enable_operator_compare`、`--enable_communication_compare`、`--enable_memory_compare`、`--enable_kernel_compare`或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
+| --base_step | 可选 | 基准性能数据step ID，配置后使用基准性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与--comparison_step同时配置。配置示例：`--base_step=1`。仅`--enable_profiling_compare`（仅Db数据）、--enable_operator_compare、`--enable_communication_compare`、`--enable_memory_compare`、--enable_kernel_compare或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
+| --comparison_step | 可选 | 比对性能数据step ID，配置后使用比对性能数据对应step的数据进行比对。为整数，需配置实际数据存在的step ID，默认未配置，比对所有性能数据，需要与--base_step同时配置。配置示例：`--comparison_step=1`。仅`--enable_profiling_compare`（仅Db数据）、--enable_operator_compare、`--enable_communication_compare`、`--enable_memory_compare`、--enable_kernel_compare或`--enable_api_compare`开启时，该参数配置生效。 | 是 | 是 |
 
 #### 4.3.3 比对能力开关
 
@@ -301,7 +301,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 #### 4.3.4 算子比对高级参数
 
-`--enable_operator_compare`时支持。
+--enable_operator_compare时支持。
 
 | 参数 | 可选/必选 | 说明 |
 | --- | --- | --- |
@@ -313,7 +313,7 @@ msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --outp
 
 #### 4.3.5 kernel比对高级参数
 
-`--enable_kernel_compare`时支持。
+--enable_kernel_compare时支持。
 
 | 参数 | 可选/必选 | 说明 |
 | --- | --- | --- |
@@ -377,12 +377,12 @@ python performance_compare.py ./benchmark_profiling_path ./profiling_path --outp
 | --- | --- | --- |
 | OverallMetrics | 总体性能比对 | 展示计算、通信、调度、E2E等耗时拆解指标，用于判断性能差异主要来自哪里。内存使用`Mem Usage`不在该Sheet中输出，可能出现在终端总体性能打印中。 |
 | OperatorCompareStatistic | 算子性能比对 | 以算子为粒度汇总耗时差异，适合按Diff Duration快速定位劣化算子。 |
-| OperatorCompare | 算子性能比对 | 展示算子级明细，可查看算子对应的kernel详情。配置`--disable_details`时不输出。 |
+| OperatorCompare | 算子性能比对 | 展示算子级明细，可查看算子对应的kernel详情。配置--disable_details时不输出。 |
 | ModuleCompareStatistic | 算子性能比对 | 当双方数据都包含Python Function事件时，按模块汇总耗时差异，适合定位劣化模块。 |
-| ModuleCompare | 算子性能比对 | 展示模块及模块下算子的明细，可结合调用栈定位代码位置。配置`--disable_details`时不输出。 |
+| ModuleCompare | 算子性能比对 | 展示模块及模块下算子的明细，可结合调用栈定位代码位置。配置--disable_details时不输出。 |
 | CommunicationCompare | 通信性能比对 | 展示通信算子的summary和detail信息，用于分析通信耗时、等待时间和传输耗时差异。 |
 | MemoryCompareStatistic | 算子内存比对 | 以算子为粒度汇总内存占用差异，适合按Diff Memory定位内存增长点。 |
-| MemoryCompare | 算子内存比对 | 展示算子内存申请明细。配置`--disable_details`时不输出。 |
+| MemoryCompare | 算子内存比对 | 展示算子内存申请明细。配置--disable_details时不输出。 |
 | KernelCompare | kernel性能比对 | 未配置`--use_kernel_type`时输出，按Kernel Type和Input Shapes分组统计Kernel耗时差异。 |
 | KernelTypeCompare | kernel性能比对 | 配置`--use_kernel_type`时输出，按Kernel Type和Core Type分组统计Kernel耗时差异。 |
 | ApiCompare | API性能比对 | 按API名称统计Host侧调用耗时、自身耗时和调用次数差异。 |
@@ -582,7 +582,7 @@ ModuleCompare字段说明：
 
 按照Kernel Type（Kernel类型）和Input Shapes（输入Shape）分组统计，统计信息包括：
 
-- Total Duration(us)：总耗时，单位μs。
+- Total Duration(us)：总耗时，单位us。
 - Avg Duration(us)：平均耗时，单位us。
 - Max Duration(us)：最大耗时，单位us。
 - Min Duration(us)：最小耗时，单位us。
@@ -615,7 +615,7 @@ API比对结果在performance_comparison_result_*.xlsx中ApiCompare页呈现。
 A：先看终端总体性能打印和`OverallMetrics`。`OverallMetrics`会把差异拆成计算、通信、调度和E2E等耗时方向；内存使用`Mem Usage`可能出现在终端总体性能打印中，算子级内存差异看`MemoryCompareStatistic`和`MemoryCompare`。
 
 **Q：采集了多个step，为什么结果不稳定？**
-A：工具默认会比对所有可用性能数据，可能同时包含预热、稳定训练和偶发抖动阶段。建议只采集一个step；如需固定分析某个step，请同时配置`--base_step`和`--comparison_step`。
+A：工具默认会比对所有可用性能数据，可能同时包含预热、稳定训练和偶发抖动阶段。建议只采集一个step；如需固定分析某个step，请同时配置--base_step和--comparison_step。
 
 **Q：Text格式和Db格式都能比对吗？**
 A：两种格式可选择任意一种进行性能比对。若同一目录中同时包含Text和Db格式文件，则优先使用Db格式结果进行比对。
@@ -624,10 +624,10 @@ A：两种格式可选择任意一种进行性能比对。若同一目录中同�
 A：只要设置了任意比对开关，工具就按照已设置的开关执行。若所有比对开关均不设置，工具默认开启全部支持的性能比对能力。
 
 **Q：为什么没有明细Sheet？**
-A：如果配置了`--disable_details`，工具会隐藏明细比对，只进行统计级比对，因此`OperatorCompare`、`ModuleCompare`、`MemoryCompare`等明细Sheet可能不会输出。
+A：如果配置了--disable_details，工具会隐藏明细比对，只进行统计级比对，因此`OperatorCompare`、`ModuleCompare`、`MemoryCompare`等明细Sheet可能不会输出。
 
 **Q：GPU数据里Device Duration(us)都是0怎么办？**
-A：可配置`--gpu_flow_cat`。使用chrome://tracing打开GPU的json，在右上角Flow events找到CPU侧算子与device kernel的连线标识，并将该标识配置进参数。
+A：可配置--gpu_flow_cat。使用chrome://tracing打开GPU的json，在右上角Flow events找到CPU侧算子与device kernel的连线标识，并将该标识配置进参数。
 
 **Q：NPU与NPU比对时kernel结果太大或比对较慢怎么办？**
 A：可配置`--use_kernel_type`，使用op_statistic.csv进行比对，输出简化结果并减少比对时间。
