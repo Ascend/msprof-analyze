@@ -1,0 +1,91 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  allocation:
+    description: Memory allocation timeline — (id, allocated, active, reserved) curve
+    devices:
+      - all
+    parameters:
+      min_id:
+        type: int
+        default: null
+        required: false
+        description: Minimum event ID (start of range)
+      max_id:
+        type: int
+        default: null
+        required: false
+        description: Maximum event ID (end of range)
+      min_allocated:
+        type: int
+        default: null
+        required: false
+        description: Minimum total allocated bytes
+      min_active:
+        type: int
+        default: null
+        required: false
+        description: Minimum total active bytes
+      min_reserved:
+        type: int
+        default: null
+        required: false
+        description: Minimum memory pool reserved bytes
+      order_by:
+        type: str
+        default: "id"
+        required: false
+        choices: [id, allocated, active, reserved]
+        description: Column to order by
+      order_dir:
+        type: str
+        default: "ASC"
+        required: false
+        choices: [ASC, DESC]
+        description: Sort direction (ASC or DESC)
+      limit:
+        type: int
+        default: -1
+        required: false
+        description: Maximum rows to return (-1 for unlimited)
+      offset:
+        type: int
+        default: 0
+        required: false
+        description: Number of rows to skip
+    query: |
+      SELECT id, allocated, active, reserved
+      FROM {{ device_trace_table }}
+      WHERE 1=1
+        {% if min_id is not none %}AND id >= {{ min_id }}{% endif %}
+        {% if max_id is not none %}AND id <= {{ max_id }}{% endif %}
+        {% if min_allocated is not none %}AND allocated >= {{ min_allocated }}{% endif %}
+        {% if min_active is not none %}AND active >= {{ min_active }}{% endif %}
+        {% if min_reserved is not none %}AND reserved >= {{ min_reserved }}{% endif %}
+      ORDER BY {{ order_by }} {{ order_dir }}{% if order_by != 'id' %}, id {{ order_dir }}{% endif %}
+      LIMIT {{ limit }}
+      {% if offset > 0 %}OFFSET {{ offset }}{% endif %}
+    output_schema:
+      - column: id
+        type: int
+      - column: allocated
+        type: int
+      - column: active
+        type: int
+      - column: reserved
+        type: int

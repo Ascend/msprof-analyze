@@ -1,0 +1,71 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  event_frames:
+    description: Read an event's structured callstack frames in the original snapshot order
+    semantics_version: 1
+    interpretation_limits:
+      - "Requires an import with structured frame tables (import_format_version >= 3). Legacy text is not split or guessed."
+      - "position is the zero-based original snapshot index. root_first reverses traversal without changing position. Empty captured stacks, missing events/stacks and invalid frame associations return no frame rows. Corrupt arrays are never returned partially."
+    parameters:
+      event_id:
+        type: int
+        required: true
+        description: Event whose ordered frame array is requested
+      frame_order:
+        type: str
+        default: original
+        choices: [original, root_first]
+        description: Original snapshot order or outermost caller first
+    query: |
+      WITH valid_stacks AS (
+        SELECT m.callstackId, m.frameCount - 1 AS last_position
+        FROM callstack_frame_manifest m
+        JOIN callstack cs ON cs.id = m.callstackId
+        LEFT JOIN callstack_frame cf ON cf.callstackId = m.callstackId
+        LEFT JOIN frame f ON f.id = cf.frameId
+        WHERE m.callstackId = (SELECT callstackId FROM {{ device_trace_table }} WHERE id = {{ event_id|int }})
+        GROUP BY m.callstackId
+        HAVING typeof(m.callstackId) = 'integer'
+           AND typeof(m.frameCount) = 'integer' AND m.frameCount >= 0
+           AND COUNT(cf.callstackId) = m.frameCount
+           AND (m.frameCount = 0 OR (
+             MIN(cf.position) = 0 AND MAX(cf.position) = m.frameCount - 1
+             AND COUNT(DISTINCT cf.position) = m.frameCount
+             AND SUM(CASE WHEN typeof(cf.position) = 'integer'
+               AND typeof(cf.frameId) = 'integer' AND typeof(f.id) = 'integer'
+               AND typeof(f.filename) = 'text' AND typeof(f.line) = 'integer'
+               AND typeof(f.name) = 'text' THEN 1 ELSE 0 END) = m.frameCount
+           ))
+      )
+      SELECT t.id AS event_id, t.callstackId AS stack_id,
+             cf.position, f.id AS frame_id, f.filename, f.line, f.name
+      FROM {{ device_trace_table }} t
+      JOIN valid_stacks valid ON valid.callstackId = t.callstackId
+      JOIN callstack_frame cf ON cf.callstackId = t.callstackId
+      JOIN frame f ON f.id = cf.frameId
+      WHERE t.id = {{ event_id|int }}
+      ORDER BY cf.position {% if frame_order == 'root_first' %}DESC{% else %}ASC{% endif %}
+    output_schema:
+      - {column: event_id, type: int, units: event_id}
+      - {column: stack_id, type: int, metric_semantics: identifier}
+      - {column: position, type: int, metric_semantics: ordering_marker}
+      - {column: frame_id, type: int, metric_semantics: identifier}
+      - {column: filename, type: str}
+      - {column: line, type: int}
+      - {column: name, type: str}

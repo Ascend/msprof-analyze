@@ -1,0 +1,336 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  active_memory_callstack_at_event:
+    description: Aggregate active memory blocks at an event by allocation callstack, including static memory classification
+    devices:
+      - all
+    semantics_version: 2
+    interpretation_limits:
+      - "Rows mix dynamic, static, and preexisting groups. Use the category column for per-row scope; do not label the whole result as dynamic."
+      - "percent_of_active_blocks is a 0-100 byte percentage of the rows included in the SQL result after min_size, include_static, and top_n truncation of dynamic groups; caller-side max_rows (-n) may truncate further after the percentage is computed. Not of all active memory and not of block counts."
+      - "Static and preexisting groups have no captured allocation callstack."
+      - "Missing dynamic callstacks form one group before top_n ranking. This includes empty strings, NULL text or IDs, and missing joined allocation events or callstack records; their category remains dynamic_live_at_event."
+      - "Event IDs are ordering markers, not elapsed time."
+    parameters:
+      stack_bytes:
+        type: int
+        default: -1
+        required: false
+        description: "Opt-in UTF-8 byte budget per callstack text (0 for identity only; negative for unchanged full output). Not a JSON byte cap or token budget. Summary fields are present only when enabled."
+      event_id:
+        type: int
+        required: true
+        description: Trace event ID used as the point-in-time lifecycle boundary
+      include_static:
+        type: bool
+        default: true
+        required: false
+        description: Include blocks without a captured allocation event as separate static and preexisting groups
+      min_size:
+        type: int
+        default: 0
+        required: false
+        description: Minimum individual block size in bytes
+      top_n:
+        type: int
+        default: 20
+        required: false
+        description: Maximum number of callstack groups to return (-1 for unlimited)
+    query_variants:
+      v1: |
+        WITH active_blocks AS (
+          SELECT
+            id,
+            size,
+            requestedSize,
+            allocEventId,
+            freeEventId,
+            CASE
+              WHEN allocEventId = -1 AND freeEventId = -1 THEN 'static'
+              WHEN allocEventId = -1 AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }}) THEN 'preexisting_live_at_event'
+              ELSE 'dynamic_live_at_event'
+            END AS category
+          FROM {{ device_block_table }}
+          WHERE size >= {{ min_size|int }}
+            AND (
+              {% if include_static %}(allocEventId = -1 AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }})) OR{% endif %}
+              (allocEventId != -1 AND allocEventId <= {{ event_id|int }} AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }}))
+            )
+        ), grouped AS (
+          SELECT
+            CASE
+              WHEN b.category = 'static' THEN '[static] allocEventId=-1, freeEventId=-1'
+              WHEN b.category = 'preexisting_live_at_event' THEN '[preexisting live] allocEventId=-1'
+              ELSE COALESCE(NULLIF(t.callstack, ''), '[missing callstack]')
+            END AS callstack,
+            {% if stack_bytes >= 0 %}
+            NULL AS stack_id,
+            CASE WHEN b.category != 'dynamic_live_at_event' THEN b.category
+                 WHEN NULLIF(t.callstack, '') IS NULL THEN 'missing'
+                 ELSE 'captured' END AS stack_kind,
+            CASE WHEN b.category = 'dynamic_live_at_event' AND NULLIF(t.callstack, '') IS NOT NULL THEN MIN(t.id) END AS stack_event_id,
+            {% endif %}
+            b.category,
+            COUNT(*) AS block_count,
+            SUM(b.size) AS size_bytes,
+            ROUND(SUM(b.size) / 1073741824.0, 6) AS size_gib,
+            SUM(b.requestedSize) AS requested_bytes,
+            ROUND(SUM(b.requestedSize) / 1073741824.0, 6) AS requested_gib
+          FROM active_blocks b
+          LEFT JOIN {{ device_trace_table }} t
+            ON b.allocEventId = t.id
+          GROUP BY NULLIF(t.callstack, ''), b.category
+        ),
+        ranked_dynamic AS (
+          SELECT
+            callstack,
+            {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+            category,
+            block_count,
+            size_bytes,
+            size_gib,
+            requested_bytes,
+            requested_gib
+          FROM grouped
+          WHERE category = 'dynamic_live_at_event'
+          ORDER BY size_bytes DESC, block_count DESC, callstack ASC
+          LIMIT {{ top_n|int }}
+        )
+        SELECT
+          callstack,
+          {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+          category,
+          block_count,
+          size_bytes,
+          size_gib,
+          requested_bytes,
+          requested_gib,
+          ROUND(size_bytes * 100.0 / NULLIF(SUM(size_bytes) OVER (), 0), 4) AS percent_of_active_blocks
+        FROM (
+          SELECT
+            callstack,
+            {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+            category,
+            block_count,
+            size_bytes,
+            size_gib,
+            requested_bytes,
+            requested_gib
+          FROM grouped
+          WHERE category IN ('static', 'preexisting_live_at_event')
+          UNION ALL
+          SELECT
+            callstack,
+            {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+            category,
+            block_count,
+            size_bytes,
+            size_gib,
+            requested_bytes,
+            requested_gib
+          FROM ranked_dynamic
+        )
+        ORDER BY size_bytes DESC, block_count DESC, callstack ASC
+      v2: |
+        WITH active_blocks AS (
+          SELECT
+            id,
+            size,
+            requestedSize,
+            allocEventId,
+            freeEventId,
+            CASE
+              WHEN allocEventId = -1 AND freeEventId = -1 THEN 'static'
+              WHEN allocEventId = -1 AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }}) THEN 'preexisting_live_at_event'
+              ELSE 'dynamic_live_at_event'
+            END AS category
+          FROM {{ device_block_table }}
+          WHERE size >= {{ min_size|int }}
+            AND (
+              {% if include_static %}(allocEventId = -1 AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }})) OR{% endif %}
+              (allocEventId != -1 AND allocEventId <= {{ event_id|int }} AND (freeEventId IS NULL OR freeEventId < 0 OR freeEventId > {{ event_id|int }}))
+            )
+        ), grouped AS (
+          SELECT
+            CASE
+              WHEN b.category = 'static' THEN '[static] allocEventId=-1, freeEventId=-1'
+              WHEN b.category = 'preexisting_live_at_event' THEN '[preexisting live] allocEventId=-1'
+              ELSE COALESCE(NULLIF(cs.callstack, ''), '[missing callstack]')
+            END AS callstack,
+            {% if stack_bytes >= 0 %}
+            CASE WHEN b.category = 'dynamic_live_at_event' AND NULLIF(cs.callstack, '') IS NOT NULL THEN t.callstackId END AS stack_id,
+            CASE WHEN b.category != 'dynamic_live_at_event' THEN b.category
+                 WHEN NULLIF(cs.callstack, '') IS NULL THEN 'missing'
+                 ELSE 'captured' END AS stack_kind,
+            CASE WHEN b.category = 'dynamic_live_at_event' AND NULLIF(cs.callstack, '') IS NOT NULL THEN MIN(t.id) END AS stack_event_id,
+            {% endif %}
+            b.category,
+            COUNT(*) AS block_count,
+            SUM(b.size) AS size_bytes,
+            ROUND(SUM(b.size) / 1073741824.0, 6) AS size_gib,
+            SUM(b.requestedSize) AS requested_bytes,
+            ROUND(SUM(b.requestedSize) / 1073741824.0, 6) AS requested_gib
+          FROM active_blocks b
+          LEFT JOIN {{ device_trace_table }} t
+            ON b.allocEventId = t.id
+          LEFT JOIN callstack cs
+            ON t.callstackId = cs.id
+          GROUP BY
+            CASE WHEN NULLIF(cs.callstack, '') IS NULL THEN NULL ELSE t.callstackId END,
+            b.category
+        ),
+        ranked_dynamic AS (
+          SELECT
+            callstack,
+            {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+            category,
+            block_count,
+            size_bytes,
+            size_gib,
+            requested_bytes,
+            requested_gib
+          FROM grouped
+          WHERE category = 'dynamic_live_at_event'
+          ORDER BY size_bytes DESC, block_count DESC, callstack ASC
+          LIMIT {{ top_n|int }}
+        )
+        SELECT
+          callstack,
+          {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+          category,
+          block_count,
+          size_bytes,
+          size_gib,
+          requested_bytes,
+          requested_gib,
+          ROUND(size_bytes * 100.0 / NULLIF(SUM(size_bytes) OVER (), 0), 4) AS percent_of_active_blocks
+        FROM (
+          SELECT
+            callstack,
+            {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+            category,
+            block_count,
+            size_bytes,
+            size_gib,
+            requested_bytes,
+            requested_gib
+          FROM grouped
+          WHERE category IN ('static', 'preexisting_live_at_event')
+          UNION ALL
+          SELECT
+            callstack,
+            {% if stack_bytes >= 0 %}stack_id, stack_kind, stack_event_id,{% endif %}
+            category,
+            block_count,
+            size_bytes,
+            size_gib,
+            requested_bytes,
+            requested_gib
+          FROM ranked_dynamic
+        )
+        ORDER BY size_bytes DESC, block_count DESC, callstack ASC
+    output_schema:
+      - column: source_stack_id
+        type: str
+        interpretation_limits: ["Dataset only, always present: full generation/device/canonical text identity for both layouts, or exact raw ordered-frame identity when covered; source owner/local IDs are provenance, not grouping keys; resolve sources before grouping/top_n."]
+      - column: text_kind
+        type: str
+        interpretation_limits: ["Dataset only: captured/missing formatted text or special category; independent of raw ordered-array identity. Representative text is preferred when available."]
+      - column: frames
+        type: list
+        interpretation_limits: ["Dataset only: ordered raw JSON objects preserving duplicates, only for explicit recognized version/schema/per-event coverage; NULL means text-only or uncovered, never reconstructed from text."]
+      - column: frames_status
+        type: str
+        interpretation_limits: ["Dataset only: ordered or text_only; scope.source_coverage describes source/frame coverage before ranking/paging independently of truncated."]
+      - column: stack_id
+        type: str
+        interpretation_limits:
+          - "Standalone opt-in stack_bytes >= 0 only; datasets always expose canonical content/ordered-frame identity. Standalone database/device-scoped identity: v1 full-text SHA-256, v2 callstackId, or category identity. Missing, static, preexisting and captured literal labels stay distinct. Never merge by display text."
+      - column: stack_kind
+        type: str
+        interpretation_limits:
+          - "Opt-in only: captured, missing, static, or preexisting_live_at_event."
+      - column: stack_event_id
+        type: int
+        interpretation_limits:
+          - "Opt-in only. Representative captured allocation event; retrieve full text with event(id=stack_event_id), omitting stack_bytes, on the same database/device. NULL for synthetic/missing groups. This locator is not the group identity."
+      - column: stack_bytes
+        type: int
+        units: bytes
+        interpretation_limits:
+          - "Opt-in only. Effective UTF-8 byte budget per callstack value, excluding JSON escaping and metadata; not a whole-response cap or model-token count."
+      - column: stack_original_bytes
+        type: int
+        units: bytes
+        interpretation_limits:
+          - "Opt-in only. Original UTF-8 callstack text length before shortening."
+      - column: stack_truncated
+        type: bool
+        interpretation_limits:
+          - "Opt-in only. Text was shortened; evidence rows, numbers, categories and completeness flags are unchanged."
+      - column: callstack
+        type: str
+        units: text
+        metric_semantics: identifier
+        scope: mixed
+        interpretation_limits:
+          - "Static and preexisting groups use synthetic labels rather than a captured allocation callstack. Dynamic rows use '[missing callstack]' for empty strings, NULL text or IDs, or missing joined allocation events or callstack records."
+          - "All missing dynamic callstacks merge before top_n ranking; bytes, requested bytes, and block counts are retained. Missing attribution does not imply static or preexisting memory."
+          - "Standalone nonempty callstacks are grouped by text in v1 and callstackId in v2. Datasets resolve local v2 IDs then group canonical full text across owners, or exact raw ordered-frame identity when explicitly covered. Whitespace-only text and a captured literal '[missing callstack]' are not missing and do not merge into the missing group. Display labels alone are not unique group identities."
+      - column: category
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: mixed
+        interpretation_limits:
+          - "Per-row scope: dynamic_live_at_event, static, or preexisting_live_at_event."
+      - column: block_count
+        type: int
+        units: count
+        scope: mixed
+      - column: size_bytes
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: mixed
+      - column: size_gib
+        type: float
+        units: gib
+        metric_semantics: instantaneous_occupancy
+        scope: mixed
+      - column: requested_bytes
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: mixed
+      - column: requested_gib
+        type: float
+        units: gib
+        metric_semantics: instantaneous_occupancy
+        scope: mixed
+      - column: percent_of_active_blocks
+        type: float
+        units: percent
+        metric_semantics: share_of_included_rows
+        scope: mixed
+        denominator: "SUM(size_bytes) over the rows included in the SQL result after min_size filtering, include_static grouping, and top_n truncation of dynamic callstack groups. Static and preexisting groups are always included when include_static is true. Caller-side max_rows (-n) truncation happens after this percentage is computed. This is not all active memory in the snapshot."
+        interpretation_limits:
+          - "0-100 byte percentage despite the column name; not a share of block count."
+          - "Changing include_static, min_size, or top_n changes the denominator."
+          - "Caller-side max_rows (-n) may return fewer rows than the denominator covers."
