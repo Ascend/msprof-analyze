@@ -97,7 +97,7 @@ for batch in train_dataloader:
     dp.step()
 ```
 
-在当前版本生成的 `profiler_config.json` 中配置下列参数。示例中 `start_step` 的默认值为 `0`，此时处于待触发状态。需要开始采集时，将其修改为所有目标进程都尚未执行到的同一个 Step，并在所有节点更新配置。各目标 rank 将从指定的 Step 开始采集，`active` 控制采集的迭代数量。
+在当前版本生成的 `profiler_config.json` 中配置下列参数。示例中 `start_step` 的默认值 `0`，此时处于待触发状态。需要开始采集时，将其修改为所有目标进程都尚未执行到的同一个 Step，并在所有节点更新配置。各目标 rank 将从指定的 Step 开始采集，`active` 控制采集的迭代数量。
 
 ```json
 {

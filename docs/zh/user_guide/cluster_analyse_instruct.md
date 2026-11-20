@@ -286,8 +286,8 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 | 字段 | 说明 |
 | --- | --- |
-| `step` | Step 编号。 |
-| `type` | 数据类型，主要包括 `rank` 和 `stage`。 |
+| step | Step 编号。 |
+| type | 数据类型，主要包括 `rank` 和 `stage`。 |
 | index | rank 编号或 stage 编号。 |
 | computing | 计算时间，单位 ms。 |
 | communication_not_overlapped | 未被计算掩盖的通信耗时，单位 ms。 |
@@ -306,9 +306,9 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 | 字段 | 说明 |
 | --- | --- |
-| `type` | 通信域类型，例如集合通信或点对点通信。 |
+| type | 通信域类型，例如集合通信或点对点通信。 |
 | rank_set | 通信域包含的 rank 集合。 |
-| `group_name` | 通信域名称。 |
+| group_name | 通信域名称。 |
 | group_id | 通信域 ID。 |
 | pg_name | 并行组名称。 |
 
@@ -316,33 +316,33 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 | 字段 | 说明                                                                     |
 | --- |------------------------------------------------------------------------|
-| `step` | Step 编号。                                                               |
+| step | Step 编号。                                                               |
 | rank_id | 全局 rank ID。                                                            |
-| `hccl_op_name` | HCCL 通信算子名称。                                                           |
-| `group_name` | 通信域名称。                                                                 |
+| hccl_op_name | HCCL 通信算子名称。                                                           |
+| group_name | 通信域名称。                                                                 |
 | start_timestamp | 通信算子开始时间戳，单位 us。                                                       |
 | elapsed_time | 通信算子总耗时，单位 ms。                                                         |
-| `transit_time` | 数据传输耗时，单位 ms。                                                          |
+| transit_time | 数据传输耗时，单位 ms。                                                          |
 | wait_time | 等待耗时，单位 ms。                                                            |
 | synchronization_time | 同步耗时，单位 ms。                                                            |
 | idle_time | 空闲耗时，单位 ms。                                                            |
 | synchronization_time_ratio | 同步耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。 |
 | wait_time_ratio | 等待耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。              |
 
-配置`Level0`采集性能数据时，`transit_time`、wait_time、synchronization_time、idle_time 未采集，synchronization_time_ratio、`wait_time_ratio不可用`，均显示为`-1`。
+配置Level0采集性能数据时，transit_time、wait_time、synchronization_time、idle_time 未采集，synchronization_time_ratio、wait_time_ratio不可用，均显示为-1。
 
 ##### 4.3.5.5 ClusterCommunicationBandwidth
 
 | 字段 | 说明 |
 | --- | --- |
-| `step` | Step 编号。 |
-| `type` | 通信算子类型，包含集合通信和点对点通信等类型。 |
-| `hccl_op_name` | HCCL 通信算子名称。 |
-| `group_name` | 通信域名称。 |
+| step | Step 编号。 |
+| type | 通信算子类型，包含集合通信和点对点通信等类型。 |
+| hccl_op_name | HCCL 通信算子名称。 |
+| group_name | 通信域名称。 |
 | band_type | 通信链路类型。 |
-| `transit_size` | 传输数据量，单位 MB。 |
-| `transit_time` | 传输耗时，单位 ms。 |
-| `bandwidth` | 带宽，单位 GB/s。 |
+| transit_size | 传输数据量，单位 MB。 |
+| transit_time | 传输耗时，单位 ms。 |
+| bandwidth | 带宽，单位 GB/s。 |
 | large_packet_ratio | 大包占比，取值为 0 到 1 的小数。 |
 | package_size | 包大小，单位 MB。 |
 | count | 对应包大小的通信次数。 |
