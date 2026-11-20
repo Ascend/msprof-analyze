@@ -1,0 +1,59 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  freed_block_lifetime:
+    description: Bucket successfully freed blocks by freeEventId-allocEventId distance
+    devices:
+      - all
+    semantics_version: 1
+    interpretation_limits:
+      - "Buckets are event-ID distances (freeEventId - allocEventId), not elapsed time."
+      - "Only successfully freed blocks (allocEventId >= 0 and freeEventId >= allocEventId) are included."
+      - "This baseline does not classify end-of-trace candidates and must not be generalized to wall-clock lifetime."
+    query: |
+      SELECT CASE
+               WHEN freeEventId - allocEventId < 1000 THEN '<1k'
+               WHEN freeEventId - allocEventId < 5000 THEN '1k-5k'
+               WHEN freeEventId - allocEventId < 20000 THEN '5k-20k'
+               WHEN freeEventId - allocEventId < 100000 THEN '20k-100k'
+               ELSE '>=100k'
+             END AS lifetime_events,
+             COUNT(*) AS block_count,
+             COALESCE(SUM(size), 0) AS size_bytes
+      FROM {{ device_block_table }}
+      WHERE allocEventId >= 0 AND freeEventId >= allocEventId
+      GROUP BY lifetime_events
+      ORDER BY MIN(freeEventId - allocEventId)
+    output_schema:
+      - column: lifetime_events
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits:
+          - "Label is an event-ID distance bucket, not a duration."
+      - column: block_count
+        type: int
+        units: count
+        scope: captured_range
+      - column: size_bytes
+        type: int
+        units: bytes
+        scope: captured_range
+        interpretation_limits:
+          - "Sum of sizes of successfully freed blocks in the bucket, not live occupancy."

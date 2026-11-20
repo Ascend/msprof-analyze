@@ -1,0 +1,199 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  allocator_gap:
+    description: Compare allocated, active, and reserved peak events and same-event gaps
+    devices:
+      - all
+    semantics_version: 2
+    interpretation_limits:
+      - "Only real trace events (id >= 0) select peaks and same-event counters, matching memory_peak semantics version 2."
+      - "Gaps are computed from counters at the same peak event. A reserved-active gap is not itself fragmentation."
+      - "Allocated, active, and reserved may peak at different events; use the same-event flags before comparing across metrics."
+      - "Event IDs are ordering markers, not elapsed time."
+    parameters:
+      start_id:
+        type: int
+        default: null
+        required: false
+        description: Start event ID for range filtering
+      end_id:
+        type: int
+        default: null
+        required: false
+        description: End event ID for range filtering
+    query: |
+      WITH filtered AS (
+        SELECT id, allocated, active, reserved
+        FROM {{ device_trace_table }}
+        WHERE id >= 0
+          {% if start_id is not none %}AND id >= {{ start_id|int }}{% endif %}
+          {% if end_id is not none %}AND id <= {{ end_id|int }}{% endif %}
+      ), peaks AS (
+        SELECT
+          (SELECT id FROM filtered ORDER BY allocated DESC, id ASC LIMIT 1) AS peak_allocated_event_id,
+          (SELECT allocated FROM filtered ORDER BY allocated DESC, id ASC LIMIT 1) AS peak_allocated,
+          (SELECT id FROM filtered ORDER BY active DESC, id ASC LIMIT 1) AS peak_active_event_id,
+          (SELECT active FROM filtered ORDER BY active DESC, id ASC LIMIT 1) AS peak_active,
+          (SELECT id FROM filtered ORDER BY reserved DESC, id ASC LIMIT 1) AS peak_reserved_event_id,
+          (SELECT reserved FROM filtered ORDER BY reserved DESC, id ASC LIMIT 1) AS peak_reserved
+      )
+      SELECT
+        p.peak_allocated_event_id,
+        p.peak_allocated,
+        allocated_event.active AS active_at_allocated_peak,
+        allocated_event.reserved AS reserved_at_allocated_peak,
+        allocated_event.reserved - allocated_event.active AS reserved_active_gap_at_allocated_peak,
+        allocated_event.reserved - allocated_event.allocated AS reserved_allocated_gap_at_allocated_peak,
+        p.peak_active_event_id,
+        p.peak_active,
+        active_event.allocated AS allocated_at_active_peak,
+        active_event.reserved AS reserved_at_active_peak,
+        active_event.reserved - active_event.active AS reserved_active_gap_at_active_peak,
+        active_event.reserved - active_event.allocated AS reserved_allocated_gap_at_active_peak,
+        p.peak_reserved_event_id,
+        p.peak_reserved,
+        reserved_event.allocated AS allocated_at_reserved_peak,
+        reserved_event.active AS active_at_reserved_peak,
+        reserved_event.reserved - reserved_event.active AS reserved_active_gap_at_reserved_peak,
+        reserved_event.reserved - reserved_event.allocated AS reserved_allocated_gap_at_reserved_peak,
+        CASE
+          WHEN p.peak_allocated_event_id = p.peak_active_event_id
+           AND p.peak_active_event_id = p.peak_reserved_event_id
+          THEN 1 ELSE 0
+        END AS all_peaks_same_event,
+        CASE WHEN p.peak_allocated_event_id = p.peak_active_event_id THEN 1 ELSE 0 END AS allocated_active_same_event,
+        CASE WHEN p.peak_active_event_id = p.peak_reserved_event_id THEN 1 ELSE 0 END AS active_reserved_same_event,
+        CASE WHEN p.peak_allocated_event_id = p.peak_reserved_event_id THEN 1 ELSE 0 END AS allocated_reserved_same_event
+      FROM peaks p
+      LEFT JOIN filtered allocated_event ON allocated_event.id = p.peak_allocated_event_id
+      LEFT JOIN filtered active_event ON active_event.id = p.peak_active_event_id
+      LEFT JOIN filtered reserved_event ON reserved_event.id = p.peak_reserved_event_id
+    output_schema:
+      - column: peak_allocated_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range
+      - column: peak_allocated
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: captured_range
+      - column: active_at_allocated_peak
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: same_event
+      - column: reserved_at_allocated_peak
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: same_event
+      - column: reserved_active_gap_at_allocated_peak
+        type: int
+        units: bytes
+        metric_semantics: same_event_gap
+        scope: same_event
+        interpretation_limits:
+          - "Same-event reserved minus active at the allocated peak. Not a direct fragmentation measurement."
+      - column: reserved_allocated_gap_at_allocated_peak
+        type: int
+        units: bytes
+        metric_semantics: same_event_gap
+        scope: same_event
+      - column: peak_active_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range
+      - column: peak_active
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: captured_range
+      - column: allocated_at_active_peak
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: same_event
+      - column: reserved_at_active_peak
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: same_event
+      - column: reserved_active_gap_at_active_peak
+        type: int
+        units: bytes
+        metric_semantics: same_event_gap
+        scope: same_event
+        interpretation_limits:
+          - "Same-event reserved minus active at the active peak. Not a direct fragmentation measurement."
+      - column: reserved_allocated_gap_at_active_peak
+        type: int
+        units: bytes
+        metric_semantics: same_event_gap
+        scope: same_event
+      - column: peak_reserved_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range
+      - column: peak_reserved
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: captured_range
+      - column: allocated_at_reserved_peak
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: same_event
+      - column: active_at_reserved_peak
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: same_event
+      - column: reserved_active_gap_at_reserved_peak
+        type: int
+        units: bytes
+        metric_semantics: same_event_gap
+        scope: same_event
+        interpretation_limits:
+          - "Same-event reserved minus active at the reserved peak. Not a direct fragmentation measurement."
+      - column: reserved_allocated_gap_at_reserved_peak
+        type: int
+        units: bytes
+        metric_semantics: same_event_gap
+        scope: same_event
+      - column: all_peaks_same_event
+        type: int
+        units: flag
+        metric_semantics: classification
+      - column: allocated_active_same_event
+        type: int
+        units: flag
+        metric_semantics: classification
+      - column: active_reserved_same_event
+        type: int
+        units: flag
+        metric_semantics: classification
+      - column: allocated_reserved_same_event
+        type: int
+        units: flag
+        metric_semantics: classification

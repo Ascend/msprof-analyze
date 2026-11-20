@@ -1,0 +1,116 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  callstack_analysis:
+    description: Analyze all real stack-bearing trace actions by full callstack identity
+    semantics_version: 2
+    interpretation_limits:
+      - "alloc_count is a retained legacy field name: it counts ALL real stack-bearing trace actions, not allocation-only events. v1 requires non-NULL text; v2 requires a non-NULL stack reference and retains absent/NULL joined text as a separate missing group. Empty text counts. Negative boundaries are excluded."
+      - "Statistics group full captured text in both standalone layouts; dataset grouping uses canonical text or explicitly covered ordered raw arrays before thresholds and ranking."
+      - "avg_size is total_size/alloc_count, not an average of shard averages; size sums include free/segment/workspace actions and are not live occupancy."
+    devices:
+      - all
+      - "0"
+      - "1"
+    parameters:
+      min_count:
+        type: int
+        default: 5
+        required: false
+        description: Minimum real stack-bearing action count (legacy alloc_count) to include
+      min_size:
+        type: int
+        default: 0
+        required: false
+        description: Minimum total size in bytes
+      limit:
+        type: int
+        default: -1
+        required: false
+        description: Maximum rows to return (-1 for unlimited). Mirrored from the caller-side ``max_rows`` for SQL pushdown.
+    query_variants:
+      v1: |
+        SELECT
+          callstack,
+          COUNT(*) as alloc_count,
+          SUM(size) as total_size,
+          AVG(size) as avg_size,
+          MAX(size) as max_size
+        FROM {{ device_trace_table }}
+        WHERE id >= 0 AND callstack IS NOT NULL
+        GROUP BY callstack
+        HAVING alloc_count >= {{ min_count }}
+          AND total_size >= {{ min_size }}
+        ORDER BY total_size DESC, callstack ASC
+        LIMIT {{ limit|int }}
+      v2: |
+        SELECT
+          COALESCE(c.callstack, '[missing callstack]') AS callstack,
+          COUNT(*) AS alloc_count,
+          SUM(t.size) AS total_size,
+          AVG(t.size) AS avg_size,
+          MAX(t.size) AS max_size
+        FROM {{ device_trace_table }} t
+        LEFT JOIN callstack c ON c.id = t.callstackId
+        WHERE t.id >= 0 AND t.callstackId IS NOT NULL
+        GROUP BY c.callstack
+        HAVING alloc_count >= {{ min_count }}
+          AND total_size >= {{ min_size }}
+        ORDER BY total_size DESC, callstack ASC, c.callstack IS NULL ASC
+        LIMIT {{ limit|int }}
+    output_schema:
+      - column: callstack
+        type: str
+      - column: alloc_count
+        type: int
+      - column: total_size
+        type: int
+      - column: avg_size
+        type: float
+      - column: max_size
+        type: int
+      - column: source_stack_id
+        type: str
+        units: text
+        metric_semantics: identifier
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: generation/device/canonical full-text or explicitly covered ordered raw-array identity, before global thresholds/ranking. Empty non-NULL text is a separate statistical group from a missing reference. Never group by local IDs, display labels or text_kind."]
+      - column: stack_kind
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: shared source availability, captured or missing; explicitly covered raw arrays (including empty arrays) are captured even without formatted text. Empty non-NULL text still counts statistically but does not prove captured attribution."]
+      - column: text_kind
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: captured for nonempty formatted text, otherwise missing. Provenance only: independent of raw-array identity/availability and never a grouping key."]
+      - column: stack_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: representative real source event for retrieval on the same generation/device; prefers nonempty captured text when available, otherwise may point to empty/NULL text. Not the group identity, not necessarily an allocation action, and not a timestamp."]
+      - column: frames_status
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: ordered only for the recognized version/schema and valid per-event raw-array coverage, otherwise text_only. Retrieve actual arrays with event(id=stack_event_id); statistics do not reconstruct or emit frame arrays."]
