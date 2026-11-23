@@ -14,7 +14,7 @@ Collect the PyTorch DB-format profile data for all ranks in one directory. Keep 
 msprof-analyze cluster -m cluster_statistic -d ./cluster_data -o ./statistic_output
 ```
 
-By default, the command analyzes all discoverable ranks. Add `--rank_list 0,2` to select specific ranks or `--agent` to get the execution result as JSON.
+By default, the command analyzes all discoverable ranks. Add `--rank_list 0,2` to select ranks for communication statistics or `--agent` to get the execution result as JSON. Iteration timing and host information cover all discoverable ranks, as in standard cluster analysis.
 
 ## 4. Output
 
@@ -27,6 +27,9 @@ The example writes results to `./statistic_output/cluster_analysis_output/cluste
 | `CommOpStatistic` | Summarizes total, minimum, and maximum durations across ranks by step, communication domain, and full operator name. It also records the ranks with the minimum and maximum durations and the number of ranks with valid durations. |
 | `CommunicationGroupMapping` | Records communication domains, communication types, rank sets, and parallel group information. Join this table to the statistics tables on `group_name`. |
 | `ClusterBaseInfo` | Records basic cluster information, such as parallel strategy parameters, when cluster configuration is available. |
+| `ClusterStepTraceTime` | Records the breakdown of iteration durations by rank or stage. |
+| `HostInfo` | Records host IDs and names. |
+| `RankDeviceMap` | Maps ranks to devices, hosts, and profile directories. |
 
 If a source table lacks a `step` column, the command uses the string `step` as the default value. Unavailable statistics are recorded as `NULL`.
 

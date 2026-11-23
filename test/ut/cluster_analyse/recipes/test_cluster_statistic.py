@@ -226,7 +226,7 @@ def test_recipe_filters_ranks_and_keeps_all_steps(tmp_path):
         assert connection.execute("SELECT step, rank_count FROM CommOpStatistic ORDER BY step").fetchall() == expected
 
 
-def test_companion_tables_use_group_recipe_and_existing_cluster_metadata(tmp_path):
+def test_recipe_writes_companion_tables(tmp_path):
     (tmp_path / Constant.PROFILER_METADATA).write_text(
         json.dumps({"distributed_args": {"rank": 2, "world_size": 8}}), encoding="utf-8"
     )
@@ -247,10 +247,29 @@ def test_companion_tables_use_group_recipe_and_existing_cluster_metadata(tmp_pat
         data_map[rank_id] = str(rank_path)
     profiler_db = tmp_path / "rank2" / Constant.SINGLE_OUTPUT / "ascend_pytorch_profiler_2.db"
     with closing(sqlite3.connect(profiler_db)) as connection, connection:
+        connection.executescript(
+            """
+            CREATE TABLE HOST_INFO (hostUid TEXT, hostName TEXT);
+            INSERT INTO HOST_INFO VALUES ('host-1', 'node-1');
+            CREATE TABLE RANK_DEVICE_MAP (rankId INTEGER, deviceId INTEGER);
+            INSERT INTO RANK_DEVICE_MAP VALUES (2, 5);
+            """
+        )
         connection.execute("CREATE TABLE META_DATA (name TEXT, value TEXT)")
         connection.execute(
             "INSERT INTO META_DATA VALUES (?, ?)",
             (Constant.PARALLEL_GROUP_INFO, json.dumps({group_id: {"group_name": "dp", "global_ranks": [1, 2, 3]}})),
+        )
+    with closing(sqlite3.connect(profiler_db.with_name("analysis.db"))) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE StepTraceTime (
+                step TEXT, computing NUMERIC, communication_not_overlapped NUMERIC, overlapped NUMERIC,
+                communication NUMERIC, free NUMERIC, stage NUMERIC, bubble NUMERIC,
+                communication_not_overlapped_and_exclude_receive NUMERIC, preparing NUMERIC
+            );
+            INSERT INTO StepTraceTime VALUES ('step1', 8, 3, 1, 4, 2, 13, 0, 3, 1);
+            """
         )
 
     params = {
@@ -263,9 +282,10 @@ def test_companion_tables_use_group_recipe_and_existing_cluster_metadata(tmp_pat
     }
     db_path = tmp_path / Constant.CLUSTER_ANALYSIS_OUTPUT / Constant.DB_CLUSTER_COMMUNICATION_ANALYZER
     db_path.parent.mkdir()
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        with patch.object(Context, "create_context", return_value=ConcurrentContext(executor=executor)):
-            AnalysisFacade(params).cluster_statistic()
+    with patch("msprof_analyze.cluster_analyse.analysis.analysis_facade.set_json_success") as report_success:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            with patch.object(Context, "create_context", return_value=ConcurrentContext(executor=executor)):
+                AnalysisFacade(params).cluster_statistic()
 
     with closing(sqlite3.connect(db_path)) as connection:
         assert connection.execute("SELECT * FROM CommunicationGroupMapping ORDER BY type").fetchall() == [
@@ -275,3 +295,10 @@ def test_companion_tables_use_group_recipe_and_existing_cluster_metadata(tmp_pat
         key, value = connection.execute("SELECT * FROM ClusterBaseInfo").fetchone()
         assert key == "distributed_args"
         assert json.loads(value) == {"world_size": 8}
+        assert connection.execute('SELECT step, type, "index", computing FROM ClusterStepTraceTime').fetchall() == [
+            ("step1", "rank", "2", 8),
+        ]
+        assert connection.execute("SELECT * FROM HostInfo").fetchall() == [("host-1", "node-1")]
+        assert connection.execute("SELECT * FROM RankDeviceMap").fetchall() == [(2, 5, "host-1", data_map[2])]
+        table_names = {name for name, in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    assert set(report_success.call_args[1]["msg_dict"]["tables"]) == table_names
