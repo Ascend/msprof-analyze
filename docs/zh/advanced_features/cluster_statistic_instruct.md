@@ -14,7 +14,7 @@
 msprof-analyze cluster -m cluster_statistic -d ./cluster_data -o ./statistic_output
 ```
 
-默认统计所有可识别的 rank。可添加 `--rank_list 0,2` 只统计指定 rank，或添加 `--agent` 获取 JSON 格式的执行结果。
+默认统计所有可识别的 rank。可添加 `--rank_list 0,2` 指定通信统计的 rank，或添加 `--agent` 获取 JSON 格式的执行结果。迭代耗时和 Host 信息沿用集群分析的范围，读取所有可识别的 rank。
 
 ## 4. 输出说明
 
@@ -27,6 +27,9 @@ msprof-analyze cluster -m cluster_statistic -d ./cluster_data -o ./statistic_out
 | `CommOpStatistic` | 按 step、通信域和完整算子名汇总跨 rank 的总耗时、最小和最大耗时及对应 rank、有效 rank 数。 |
 | `CommunicationGroupMapping` | 记录通信域、通信类型、rank 集合和并行组信息。可通过 `group_name` 与统计表关联。 |
 | `ClusterBaseInfo` | 在集群配置可用时记录并行策略等基础信息。 |
+| `ClusterStepTraceTime` | 记录 rank 或 stage 的迭代耗时拆解。 |
+| `HostInfo` | 记录主机标识和主机名。 |
+| `RankDeviceMap` | 记录 rank 与设备、主机及采集目录的对应关系。 |
 
 源表缺少 `step` 列时使用字符串 `step` 作为默认值。不可用的统计指标以 `NULL` 表示。
 

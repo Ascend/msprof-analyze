@@ -143,6 +143,18 @@ class AnalysisFacade:
         if base_info.distributed_args:
             tables.append(Constant.TABLE_CLUSTER_BASE_INFO)
 
+        step_trace = StepTraceTimeAnalysis(params)
+        step_trace.run()
+        if step_trace.step_data_list:
+            tables.append(step_trace.CLUSTER_TRACE_TIME_TABLE)
+
+        host_info = HostInfoAnalysis(params)
+        host_info.run()
+        if host_info.all_rank_host_info:
+            tables.append(Constant.TABLE_HOST_INFO)
+        if host_info.all_rank_device_info:
+            tables.append(Constant.TABLE_RANK_DEVICE_MAP)
+
         message = {"tables": tables}
         if tables:
             message["db_path"] = str(db_path)

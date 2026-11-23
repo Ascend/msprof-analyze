@@ -91,12 +91,13 @@ class StepTraceTimeAnalysis:
             return msprof_slice_dict.get(max_timestamp)
         return []
 
-    def run(self, completed_processes, lock):
+    def run(self, completed_processes=None, lock=None):
         self.load_step_trace_time_data()
         self.analyze_step_time()
         self.partition_ranks_data()
         self.dump_data()
-        increase_shared_value(completed_processes, lock)
+        if completed_processes is not None and lock is not None:
+            increase_shared_value(completed_processes, lock)
         logger.info("StepTraceTimeAnalysis completed")
 
     def partition_ranks_data(self):
