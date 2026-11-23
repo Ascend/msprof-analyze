@@ -12,7 +12,7 @@
 
 A列： Step数，是采集性能数据时设置的，一般来说集群性能数据采集一个step足够，如果采集多个step，需要先筛选一下。
 
-B列： Type，主要分两种，rank和stage，和后面的index强相关，可以理解为一个是单卡rank，一个是rank group（pp 并行的stage），如果type为stage，则后面D-K列信息为rank group下的最大值。
+B列： Type，主要分两种，rank和stage，和后面的index强相关，可以理解为一个是单卡rank，一个是rank group（PP并行的stage），如果type为stage，则后面D-K列信息为rank group下的最大值。
 
 C列：Index，与type相关，表示卡号。
 
@@ -26,7 +26,7 @@ G列：Communication，通信时间的全部耗时。
 
 H列：Free，空闲时间，指device侧既不在通信也不在计算的耗时，可能在做SDMA拷贝或者空闲等待。
 
-I列：Stage时间，I、J、K列属于pp并行时有效的数值，stage时间代表除receive算子时间外的时间。
+I列：Stage时间，I、J、K列属于PP并行时有效的数值，stage时间代表除receive算子时间外的时间。
 
 J列：Bubble时间，指receive时间的总和。
 
@@ -131,7 +131,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-配置--exclude_op_name参数时不会生成该表；
+配置--exclude_op_name参数时不会生成该表。
 基于db格式的集群性能数据，针对每个rank的数据，以OpName、OpType、TaskType和InputShapes分组，对计算算子的耗时进行统计分析。
 
 格式：
@@ -269,7 +269,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-基于db格式的集群性能数据，对所有rank的通信算子的耗时进行分析，展示耗时平均值排名TOP N（默认为 15）的通信算子的数据。
+基于db格式的集群性能数据，对所有rank的通信算子的耗时进行分析，展示耗时平均值排名TOP N（默认为15）的通信算子的数据。
 
 格式：
 
@@ -377,7 +377,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 ## 8. communication_group_map
 
-设置-m communication_group_map，会生成以下表。
+设置-m communication_group_map时，会生成以下表。
 
 ### 8.1 CommunicationGroupMapping
 
@@ -457,8 +457,8 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 基于db格式的集群性能数据，分析aicoreFrequency，提供NPU降频一键检测能力。频率分为三种情况：
 
-* 正常情况下，应当稳定在1800MHz；
-* 当NPU空闲时间较长时，设备会自动降频，会掉到800MHz；
+* 正常情况下，应当稳定在1800MHz。
+* 当NPU空闲时间较长时，设备会自动降频，会掉到800MHz。
 * 当NPU因为各种原因，出现降频现象时，除了1800MHz、800MHz，还会出现其他异常频率。
 
 设置-m freq_analysis时，如果发生降频，会生成以下表。
@@ -515,14 +515,14 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 说明：
 
-负载不均的ep。
+负载不均的EP。
 
 格式：
 
 | 字段名 | 类型 | 含义 |
 | ------ | ---- | ---- |
-| epRanks    | TEXT    | 负载不均的ep(Expert Parallelism)的rank集合，例如0,1 |
-| tokensDiff | INTEGER | 同一个ep内最大值与最小值之间的差值 |
+| epRanks    | TEXT    | 负载不均的EP(Expert Parallelism)的rank集合，例如0,1 |
+| tokensDiff | INTEGER | 同一个EP内最大值与最小值之间的差值 |
 
 ## 13. mstx2commop
 
@@ -589,7 +589,7 @@ O列：TP Index，指集群数据按照并行策略切分后所属TP组的索引
 
 ## 16. pp_chart
 
-说明： 这个能力需要首先要使用轻量化打点在前反向前后打点，然后使用msprof-analyze进行处理，最后用MindStudio Insight进行显示。
+说明： 这个能力需要首先使用轻量化打点在前反向前后打点，然后使用msprof-analyze进行处理，最后用MindStudio Insight进行显示。
 
 ### 16.1 打点
 
@@ -638,7 +638,7 @@ prof.add_metadata('pp_info', json.dumps(
 
 说明：
 
-基于上一章节打点后的db格式的集群性能数据，进行处理，生成表格，供可视化显示
+基于上一章节打点后的db格式的集群性能数据，进行处理，生成表格，供可视化显示。
 
 格式：
 
@@ -651,9 +651,9 @@ prof.add_metadata('pp_info', json.dumps(
 
 ### 16.3 通信
 
-当profiler_level设为Level_none时，COMMUNICATION_OP这个表不存在，需要使用mstx2commop这个分析能力将通信内置打点转换为通信算子，这样就会生成这个表。pp流水图也可以显示send和recv。
+当profiler_level设为Level_none时，COMMUNICATION_OP这个表不存在，需要使用mstx2commop这个分析能力将通信内置打点转换为通信算子，这样就会生成这个表。PP流水图也可以显示send和recv。
 
-有了COMMUNICATION_OP这个表，需要使用分析能力p2p_pairing。这样pp流水图也可以显示send和recv的连线，但是这个能力需要level1及以上。
+有了COMMUNICATION_OP这个表，需要使用分析能力p2p_pairing。这样PP流水图也可以显示send和recv的连线，但是这个能力需要level1及以上。
 
 ### 16.4 communication_group.json
 

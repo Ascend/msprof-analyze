@@ -1,5 +1,7 @@
 # 集群算子耗时分析
 
+本文档介绍集群算子耗时分析功能，基于多卡性能数据的op_summary信息统计并展示各卡中执行最快、最慢、均值和方差的TopN算子，适用于需要在集群场景下对比各卡算子性能差异的用户。
+
 ## 1. 简介
 
 集群算子耗时分析功能是在集群场景下，通过cluster_prof_info_analysis.py脚本，基于多卡性能数据的op_summary信息，统计并展示各卡中执行最快、最慢、均值和方差的TopN算子。
@@ -23,7 +25,7 @@ pip install plotly
 
 ```bash
 ├── node0             # 可以是node0或node0_xxx，表示某个节点
-│   ├── PROF_XXXXX    # 单个device的性能数据，须完成msprof性能数据解析
+│   ├── PROF_XXXXX    # 单个device的性能数据，须完成msProf性能数据解析
 │       ├── SUMMARY
 │           ├── op_summary_XX.csv
 |   ......               # 一共八张卡的性能数据
@@ -55,7 +57,7 @@ python3 cluster_prof_info_analysis.py -d <data_path> -t <type> [-n <top_n>]
 | 参数 | 可选/必选 | 说明                                              |
 | ---- | -------- | ------------------------------------------------- |
 | -d   | 必选      | 集群场景性能数据目录，输入node的上一级目录。<br>&#8226; 部分没有op_summary的，不显示也不报错。<br>&#8226; 目录下不存在op_summary时，执行报错无法找到数据文件。<br>&#8226; op_summary列数据错误或读不到数据时，提示具体出错文件。 |
-| -t   | 可选      | 获取分析信息结果文件类型，可取值：html、csv、all，默认html。<br>参数配置错误时，提示输入错误，并提示正确的配置。 |
+| -t   | 可选      | 获取分析结果文件类型，可取值：html、csv、all，默认html。<br>参数配置错误时，提示输入错误，并提示正确的配置。 |
 | -n   | 可选      | html分析独有，表示需要展示的是平均时间top_n的算子，默认10，配置超过30时需要一定时间。<br>&#8226; 必须大于0，如果输入<= 0，默认只导出一个算子的数据。<br>&#8226; 大于算子总数时，按等于算子数处理。 |
 
 **使用示例**
@@ -66,13 +68,13 @@ python3 cluster_prof_info_analysis.py -d ./cluster_data -t html -n 5
 
 ## 4. 输出结果文件说明
 
-### 4.1 cluster_op_time_analysis.csv
+### 4.1 cluster_duration_time_analysis.csv
 
 将算子以op_name、input_shape、input_size、output_shape进行分类，统计每一类算子，在不同节点（node）的不同卡（device）上，执行时间的最大、最小、方差、平均时间以及范围。
 
 ### 4.2 xxx_info.html
 
-主要是各个特性（time和ratio）的html文件，以html方式展示top_n算子的箱线图。
+主要是各个特性（time和ratio）的html文件，以html方式展示TopN算子的箱线图。
 
 time和ratio表示AI Core和AI Vector Core算子性能指标中的耗时和占比字段。
 

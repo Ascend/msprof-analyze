@@ -50,7 +50,7 @@ msprof-analyze支持源码编译安装，在编译过程中会产生临时程序
 
 ## 5. 运行安全声明
 
-1. 工具分析数据时，如数据内存大小超出内存容量限制，可能引发错误并导致进程意外退出。
+1. 工具分析数据时，如数据大小超出内存容量限制，可能引发错误并导致进程意外退出。
 
 2. 工具在运行异常时会退出进程并打印报错信息，属于正常现象。建议用户根据报错提示定位具体错误原因，包括查看打印日志，采集解析过程中生成的结果文件等方式。
 
@@ -65,7 +65,7 @@ msprof-analyze支持源码编译安装，在编译过程中会产生临时程序
 | 开源软件 | msprof-analyze advisor | /msprof_analyze/advisor/config/config.ini           | 公网地址 | <https://www.hiascend.com/document/detail/zh/canncommercial/700/modeldevpt/ptmigr/AImpug_000060.html> | Advisor优化手段参考示例                    |
 | 开源软件 | msprof-analyze         | /config/config.ini                   | 公网地址 | <https://gitcode.com/Ascend/msprof-analyze> | msprof-analyze工具地址                     |
 | 开源软件 | msprof-analyze         | /LICENSE                             | 公网地址 | <http://www.apache.org/licenses/LICENSE-2.0>                   | 开源软件协议地址                           |
-| 开源软件 | msprof-analyze advisor | /msprof_analyze/advisor/rules/aicpu_rules.yaml      | 公网地址 | <https://gitcode.com/Ascend/msprof-analyze/blob/master/docs/zh/aicpu_operator_replacement_example.md> | AICPU算子替换样例                        |
+| 开源软件 | msprof-analyze advisor | /msprof_analyze/advisor/rules/aicpu_rules.yaml      | 公网地址 | <https://gitcode.com/Ascend/msprof-analyze/blob/master/docs/zh/aicpu_operator_replacement_example.md> | AI CPU算子替换样例                        |
 | 开源软件 | msprof-analyze advisor | /msprof_analyze/advisor/rules/environment_variable_info.yaml | 公网地址 | <https://www.hiascend.com/document/detail/zh/canncommercial/850/maintenref/envvar/envref_07_0001.html> | 组网指南                                   |
 | 开源软件 | msprof-analyze         | /config/config.ini                   | 公网地址 | <pmail_mindstudio@huawei.com>                                  | 公网邮箱                                   |
 

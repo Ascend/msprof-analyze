@@ -1,11 +1,13 @@
 # 集群分析工具
 
+本文档介绍集群分析工具，涵盖通信域迭代内耗时分析、通信时间分析和通信矩阵分析，用于定位慢卡、慢节点及慢链路问题，适用于集群场景下的性能分析人员。
+
 ## 1. 简介
 
 `cluster_analyse` 是面向集群场景的分析工具，基础功能涵盖通信域的迭代内耗时分析、通信时间分析和通信矩阵分析，可用于定位慢卡、慢节点及慢链路问题。生成的交付件推荐在 `MindStudio Insight` 中可视化查看，典型应用场景有：
 
 - **判断是否存在慢卡或负载不均衡**：对比各 rank 或 stage 的计算时间、通信时间、空闲时间。如果同类时间差异超过 5%，可进一步排查慢卡或通信瓶颈。
-- **判断是否存在慢链路或带宽异常**：查看 rank 间的链路类型（LOCAL/HCCS/PCIE/RDMA）和传输带宽。同一类链路间的带宽应基本持平，差异明显时可定位到具体慢链路。
+- **判断是否存在慢链路或带宽异常**：查看 rank 间的链路类型（LOCAL/HCCS/PCIe/RDMA）和传输带宽。同一类链路间的带宽应基本持平，差异明显时可定位到具体慢链路。
 - **定位耗时集中的通信算子或通信域**：查看通信算子的耗时分布和通信域内的 rank 范围，快速锁定异常通信操作。
 
 ## 2. 使用前准备
@@ -29,7 +31,7 @@
 
 #### 2.2.1 采集配置
 
-`profiler_level` 建议设置为 `Level1` 或更高，此时集群分析可汇总完整的通信耗时、带宽、传输矩阵信息。但在超大集群场景下，也可以使用 `Level0` 数据，此时仅汇总集群的 `step_trace_time` 迭代内耗时信息以及通信大算子的整体耗时，不包含通信带宽和传输矩阵信息。
+`profiler_level` 建议设置为 `Level1` 或更高，此时集群分析可汇总完整的通信耗时、带宽、通信矩阵信息。但在超大集群场景下，也可以使用 `Level0` 数据，此时仅汇总集群的 `step_trace_time` 迭代内耗时信息以及通信大算子的整体耗时，不包含通信带宽和通信矩阵信息。
 
 ```python
 experimental_config = torch_npu.profiler._ExperimentalConfig(
@@ -57,7 +59,7 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 >
 > `analysis.db` 仅当采集时开启通信数据才会生成。若未采集该数据，`msprof-analyze` 分析时提示 `missing analysis DB file`，详见 [missing analysis DB file (analysis.db) for N rank(s)](../support/faq.md)。
 >
-> 对于超大集群性能数据需要汇总分析的场景，由于数据量较大，转存的代价高，支持单独保存 `analysis.db` 和 `profiler_info_*.json` 文件（须保留原有目录结构）进行 `msprof-analyze cluster` 分析，以此节省文件转储耗时，完成基本的性能分析。
+> 对于超大集群性能数据需要汇总分析的场景，由于数据量较大，转储的代价高，支持单独保存 `analysis.db` 和 `profiler_info_*.json` 文件（须保留原有目录结构）进行 `msprof-analyze cluster` 分析，以此节省文件转储耗时，完成基本的性能分析。
 
 ##### 2.2.2.2 text 格式性能数据
 
@@ -76,8 +78,8 @@ Ascend PyTorch Profiler 支持以下两种结果格式，二者满足其一即�
 
 集群分析时，`-d` 参数应指向集群性能数据根目录，根目录下需包含多张卡、同一次采集得到的 profiling 子目录。为保证分析结果准确，集群路径需满足：
 
-* 只包含同一次采集的全量卡数据，避免混入不同批次或缺失部分 rank；
-* 每张卡对应一个 profiling 子目录，目录名保持采集工具生成的原始格式（如 Ascend PyTorch Profiler 的 `_ascend_pt`、MindSpore Profiler 的 `_ascend_ms`），不要重命名；
+* 只包含同一次采集的全量卡数据，避免混入不同批次或缺失部分 rank。
+* 每张卡对应一个 profiling 子目录，目录名保持采集工具生成的原始格式（如 Ascend PyTorch Profiler 的 `_ascend_pt`、MindSpore Profiler 的 `_ascend_ms`），不要重命名。
 * 每个子目录内保留 `ASCEND_PROFILER_OUTPUT` 目录和 `profiler_info_{rank_id}.json` 文件，工具据此识别 rank，无需在目录名中额外添加 rank 标识。
 
 若混入不同批次数据或缺失部分 rank，通信矩阵的 `src_rank`、`dst_rank` 映射可能不准确，并伴有 warning 输出。
@@ -136,7 +138,7 @@ python3 cluster_analysis.py -d <profiling_path> [-m mode] [-o output_path] [--ag
 | --agent              | 可选      | 分析结果以json格式输出至标准输出，配置该参数表示开启，默认未配置表示关闭。 |
 | --force              | 可选      | 强制执行 cluster。配置后可强制跳过如下情况：<br>&#8226; 指定的目录、文件的用户属主不属于当前用户，忽略属主判断直接执行。<br>&#8226; csv 文件大于 5GB、json 文件大于 10GB、db 文件大于 8GB，忽略文件过大判断直接执行。<br>&#8226; 指定目录、文件的读写权限不满足校验要求，忽略权限判断直接执行。<br>配置该参数表示开启强制执行，默认未配置表示关闭。 |
 
---mode 参数说明：
+--mode参数说明：
 
 | 参数名               | 可选/必选 | 说明                                                         |
 | -------------------- | --------- | ------------------------------------------------------------ |
@@ -213,7 +215,7 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 | Computing | 计算时间。 |
 | Communication(Not Overlapped) | 未被计算掩盖的通信耗时。 |
 | Overlapped | 计算与通信重叠的耗时。 |
-| Communication | 通信时间的全部耗时。 |
+| Communication | 通信总耗时。 |
 | Free | Device 侧既不在通信也不在计算的空闲时间，可能来自 SDMA 拷贝、host bound 或等待。 |
 | Stage | PP 并行时有效，表示除 receive 算子时间外的 stage 时间。 |
 | Bubble | Receive 时间总和。 |
@@ -242,13 +244,13 @@ python3 cluster_analysis.py -m all -d ./cluster_data -o ./output
 
 | 字段 | 说明 |
 | --- | --- |
-| `{src_rank}-{dst_rank}` | 通信链路两端的 rank 编号。 |
-| `Transport Type` | 链路类型。`LOCAL` 表示片内拷贝，`HCCS` 或 `PCIE` 表示节点内片间拷贝，`RDMA` 表示节点间拷贝。 |
-| `Transit Time(ms)` | 该链路传输耗时。 |
-| `Transit Size(MB)` | 该链路传输数据量。 |
-| `Bandwidth(GB/s)` | 该链路带宽。 |
+| {src_rank}-{dst_rank} | 通信链路两端的 rank 编号。 |
+| Transport Type | 链路类型。`LOCAL` 表示片内拷贝，`HCCS` 或 `PCIE` 表示节点内片间拷贝，`RDMA` 表示节点间拷贝。 |
+| Transit Time(ms) | 该链路传输耗时。 |
+| Transit Size(MB) | 该链路传输数据量。 |
+| Bandwidth(GB/s) | 该链路带宽。 |
 
-同一类链路之间的带宽通常应接近。如果某个 `{src_rank}-{dst_rank}` 的 `Bandwidth(GB/s)` 明显低于同类链路，可结合链路类型、传输数据量和传输耗时判断是否存在慢链路。
+同一类链路之间的带宽通常应接近。如果某个 {src_rank}-{dst_rank} 的 Bandwidth(GB/s) 明显低于同类链路，可结合链路类型、传输数据量和传输耗时判断是否存在慢链路。
 
 #### 4.3.3 cluster_communication.json
 
@@ -273,91 +275,91 @@ db 格式性能数据解析后生成的集群分析数据库，用于支撑 Mind
 
 不同采集工具、采集级别、`--mode` 取值和原始 profiling 数据完整度会影响实际生成的表。若某类原始数据缺失，对应表可能不会生成。
 
-##### 4.3.5.1 `ClusterBaseInfo`
+##### 4.3.5.1 ClusterBaseInfo
 
 | 字段 | 说明 |
 | --- | --- |
-| `key` | 基础信息名称，例如分布式参数。 |
-| `value` | 基础信息内容，通常为序列化后的字符串。 |
+| key | 基础信息名称，例如分布式参数。 |
+| value | 基础信息内容，通常为序列化后的字符串。 |
 
-##### 4.3.5.2 `ClusterStepTraceTime`
-
-| 字段 | 说明 |
-| --- | --- |
-| `step` | Step 编号。 |
-| `type` | 数据类型，主要包括 `rank` 和 `stage`。 |
-| `index` | rank 编号或 stage 编号。 |
-| `computing` | 计算时间，单位 ms。 |
-| `communication_not_overlapped` | 未被计算掩盖的通信耗时，单位 ms。 |
-| `overlapped` | 计算与通信重叠的耗时，单位 ms。 |
-| `communication` | 通信总耗时，单位 ms。 |
-| `free` | Device 侧空闲时间，单位 ms。 |
-| `stage` | PP 并行场景下的 stage 时间，单位 ms。 |
-| `bubble` | Receive 时间总和，单位 ms。 |
-| `communication_not_overlapped_and_exclude_receive` | 剔除 receive 算子后，未被计算掩盖的通信耗时，单位 ms。 |
-| `preparing` | 迭代开始到首个计算或通信算子运行前的准备时间，单位 ms。 |
-| `dp_index` | 所属 DP 组索引，未采集则为空或默认值。 |
-| `pp_index` | 所属 PP 组索引，未采集则为空或默认值。 |
-| `tp_index` | 所属 TP 组索引，未采集则为空或默认值。 |
-
-##### 4.3.5.3 `CommunicationGroupMapping`
+##### 4.3.5.2 ClusterStepTraceTime
 
 | 字段 | 说明 |
 | --- | --- |
-| `type` | 通信域类型，例如集合通信或点对点通信。 |
-| `rank_set` | 通信域包含的 rank 集合。 |
-| `group_name` | 通信域名称。 |
-| `group_id` | 通信域 ID。 |
-| `pg_name` | 并行组名称。 |
+| step | Step 编号。 |
+| type | 数据类型，主要包括 `rank` 和 `stage`。 |
+| index | rank 编号或 stage 编号。 |
+| computing | 计算时间，单位 ms。 |
+| communication_not_overlapped | 未被计算掩盖的通信耗时，单位 ms。 |
+| overlapped | 计算与通信重叠的耗时，单位 ms。 |
+| communication | 通信总耗时，单位 ms。 |
+| free | Device 侧空闲时间，单位 ms。 |
+| stage | PP 并行场景下的 stage 时间，单位 ms。 |
+| bubble | Receive 时间总和，单位 ms。 |
+| communication_not_overlapped_and_exclude_receive | 剔除 receive 算子后，未被计算掩盖的通信耗时，单位 ms。 |
+| preparing | 迭代开始到首个计算或通信算子运行前的准备时间，单位 ms。 |
+| dp_index | 所属 DP 组索引，未采集则为空或默认值。 |
+| pp_index | 所属 PP 组索引，未采集则为空或默认值。 |
+| tp_index | 所属 TP 组索引，未采集则为空或默认值。 |
 
-##### 4.3.5.4 `ClusterCommunicationTime`
+##### 4.3.5.3 CommunicationGroupMapping
+
+| 字段 | 说明 |
+| --- | --- |
+| type | 通信域类型，例如集合通信或点对点通信。 |
+| rank_set | 通信域包含的 rank 集合。 |
+| group_name | 通信域名称。 |
+| group_id | 通信域 ID。 |
+| pg_name | 并行组名称。 |
+
+##### 4.3.5.4 ClusterCommunicationTime
 
 | 字段 | 说明                                                                     |
 | --- |------------------------------------------------------------------------|
-| `step` | Step 编号。                                                               |
-| `rank_id` | 全局 rank ID。                                                            |
-| `hccl_op_name` | HCCL 通信算子名称。                                                           |
-| `group_name` | 通信域名称。                                                                 |
-| `start_timestamp` | 通信算子开始时间戳，单位 us。                                                       |
-| `elapsed_time` | 通信算子总耗时，单位 ms。                                                         |
-| `transit_time` | 数据传输耗时，单位 ms。                                                          |
-| `wait_time` | 等待耗时，单位 ms。                                                            |
-| `synchronization_time` | 同步耗时，单位 ms。                                                            |
-| `idle_time` | 空闲耗时，单位 ms。                                                            |
-| `synchronization_time_ratio` | 同步耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。 |
-| `wait_time_ratio` | 等待耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。              |
+| step | Step 编号。                                                               |
+| rank_id | 全局 rank ID。                                                            |
+| hccl_op_name | HCCL 通信算子名称。                                                           |
+| group_name | 通信域名称。                                                                 |
+| start_timestamp | 通信算子开始时间戳，单位 us。                                                       |
+| elapsed_time | 通信算子总耗时，单位 ms。                                                         |
+| transit_time | 数据传输耗时，单位 ms。                                                          |
+| wait_time | 等待耗时，单位 ms。                                                            |
+| synchronization_time | 同步耗时，单位 ms。                                                            |
+| idle_time | 空闲耗时，单位 ms。                                                            |
+| synchronization_time_ratio | 同步耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。 |
+| wait_time_ratio | 等待耗时占比，有效值为 0 到 1 的小数，不可用时为 -1。              |
 
-配置`Level0`采集性能数据时， `transit_time`、`wait_time`、`synchronization_time`、`idle_time` 未采集，`synchronization_time_ratio`、`wait_time_ratio不可用`，均显示为`-1`。
+配置Level0采集性能数据时，transit_time、wait_time、synchronization_time、idle_time 未采集，synchronization_time_ratio、wait_time_ratio不可用，均显示为-1。
 
-##### 4.3.5.5 `ClusterCommunicationBandwidth`
-
-| 字段 | 说明 |
-| --- | --- |
-| `step` | Step 编号。 |
-| `type` | 通信算子类型，包含集合通信和点对点通信等类型。 |
-| `hccl_op_name` | HCCL 通信算子名称。 |
-| `group_name` | 通信域名称。 |
-| `band_type` | 通信链路类型。 |
-| `transit_size` | 传输数据量，单位 MB。 |
-| `transit_time` | 传输耗时，单位 ms。 |
-| `bandwidth` | 带宽，单位 GB/s。 |
-| `large_packet_ratio` | 大包占比，取值为 0 到 1 的小数。 |
-| `package_size` | 包大小，单位 MB。 |
-| `count` | 对应包大小的通信次数。 |
-| `total_duration` | 对应包大小的总耗时，单位 ms。 |
-
-##### 4.3.5.6 `ClusterCommunicationMatrix`
+##### 4.3.5.5 ClusterCommunicationBandwidth
 
 | 字段 | 说明 |
 | --- | --- |
-| `step` | Step 编号。 |
-| `type` | 通信算子类型，包含集合通信和点对点通信等类型。 |
-| `hccl_op_name` | HCCL 通信算子名称。 |
-| `group_name` | 通信域名称。 |
-| `src_rank` | 源 rank。 |
-| `dst_rank` | 目的 rank。 |
-| `transit_size` | 传输数据量，单位 MB。 |
-| `transit_time` | 传输耗时，单位 ms。 |
-| `bandwidth` | 链路带宽，单位 GB/s。 |
-| `transport_type` | 链路类型。 |
-| `op_name` | 通信算子或链路对应的操作名称。 |
+| step | Step 编号。 |
+| type | 通信算子类型，包含集合通信和点对点通信等类型。 |
+| hccl_op_name | HCCL 通信算子名称。 |
+| group_name | 通信域名称。 |
+| band_type | 通信链路类型。 |
+| transit_size | 传输数据量，单位 MB。 |
+| transit_time | 传输耗时，单位 ms。 |
+| bandwidth | 带宽，单位 GB/s。 |
+| large_packet_ratio | 大包占比，取值为 0 到 1 的小数。 |
+| package_size | 包大小，单位 MB。 |
+| count | 对应包大小的通信次数。 |
+| total_duration | 对应包大小的总耗时，单位 ms。 |
+
+##### 4.3.5.6 ClusterCommunicationMatrix
+
+| 字段 | 说明 |
+| --- | --- |
+| step | Step 编号。 |
+| type | 通信算子类型，包含集合通信和点对点通信等类型。 |
+| hccl_op_name | HCCL 通信算子名称。 |
+| group_name | 通信域名称。 |
+| src_rank | 源 rank。 |
+| dst_rank | 目的 rank。 |
+| transit_size | 传输数据量，单位 MB。 |
+| transit_time | 传输耗时，单位 ms。 |
+| bandwidth | 链路带宽，单位 GB/s。 |
+| transport_type | 链路类型。 |
+| op_name | 通信算子或链路对应的操作名称。 |

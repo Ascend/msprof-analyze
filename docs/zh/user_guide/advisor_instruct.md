@@ -1,5 +1,7 @@
 # 专家建议
 
+本文档介绍msprof-analyze advisor专家建议功能，说明advisor命令行与Jupyter Notebook两种使用方式及HTML报告解读指南，适用于需要对Ascend PyTorch或MindSpore采集的性能数据进行分析并获取调优建议的用户。
+
 ## 1. 简介
 
 advisor（专家建议）功能是将Ascend PyTorch Profiler或者MindSpore Profiler采集的性能数据进行分析，并输出性能调优建议。

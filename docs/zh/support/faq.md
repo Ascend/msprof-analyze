@@ -14,7 +14,7 @@
 
 1. 检查每个 rank 子目录的 `ASCEND_PROFILER_OUTPUT` 目录下是否存在 `analysis.db`（MindSpore、msProf 数据中为 `communication_analyzer.db`），确认缺失的是全部 rank 还是部分 rank。
 2. 检查采集命令或采集配置是否开启通信（HCCL）算子数据采集。未开启时，通信类分析项缺失属于预期行为，如需通信域分析结果请重新采集。
-3. 检查目录结构是否符合 [集群输入目录要求](../user_guide/cluster_analyse_instruct.md#23-集群输入目录要求)：`-d` 指向集群根目录，每张卡对应一个 profiling 子目录，目录内保留 `ASCEND_PROFILER_OUTPUT` 和 `profiler_info_{rank_id}.json`。
+3. 检查目录结构是否符合 [集群输入目录要求](../user_guide/cluster_analyse_instruct.md#23-集群输入目录要求)：`-d` 指向集群根目录，每个 rank 对应一个 profiling 子目录，目录内保留 `ASCEND_PROFILER_OUTPUT` 和 `profiler_info_{rank_id}.json`。
 4. 若确认已开启通信数据采集，检查数据转储或拷贝过程是否遗漏 `analysis.db`（例如仅拷贝了 `ascend_pytorch_profiler_{rank_id}.db`），以及是否为每个 rank 保留了完整的同名文件。
 
 ## 集群分析时提示 Cannot determine rank_id for the following paths

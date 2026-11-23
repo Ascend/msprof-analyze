@@ -23,7 +23,7 @@
 
 ![img](./figures/Mul.png)
 
-AI Core支持的dtype。
+AI Core支持的dtype如下。
 
 ```python
 float, float32, float16, dt_bf16, int32, int64, int8, uint8, complex64
@@ -41,7 +41,7 @@ int16, complex128
 
 ![img](./figures/Equal.png)
 
-AI Core支持的dtype。
+AI Core支持的dtype如下。
 
 ```python
 float, float32, float16, dt_bf16, bool, int32, int64, int8, uint8
@@ -109,7 +109,7 @@ int16, int64
 
 ### 2.2 IndexPut算子替换
 
-在tensor类型的赋值和切片操作时，会使用IndexPut算子执行，一般都在AI CPU上执行，可以转换为等价的tensor操作，并在CUBE单元上执行。例如：
+在tensor类型的赋值和切片操作时，会使用IndexPut算子执行，一般都在AI CPU上执行，可以转换为等价的tensor操作，并在Cube单元上执行。例如：
 
 ```python
 masked_input[input_mask] = 0
@@ -121,9 +121,9 @@ masked_input[input_mask] = 0
 masked_input *= ~input_mask
 ```
 
-此处masked_input是float类型的tensor数据，input_mask是和masked_input shape 一致的bool类型tensor或者01矩阵。由于是赋0操作，所以先对input_mask取反后再进行乘法操作。
+此处masked_input是float类型的tensor数据，input_mask是和masked_input shape一致的bool类型tensor或者01矩阵。由于是赋0操作，所以先对input_mask取反后再进行乘法操作。
 
-以赋0操作为例，在shape = (512, 32, 64) 类型float32 数据上测试，替换前耗时：9.639978408813477 ms，替换之后耗时为 0.1747608184814453 ms，如下图，替换前，总体耗时为9.902ms，Host下发到Device侧执行5个算子，其中aclnnIndexPutImpl_IndexPut_IndexPut是执行在AI CPU上。
+以赋0操作为例，在shape = (512, 32, 64) 类型float32数据上测试，替换前耗时：9.639978408813477 ms，替换之后耗时为 0.1747608184814453 ms，如下图，替换前，总体耗时为9.902ms，Host下发到Device侧执行5个算子，其中aclnnIndexPutImpl_IndexPut_IndexPut是执行在AI CPU上。
 
 **图7** 替换前耗时
 
@@ -139,15 +139,15 @@ masked_input *= ~input_mask
 
 ArgMin在CANN 6.3.RC2版本上算子下发到AI CPU执行，在CANN 7.0.RC1上下发到AI Core上执行。出现此类情形建议升级CANN包版本。
 
-在shape大小是 (1024, 1024) 的tensor上测试，结果如下：CANN 6.3.RC2上，单算子执行时间 2.603 ms。
+在shape大小是 (1024, 1024) 的tensor上测试，结果如下：CANN 6.3.RC2上，单算子执行时间2.603 ms。
 
 **图9** 单算子执行时间（CANN 6.3.RC2）
 
 ![img](./figures/single_op_time_CANN63RC2.png)
 
-CANN7.0 RC1上，单算子执行时间223.516 us。
+CANN 7.0 RC1上，单算子执行时间223.516 us。
 
-**图10** 单算子执行时间（CANN7.0 RC1）
+**图10** 单算子执行时间（CANN 7.0 RC1）
 
 ![img](./figures/single_op_time_CANN70RC1.png)
 

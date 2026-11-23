@@ -1,5 +1,7 @@
 # msprof-analyze 快速入门
 
+本文档介绍msprof-analyze性能数据自动分析工具的快速入门流程，涵盖环境准备、性能数据采集、Advisor分析和报告查看，适用于需要在昇腾AI处理器上完成性能瓶颈诊断的用户。
+
 <br>
 
 ## 1. 概述
@@ -52,7 +54,7 @@ source /dev/stdin <<< "$(dev_id=$(lspci -n -D | grep -o '19e5:d[0-9a-f]\{3\}' | 
 
 若命令执行后输出 `[PASS]`，则表示执行成功；若输出 `[FAIL]`，可能原因如下：
 
-1. 硬件不在本教程支持范围内：本学习环境仅支持Atlas推理系列产品、Atlas A2系列产品、Atlas A3系列产品及Ascend 950PR&950DT系列产品，请切换至兼容的硬件环境后重试；
+1. 硬件不在本教程支持范围内：本学习环境仅支持Atlas推理系列产品、Atlas A2系列产品、Atlas A3系列产品及Ascend 950PR&950DT系列产品，请切换至兼容的硬件环境后重试。
 2. 底层环境异常：未安装 `lspci`，或当前用户无法通过 `lspci -n -D` 查询 NPU PCI ID，请联系环境管理员确认底层环境。
 
 #### 2.1.3 宿主机：拉取镜像
@@ -83,7 +85,7 @@ cd ~ && curl -fLO --retry 3 https://inst.obs.cn-north-4.myhuaweicloud.com/env/ct
 ~/ctr_in.py ${MY_STUDY_VAR_CANN_IMAGE}
 ```
 
-**预期结果**：终端进入类似以下 root Shell 提示符，表示容器已成功启动：
+**预期结果**：终端显示类似以下 root Shell 提示符，表示容器已成功启动：
 
 ```text
 [root@xxxxxx ~]#
@@ -314,7 +316,7 @@ docker cp "${CONTAINER_ID}:${ADVISOR_OUTPUT}" ./
 3. **定位明细数据**：如需定位算子或 API 层面的具体原因，可打开 `log/mstt_advisor_{timestamp}.xlsx` 结合模块名称深入分析。
 4. **进行调优验证**：根据建议修改训练脚本、数据加载逻辑或通信配置后，重新采集 Profiling 数据并运行 Advisor 验证优化效果。
 
-> **延伸阅读**：如需了解更多分析维度、参数说明及高级解读技巧，请参阅 《[专家建议](../user_guide/advisor_instruct.md)》。
+> **延伸阅读**：如需了解更多分析维度、参数说明及高级解读技巧，请参阅《[专家建议](../user_guide/advisor_instruct.md)》。
 
 至此，您已掌握 msprof-analyze 性能瓶颈基础分析方法，本次快速入门结束。如需深入了解其功能用法，请参考：
 
@@ -415,7 +417,7 @@ pip3 install --no-index --find-links="${HOME}/offline_wheels" xxx # xxx 为需�
 
 ### 4.2 执行 Docker 命令遇到 permission denied 类错误提示？
 
-可能当前用户未加入 Docker 用户组。可使用 root 权限在宿主机执行：
+可能当前用户未加入 Docker 用户组，可使用 root 权限在宿主机执行：
 
 ```bash
 sudo usermod -aG docker <当前用户名>

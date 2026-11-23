@@ -1,5 +1,7 @@
 # 集群性能数据细粒度拆解
 
+本文档介绍集群性能数据细粒度拆解，提供集群训练过程中迭代耗时拆解的功能，包括计算、通信和内存拷贝等各部分的时间消耗，帮助用户找到性能瓶颈，适用于需要评估大集群运行情况的用户。
+
 ## 1. 简介
 
 大集群场景涉及多个计算节点，数据量大，单卡维度的性能数据统计与分析无法评估整体集群运行情况。
@@ -75,7 +77,7 @@ msprof-analyze -m cluster_time_summary -d ./xxx/cluster_data -o ./xxx/output_pat
 | communicationNotOverlapComputation       | REAL    | 未被计算掩盖的通信耗时。                       |
 | communicationOverlapComputation          | REAL    | 计算和通信重叠的时间。                         |
 | communication                            | REAL    | NPU上算子的通信总时间。                        |
-| free                                     | REAL    | 空闲时间，迭代总时间减去计算、通信、拷贝时间。 |
+| free                                     | REAL    | 空闲时间，迭代总耗时减去计算、通信、拷贝耗时。 |
 | communicationWaitStageTime               | REAL    | 通信中的总等待耗时。                           |
 | communicationTransmitStageTime           | REAL    | 通信中的总传输耗时。                           |
 | memory                                   | REAL    | 拷贝耗时。                                     |
@@ -88,5 +90,5 @@ cluster_time_summary_{timestamp}.csv除了表头格式有所调整，数据和db
 **输出结果分析**
 
 * 通过分析计算、通信、内存拷贝、空闲时间占比，找到性能瓶颈。
-* 通过比较集群内各卡耗时指标差异，定位性能问题。例如，computing计算耗时波动显著，通常表明存在卡间不同步、计算卡性能不均的情况，而通信传输耗时差异过大时，则需优先排查参数面网络是否存在拥塞或配置异常。
+* 通过比较集群内各卡耗时指标差异，定位性能问题。例如，computation计算耗时波动显著，通常表明存在卡间不同步、计算卡性能不均的情况，而通信传输耗时差异过大时，则需优先排查参数面网络是否存在拥塞或配置异常。
 * 配合使用cluster_time_compare_summary功能，可有效定位集群性能劣化根因。

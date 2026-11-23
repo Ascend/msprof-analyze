@@ -1,5 +1,7 @@
 # 集群性能数据细粒度比对
 
+本文档介绍集群性能数据细粒度比对功能，对比当前集群与基准集群的计算、通信和内存拷贝耗时，适用于需要定位大集群性能瓶颈的用户。
+
 ## 1. 简介
 
 大集群场景涉及多个计算节点，数据量大，原有的单卡性能数据对比不能评估整体集群运行情况。
@@ -10,7 +12,7 @@
 
 **环境准备**
 
-完成msprof-analyze工具安装，具体请参见《[msprof-analyze工具安装指南](../install_guide/msprof-analyze_install_guide.md)》。
+完成msprof-analyze工具安装，具体请参见[msprof-analyze工具安装指南](../install_guide/msprof-analyze_install_guide.md)。
 
 **数据准备**
 
@@ -34,14 +36,14 @@ msprof-analyze -m cluster_time_compare_summary -d <cluster_data> --bp <base_clus
 | ---- | --------- | ------------------------------------------------------------ |
 | -m   | 必选      | 设置为cluster_time_compare_summary，启动集群耗时细粒度比对。 |
 | -d   | 必选      | 集群性能数据文件父目录路径。                                     |
-| --bp | 必选      | 基础集群性能数据文件父目录路径。                                 |
+| --bp | 必选      | 基准集群性能数据文件父目录路径。                                 |
 | -o   | 可选      | 分析结果输出路径，默认输出在 -d 参数指定的目录下。                   |
 
 更多参数详细介绍请参见msprof-analyze的[参数说明](./README.md#51-参数说明)。
 
 **使用示例**
 
-1. 执行cluster_time_summary分析能力，以进行集群耗时细粒度拆解。
+1. 执行cluster_time_summary分析能力，以进行集群性能数据细粒度拆解。
 
    cluster_time_summary分析能力详细介绍请参见《[集群性能数据细粒度拆解](./cluster_time_summary_instruct.md)》。
 
