@@ -30,6 +30,7 @@ MindStudio Profiler Analyze (`msprof-analyze`) is a performance analysis tool fo
 | [`compare`](./docs/en/user_guide/compare_tool_instruct.md) | Supports performance comparison in various scenarios, including GPU/NPU and NPU/NPU comparisons. | [compare_tools](./msprof_analyze/compare_tools) |
 | [`cluster_analyse`](./docs/en/user_guide/cluster_analyse_instruct.md) | Summarizes cluster communication data, with results that can be visualized in MindStudio Insight. | [cluster_analyse](./msprof_analyze/cluster_analyse) |
 | [Advanced Analysis](./docs/en/advanced_features/README.md) | Provides customizable recipe rules based on `db`-format profile data, covering more than 20 analysis capabilities, including breakdown comparison, host-side dispatch, and computation and communication analysis, with flexible extensibility. | [recipes](./msprof_analyze/cluster_analyse/recipes) |
+| [`pt-snap`](./docs/en/user_guide/pt_snap_instruct.md) | Parses PyTorch / TorchNPU memory snapshots into shards that open directly in MindStudio Insight, with queries, peak attribution, and callstack memory trees. | [pt_snap](./components/pt_snap/src/pt_snap_cli) |
 
 ## 🚀 Quick Start
 
