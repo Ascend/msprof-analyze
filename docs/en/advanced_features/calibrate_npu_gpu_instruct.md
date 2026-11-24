@@ -50,7 +50,7 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
        --output-len 8
    ```
 
-   **Key Option Description**
+   **Key Parameter Description**
 
    * `--stats=true`: enables Nsys to automatically generate an SQLite database file after profile data collection is complete.
    * `--trace=cuda,nvtx`: enables CUDA and NVTX tracing. NVTX markers are used for module hierarchy parsing.
@@ -67,22 +67,22 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    ```bash
    #!/bin/bash
 
-   # eager mode
-   # Use the profiler capability of vLLM. To support MSTX, modify vllm-ascend/vllm_ascend/worker/worker_v1.py.
+   # Eager mode
+   # Use the vLLM profiler capability. To support mstx, modify vllm-ascend/vllm_ascend/worker/worker_v1.py
    # - Set mstx in experimental_config to True to enable custom instrumentation.
-   # - Add db to export_type.
-   # - Set enforce_eager to True during vLLM inference.
+   # - Add db to the data export type export_type.
+   # - Enable enforce_eager=True during vLLM inference.
 
    dir_model="/path/to/model"
    dir_output_prof="/path/to/model_profile_npu"
 
-   # Use the VLLM_TORCH_PROFILER_DIR environment variable to enable profile data collection and specify the profile data output directory. This variable can also be set directly in the terminal.
+   # Enable performance data collection by using the VLLM_TORCH_PROFILER_DIR environment variable to set the profile data storage path. You can also set this environment variable in the terminal.
    export VLLM_TORCH_PROFILER_DIR=${dir_output_prof}
    export ASCEND_RT_VISIBLE_DEVICES=0,1
 
    echo "Start Profiling"
-   # Modify the benchmark code to add MSTX instrumentation.
-   # Add a profile option to start llm.start_profile().
+   # Modify the benchmark code to add mstx instrumentation.
+   # Add the profile option to start llm.start_profile().
    vllm bench latency \
        --enforce-eager \
        --model ${dir_model} \
@@ -98,8 +98,8 @@ Install `msprof-analyze`. For details, see [msprof-analyze Installation Guide](.
    **Key Configuration Description**
 
    * **Environment variable**: Use `VLLM_TORCH_PROFILER_DIR` to set the profile data output directory.
-   **Instrumentation configuration:** Modify the vLLM-Ascend code to set `msprof_tx=True` and `export_type=['text', 'db']` in `experimental_config`.
-   **eager mode**: Currently, only eager mode is supported. Use `--enforce-eager` to ensure operators are executed one by one.
+   * **Instrumentation configuration:** Modify the vLLM-Ascend code to set `mstx=True` and `export_type=['text', 'db']` in `experimental_config`.
+   * **eager mode**: Currently, only eager mode is supported. Use `--enforce-eager` to ensure operators are executed one by one.
 
 3. Data File Requirements
 
@@ -121,17 +121,17 @@ Compares the prepared GPU and NPU profile data and outputs the results.
 msprof-analyze cluster -m calibrate_npu_gpu --profiling_path <npu_profile_path> --baseline_profiling_path <gpu_profile_path> [-o <output_path>] [--export_type <export_type>] [--fuzzy_threshold <fuzzy_threshold>] [--dump_intermediate_results]
 ```
 
-**Command-line options**
+**Command-line Options**
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| -m | Yes | Specifies the analysis feature. Set it to `calibrate_npu_gpu` to enable NPU and GPU profile data breakdown and comparison. |
-| --profiling_path | Yes | Specifies the directory of the NPU profile data files. |
-| --baseline_profiling_path | Yes | Specifies the directory of the GPU profile data files. |
-| -o | No | Specifies the analysis result output directory. By default, results are saved in the directory specified by `--profiling_path`. |
-| --export_type | No | Specifies the output file type. Valid values: `db` (default) or `text`. |
-| --fuzzy_threshold | No | Specifies the fuzzy match threshold for NPU and GPU module names, which defaults to `0.8`. |
-| --dump_intermediate_results | No | Saves the intermediate analysis results (GPU/NPU profile analysis results) in the `{platform}_report_{rank_id}.xlsx` file. By default, this option is not specified, and intermediate analysis results are not saved. |
+| -m | Required | Specifies the analysis feature. Set it to `calibrate_npu_gpu` to enable NPU and GPU profile data breakdown and comparison. |
+| --profiling_path | Required | Specifies the directory of the NPU profile data files. |
+| --baseline_profiling_path | Required | Specifies the directory of the GPU profile data files. |
+| -o | Optional | Specifies the analysis result output directory. By default, results are saved in the directory specified by `--profiling_path`. |
+| --export_type | Optional | Specifies the output file type. Valid values: `db` (default) or `text`. |
+| --fuzzy_threshold | Optional | Specifies the fuzzy match threshold for NPU and GPU module names, which defaults to `0.8`. |
+| --dump_intermediate_results | Optional | Saves the intermediate analysis results (GPU/NPU profile analysis results) in the `{platform}_report_{rank_id}.xlsx` file. By default, this parameter is not specified, and intermediate analysis results are not saved. |
 
 **Example**
 
@@ -211,22 +211,22 @@ from vllm.sampling_params import BeamSearchParams
 # --- START OF INJECTION ---
 -import nvtx
 +import torch_npu
-+import torch_nn as nn
++import torch.nn as nn
 import torch.cuda.profiler as cuda_profiler
 original_call = nn.Module.__call__
 
 def custom_call(self, *args, **kwargs):
-+   # Customize the call method and add MSTX instrumentation.
++   # Custom call method that adds msTX instrumentation.
     module_name = self.__class__.__name__
 -    nvtx.push_range(module_name)
-+    mstx_id = torch_npu.npu.mstx.range_start(module_name, domain="Module")    # Start module instrumentation with domain set to Module
++    mstx_id = torch_npu.npu.mstx.range_start(module_name, domain="Module")    # Start Module instrumentation and set the domain to Module.
     tmp = original_call(self, *args, **kwargs)
 -    nvtx.pop_range()
-+    torch_npu.npu.mstx.range_end(mstx_id, domain="Module")    # End module instrumentation with domain set to Module
++    torch_npu.npu.mstx.range_end(mstx_id, domain="Module")    # End Module instrumentation and set the domain to Module.
     return tmp
 nn.Module.__call__ = custom_call
 -# --- END OF INJECTION ---
-+# Replace the default call method
++# Replace the default call method.
 
 ... # original code
 

@@ -23,7 +23,7 @@ msprof-analyze compare \
   -o ./compare_output
 ```
 
-The three core paths in the command are described below:
+The three core paths in the command are described below.
 
 | Path | Description | Example |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ Proceed with the following analyses:
 
 **Step 2: Check operator performance for computation performance degradation.**
 
-If computation duration has increased significantly in `OverallMetrics`, prioritize the following sheets:
+If computation duration has increased significantly in `OverallMetrics`, prioritize the following sheets.
 
 | Sheet | Applicable Scenario | How to Read |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ If `Uncovered Communication Time` has increased in `OverallMetrics`, check `Comm
 
 **Step 4: Check `MemoryCompareStatistic` for memory performance degradation.**
 
-If `Mem Usage` in the overall performance output printed to the terminal has increased, or if you need to analyze differences in operator-level memory usage, prioritize the following sheets:
+If `Mem Usage` in the overall performance output printed to the terminal has increased, or if you need to analyze differences in operator-level memory usage, prioritize the following sheets.
 
 | Sheet                    | How to Read                                                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
@@ -123,8 +123,8 @@ Collection code example 1 (recommended): use `schedule` to control when data is 
 
 ```python
 with torch.profiler.profile(
-        profile_memory=True,  # Enables memory profile data collection
-        record_shapes=True,  # Enables operator input shape collection
+        profile_memory=True,  # Switch for memory data collection.
+        record_shapes=True,  # Switch for operator input shape collection.
         schedule=torch.profiler.schedule(wait=10, warmup=0, active=1, repeat=1),
         on_trace_ready=torch.profiler.tensorboard_trace_handler("./result_dir")
 ) as prof:
@@ -137,8 +137,8 @@ Collection code example 2: manually control `start`/`stop`.
 
 ```python
 prof = torch.profiler.profile(
-    profile_memory=True,
-    record_shapes=True,
+    profile_memory=True,  # Switch for memory data collection.
+    record_shapes=True,  # Switch for operator input shape collection.
     on_trace_ready=torch.profiler.tensorboard_trace_handler("./result_dir"))
 for step in range(step_number):
     if step == 11:
@@ -150,7 +150,7 @@ for step in range(step_number):
 
 The directory structure of the PyTorch Profiler collection results is as follows:
 
-```text
+```Python
 |- pytorch_profiling
     |- *.pt.trace.json
 ```
@@ -165,7 +165,7 @@ Depending on the value of the `export_type` parameter, the tool outputs result d
 
 `export_type = Text`
 
-```text
+```bash
 |- ascend_pytorch_profiling
     |- *_ascend_pt
         |- ASCEND_PROFILER_OUTPUT
@@ -179,7 +179,7 @@ Depending on the value of the `export_type` parameter, the tool outputs result d
 
 `export_type = Db`
 
-```text
+```bash
 |- ascend_pytorch_profiling
     |- *_ascend_pt
         |- ASCEND_PROFILER_OUTPUT
@@ -207,7 +207,7 @@ Collection result directory structure: Depending on the value of the `export_typ
 
 Method 1: `export_type = Text`
 
-```text
+```bash
 |- profiler/{rank-*}_{timestamps}_ascend_ms
    |- ASCEND_PROFILER_OUTPUT
       |- kernel_details.csv
@@ -217,7 +217,7 @@ Method 1: `export_type = Text`
 
 Method 2: `export_type = Db`
 
-```text
+```bash
 |- profiler/{rank-*}_{timestamps}_ascend_ms
    |- ASCEND_PROFILER_OUTPUT
       |- analysis.db
@@ -263,19 +263,19 @@ For the script method, the first positional argument, `<benchmark_profiling_path
 
 #### 4.3.1 Input and Output
 
-| Option | Required (Yes/No) | Description | Typical Value |
+| Option | Required/Optional | Description | Typical Value |
 | --- | --- | --- | --- |
-| `-bp` or `--benchmark_profiling_path` | Yes | Specifies the path to the benchmark profile data, which is typically GPU data, data collected before optimization, or data from an earlier version. | `./gpu_trace.json`, `./base_ascend_pt` |
-| `-d` or `--profiling_path` | Yes | Specifies the path to the profile data to be compared, which is typically NPU data, data collected after optimization, or data from a later version. | `./ascend_pt`, `./new_ascend_pt` |
-| `-o` or `--output_path` | Yes | Specifies the directory for storing comparison results. | `./compare_output` |
+| `-bp` or `--benchmark_profiling_path` | Required | Specifies the path to the benchmark profile data, which is typically GPU data, data collected before optimization, or data from an earlier version. | `./gpu_trace.json`, `./base_ascend_pt` |
+| `-d` or `--profiling_path` | Required | Specifies the path to the profile data to be compared, which is typically NPU data, data collected after optimization, or data from a later version. | `./ascend_pt`, `./new_ascend_pt` |
+| `-o` or `--output_path` | Required | Specifies the directory for storing comparison results. | `./compare_output` |
 
 #### 4.3.2 Comparison Scope Control
 
-| Option | Required (Yes/No) | Description | Supported by TorchNPU | Supported by MindSpore |
+| Option | Required/Optional | Description | Supported by TorchNPU | Supported by MindSpore |
 | --- | --- | --- | --- | --- |
-| `--disable_details` | No | Hides detailed comparison and performs only statistics-level comparison. | Yes | Yes |
-| `--base_step` | No | Specifies the step ID of the benchmark profile data. Once configured, the tool uses data from the corresponding step in the benchmark profile data for comparison. The value must be an integer matching an existing step ID. By default, it is not configured, and all profile data is compared. This option must be used together with `--comparison_step`. Example: `--base_step=1`. This option takes effect only when `--enable_profiling_compare` (DB data only), `--enable_operator_compare`, `--enable_communication_compare`, `--enable_memory_compare`, `--enable_kernel_compare`, or `--enable_api_compare` is enabled. | Yes | Yes |
-| `--comparison_step` | No | Specifies the step ID of the profile data to be compared. Once configured, the tool uses data from the corresponding step in the profile data to be compared. The value must be an integer matching an existing step ID. By default, it is not configured, and all profile data is compared. This option must be used together with `--base_step`. Example: `--comparison_step=1`. This option takes effect only when `--enable_profiling_compare` (DB data only), `--enable_operator_compare`, `--enable_communication_compare`, `--enable_memory_compare`, `--enable_kernel_compare`, or `--enable_api_compare` is enabled. | Yes | Yes |
+| `--disable_details` | Optional | Hides detailed comparison and performs only statistics-level comparison. | Yes | Yes |
+| `--base_step` | Optional | Specifies the step ID of the benchmark profile data. Once configured, the tool uses data from the corresponding step in the benchmark profile data for comparison. The value must be an integer matching an existing step ID. By default, it is not configured, and all profile data is compared. This option must be used together with `--comparison_step`. Example: `--base_step=1`. This option takes effect only when `--enable_profiling_compare` (DB data only), `--enable_operator_compare`, `--enable_communication_compare`, `--enable_memory_compare`, `--enable_kernel_compare`, or `--enable_api_compare` is enabled. | Yes | Yes |
+| `--comparison_step` | Optional | Specifies the step ID of the profile data to be compared. Once configured, the tool uses data from the corresponding step in the profile data to be compared. The value must be an integer matching an existing step ID. By default, it is not configured, and all profile data is compared. This option must be used together with `--base_step`. Example: `--comparison_step=1`. This option takes effect only when `--enable_profiling_compare` (DB data only), `--enable_operator_compare`, `--enable_communication_compare`, `--enable_memory_compare`, `--enable_kernel_compare`, or `--enable_api_compare` is enabled. | Yes | Yes |
 
 #### 4.3.3 Comparison Capability Switches
 
@@ -284,46 +284,46 @@ If none of the comparison switches is specified, the tool **enables all** suppor
 If you are interested in only a specific type of issue, you can enable the corresponding switch as required. Once any comparison switch is specified, the tool performs only the comparisons enabled by the specified switches. Example:
 
 ```bash
-# Configure --enable_profiling_compare to enable only overall performance comparison.
+# Configure the --enable_profiling_compare parameter to enable only overall performance comparison.
 msprof-analyze compare -d [profiling_path] -bp [benchmark_profiling_path] --output_path=./result_dir --enable_profiling_compare
 ```
 
-| Option | Required (Yes/No) | Description | Supported by TorchNPU | Supported by MindSpore |
+| Option | Required/Optional | Description | Supported by TorchNPU | Supported by MindSpore |
 | --- | --- | --- | --- | --- |
-| `--enable_profiling_compare` | No | Enables overall performance comparison. | Yes | Yes |
-| `--enable_operator_compare` | No | Enables operator performance comparison. This option is time-consuming. You are advised to collect profile data for only a single step. For supported extended options, see [Operator Performance Comparison Options](#434-operator-performance-comparison-options). | Yes | No |
-| `--enable_communication_compare` | No | Enables communication performance comparison. | Yes | Yes |
-| `--enable_memory_compare` | No | Enables operator memory comparison. This option is time-consuming. You are advised to collect profile data for only a single step. | Yes | No |
-| `--enable_kernel_compare` | No | Enables kernel performance comparison. This option applies only to NPU-to-NPU comparison scenarios. For supported extended options, see [Kernel Performance Comparison Options](#435-kernel-performance-comparison-options). | Yes | Yes |
-| `--enable_api_compare` | No | Enables API performance comparison. The `trace_view.json` file in the profile data is required. | Yes | No |
+| `--enable_profiling_compare` | Optional | Enables overall performance comparison. | Yes | Yes |
+| `--enable_operator_compare` | Optional | Enables operator performance comparison. This option is time-consuming. You are advised to collect profile data for only a single step. For supported extended options, see [Operator Performance Comparison Options](#434-operator-performance-comparison-options). | Yes | No |
+| `--enable_communication_compare` | Optional | Enables communication performance comparison. | Yes | Yes |
+| `--enable_memory_compare` | Optional | Enables operator memory comparison. This option is time-consuming. You are advised to collect profile data for only a single step. | Yes | No |
+| `--enable_kernel_compare` | Optional | Enables kernel performance comparison. This option applies only to NPU-to-NPU comparison scenarios. For supported extended options, see [Kernel Performance Comparison Options](#435-kernel-performance-comparison-options). | Yes | Yes |
+| `--enable_api_compare` | Optional | Enables API performance comparison. The `trace_view.json` file in the profile data is required. | Yes | No |
 
 #### 4.3.4 Operator Performance Comparison Options
 
 Supported when `--enable_operator_compare` is specified.
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| `--gpu_flow_cat` | No | Sets the connection identifier between CPU-side operators and device kernels in the GPU trace. Set this parameter when all GPU `Device Duration(us)` values are `0`. To obtain the identifier, open the GPU JSON file with `chrome://tracing`, locate the connection identifier under **Flow events** in the upper-right corner, and configure the identifier as the parameter value. Example: `--gpu_flow_cat=async_gpu`. |
-| `--use_input_shape` | No | Enables precise operator matching. Disabled by default. Example: `--use_input_shape`. |
-| `--max_kernel_num` | No | Sets the maximum number of kernels launched by a CPU-side operator. When the number exceeds the specified value, the tool automatically searches downward for sub-operators until the condition is met. By default, only top-level operators are compared, resulting in relatively coarse granularity. To perform operator comparison at a finer granularity, configure this parameter. The value must be greater than `3`, with a minimum configurable value of `4`. A smaller value results in finer comparison granularity. Example: `--max_kernel_num=10`. |
-| `--op_name_map` | No | Sets the mapping between equivalent operator names on GPUs and NPUs. The mapping is specified in dictionary format. Example: `--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`. |
-| `--disable_module` | No | Enables operator-level performance comparison. When this parameter is specified, the tool performs comparison at the operator level regardless of whether module information is collected. |
+| `--gpu_flow_cat` | Optional | Sets the connection identifier between CPU-side operators and device kernels in the GPU trace. Set this parameter when all GPU `Device Duration(us)` values are `0`. To obtain the identifier, open the GPU JSON file with `chrome://tracing`, locate the connection identifier under **Flow events** in the upper-right corner, and configure the identifier as the parameter value. Example: `--gpu_flow_cat=async_gpu`. |
+| `--use_input_shape` | Optional | Enables precise operator matching. Disabled by default. Example: `--use_input_shape`. |
+| `--max_kernel_num` | Optional | Sets the maximum number of kernels launched by a CPU-side operator. When the number exceeds the specified value, the tool automatically searches downward for sub-operators until the condition is met. By default, only top-level operators are compared, resulting in relatively coarse granularity. To perform operator comparison at a finer granularity, configure this parameter. The value must be greater than `3`, with a minimum configurable value of `4`. A smaller value results in finer comparison granularity. Example: `--max_kernel_num=10`. |
+| `--op_name_map` | Optional | Sets the mapping between equivalent operator names on GPUs and NPUs. The mapping is specified in dictionary format. Example: `--op_name_map={'Optimizer.step#SGD.step':'Optimizer.step#NpuFusedSGD.step'}`. |
+| `--disable_module` | Optional | Enables operator-level performance comparison. When this parameter is specified, the tool performs comparison at the operator level regardless of whether module information is collected. |
 
 #### 4.3.5 Kernel Performance Comparison Options
 
 Supported when `--enable_kernel_compare` is specified.
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| `--use_kernel_type` | No | Specifies the kernel comparison mode. When this switch is specified, `op_statistic.csv` is used for comparison, producing simplified results and reducing comparison time. When this switch is not specified, `kernel_details.csv` is used for comparison by default, producing complete results. Example: `--use_kernel_type`. |
+| `--use_kernel_type` | Optional | Specifies the kernel comparison mode. When this switch is specified, `op_statistic.csv` is used for comparison, producing simplified results and reducing comparison time. When this switch is not specified, `kernel_details.csv` is used for comparison by default, producing complete results. Example: `--use_kernel_type`. |
 
 #### 4.3.6 Execution Assistance Options
 
-| Option | Required (Yes/No) | Description | Supported by TorchNPU | Supported by MindSpore |
+| Option | Required/Optional | Description | Supported by TorchNPU | Supported by MindSpore |
 | --- | --- | --- | --- | --- |
-| `--force` | No | Forcibly executes `compare`. When specified, the following checks can be forcibly skipped: if the specified directory or file is not owned by the current user, ignore the ownership check and proceed with execution; if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB, ignore the file size check and proceed with execution; if the read or write permissions of the specified directory or file do not meet the validation requirements, ignore the permission check and proceed with execution. Specifying this parameter enables forced execution; if it is not specified, forced execution is disabled. | Yes | Yes |
-| `--debug` | No | Enables DEBUG-level information in the logs when the tool reports an error, to facilitate troubleshooting. Specifying this parameter enables debug mode; if it is not specified, debug mode is disabled. | Yes | Yes |
-| `-h`, `-H`, `--help` | No | Displays help information about the subcommands or related parameters of the current command. | Yes | Yes |
+| `--force` | Optional | Forcibly executes `compare`. When specified, the following checks can be forcibly skipped: if the specified directory or file is not owned by the current user, ignore the ownership check and proceed with execution; if a CSV file exceeds 5 GB, a JSON file exceeds 10 GB, or a DB file exceeds 8 GB, ignore the file size check and proceed with execution; if the read or write permissions of the specified directory or file do not meet the validation requirements, ignore the permission check and proceed with execution. Specifying this parameter enables forced execution; if it is not specified, forced execution is disabled. | Yes | Yes |
+| `--debug` | Optional | Enables DEBUG-level information in the logs when the tool reports an error, to facilitate troubleshooting. Specifying this parameter enables debug mode; if it is not specified, debug mode is disabled. | Yes | Yes |
+| `-h` or `--help` | Optional | Displays help information about the subcommands or related parameters of the current command. | Yes | Yes |
 
 ### 4.4 Usage Examples
 
@@ -339,9 +339,9 @@ msprof-analyze compare \
 **Script**
 
 ```bash
-# Download the msprof-analyze repository locally and go to the compare_tools directory.
+# Download the msprof-analyze source repository and go to the compare_tools directory under it.
 cd msprof_analyze/compare_tools
-# Run the basic comparison command.
+# Run the simplest comparison command.
 python performance_compare.py ./benchmark_profiling_path ./profiling_path --output_path=./output_path
 ```
 
@@ -357,7 +357,7 @@ In general, the `compare` function compares performance based on operators speci
 
 An operator name identification keyword is a substring of an operator name. An operator is included in the comparison as long as its name contains the configured keyword.
 
-The configuration format is as follows. Separate operator name identification keywords with commas, and use lowercase English letters only for the names:
+The configuration format is as follows. Separate operator name identification keywords with commas, and use lowercase English letters only for the names.
 
 ![config](../figures/config.png)
 
@@ -454,9 +454,9 @@ with torch_npu.profiler.profile(
         schedule=torch_npu.profiler.schedule(wait=1, warmup=1, active=1, repeat=1, skip_first=10),
         on_trace_ready=torch_npu.profiler.tensorboard_trace_handler("./result"),
 ) as prof:
-    for step in range(steps):
-        train_one_step()
-        prof.step()
+        for step in range(steps):
+            train_one_step()
+            prof.step()
 ```
 
 Configure `activities` to collect only NPU data, without configuring `experimental_config` or other optional switches.

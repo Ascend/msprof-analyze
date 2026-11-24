@@ -101,8 +101,8 @@ Constraints: None
 
  | Product Type | Supported |
  | --- | --- |
- | Atlas A3 training products/inference products | Yes |
- | Atlas A2 training products/inference products | Yes |
+ | Atlas A3 products | Yes |
+ | Atlas A2 products | Yes |
 
 ### 2.3.2 Technical Restrictions
 

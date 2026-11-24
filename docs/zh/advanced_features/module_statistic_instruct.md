@@ -1,11 +1,13 @@
 # 性能数据模型结构拆解
 
+本文档介绍性能数据模型结构拆解（module_statistic）功能，可自动提取PyTorch模型的层级化结构与算子调用顺序，输出Device侧Kernel执行耗时统计，适用于需要定位模型性能瓶颈并做模型优化的用户。
+
 ## 1. 简介
 
 性能数据模型结构拆解（module_statistic）提供了针对PyTorch模型自动解析模型层级结构的分析功能，帮助精准定位性能瓶颈，为模型优化提供关键洞察。该功能提供：
 
 * 模型结构拆解：自动提取并展示模型的层次化结构，以及模型中的算子调用顺序。
-* 算子与Kernel映射：框架层算子与NPU上执行Kernel的映射关系。
+* 算子与Kernel映射：框架侧算子与NPU上执行Kernel的映射关系。
 * 性能分析：精确统计并输出Device侧Kernel的执行耗时。
 
 ## 2. 使用前准备
@@ -20,7 +22,7 @@
 
     在模型代码中调用`torch_npu.npu.mstx.range_start/range_end`性能打点接口，需重写PyTorch中的nn.Module调用逻辑。
 
-2. 配置并采集 Profiling 数据
+2. 配置并采集Profiling数据
 
    * 使用`torch_npu.profiler`接口采集性能数据。
    * 在`torch_npu.profiler._ExperimentalConfig`设置`mstx=True`，开启打点事件采集（在旧版本中对应的参数为`msprof_tx=True`）。
@@ -55,7 +57,7 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 **输出说明**
 
 * 当--export_type设置为db时，在-o参数指定路径下生成`cluster_analysis_output/cluster_analysis.db`文件，在该文件中生成`ModuleStatistic`表。
-* 当--export_type设置为text时，每张卡生成独立的module_statistic_{rank_id}.xlsx文件。
+* 当--export_type设置为text时，每张卡生成独立的`module_statistic_{rank_id}.xlsx`文件。
 
 具体介绍请参见[输出结果文件说明](#4-输出结果文件说明)。
 

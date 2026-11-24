@@ -1,5 +1,7 @@
 # 专家建议
 
+本文档介绍msprof-analyze advisor专家建议功能，说明advisor命令行与Jupyter Notebook两种使用方式及HTML报告解读指南，适用于需要对Ascend PyTorch或MindSpore采集的性能数据进行分析并获取调优建议的用户。
+
 ## 1. 简介
 
 advisor（专家建议）功能是将Ascend PyTorch Profiler或者MindSpore Profiler采集的性能数据进行分析，并输出性能调优建议。
@@ -226,7 +228,7 @@ overall模块仅识别问题，不提供调优建议。
 
 ![env_var.png](../figures/env_var.png)
 
-上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/maintenref/envvar/envref_07_0031.html)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
+上图中的环境变量详细介绍请参见[ACLNN_CACHE_LIMIT](https://gitcode.com/cann/docs/blob/master/docs/zh/env-vars/ACLNN_CACHE_LIMIT.md)和[HOST_CACHE_CAPACITY](https://www.hiascend.com/document/detail/zh/canncommercial/80RC22/developmentguide/appdevg/aclpythondevg/aclpythondevg_0045.html)。
 
 无标杆单卡场景的overall summary分析示例如下：
 
@@ -393,8 +395,8 @@ Fusible Operator Analysis解析结果打印展示并保存在`mstt_advisor_{time
 
 | 字段 | 说明 |
 | --- | --- |
-| start index | 序列起始算子在kernel details.csv或op_summary.csv中索引位置（不包含表头，起始索引为0）。 |
-| end index | 序列末尾算子在kernel details.csv或op_summary.csv中索引位置。 |
+| start index | 序列起始算子在kernel_details.csv或op_summary.csv中索引位置（不包含表头，起始索引为0）。 |
+| end index | 序列末尾算子在kernel_details.csv或op_summary.csv中索引位置。 |
 | total time(us) | 算子序列总耗时（包含算子间隙），单位us。 |
 | execution time(us) | 序列中算子执行总耗时，单位us。 |
 | mte time(us) | 序列中算子搬运总耗时，单位us。 |
@@ -434,7 +436,7 @@ torch_npu.npu.config.allow_internal_format = False
 
 ![输入图片说明](../figures/schedule_1.png)
 
-上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/API/ascendgraphapi/aclcppdevg_03_0251.html)。
+上图中aclopCompileAndExecute接口介绍请参见[aclopCompileAndExecute](https://gitcode.com/cann/ge/blob/master/docs/zh/api/graph_engine_api/c/acl/aclopCompileAndExecute.md)。
 
 #### 5.4.4 memory/dataloader模块问题速查
 

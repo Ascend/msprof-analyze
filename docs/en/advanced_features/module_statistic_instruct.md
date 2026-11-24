@@ -43,12 +43,12 @@ msprof-analyze -m module_statistic -d ./result --export_type text
 
 **Command-line Options**
 
-| Option | Required (Yes/No) | Description |
+| Option | Required/Optional | Description |
 | --- | --- | --- |
-| -m | Yes | Specifies the analysis feature. Set it to `module_statistic` to enable model structure breakdown. |
-| -d | Yes | Specifies the parent directory of the cluster profile data files. |
-| -o | No | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
-| --export_type | No | Specifies the output file type. Valid values: `db` (default) or `text`. |
+| -m | Required | Specifies the analysis feature. Set it to `module_statistic` to enable model structure breakdown. |
+| -d | Required | Specifies the parent directory of the cluster profile data files. |
+| -o | Optional | Specifies the analysis result output directory. If not specified, results are saved to the directory specified by `-d`. |
+| --export_type | Optional | Specifies the output file type. Valid values: `db` (default) or `text`. |
 
 For details about more options, see [Command-line Options and Parameters](./README.md#51-command-line-options-and-parameters) of `msprof-analyze`.
 
@@ -114,14 +114,14 @@ import torch.optim as optim
 original_call = nn.Module.__call__
 
 def custom_call(self, *args, **kwargs):
-    """Customize the `nn.Module` calling method and add MSTX instrumentation."""
+    """Custom nn.Module call method that adds msTX instrumentation."""
     module_name = self.__class__.__name__
     mstx_id = torch_npu.npu.mstx.range_start(module_name, domain="Module")
     tmp = original_call(self, *args, **kwargs)
     torch_npu.npu.mstx.range_end(mstx_id, domain="Module")
     return tmp
 
-# Replace the default call method
+# Replace the default call method.
 nn.Module.__call__ = custom_call
 
 class RMSNorm(nn.Module):
@@ -169,12 +169,12 @@ def train():
         aic_metrics=torch_npu.profiler.AiCMetrics.PipeUtilization,
         profiler_level=torch_npu.profiler.ProfilerLevel.Level2,
         l2_cache=False,
-        mstx=True,  # Enable MSTX collection. The original parameter name is msprof_tx.
+        mstx=True,  # Enable msTX collection. The original parameter name is msprof_tx.
         data_simplification=False,
         export_type=[
             torch_npu.profiler.ExportType.Text,
             torch_npu.profiler.ExportType.Db
-        ],  # The export_type parameter must include db.
+        ],  # The export type must include db.
     )
 
     prof = torch_npu.profiler.profile(

@@ -73,7 +73,7 @@ The formula uses bandwidth in bytes/s internally. Only final output is rounded: 
 
 Tensor bytes are computed from the shape element count and dtype size. Supported types include FLOAT/FLOAT32 (4 bytes), FLOAT16/BF16 (2), INT8/UINT8/BOOL (1), INT16/UINT16 (2), INT32/UINT32 (4), INT64/UINT64/DOUBLE/FLOAT64 (8), and FP8/HIFLOAT8/FLOAT8_E4M3FN/FLOAT8_E5M2 (1). `DT_` prefixes are supported. INT4/UINT4 use 4 bits per element, rounded up to whole bytes per tensor. Missing or unknown dtypes fall back to 2 bytes; unknown types emit warnings with cached lookups to reduce repetition. This fallback can overestimate or underestimate traffic.
 
-Tensors with non-positive dimensions, empty shapes, or unparseable shapes are skipped. Empty shapes cannot currently be distinguished from missing data or empty separators, so they are not treated as scalar tensors. Partially skipped kernels may underestimate traffic and MBU; kernels with no calculable bytes are omitted. Supply valid shapes before interpreting these results as complete traffic estimates.
+Tensors with non-positive dimensions, empty shapes, or unparsable shapes are skipped. Empty shapes cannot currently be distinguished from missing data or empty separators, so they are not treated as scalar tensors. Partially skipped kernels may underestimate traffic and MBU; kernels with no calculable bytes are omitted. Supply valid shapes before interpreting these results as complete traffic estimates.
 
 Kernels with non-positive durations are omitted. Only identical query records are deduplicated; concurrent tasks with different `globalTaskId` values are retained. Missing calculation columns are reported in the log and analysis of that rank is skipped.
 

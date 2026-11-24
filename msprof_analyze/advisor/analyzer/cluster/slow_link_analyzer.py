@@ -48,7 +48,7 @@ class SlowLinkAnalyzer(BaseAnalyzer):
         super().__init__(collection_path, n_processes, **kwargs)
         key = ClusterCommunicationDataset.get_key()
         self.communication_data_class = self.get_first_data_by_key(self.dataset_list, key)
-        self.rank_bw_dict = self.communication_data_class.get_data()
+        self.rank_bw_dict = self.communication_data_class.get_data() if self.communication_data_class else None
         self.result = OptimizeResult()
         self.bottelneck = ''
         self.suggestion = ''
@@ -64,12 +64,8 @@ class SlowLinkAnalyzer(BaseAnalyzer):
             return (max(data) - min(data)) / mean
 
     def optimize(self, **kwargs):
-        if self.rank_bw_dict is None:
-            logger.error(
-                "Slow link analysis failed due to data loading failure. \
-                        Please check your cluster_analysis_output folder. \
-                        If you are not concerned about this type of data, please ignore this message."
-            )
+        if not self.rank_bw_dict:
+            logger.info("Skipping slow link analysis because communication bandwidth data is unavailable.")
             return self.result
         self.process()
         self.make_record()

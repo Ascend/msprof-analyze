@@ -399,6 +399,10 @@ class Constant:
         "communication.json",
         "communication_matrix.json",
     ]
+    CLUSTER_DATA_PREPARATION_DOC_URL = (
+        "https://gitcode.com/Ascend/msprof-analyze/blob/master/docs/zh/user_guide/"
+        "cluster_analyse_instruct.md#22-数据准备"
+    )
     ANALYSIS_OUTPUT_PATH = "ANALYSIS_OUTPUT_PATH"
     DEFAULT_RANK_FOR_PROFILING_ANALYSIS = 0
     PROFILER_INFO_FILE_PATTERN = r"profiler_info_(\d+)\.json"
@@ -455,6 +459,7 @@ class Constant:
     RECIPE_NAME = "recipe_name"
     RECIPE_CLASS = "recipe_class"
     PARALLEL_MODE = "parallel_mode"
+    CLUSTER_STATISTIC = "cluster_statistic"
     MSPROF_ANALYZE_PATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     RECIPES_PATH = os.path.join(MSPROF_ANALYZE_PATH, 'cluster_analyse', 'recipes')
 
@@ -507,6 +512,7 @@ class Constant:
     TABLE_MEMORY_RECORD = "MEMORY_RECORD"
     TABLE_STEP_TIME = "STEP_TIME"
     TABLE_COMPUTATIONAL_OPERATOR_MASKING_LINEARITY = "ComputationalOperatorMaskingLinearity"
+    TABLE_CLUSTER_COMPARE_BASELINE_OPERATOR = "ClusterCompareBaselineOperator"
 
     # communication task type
     NOTIFY_RECORD = "Notify_Record"

@@ -1,5 +1,7 @@
 # 自定义分析规则开发指导
 
+本文档介绍基于Profiling生成的analysis.db和ascend_pytorch_profiler_{rank_id}.db文件开展性能数据分析的自定义分析规则开发方法，涵盖目录与py文件创建、run函数与mapper_func/reducer_func等函数实现、单db数据查询方式、扩展参数添加及执行命令，适用于需要在msprof-analyze代码仓中自定义一套性能数据分析规则的用户。
+
 ## 1. 简介
 
 自定义分析规则是基于对Profiling的analysis.db和ascend_pytorch_profiler_{rank_id}.db文件进行性能数据分析而开发。与cann_api_sum、compute_op_sum、hccl_sum等参数功能实现类似，可自定义一套性能数据的分析规则。
@@ -57,9 +59,9 @@
 
    3. `save_db`函数：分析结果保存在cluster_analysis.db中。
 
-   4. `save_notebook`函数：分析结果以csv和stats.ipynb的形式保存。
+   4. `save_notebook`函数：分析结果以CSV和stats.ipynb的形式保存。
 
-3. `self._mapper_func`函数依赖单db数据查询，可通过如下两种方式。
+3. `self._mapper_func`函数依赖单db数据查询，可通过如下两种方式实现。
 
    1. 使用DatabaseService可配置单表的查询。
 
@@ -74,7 +76,7 @@
       df_dict = service.query_data()  # 将配置的所有表按序查询，以dict形式返回，key为表名，value为数据库查询结果dataframe数据类型
       ```
 
-   2. 维护在msprof_analyze/prof_exports目录下，新建一个py文件，需继承自BaseStatsExport（注：新增之前可以看现有的是否可用，避免重复）。如下示例：
+   2. 在msprof_analyze/prof_exports目录下，新建一个py文件，需继承自BaseStatsExport（注：新增之前可以看现有的是否可用，避免重复）。如下示例：
 
       ```python
       from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
@@ -107,7 +109,7 @@
 
       使用样例：df = HcclSumExport(profiler_db_path, analysis_class).read_export_db()，返回的数据类型是dataframe。
 
-4. 分析规则增加扩展参数。
+4. 为分析规则增加扩展参数。
 
    实现函数add_parser_argument，样例如下：
 

@@ -236,11 +236,12 @@ class TestBaseRecipeAnalysis(unittest.TestCase):
             [
                 call("Invalid Rank id: [%s].", "9"),
                 call(
-                    '%s: missing %s for %d rank(s) [%s]; these ranks will be skipped.',
+                    '%s: missing %s for %d rank(s) [%s]; these ranks will be skipped. For details, see %s.',
                     'test_recipe',
                     'analysis DB file (analysis.db)',
                     1,
                     '1',
+                    Constant.CLUSTER_DATA_PREPARATION_DOC_URL,
                 ),
             ]
         )

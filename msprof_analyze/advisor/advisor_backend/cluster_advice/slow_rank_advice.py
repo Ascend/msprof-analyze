@@ -25,6 +25,7 @@ from msprof_analyze.prof_common.file_manager import FileManager
 
 
 class SlowRankAdvice(ClusterAdviceBase):
+    result_file = Constant.CLUSTER_STEP_TIME_CSV
     RANK = "rank"
     RATIO_THRESHOLD = 0.05
     BOTTLENECK_LIST = ['Computing', 'Communication', "Free"]

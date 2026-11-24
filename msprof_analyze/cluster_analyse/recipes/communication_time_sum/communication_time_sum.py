@@ -37,6 +37,17 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
     TABLE_CLUSTER_COMM_BANDWIDTH = "ClusterCommunicationBandwidth"
 
     TABLE_COMMUNICATION_GROUP_MAPPING = "CommunicationGroupMapping"
+    TIME_GROUP_COLUMNS = [TableConstant.STEP, TableConstant.RANK_ID, TableConstant.GROUP_NAME]
+    TIME_RATIO_COLUMNS = (
+        (TableConstant.SYNCHRONIZATION_TIME, TableConstant.SYNCHRONIZATION_TIME_RATIO),
+        (TableConstant.WAIT_TIME, TableConstant.WAIT_TIME_RATIO),
+    )
+    TIME_BREAKDOWN_COLUMNS = [
+        TableConstant.TRANSIT_TIME,
+        TableConstant.WAIT_TIME,
+        TableConstant.SYNCHRONIZATION_TIME,
+        TableConstant.IDLE_TIME,
+    ]
     TIME_COLUMNS = [
         TableConstant.STEP,
         TableConstant.RANK_ID,
@@ -103,7 +114,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         mapper_res_time = list(item[0] for item in mapper_res if item[0] is not None)
         mapper_res_bw = list(item[1] for item in mapper_res if item[1] is not None)
         if not mapper_res_time and not mapper_res_bw:
-            logger.warning("Mapper data is None, generating empty tables.")
+            logger.warning("Mapper data is None, skipping empty results.")
             return
         cluster_db_path = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
         data_service = DatabaseService(cluster_db_path, None)
@@ -114,7 +125,7 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         rank_set_df = df_dict.get(self.TABLE_COMMUNICATION_GROUP_MAPPING, None)
         if rank_set_df is None or rank_set_df.empty:
             logger.warning(
-                "There is no %s data in %s, generating empty tables.",
+                "There is no %s data in %s, skipping empty results.",
                 self.TABLE_COMMUNICATION_GROUP_MAPPING,
                 cluster_db_path,
             )
@@ -128,21 +139,23 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
             self._compute_bandwidth_info(communication_bandwidth, rank_set_df)
 
     def save_db(self):
-        self._dump_data_to_db(self.communication_time, self.TABLE_CLUSTER_COMM_TIME)
-        self._dump_data_to_db(self.communication_bandwidth, self.TABLE_CLUSTER_COMM_BANDWIDTH)
+        tables = []
+        for data, table in (
+            (self.communication_time, self.TABLE_CLUSTER_COMM_TIME),
+            (self.communication_bandwidth, self.TABLE_CLUSTER_COMM_BANDWIDTH),
+        ):
+            if not data.empty:
+                self._dump_data_to_db(data, table)
+                tables.append(table)
         set_json_success(
             msg_dict={
                 "db_path": os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER),
-                "tables": [self.TABLE_CLUSTER_COMM_TIME, self.TABLE_CLUSTER_COMM_BANDWIDTH],
+                "tables": tables,
             },
             suggestion=self.SUGGESTION,
         )
 
     def _dump_data_to_db(self, data, table_name):
-        if data is None:
-            data = pd.DataFrame(
-                columns=self.TIME_COLUMNS if table_name == self.TABLE_CLUSTER_COMM_TIME else self.BANDWIDTH_COLUMNS
-            )
         result_db = os.path.join(self.output_path, Constant.DB_CLUSTER_COMMUNICATION_ANALYZER)
         logger.info("Exporting data to database: %s, table: %s", result_db, table_name)
         conn, cursor = DBManager.create_connect_db(result_db)
@@ -150,21 +163,20 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         DBManager.destroy_db_connect(conn, cursor)
 
     def save_csv(self):
-        self._dump_data_to_csv(self.communication_time, "cluster_communication_time.csv")
-        self._dump_data_to_csv(self.communication_bandwidth, "cluster_communication_bandwidth.csv")
+        csv_paths = []
+        for data, file_name in (
+            (self.communication_time, "cluster_communication_time.csv"),
+            (self.communication_bandwidth, "cluster_communication_bandwidth.csv"),
+        ):
+            if not data.empty:
+                self._dump_data_to_csv(data, file_name)
+                csv_paths.append(os.path.join(self.output_path, file_name))
         set_json_success(
-            msg_dict={
-                "csv_path": [
-                    os.path.join(self.output_path, "cluster_communication_time.csv"),
-                    os.path.join(self.output_path, "cluster_communication_bandwidth.csv"),
-                ]
-            },
+            msg_dict={"csv_path": csv_paths},
             suggestion=self.SUGGESTION,
         )
 
     def _dump_data_to_csv(self, data, file_name):
-        if data is None:
-            data = pd.DataFrame(columns=self.TIME_COLUMNS if "time" in file_name else self.BANDWIDTH_COLUMNS)
         result_csv = os.path.join(self.output_path, file_name)
         logger.info("Exporting data to CSV file: %s", result_csv)
         FileManager.create_csv_from_dataframe(result_csv, data, index=False)
@@ -193,73 +205,50 @@ class CommunicationTimeSum(BaseRecipeAnalysis):
         return self.check_table_exist(self.TABLE_COMMUNICATION_GROUP_MAPPING)
 
     def _compute_time_info(self, communication_time, rank_set_df):
-        """
-        communication_time: ['hccl_op_name', 'group_name', 'start_timestamp', 'elapse_time',
-                            'transit_time', 'wait_time', 'synchronization_time', 'idle_time',
-                            'step', 'type', 'rank_id']
-        rank_set_df: ['rank_set', 'group_name']
-        output: ['step', 'rank_id', 'hccl_op_name', 'group_name', 'start_timestamp', 'elapse_time', 'transit_time',
-                'wait_time', 'synchronization_time', 'idle_time', 'synchronization_time_ratio', 'wait_time_ratio']
-
-        按"step", "rank_id", "rank_set"字段进行分组，汇总"elapse_time", "transit_time", "wait_time",
-        "synchronization_time", "idle_time"等时间数据，新增汇总行插入communication_time
-        """
+        """Preserve individual calls and append totals for each step/rank/group."""
+        communication_time = communication_time.copy()
+        for column in self.TIME_BREAKDOWN_COLUMNS:
+            if column not in communication_time:
+                communication_time[column] = Constant.INVALID_VALUE
+            communication_time[column] = pd.to_numeric(communication_time[column], errors='coerce').fillna(
+                Constant.INVALID_VALUE
+            )
         merged_df = pd.merge(communication_time, rank_set_df, on=TableConstant.GROUP_NAME, how='left')
-        summed_df = (
-            merged_df.groupby([TableConstant.STEP, TableConstant.RANK_ID, TableConstant.GROUP_NAME])
-            .agg(
-                {
-                    TableConstant.ELAPSED_TIME: "sum",
-                    TableConstant.TRANSIT_TIME: "sum",
-                    TableConstant.WAIT_TIME: "sum",
-                    TableConstant.SYNCHRONIZATION_TIME: "sum",
-                    TableConstant.IDLE_TIME: "sum",
-                }
-            )
-            .reset_index()
-        )
-        summed_df[TableConstant.HCCL_OP_NAME] = Constant.TOTAL_OP_INFO
-        summed_df[TableConstant.START_TIMESTAMP] = 0
-        # 计算 synchronization_time_ratio，wait_time_ratio
-        summed_df[TableConstant.SYNCHRONIZATION_TIME_RATIO] = (
-            (
-                summed_df[TableConstant.SYNCHRONIZATION_TIME]
-                / (summed_df[TableConstant.TRANSIT_TIME] + summed_df[TableConstant.SYNCHRONIZATION_TIME]).replace(
-                    0, np.nan
-                )
-            )
-            .fillna(0)
-            .round(4)
-        )
-        summed_df[TableConstant.WAIT_TIME_RATIO] = (
-            (
-                summed_df[TableConstant.WAIT_TIME]
-                / (summed_df[TableConstant.TRANSIT_TIME] + summed_df[TableConstant.WAIT_TIME]).replace(0, np.nan)
-            )
-            .fillna(0)
-            .round(4)
-        )
+        total_time = self._compute_total_time_info(merged_df)
+        for time_column, ratio_column in self.TIME_RATIO_COLUMNS:
+            valid = communication_time[[time_column, TableConstant.TRANSIT_TIME]].ne(Constant.INVALID_VALUE).all(axis=1)
+            # Preserve the legacy per-call ratio for detailed data.
+            communication_time[ratio_column] = np.where(valid, 0, Constant.INVALID_VALUE)
+        final_df = pd.concat([communication_time, total_time], axis=0)
+        final_df = final_df.rename(columns={TableConstant.ELAPSED_TIME: "elapsed_time"})
+        self.communication_time = final_df.reindex(columns=self.TIME_COLUMNS)
 
-        communication_time[TableConstant.SYNCHRONIZATION_TIME_RATIO] = 0
-        communication_time[TableConstant.WAIT_TIME_RATIO] = 0
-        desired_order = [
-            TableConstant.STEP,
-            TableConstant.RANK_ID,
-            TableConstant.HCCL_OP_NAME,
-            TableConstant.GROUP_NAME,
-            TableConstant.START_TIMESTAMP,
-            TableConstant.ELAPSED_TIME,
-            TableConstant.TRANSIT_TIME,
-            TableConstant.WAIT_TIME,
-            TableConstant.SYNCHRONIZATION_TIME,
-            TableConstant.IDLE_TIME,
-            TableConstant.SYNCHRONIZATION_TIME_RATIO,
-            TableConstant.WAIT_TIME_RATIO,
-        ]
-        # 合并汇总数据DataFrame
-        final_df = pd.concat([communication_time, summed_df], axis=0).reindex(columns=desired_order)
-        final_df.rename(columns={'elapse_time': 'elapsed_time'}, inplace=True)
-        self.communication_time = final_df
+    def _compute_total_time_info(self, communication_time):
+        """Sum valid values per metric; an entirely unavailable metric remains -1."""
+        time_columns = [TableConstant.ELAPSED_TIME] + self.TIME_BREAKDOWN_COLUMNS
+        valid_times = communication_time[self.TIME_GROUP_COLUMNS + time_columns].copy()
+        valid_times[time_columns] = valid_times[time_columns].replace(Constant.INVALID_VALUE, np.nan)
+        totals = (
+            valid_times.groupby(self.TIME_GROUP_COLUMNS)[time_columns].sum(min_count=1).fillna(Constant.INVALID_VALUE)
+        )
+        for time_column, ratio_column in self.TIME_RATIO_COLUMNS:
+            totals[ratio_column] = self._compute_total_time_ratio(communication_time, totals, time_column)
+        totals[TableConstant.HCCL_OP_NAME] = Constant.TOTAL_OP_INFO
+        totals[TableConstant.START_TIMESTAMP] = 0
+        return totals.reset_index()
+
+    def _compute_total_time_ratio(self, communication_time, totals, time_column):
+        """Use the same valid calls for the numerator and transit time."""
+        columns = [time_column, TableConstant.TRANSIT_TIME]
+        valid = communication_time[columns].ne(Constant.INVALID_VALUE).all(axis=1)
+        if valid.all():
+            paired_totals = totals
+        else:
+            paired_totals = communication_time.loc[valid].groupby(self.TIME_GROUP_COLUMNS)[columns].sum()
+        numerator = paired_totals[time_column]
+        denominator = (numerator + paired_totals[TableConstant.TRANSIT_TIME]).replace(0, np.nan)
+        ratio = (numerator / denominator).fillna(0).round(4)
+        return ratio.reindex(totals.index, fill_value=Constant.INVALID_VALUE)
 
     def _compute_bandwidth_info(self, communication_bandwidth, rank_set_df):
         """

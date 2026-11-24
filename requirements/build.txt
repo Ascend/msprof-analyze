@@ -1,7 +1,7 @@
-click
+click>=8.1.0
 networkx
-jinja2
-PyYaml
+jinja2>=3.0.0
+PyYaml>=6.0
 tqdm
 prettytable
 ijson
@@ -12,3 +12,9 @@ pandas
 psutil
 pybind11
 plotly
+
+# Snapshot analysis shares the host Python 3.7.5 minimum.
+typer>=0.19.1
+typing-extensions>=4.7.1
+importlib-metadata>=6.7; python_version < "3.8"
+importlib-resources>=5.12; python_version < "3.9"

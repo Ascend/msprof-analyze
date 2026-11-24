@@ -1,0 +1,195 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  block:
+    description: Query memory blocks with flexible field filters
+    devices:
+      - all
+    parameters:
+      id:
+        type: int
+        default: null
+        required: false
+        description: Block ID
+      address:
+        type: int
+        default: null
+        required: false
+        description: Memory address
+      size:
+        type: int
+        default: null
+        required: false
+        description: Exact block size in bytes
+      min_size:
+        type: int
+        default: null
+        required: false
+        description: Minimum block size
+      max_size:
+        type: int
+        default: null
+        required: false
+        description: Maximum block size
+      requestedSize:
+        type: int
+        default: null
+        required: false
+        description: Exact user-requested size
+      allocEventId:
+        type: int
+        default: null
+        required: false
+        description: Allocation event ID
+      min_allocEventId:
+        type: int
+        default: null
+        required: false
+        description: Minimum allocation event ID
+      max_allocEventId:
+        type: int
+        default: null
+        required: false
+        description: Maximum allocation event ID
+      freeEventId:
+        type: int
+        default: null
+        required: false
+        description: Free event ID
+      min_freeEventId:
+        type: int
+        default: null
+        required: false
+        description: Minimum free event ID
+      max_freeEventId:
+        type: int
+        default: null
+        required: false
+        description: Maximum free event ID
+      order_by:
+        type: str
+        default: "size"
+        required: false
+        choices: [id, address, size, requestedSize, state, allocEventId, freeEventId]
+        description: Column to order by
+      order_dir:
+        type: str
+        default: "DESC"
+        required: false
+        choices: [ASC, DESC]
+        description: Sort direction (ASC or DESC)
+      limit:
+        type: int
+        default: -1
+        required: false
+        description: Maximum rows to return (-1 for unlimited)
+      offset:
+        type: int
+        default: 0
+        required: false
+        description: Number of rows to skip
+    query: |
+      SELECT * FROM {{ device_block_table }}
+      WHERE 1=1
+        {% if id is not none %}AND id = {{ id }}{% endif %}
+        {% if address is not none %}AND address = {{ address }}{% endif %}
+        {% if size is not none %}AND size = {{ size }}{% endif %}
+        {% if min_size is not none %}AND size >= {{ min_size }}{% endif %}
+        {% if max_size is not none %}AND size <= {{ max_size }}{% endif %}
+        {% if requestedSize is not none %}AND requestedSize = {{ requestedSize }}{% endif %}
+        {% if allocEventId is not none %}AND allocEventId = {{ allocEventId }}{% endif %}
+        {% if min_allocEventId is not none %}AND allocEventId >= {{ min_allocEventId }}{% endif %}
+        {% if max_allocEventId is not none %}AND allocEventId <= {{ max_allocEventId }}{% endif %}
+        {% if freeEventId is not none %}AND freeEventId = {{ freeEventId }}{% endif %}
+        {% if min_freeEventId is not none %}AND freeEventId >= {{ min_freeEventId }}{% endif %}
+        {% if max_freeEventId is not none %}AND freeEventId <= {{ max_freeEventId }}{% endif %}
+      ORDER BY {{ order_by }} {{ order_dir }}{% if order_by != 'id' %}, id {{ order_dir }}{% endif %}
+      LIMIT {{ limit }}
+      {% if offset > 0 %}OFFSET {{ offset }}{% endif %}
+    output_schema:
+      - column: id
+        type: int
+      - column: address
+        type: int
+      - column: size
+        type: int
+      - column: requestedSize
+        type: int
+      - column: state
+        type: int
+      - column: allocEventId
+        type: int
+      - column: freeEventId
+        type: int
+      - column: lifecycle_id
+        type: str
+        units: text
+        metric_semantics: identifier
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: generation/device/proved allocation-event or stable negative lifetime token; unproved histories retain separate unproved:slice:<index>:block:<id> identities even when block IDs, addresses and unproved allocation references coincide across shards. Never address or local stack identity."]
+      - column: identity_status
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: proved_allocation_event, stable_negative_token, or unproved_shard_local. Unknown histories are not guessed into a global lifetime."]
+      - column: allocation_source
+        type: object
+        metric_semantics: identifier
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: resolved alloc-action event, owning slice/local stack provenance, canonical full source identity and optionally covered ordered raw frames; NULL for preexisting or missing proof."]
+      - column: allocation_source_status
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: resolved, unknown_preexisting, or missing. Missing proof does not discard dynamic bytes or invent an allocation event."]
+      - column: free_source
+        type: object
+        metric_semantics: identifier
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: proved free_completed event with owning-source provenance, never free_requested; NULL for live/unknown or missing completion proof."]
+      - column: free_source_status
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: resolved, live_or_unknown, or missing. No recorded completion alone does not prove a leak."]
+      - column: observation_slice_index
+        type: int
+        metric_semantics: identifier
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: latest selected shard containing this lifetime observation, not necessarily the terminal dataset shard."]
+      - column: state_scope
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: latest_slice_observation. Stored state is not reconstructed at an arbitrary event or at dataset end when the lifetime is absent from the terminal shard."]
+      - column: terminal_survivor
+        type: bool
+        units: flag
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: present in the terminal dataset shard with active/pending-free state and no recorded completion. Survival is not a confirmed leak or proof of allocation history."]
+      - column: category
+        type: str
+        units: text
+        metric_semantics: classification
+        scope: captured_range
+        interpretation_limits: ["Dataset only, optional: dynamic, static, or preexisting according to captured lifecycle IDs. Identity/source proof and terminal survival are separate fields."]

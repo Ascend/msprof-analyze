@@ -1,0 +1,112 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  memory_peak:
+    description: Get peak memory metrics from trace events with corresponding event IDs
+    devices:
+      - all
+    semantics_version: 2
+    interpretation_limits:
+      - "Only real trace events (id >= 0) participate in standalone databases and datasets; synthetic boundary occupancy cannot be a peak."
+      - "Each peak is the maximum of that counter in the filtered event range; ties resolve to the earliest event ID."
+      - "Peaks of allocated, active, and reserved may occur at different events; do not subtract them as if they were simultaneous."
+      - "Event IDs are ordering markers, not elapsed time."
+    parameters:
+      start_id:
+        type: int
+        default: null
+        required: false
+        description: Start event ID for range filtering
+      end_id:
+        type: int
+        default: null
+        required: false
+        description: End event ID for range filtering
+    # Uses two CTEs to converge the peak computation to a single scan of the
+    # filtered range. ``filtered`` applies the optional ``start_id`` /
+    # ``end_id`` predicate once and is reused by ``peaks`` (aggregate scan)
+    # and by the outer MIN(id) subqueries so the result is bit-identical to
+    # the original nested-subquery form for every start_id/end_id
+    # combination, including the null/null default.
+    query: |
+      WITH filtered AS (
+        SELECT id, allocated, active, reserved
+        FROM {{ device_trace_table }}
+        WHERE id >= 0
+          {% if start_id is not none %}AND id >= {{ start_id|int }}{% endif %}
+          {% if end_id is not none %}AND id <= {{ end_id|int }}{% endif %}
+      ), peaks AS (
+        SELECT
+          MAX(allocated) AS peak_allocated,
+          MAX(active) AS peak_active,
+          MAX(reserved) AS peak_reserved
+        FROM filtered
+      )
+      SELECT
+        (SELECT peak_allocated FROM peaks) AS peak_allocated,
+        (
+          SELECT MIN(id) FROM filtered
+          WHERE allocated = (SELECT peak_allocated FROM peaks)
+        ) AS peak_allocated_event_id,
+        (SELECT peak_active FROM peaks) AS peak_active,
+        (
+          SELECT MIN(id) FROM filtered
+          WHERE active = (SELECT peak_active FROM peaks)
+        ) AS peak_active_event_id,
+        (SELECT peak_reserved FROM peaks) AS peak_reserved,
+        (
+          SELECT MIN(id) FROM filtered
+          WHERE reserved = (SELECT peak_reserved FROM peaks)
+        ) AS peak_reserved_event_id
+    output_schema:
+      - column: peak_allocated
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: captured_range
+        interpretation_limits:
+          - "Maximum of the allocated counter in the filtered range. Do not subtract this from a peak recorded at a different event."
+      - column: peak_allocated_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range
+      - column: peak_active
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: captured_range
+        interpretation_limits:
+          - "Maximum of the active counter in the filtered range. Do not subtract this from a peak recorded at a different event."
+      - column: peak_active_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range
+      - column: peak_reserved
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: captured_range
+        interpretation_limits:
+          - "Maximum of the reserved counter in the filtered range. A large reserved value is not itself fragmentation."
+      - column: peak_reserved_event_id
+        type: int
+        units: event_id
+        metric_semantics: ordering_marker
+        scope: captured_range

@@ -1,0 +1,52 @@
+# -------------------------------------------------------------------------
+# This file is part of the MindStudio project.
+# Copyright (c) 2026 Huawei Technologies Co.,Ltd.
+#
+# MindStudio is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
+version: "1.0"
+queries:
+  preexisting_live:
+    description: Count preexisting-live blocks at an event (pre-tracing allocations still live)
+    devices:
+      - all
+    semantics_version: 1
+    interpretation_limits:
+      - "Counts only allocEventId=-1 blocks that are still live at event_id, using the same predicate as the [preexisting live] group in active_memory_callstack_at_event."
+      - "The packaged block filters cannot express freeEventId IS NULL, so this aggregate is the exact bucket total."
+      - "Event IDs are ordering markers, not elapsed time."
+      - "This is an occupancy aggregate, not a leak confirmation."
+    parameters:
+      event_id:
+        type: int
+        required: true
+        description: Trace event ID used as the point-in-time lifecycle boundary
+    query: |
+      SELECT COUNT(*) AS block_count, COALESCE(SUM(size), 0) AS size_bytes
+      FROM {{ device_block_table }}
+      WHERE allocEventId = -1
+        AND (
+          freeEventId IS NULL
+          OR (freeEventId > {{ event_id|int }} AND freeEventId <> -1)
+          OR (freeEventId < 0 AND freeEventId <> -1)
+        )
+    output_schema:
+      - column: block_count
+        type: int
+        units: count
+        scope: preexisting
+      - column: size_bytes
+        type: int
+        units: bytes
+        metric_semantics: instantaneous_occupancy
+        scope: preexisting
