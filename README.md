@@ -30,6 +30,7 @@ MindStudio Profiler Analyze（`msprof-analyze`）是面向 AI 训练与推理场
 | [性能比对](./docs/zh/user_guide/compare_tool_instruct.md) | 支持 GPU/NPU、NPU/NPU 等多种场景的性能差异分析。                       | [查看](./msprof_analyze/compare_tools)         |
 | [集群分析](./docs/zh/user_guide/cluster_analyse_instruct.md) | 汇总集群通信数据，输出结果支持在 MindStudio Insight 中可视化查看。            | [查看](./msprof_analyze/cluster_analyse)       |
 | [进阶分析](./docs/zh/advanced_features/README.md) | 基于DB性能数据，自定义Recipe规则，涵盖拆解对比、Host下发、计算通信等20+分析能力，可灵活扩展。 | [查看](./msprof_analyze/cluster_analyse/recipes) |
+| [内存快照分析](./docs/zh/user_guide/pt_snap_instruct.md) | 将 PyTorch / TorchNPU 内存快照解析为可直接使用 MindStudio Insight 打开的分片数据，并支持查询、峰值归因和调用栈内存树分析。 | [查看](./components/pt_snap/src/pt_snap_cli) |
 
 ## 🚀 快速入门
 
