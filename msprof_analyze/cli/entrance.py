@@ -24,6 +24,7 @@ from msprof_analyze.cli.compare_cli import compare_cli
 from msprof_analyze.cli.cluster_cli import cluster_cli
 from msprof_analyze.cli.unified_cli import help_callback
 from msprof_analyze.cli.version import build_version_text
+from msprof_analyze.cli.pt_snap_cli import pt_snap_command
 from msprof_analyze.prof_common.constant import Constant
 from msprof_analyze.prof_common.logger import get_logger
 from msprof_analyze.prof_common.path_manager import is_root
@@ -147,6 +148,8 @@ def _version_callback(ctx: click.Context, param: click.Parameter, value: bool):
 @click.option('-H', is_flag=True, expose_value=False, hidden=True, callback=help_callback)
 @click.pass_context
 def msprof_analyze_cli(ctx, **kwargs):
+    if ctx.invoked_subcommand == "pt-snap":
+        return
     if not _has_help_option(ctx):
         logo = CliLogo()
         logo.print_logo()
@@ -163,3 +166,5 @@ msprof_analyze_cli.add_command(analyze_cli, name="advisor")
 msprof_analyze_cli.add_command(compare_cli, name="compare")
 msprof_analyze_cli.add_command(cluster_cli, name="cluster")
 msprof_analyze_cli.add_command(auto_complete_cli, name="auto-completion")
+
+msprof_analyze_cli.add_command(pt_snap_command, name="pt-snap")

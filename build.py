@@ -106,6 +106,12 @@ class BuildManager:
 
         if 'test' in self.args.command:
             # -------------------- 单元测试 --------------------
+            # setup.py imports PyYAML from the test dependencies; use that environment
+            # to install the component packages, runtime dependencies and metadata.
+            install_command = ["pip", "install", "--no-build-isolation", "."]
+            if 'local' in self.args.command:
+                install_command.append("--no-deps")
+            self._execute_command(install_command, cwd=self.project_root)
             self._execute_command(["python3", "run_ut.py"], cwd=self.project_root / "test")
         else:
             # -------------------- 产品构建 --------------------
