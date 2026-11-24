@@ -1,6 +1,4 @@
-# 内存快照分析（pt-snap）
-
-[English](../../en/user_guide/pt_snap_instruct.md)
+# 内存快照分析
 
 ## 1. 简介
 
@@ -168,6 +166,8 @@ msprof-analyze pt-snap --help
 
 已有 SnapshotDB `.db` 文件可直接分析；已有完整数据集时，可指定数据集目录或 `manifest.json`。只有原始快照时，先执行导入。
 
+> [!NOTE]
+>
 > 只处理可信的 pickle 文件：反序列化可能执行代码，导入和拆分都不是沙箱。
 
 ## 4. 功能介绍

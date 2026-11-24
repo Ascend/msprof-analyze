@@ -1,6 +1,4 @@
-# Memory Snapshot Analysis (pt-snap)
-
-[简体中文](../../zh/user_guide/pt_snap_instruct.md)
+# Memory Snapshot Analysis
 
 ## 1. Overview
 
@@ -168,6 +166,8 @@ msprof-analyze pt-snap --help
 
 An existing SnapshotDB `.db` can be analyzed directly. For an existing complete dataset, specify its directory or `manifest.json`. Import first if you only have a raw snapshot.
 
+> [!NOTE]
+>
 > Only process trusted pickle files. Deserialization may execute code; import and split are not sandboxes.
 
 ## 4. Feature Introduction
