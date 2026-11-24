@@ -15,7 +15,12 @@ msprof-analyze 通过 `pt-snap` 子命令提供 PyTorch / TorchNPU 内存快照�
 
 ## 2. 快速上手
 
-下文使用 `snapshot.pkl` 作为输入，设备 ID 以 `0` 为例。路径含空格时请加引号。
+下文使用从业务程序采集导出的内存快照 `snapshot.pkl` 作为输入，设备 ID 以 `0` 为例。`snapshot.pkl` 仅为示例文件名，请替换为实际导出的 `.pkl` / `.pickle` 文件路径。
+
+尚未采集快照时，请根据运行设备参考以下指南，在目标业务阶段记录内存分配历史并导出快照：
+
+- GPU / PyTorch：参见 [PyTorch 内存快照采集指南](https://docs.pytorch.org/docs/stable/torch_cuda_memory.html)。
+- 昇腾 NPU / TorchNPU：参见 [Ascend PyTorch 内存快照指南](https://gitcode.com/Ascend/pytorch/blob/master/docs/zh/developer_notes/memory_management/memory_snapshot.md)。
 
 ### 2.1 分片解析并使用 MindStudio Insight 打开
 

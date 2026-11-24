@@ -15,7 +15,12 @@ Main capabilities:
 
 ## 2. Quick Start
 
-The following examples use `snapshot.pkl` and device `0`. Quote paths containing spaces. Replace device and event IDs with values from your data.
+The following examples use `snapshot.pkl`, a memory snapshot collected and exported from your workload, and device `0`. The filename is a placeholder; replace it with the path to your exported `.pkl` / `.pickle` file. Replace device and event IDs with values from your data.
+
+If you have not collected a snapshot, follow the guide for your device to record allocation history during the relevant workload phase and export the snapshot:
+
+- GPU / PyTorch: See the [PyTorch memory snapshot collection guide](https://docs.pytorch.org/docs/stable/torch_cuda_memory.html).
+- Ascend NPU / TorchNPU: See the [Ascend PyTorch memory snapshot guide](https://gitcode.com/Ascend/pytorch/blob/master/docs/en/developer_notes/memory_management/memory_snapshot.md).
 
 ### 2.1 Parse Shards and Open Them in MindStudio Insight
 
