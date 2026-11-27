@@ -85,6 +85,7 @@ For details about the output deliverables of `msprof-analyze` features, see the 
 | ep_load_balance | Summarizes and analyzes MoE load information. | - |
 | computational_op_masking | Provides computation-communication operator overlap calculations during cluster training to help users identify performance bottlenecks. | [computational_op_masking](./computational_op_masking_instruct.md) |
 | operator_mfu | Calculates kernel-level and module-level MFU based on operator FLOPs recorded on the collection side and device-side kernel durations. | [operator_mfu](./operator_mfu_instruct.md) |
+| operator_mbu | Estimates kernel-level memory traffic, bandwidth, and Model Bandwidth Utilization from tensor shapes and data types. | [operator_mbu](./operator_mbu_instruct.md) |
 
 ##### 5.1.1.3 Communication
 

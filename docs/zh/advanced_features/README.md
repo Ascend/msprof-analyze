@@ -85,6 +85,7 @@ msprof-analyze分析特性的输出交付件详细内容请参见[recipe结果�
 | ep_load_balance           | MoE负载信息汇总分析。 | - |
 | computational_op_masking  | 提供集群训练过程中不同算子耗时的掩盖计算，帮助用户找到性能瓶颈。 | [集群算子掩盖线性度分析](./computational_op_masking_instruct.md) |
 | operator_mfu              | 基于采集侧记录的算子 FLOPs 和 Device 侧 kernel 耗时，计算 kernel 级和 module 级算力利用率。 | [算子 MFU 分析](./operator_mfu_instruct.md) |
+| operator_mbu              | 基于关键算子访存字节和 Device 侧 kernel 耗时，计算 kernel 级模型带宽利用率（MBU）。 | [算子 MBU 分析](./operator_mbu_instruct.md) |
 
 ##### 5.1.1.3 通信类特性
 

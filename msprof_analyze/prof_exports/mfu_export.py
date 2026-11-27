@@ -17,7 +17,7 @@
 from msprof_analyze.prof_exports.base_stats_export import BaseStatsExport
 
 
-QUERY_KERNEL_SHAPES = """
+QUERY_KERNEL_SHAPES_TEMPLATE = """
     WITH compute_info AS (
         SELECT
             (SELECT value FROM STRING_IDS WHERE id = t.name) AS kernel_name,
@@ -25,7 +25,7 @@ QUERY_KERNEL_SHAPES = """
             (SELECT value FROM STRING_IDS WHERE id = t.opType) AS type,
             (SELECT value FROM STRING_IDS WHERE id = t.inputShapes) AS input_shapes,
             (SELECT value FROM STRING_IDS WHERE id = t.inputDataTypes) AS input_types,
-            (SELECT value FROM STRING_IDS WHERE id = t.outputShapes) AS output_shapes
+            (SELECT value FROM STRING_IDS WHERE id = t.outputShapes) AS output_shapes{extra_columns}
         FROM
             COMPUTE_TASK_INFO t
     )
@@ -38,8 +38,11 @@ QUERY_KERNEL_SHAPES = """
         compute_info
     JOIN
         TASK as task ON compute_info.globalTaskId = task.globalTaskId
+    {where_clause}
     ORDER BY task.startNs;
 """
+
+QUERY_KERNEL_SHAPES = QUERY_KERNEL_SHAPES_TEMPLATE.format(extra_columns="", where_clause="")
 
 QUERY_MFU_FLOPS = """
     -- 查询 mfu_flops domain 下记录的算子 FLOPs range。
